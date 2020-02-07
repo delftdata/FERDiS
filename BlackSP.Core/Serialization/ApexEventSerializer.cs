@@ -95,22 +95,18 @@ namespace BlackSP.Core.Serialization
             int bytesReceivedCount = 0;
             byte[] nextMsgBytes = _arrayPool.Rent(nextEventByteLength);
             IEvent result;
-            using (Stream buffer = new MemoryStream(nextEventByteLength))
+
+            while (bytesReceivedCount < nextEventByteLength)
             {
-                while (bytesReceivedCount < nextEventByteLength)
-                {
-                    if (t.IsCancellationRequested)
-                    { return null; }
+                if (t.IsCancellationRequested)
+                { return null; }
 
-                    int bytesRead = inputStream.Read(nextMsgBytes, bytesReceivedCount, nextEventByteLength - bytesReceivedCount);
-                    bytesReceivedCount += bytesRead;
-                    if (bytesRead > 0)
-                    {
-                        buffer.Write(nextMsgBytes, 0, nextEventByteLength);
-                    }
-                }
+                int bytesRead = inputStream.Read(nextMsgBytes, bytesReceivedCount, nextEventByteLength - bytesReceivedCount);
+                bytesReceivedCount += bytesRead;
+            }
 
-                buffer.Seek(0, SeekOrigin.Begin);
+            using (Stream buffer = new MemoryStream(nextMsgBytes))
+            {
                 result = _apexSerializer.Read<IEvent>(buffer);
             }
             _arrayPool.Return(nextMsgBytes);
