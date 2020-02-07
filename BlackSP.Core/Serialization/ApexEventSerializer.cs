@@ -1,6 +1,7 @@
 ﻿using Apex.Serialization;
 using BlackSP.Core.Events;
 using System;
+using System.Buffers;
 using System.IO;
 using System.Threading;
 
@@ -8,11 +9,13 @@ namespace BlackSP.Core.Serialization
 {
     public class ApexEventSerializer : IEventSerializer
     {
-        IBinary _apexSerializer;
+        private readonly IBinary _apexSerializer;
+        private readonly ArrayPool<byte> _arrayPool;
 
         public ApexEventSerializer(IBinary apexSerializer)
         {
             _apexSerializer = apexSerializer;
+            _arrayPool = ArrayPool<byte>.Shared;
         }
 
         public void SerializeEvent(Stream outputStream, ref IEvent @event)
@@ -24,14 +27,6 @@ namespace BlackSP.Core.Serialization
                 apexBuffer.Seek(0, SeekOrigin.Begin);
                 //get msg length in msg buffer
                 byte[] buffLengthBytes = BitConverter.GetBytes((int)apexBuffer.Length);
-                
-                //declare byte buffer large enough for the message
-                // byte[] msgBytes = new byte[buffLengthBytes.Length + apexBuffer.Length];
-                //first copy in message length bytes
-                // Array.Copy(buffLengthBytes, 0, msgBytes, 0, buffLengthBytes.Length);
-                //then append apex bytes
-                // apexBuffer.Read(msgBytes, buffLengthBytes.Length, (int)apexBuffer.Length);
-                //finally write msgBytes to buffer
                 
                 outputStream.Write(buffLengthBytes, 0, buffLengthBytes.Length);
                 apexBuffer.CopyTo(outputStream);
@@ -80,23 +75,26 @@ namespace BlackSP.Core.Serialization
         private int? GetNextEventLength(Stream inputStream, CancellationToken t)
         {
             int bytesReceivedCount = 0;
-            byte[] nextMsgBytes = new byte[4];
-            while (bytesReceivedCount < nextMsgBytes.Length)
+            int bytesToRead = 4; //4 bytes to represent an int32
+            byte[] nextMsgBytes = _arrayPool.Rent(bytesToRead);
+            while (bytesReceivedCount < bytesToRead)
             {
                 if (t.IsCancellationRequested)
                 { return null; }
                 
-                int bytesRead = inputStream.Read(nextMsgBytes, bytesReceivedCount, nextMsgBytes.Length - bytesReceivedCount);
+                int bytesRead = inputStream.Read(nextMsgBytes, bytesReceivedCount, bytesToRead - bytesReceivedCount);
                 bytesReceivedCount += bytesRead;
             }
-
-            return BitConverter.ToInt32(nextMsgBytes, 0);
+            int receivedInt = BitConverter.ToInt32(nextMsgBytes, 0);
+            _arrayPool.Return(nextMsgBytes);
+            return receivedInt;
         }
 
         private IEvent GetNextEvent(Stream inputStream, int nextEventByteLength, CancellationToken t)
         {
             int bytesReceivedCount = 0;
-            byte[] nextMsgBytes = new byte[nextEventByteLength];
+            byte[] nextMsgBytes = _arrayPool.Rent(nextEventByteLength);
+            IEvent result;
             using (Stream buffer = new MemoryStream(nextEventByteLength))
             {
                 while (bytesReceivedCount < nextEventByteLength)
@@ -104,7 +102,7 @@ namespace BlackSP.Core.Serialization
                     if (t.IsCancellationRequested)
                     { return null; }
 
-                    int bytesRead = inputStream.Read(nextMsgBytes, bytesReceivedCount, nextMsgBytes.Length);
+                    int bytesRead = inputStream.Read(nextMsgBytes, bytesReceivedCount, nextEventByteLength - bytesReceivedCount);
                     bytesReceivedCount += bytesRead;
                     if (bytesRead > 0)
                     {
@@ -113,8 +111,10 @@ namespace BlackSP.Core.Serialization
                 }
 
                 buffer.Seek(0, SeekOrigin.Begin);
-                return _apexSerializer.Read<IEvent>(buffer);
+                result = _apexSerializer.Read<IEvent>(buffer);
             }
+            _arrayPool.Return(nextMsgBytes);
+            return result;
         }
         #endregion
     
