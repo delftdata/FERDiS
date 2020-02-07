@@ -69,7 +69,7 @@ namespace BlackSP.CRA.Vertices
                     secondCounter++;
                     if(secondCounter % 10 == 0)
                     {
-                        LogUnixMetrics();
+                        DoGC();
                     }
 
                     if(secondCounter == 60)
@@ -85,30 +85,10 @@ namespace BlackSP.CRA.Vertices
             });
         }
 
-        private void LogUnixMetrics()
+        private void DoGC()
         {
-            GC.Collect();
-            Console.WriteLine("force collected garbage");
-            //var output = "";
-
-            //var info = new ProcessStartInfo("free -m");
-            //info.FileName = "/bin/bash";
-            //info.Arguments = "-c \"free -m\"";
-            //info.RedirectStandardOutput = true;
-
-            //using (var process = Process.Start(info))
-            //{
-            //    output = process.StandardOutput.ReadToEnd();
-            //    Console.WriteLine(output);
-            //}
-
-            //var lines = output.Split("\n");
-            //var memory = lines[1].Split(" ", StringSplitOptions.RemoveEmptyEntries);
-
-            //var total = double.Parse(memory[1]);
-            //var used = double.Parse(memory[2]);
-            //var free = double.Parse(memory[3]);
-            //Console.WriteLine($"MEMSTATS: Total: {total}, Used: {used}, Free: {free}");
+            //GC.Collect();
+            //Console.WriteLine("force collected garbage");   
         }
     }
 }
