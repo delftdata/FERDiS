@@ -14,7 +14,8 @@ namespace BlackSP.Core.Endpoints
 {
     public class BaseOutputEndpoint : IOutputEndpoint
     {
-        protected IDictionary<int, ConcurrentQueue<IEvent>> _outputQueues;
+        //default BlockingCollection implementation is a ConcurrentQueue..
+        protected IDictionary<int, BlockingCollection<IEvent>> _outputQueues;
         protected int _shardCount;
         private IEventSerializer _serializer;
 
@@ -32,7 +33,7 @@ namespace BlackSP.Core.Endpoints
         {
             _shardCount = 0;
             _serializer = serializer;
-            _outputQueues = new ConcurrentDictionary<int, ConcurrentQueue<IEvent>>();
+            _outputQueues = new ConcurrentDictionary<int, BlockingCollection<IEvent>>();
 
         }
 
@@ -49,7 +50,7 @@ namespace BlackSP.Core.Endpoints
             {
                 return false;
             }
-            _outputQueues.Add(remoteShardId, new ConcurrentQueue<IEvent>());
+            _outputQueues.Add(remoteShardId, new BlockingCollection<IEvent>());
             return true;
         }
 
@@ -74,32 +75,29 @@ namespace BlackSP.Core.Endpoints
         /// <param name="t"></param>
         public void Egress(Stream outputStream, int remoteShardId, CancellationToken t)
         {
-            ConcurrentQueue<IEvent> outputQueue;
-            if(!_outputQueues.TryGetValue(remoteShardId, out outputQueue))
+            BlockingCollection<IEvent> blockingColl;
+            if(!_outputQueues.TryGetValue(remoteShardId, out blockingColl))
             {
                 throw new ArgumentException($"Remote shard with id {remoteShardId} has not been registered");
             }
             Stopwatch sw = new Stopwatch();
             sw.Start();
             double counter = 0;
-            while (!t.IsCancellationRequested)
+            while(!t.IsCancellationRequested)
             {
-                if (outputQueue.TryDequeue(out IEvent @event))
+                //TODO: consider error scenario where connection closes to not lose event
+                IEvent @event = blockingColl.Take(); //TODO: consider changing ref back to normal even if that means valuecopy? as it already valuecopies now anyway
+                _serializer.SerializeEvent(outputStream, ref @event);
+                ;
+
+                counter++;
+                if (sw.ElapsedMilliseconds >= 10000) //every 10 seconds..
                 {
-                    //TODO: consider error scenario where connection closes to not lose event
-                    // (peek then dequeue?)
-                    _serializer.SerializeEvent(outputStream, ref @event);
-                    counter++;
-                    if(sw.ElapsedMilliseconds >= 10000) //every 10 seconds..
-                    {
-                        double elapsedSeconds = (int)(sw.ElapsedMilliseconds / 1000d);
-                        Console.WriteLine($"Egressing  {(int)(counter / elapsedSeconds)} e/s | {counter}/{elapsedSeconds}");
-                        sw.Restart();
-                        counter = 0;
-                    }
-                    
+                    double elapsedSeconds = (int)(sw.ElapsedMilliseconds / 1000d);
+                    Console.WriteLine($"Egressing  {(int)(counter / elapsedSeconds)} e/s | {counter}/{elapsedSeconds}");
+                    sw.Restart();
+                    counter = 0;
                 }
-                
             }
         }
 
@@ -121,9 +119,9 @@ namespace BlackSP.Core.Endpoints
         /// <param name="event"></param>
         public void EnqueueAll(IEvent @event)
         {
-            foreach(var queue in _outputQueues.Values)
+            foreach(var blockingColl in _outputQueues.Values)
             {
-                queue.Enqueue(@event);
+                blockingColl.Add(@event);
             }
         }
 
