@@ -106,7 +106,7 @@ namespace BlackSP.Core.Serialization
                     bytesReceivedCount += bytesRead;
                     if (bytesRead > 0)
                     {
-                        buffer.Write(nextMsgBytes, 0, nextMsgBytes.Length);
+                        buffer.Write(nextMsgBytes, 0, nextEventByteLength);
                     }
                 }
 
