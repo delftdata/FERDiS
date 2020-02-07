@@ -38,14 +38,15 @@ namespace BlackSP.CRA
                     await Cluster.Setup();
                     break;
                 case LaunchMode.LocalWorker:
-                    if(args.Length != 3)
+                    if(args.Length < 3 || args.Length > 4)
                     {
-                        Console.WriteLine("Expecting 3 arguments for launching a local worker (instanceName & portNumber)");
+                        Console.WriteLine("Worker mode has 2 required (r) and 1 optional (o) arguments instanceName (r), portNumber (r), ipAddress (o)");
                         return;
                     }
                     string instanceName = args[1];
                     int portNum = int.Parse(args[2]);
-                    Worker.Launch(instanceName, portNum);
+                    string ipAddress = args.Length == 4 ? args[3] : null;
+                    Worker.Launch(instanceName, portNum, ipAddress);
                     break;
                 default:
                     Console.WriteLine("Invalid launch mode provided");

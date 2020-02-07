@@ -13,7 +13,7 @@
       "environmentVariables": {
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net"
       },
-      "commandLineArgs": "1 crainst01 3180"
+      "commandLineArgs": "1 crainst01 3180 0.0.0.0"
     },
 
     "Launch crainst02": {
@@ -21,7 +21,7 @@
       "environmentVariables": {
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net"
       },
-      "commandLineArgs": "1 crainst02 3181"
+      "commandLineArgs": "1 crainst02 3181 0.0.0.0"
     }
   }
 }

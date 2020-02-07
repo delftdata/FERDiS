@@ -21,7 +21,7 @@ namespace BlackSP.CRA.Utilities
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        public static void Launch(string instanceName, int portNum)
+        public static void Launch(string instanceName, int portNum, string ipAddress = null)
         {
             int connPoolSize = 1000;
             
@@ -29,7 +29,7 @@ namespace BlackSP.CRA.Utilities
             
             var worker = new CRAWorker(
                 instanceName,
-                GetLocalIPAddress(),
+                ipAddress ?? GetLocalIPAddress(),
                 portNum,
                 dataProvider,
                 null,
