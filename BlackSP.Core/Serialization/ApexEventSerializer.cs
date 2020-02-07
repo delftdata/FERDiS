@@ -24,14 +24,17 @@ namespace BlackSP.Core.Serialization
                 apexBuffer.Seek(0, SeekOrigin.Begin);
                 //get msg length in msg buffer
                 byte[] buffLengthBytes = BitConverter.GetBytes((int)apexBuffer.Length);
+                
                 //declare byte buffer large enough for the message
-                byte[] msgBytes = new byte[buffLengthBytes.Length + apexBuffer.Length];
+                // byte[] msgBytes = new byte[buffLengthBytes.Length + apexBuffer.Length];
                 //first copy in message length bytes
-                Array.Copy(buffLengthBytes, 0, msgBytes, 0, buffLengthBytes.Length);
+                // Array.Copy(buffLengthBytes, 0, msgBytes, 0, buffLengthBytes.Length);
                 //then append apex bytes
-                apexBuffer.Read(msgBytes, buffLengthBytes.Length, (int)apexBuffer.Length);
+                // apexBuffer.Read(msgBytes, buffLengthBytes.Length, (int)apexBuffer.Length);
                 //finally write msgBytes to buffer
-                outputStream.Write(msgBytes, 0, msgBytes.Length);
+                
+                outputStream.Write(buffLengthBytes, 0, buffLengthBytes.Length);
+                apexBuffer.CopyTo(outputStream);
             }
         }
 
