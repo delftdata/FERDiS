@@ -46,7 +46,7 @@ namespace BlackSP.CRA.Vertices
                 Random r = new Random();
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-                int eventsPerSec = 1;
+                int eventsPerSec = 1000;
                 int secondCounter = 0;
                 while (true)
                 {   //go ham enqueueing events, see how fast we can go..
