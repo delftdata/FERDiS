@@ -1,27 +1,48 @@
 {
   "profiles": {
-    "Setup cluster": {
+    "Setup cluster FS": {
       "commandName": "Project",
       "environmentVariables": {
-        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net"
       },
-      "commandLineArgs": "0"
+      "commandLineArgs": "0 1"
     },
 
-    "Launch crainst01": {
+    "Setup cluster Azure": {
       "commandName": "Project",
       "environmentVariables": {
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net"
       },
-      "commandLineArgs": "1 crainst01 3180 0.0.0.0"
+      "commandLineArgs": "0 0"
     },
 
-    "Launch crainst02": {
+    "Launch crainst01 FS": {
+      "commandName": "Project",
+      "environmentVariables": {
+      },
+      "commandLineArgs": "1 1 crainst01 3180 0.0.0.0"
+    },
+
+    "Launch crainst01 Azure": {
       "commandName": "Project",
       "environmentVariables": {
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net"
       },
-      "commandLineArgs": "1 crainst02 3181 0.0.0.0"
+      "commandLineArgs": "1 0 crainst01 3180 0.0.0.0"
+    },
+
+    "Launch crainst02 FS": {
+      "commandName": "Project",
+      "environmentVariables": {
+      },
+      "commandLineArgs": "1 1 crainst02 3180 0.0.0.0"
+    },
+
+    "Launch crainst02 Azure": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net"
+      },
+      "commandLineArgs": "1 0 crainst02 3180 0.0.0.0"
     }
   }
 }

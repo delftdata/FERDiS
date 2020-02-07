@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using CRA.DataProvider;
 using CRA.DataProvider.Azure;
+using CRA.DataProvider.File;
 
 namespace BlackSP.CRA.Utilities
 {
@@ -21,12 +22,10 @@ namespace BlackSP.CRA.Utilities
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        public static void Launch(string instanceName, int portNum, string ipAddress = null)
+        public static void Launch(string instanceName, int portNum, IDataProvider dataProvider, string ipAddress = null)
         {
             int connPoolSize = 1000;
-            
-            IDataProvider dataProvider = new AzureDataProvider(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING"));
-            
+
             var worker = new CRAWorker(
                 instanceName,
                 ipAddress ?? GetLocalIPAddress(),

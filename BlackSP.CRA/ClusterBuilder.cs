@@ -1,5 +1,6 @@
 ﻿using CRA.ClientLibrary;
 using CRA.DataProvider;
+using CRA.DataProvider.File;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,9 +14,14 @@ namespace BlackSP.CRA
         private IVertexConnectionInfoProvider _vertexConnectionInfoProvider => _craClient.DataProvider.GetVertexConnectionInfoProvider();
         private IShardedVertexInfoProvider _shardedVertexInfoProvider => _craClient.DataProvider.GetShardedVertexInfoProvider();
 
-        public ClusterBuilder()
+        public ClusterBuilder(IDataProvider provider)
         {
-            _craClient = new CRAClientLibrary();
+            _craClient = new CRAClientLibrary(provider);
+        }
+
+        public CRAClientLibrary GetClientLibrary()
+        {
+            return _craClient;
         }
 
         public async Task ResetClusterAsync()

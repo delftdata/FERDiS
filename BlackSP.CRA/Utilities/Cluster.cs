@@ -1,5 +1,6 @@
 ﻿using BlackSP.CRA.Vertices;
 using CRA.ClientLibrary;
+using CRA.DataProvider;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,11 +15,11 @@ namespace BlackSP.CRA.Utilities
         /// primarily useful for development purposes
         /// </summary>
         /// <returns></returns>
-        public static async Task Setup()
+        public static async Task Setup(IDataProvider dataProvider)
         {
-            var builder = new ClusterBuilder();
+            var builder = new ClusterBuilder(dataProvider);
 
-            Console.WriteLine(">> Wiping exising data from azure storage");
+            Console.WriteLine($">> Wiping exising data from {dataProvider.GetType().Name}");
             await builder.ResetClusterAsync();
 
             //TODO: refactor below to clusterbuilder
@@ -27,7 +28,7 @@ namespace BlackSP.CRA.Utilities
             //- chain inputs to outputs
             //- each vertex pair should have their own endpoints connected
             //--- NO SHARED ENDPOINTS
-            var client = new CRAClientLibrary();
+            var client = builder.GetClientLibrary();
 
             Console.WriteLine(">> Defining vertex types");
             await client.DefineVertexAsync(typeof(OperatorVertex).Name.ToLowerInvariant(), () => new OperatorVertex());
@@ -54,7 +55,7 @@ namespace BlackSP.CRA.Utilities
             //await client.ConnectAsync("operator3", "output", "operator1", "input2");
             //await client.ConnectAsync("operator3", "output2", "operator2", "input2");
 
-            Console.WriteLine(">> CRA configured, check kubernetes..");
+            Console.WriteLine(">> CRA Setup completed. Press any key to exit.");
             Console.ReadLine();
         }
     }
