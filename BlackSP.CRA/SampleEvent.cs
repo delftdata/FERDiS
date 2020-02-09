@@ -1,7 +1,4 @@
-﻿using BlackSP.Core.Events;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using BlackSP.Interfaces.Events;
 
 namespace BlackSP.CRA
 {

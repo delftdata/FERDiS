@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.Operators
+namespace BlackSP.Interfaces.Operators
 {
-    interface IOperator
+    public interface IOperator
     {
     }
 }

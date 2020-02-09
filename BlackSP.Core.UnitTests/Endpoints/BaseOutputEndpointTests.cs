@@ -1,5 +1,3 @@
-using Apex.Serialization;
-using BlackSP.Core.Events;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.UnitTests.Events;
 using NUnit.Framework;
@@ -8,10 +6,11 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Linq;
 using System;
-using BlackSP.Core.Serialization;
 using Moq;
 using System.Collections.Generic;
-using BlackSP.Core.Serialization.Parallelization;
+using BlackSP.Interfaces.Endpoints;
+using BlackSP.Interfaces.Events;
+using BlackSP.Interfaces.Serialization;
 
 namespace BlackSP.Core.UnitTests.Endpoints
 {
@@ -19,6 +18,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
     {
         ICollection<IEvent> _testEvents;
         IOutputEndpoint _testEndpoint;
+        ISerializer _serializer;
         CancellationTokenSource _ctSource;
         Stream[] _streams;
         private int _streamCount;
@@ -42,23 +42,24 @@ namespace BlackSP.Core.UnitTests.Endpoints
             }
 
             _testEvents = new List<IEvent>() {
-                new TestEvent("test_key_0", 1337),
-                new TestEvent("test_key_1", 1338),
-                new TestEvent("test_key_2", 1339),
+                new TestEvent("test_key_0", 0),
+                new TestEvent("test_key_1", 1),
+                new TestEvent("test_key_2", 2),
             };
 
-            //var serializerMock = new Mock<IEventSerializer>();
-            //serializerMock
-            //    .Setup(s => s.SerializeEvent(It.IsAny<Stream>(), It.IsAny<IEvent>())) //ref It.Ref<IEvent>.IsAny
-            //    .Callback<Stream, IEvent>((s, e) => s.Write(new byte[] { 1 }, 0, 1));
-            //write a byte to the stream to mock serialized result 
+            var serializerMoq = new Mock<ISerializer>();
+            serializerMoq
+                .Setup(ser => ser.Serialize(It.IsAny<Stream>(), It.IsAny<IEvent>()))
+                .Callback<Stream, IEvent>((s, e) => s.Write(new byte[] { (byte)e.GetValue() }, 0, 1));
+            serializerMoq
+                .Setup(ser => ser.Deserialize<IEvent>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .Returns<Stream, CancellationToken>((s, e) => {
+                    int c = s.ReadByte();
+                    return _testEvents.FirstOrDefault(ev => c == (byte)ev.GetValue());
+                });
+            _serializer = serializerMoq.Object;
 
-            var pSerializerMock = new Mock<IParallelEventSerializer>();
-            pSerializerMock
-                .Setup(ps => ps.StartSerialization(It.IsAny<Stream>(), It.IsAny<IEvent>()))
-                .Callback<Stream, IEvent>((s, e) => s.Write(new byte[] { 1 }, 0, 1));
-
-            _testEndpoint = new TestOutputEndpoint(pSerializerMock.Object);
+            _testEndpoint = new TestOutputEndpoint(serializerMoq.Object);
             _ctSource = new CancellationTokenSource();
         }
 
@@ -85,7 +86,9 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 await thread;
             } catch(OperationCanceledException e) {};
 
+            _streams[0].Seek(0, SeekOrigin.Begin);
             Assert.AreEqual(1, _streams[0].Length);
+            Assert.AreEqual(_testEvents.ElementAt(0), _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token));
         }
 
 
@@ -110,9 +113,19 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 await Task.WhenAll(threads);
             }
             catch (OperationCanceledException e) { };
-            
+
+            _streams[0].Seek(0, SeekOrigin.Begin);
+            _streams[1].Seek(0, SeekOrigin.Begin);
+
             Assert.AreEqual(2, _streams[0].Length);
+            Assert.AreEqual(_testEvents.ElementAt(0), _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token));
+            Assert.AreEqual(_testEvents.ElementAt(1), _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token));
+
+
             Assert.AreEqual(2, _streams[1].Length);
+            Assert.AreEqual(_testEvents.ElementAt(0), _serializer.Deserialize<IEvent>(_streams[1], _ctSource.Token));
+            Assert.AreEqual(_testEvents.ElementAt(1), _serializer.Deserialize<IEvent>(_streams[1], _ctSource.Token));
+
         }
     }
 }

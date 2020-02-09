@@ -1,26 +1,23 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using Apex.Serialization;
-using BlackSP.Core.Events;
-using BlackSP.Core.Serialization;
+using BlackSP.Interfaces.Endpoints;
+using BlackSP.Interfaces.Events;
+using BlackSP.Interfaces.Serialization;
 
 namespace BlackSP.Core.Endpoints
 {
     public class BaseInputEndpoint : IInputEndpoint
     {
         protected ConcurrentQueue<IEvent> _inputQueue;
-        private IEventSerializer _serializer;
+        private ISerializer _serializer;
 
-        public BaseInputEndpoint()
+        public BaseInputEndpoint(ISerializer serializer)
         {
             _inputQueue = new ConcurrentQueue<IEvent>();
-            _serializer = new ApexEventSerializer(Binary.Create());
+            _serializer = serializer;// new ApexSerializer<IEvent>(Binary.Create());
         }
 
         /// <summary>
@@ -36,11 +33,11 @@ namespace BlackSP.Core.Endpoints
             double counter = 0;
             while (!t.IsCancellationRequested)
             {
-                var nextEvent = _serializer.DeserializeEvent(s, t);
+                var nextEvent = _serializer.Deserialize<IEvent>(s, t);
                 if(nextEvent != null)
                 {   
-                    //TODO BRUH JUST IGNORE FOR NOW DUE TO MEMORY ISSUES
                     _inputQueue.Enqueue(nextEvent);
+                    
                     counter++;
                     if(sw.ElapsedMilliseconds >= 10000)
                     {

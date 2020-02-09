@@ -1,16 +1,16 @@
-﻿using BlackSP.Core.Events;
+﻿using BlackSP.Interfaces.Events;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace BlackSP.Core.UnitTests.Events
 {
-    public struct TestEvent : IEvent {
+    public class TestEvent : IEvent {
         
-        private int _value;
+        private byte _value;
         public string Key { get; }
 
-        public TestEvent(string key, int value)
+        public TestEvent(string key, byte value)
         {
             Key = key;
             _value = value;

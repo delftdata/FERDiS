@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.Events;
+﻿using BlackSP.Interfaces.Events;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Endpoints
+namespace BlackSP.Interfaces.Endpoints
 {
     public interface IInputEndpoint
     {

@@ -1,72 +1,77 @@
-﻿using Apex.Serialization;
-using BlackSP.Core.Events;
+﻿using BlackSP.Interfaces.Serialization;
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
-namespace BlackSP.Core.Serialization
+namespace BlackSP.Serialization
 {
-    public class ApexEventSerializer : IEventSerializer
+    /// <summary>
+    /// Abstraction layer that introduces reading and 
+    /// writing to input/output stream while adding
+    /// on a leading int32 to specify message length
+    /// Designed to be used for (de)serializing from/to  
+    /// network streams
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public abstract class BaseLengthPrefixedSerializer : ISerializer
     {
-        private readonly IBinary _apexSerializer;
         private readonly ArrayPool<byte> _arrayPool;
 
-        public ApexEventSerializer()
+        public BaseLengthPrefixedSerializer()
         {
-            _apexSerializer = Binary.Create();
             _arrayPool = ArrayPool<byte>.Shared;
         }
 
-        public ApexEventSerializer(IBinary apexSerializer)
-        {
-            _apexSerializer = apexSerializer;
-            _arrayPool = ArrayPool<byte>.Shared;
-        }
+        protected abstract void DoSerialization<T>(Stream outputStream, T obj);
+        protected abstract T DoDeserialization<T>(byte[] input);
 
-        public void SerializeEvent(Stream outputStream, IEvent @event)
+        public Task Serialize<T>(Stream outputStream, T obj)
         {
-            using (Stream apexBuffer = new MemoryStream())
+            using (Stream buffer = new MemoryStream())
             {
-                //get apex bytes in buffer & reset stream position
-                _apexSerializer.Write(@event, apexBuffer);
-                apexBuffer.Seek(0, SeekOrigin.Begin);
-                
+                //get obj bytes in buffer & reset stream position
+                DoSerialization(buffer, obj);
+                buffer.Seek(0, SeekOrigin.Begin);
+
                 //get msg length in msg buffer
-                byte[] buffLengthBytes = BitConverter.GetBytes((int)apexBuffer.Length);
-                
+                byte[] buffLengthBytes = BitConverter.GetBytes((int)buffer.Length);
+
                 outputStream.Write(buffLengthBytes, 0, buffLengthBytes.Length);
-                apexBuffer.CopyTo(outputStream);
+                buffer.CopyTo(outputStream);
             }
+            return Task.CompletedTask;
         }
+
 
         /// <summary>
-        /// Attempts to read the next IEvent from the inputStream. Will
+        /// Attempts to read the next T from the inputStream. Will
         /// return null when not enough bytes are buffered yet. The method
         /// is expected to be invoked again to retry.
         /// </summary>
         /// <param name="inputStream"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        public IEvent DeserializeEvent(Stream inputStream, CancellationToken t)
+        public T Deserialize<T>(Stream inputStream, CancellationToken t)
         {
             try
             {
-                int nextEventByteLength = GetNextEventLength(inputStream, t) ?? 0;
-                if (nextEventByteLength <= 0 || t.IsCancellationRequested)
-                { return null; }
+                int nextPackageByteLength = GetNextPackageLength(inputStream, t) ?? 0;
+                if (nextPackageByteLength <= 0 || t.IsCancellationRequested)
+                { return default; }
 
-                return GetNextEvent(inputStream, nextEventByteLength, t);
-            } 
-            catch(ArgumentOutOfRangeException e)
+                return GetNextObject<T>(inputStream, nextPackageByteLength, t);
+            }
+            catch (ArgumentOutOfRangeException)
             {
-                return null; 
+                return default;
                 //sometimes there are no bytes ready to be read from the underlying stream
                 //just return null in this case and have caller try again.
             }
         }
-
-        #region private helper methods
 
         /// <summary>
         /// Tries to read the first 4 bytes of the stream and
@@ -79,7 +84,7 @@ namespace BlackSP.Core.Serialization
         /// <param name="inputStream"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        private int? GetNextEventLength(Stream inputStream, CancellationToken t)
+        private int? GetNextPackageLength(Stream inputStream, CancellationToken t)
         {
             int bytesReceivedCount = 0;
             int bytesToRead = 4; //4 bytes to represent an int32
@@ -88,7 +93,7 @@ namespace BlackSP.Core.Serialization
             {
                 if (t.IsCancellationRequested)
                 { return null; }
-                
+
                 int bytesRead = inputStream.Read(nextMsgBytes, bytesReceivedCount, bytesToRead - bytesReceivedCount);
                 bytesReceivedCount += bytesRead;
             }
@@ -97,29 +102,25 @@ namespace BlackSP.Core.Serialization
             return receivedInt;
         }
 
-        private IEvent GetNextEvent(Stream inputStream, int nextEventByteLength, CancellationToken t)
+        private T GetNextObject<T>(Stream inputStream, int nextPackageByteLength, CancellationToken t)
         {
             int bytesReceivedCount = 0;
-            byte[] nextMsgBytes = _arrayPool.Rent(nextEventByteLength);
-            IEvent result;
+            byte[] nextMsgBytes = _arrayPool.Rent(nextPackageByteLength);
+            T result;
 
-            while (bytesReceivedCount < nextEventByteLength)
+            while (bytesReceivedCount < nextPackageByteLength)
             {
                 if (t.IsCancellationRequested)
-                { return null; }
+                { return default; }
 
-                int bytesRead = inputStream.Read(nextMsgBytes, bytesReceivedCount, nextEventByteLength - bytesReceivedCount);
+                int bytesRead = inputStream.Read(nextMsgBytes, bytesReceivedCount, nextPackageByteLength - bytesReceivedCount);
                 bytesReceivedCount += bytesRead;
             }
 
-            using (Stream buffer = new MemoryStream(nextMsgBytes))
-            {
-                result = _apexSerializer.Read<IEvent>(buffer);
-            }
+            result = DoDeserialization<T>(nextMsgBytes);
+
             _arrayPool.Return(nextMsgBytes);
             return result;
         }
-        #endregion
-    
     }
 }

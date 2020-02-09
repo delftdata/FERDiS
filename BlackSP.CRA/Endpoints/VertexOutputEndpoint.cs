@@ -1,13 +1,8 @@
 ﻿using BlackSP.Core.Endpoints;
-using BlackSP.Core.Reusability;
-using BlackSP.Core.Serialization;
-using BlackSP.Core.Serialization.Parallelization;
+using BlackSP.Interfaces.Serialization;
 using CRA.ClientLibrary;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,7 +12,7 @@ namespace BlackSP.CRA.Endpoints
     {
         public bool IsConnected { get; set; }
 
-        public VertexOutputEndpoint(IParallelEventSerializer serializer) : base(serializer)
+        public VertexOutputEndpoint(ISerializer serializer) : base(serializer)
         {
             
         }
@@ -30,7 +25,7 @@ namespace BlackSP.CRA.Endpoints
                 //CRA invokes current method on a background thread 
                 //so just invoke (the blocking) Egress on this thread
                 IsConnected = true;
-                Egress(stream, otherShardId, token);
+                await Egress(stream, otherShardId, token);
                 IsConnected = false;
             }
             catch (Exception e)

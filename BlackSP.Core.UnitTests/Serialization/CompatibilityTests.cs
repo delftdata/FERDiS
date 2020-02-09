@@ -1,4 +1,4 @@
-﻿using Apex.Serialization;
+﻿/*using Apex.Serialization;
 using BlackSP.Core.Events;
 using BlackSP.Core.Serialization;
 using BlackSP.Core.UnitTests.Events;
@@ -22,7 +22,8 @@ namespace BlackSP.Core.UnitTests.Serialization
         [SetUp]
         public void Setup()
         {
-            _serializer = new ApexEventSerializer(Binary.Create());
+            _serializer = new ApexEventSerializer();
+            
             _testEvents = new List<IEvent> {
                 new TestEvent("test_key_0", 1337),
                 new TestEvent("test_key_1", 1338),
@@ -59,3 +60,4 @@ namespace BlackSP.Core.UnitTests.Serialization
         }
     }
 }
+*/

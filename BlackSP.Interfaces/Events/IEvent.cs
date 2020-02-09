@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.Events
+namespace BlackSP.Interfaces.Events
 {
     public interface IEvent
     {

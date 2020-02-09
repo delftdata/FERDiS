@@ -1,12 +1,10 @@
 ﻿using BlackSP.Core.Reusability;
-using BlackSP.Core.Serialization;
-using BlackSP.Core.Serialization.Parallelization;
 using BlackSP.CRA.Endpoints;
+using BlackSP.Serialization;
+using BlackSP.Serialization.Parallelization;
 using CRA.ClientLibrary;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Vertices
@@ -17,12 +15,14 @@ namespace BlackSP.CRA.Vertices
         public override Task InitializeAsync(int shardId, ShardingInfo shardingInfo, object vertexParameter)
         {
             Console.Write("Vertex Endpoint Initialization.. ");
-            var input = new VertexInputEndpoint();
+
+            var input = new VertexInputEndpoint(new ApexSerializer());
             AddAsyncInputEndpoint($"input", input);
 
-            var apexObjectPool = new ParameterlessObjectPool<NoOpEventSerializer>();
-            var ser = new ParallelSerializer<NoOpEventSerializer>(apexObjectPool);
-            var output = new VertexOutputEndpoint(ser);
+            var apexObjectPool = new ParameterlessObjectPool<ZFSerializer>();
+            var parallelSerializer = new ParallelSerializer<ZFSerializer>(apexObjectPool);
+            
+            var output = new VertexOutputEndpoint(parallelSerializer);
             AddAsyncOutputEndpoint($"output", output);
 
 

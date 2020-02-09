@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using BlackSP.Interfaces.Operators;
 
 namespace BlackSP.Core.Operators
 {
-    class BaseOperator
+    public class BaseOperator : IOperator
     {
         //- each vertex pair should have their own endpoints connected
         //--- NO SHARED ENDPOINTS

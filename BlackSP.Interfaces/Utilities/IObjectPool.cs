@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.Reusability
+namespace BlackSP.Interfaces.Utilities
 {
-    public interface IObjectPool<T> where T : class, new()
+    public interface IObjectPool<T>
     {
         T Rent();
 

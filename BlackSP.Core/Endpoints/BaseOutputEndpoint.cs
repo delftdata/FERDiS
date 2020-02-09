@@ -1,15 +1,12 @@
-﻿using Apex.Serialization;
-using BlackSP.Core.Events;
-using BlackSP.Core.Reusability;
-using BlackSP.Core.Serialization;
-using BlackSP.Core.Serialization.Parallelization;
+﻿using BlackSP.Interfaces.Events;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading;
+using BlackSP.Interfaces.Endpoints;
+using BlackSP.Interfaces.Serialization;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.Endpoints
@@ -19,24 +16,13 @@ namespace BlackSP.Core.Endpoints
         //default BlockingCollection implementation is a ConcurrentQueue..
         protected IDictionary<int, BlockingCollection<IEvent>> _outputQueues;
         protected int _shardCount;
-        private IParallelEventSerializer _pSerializer;
+        private ISerializer _serializer;
 
-        //public BaseOutputEndpoint()
-        //{
-        //    Initialize(new ApexEventSerializer(Binary.Create()));
-        //}
-
-        public BaseOutputEndpoint(IParallelEventSerializer serializer)
-        {
-            Initialize(serializer);
-        }
-
-        private void Initialize(IParallelEventSerializer serializer)
+        public BaseOutputEndpoint(ISerializer serializer)
         {
             _shardCount = 0;
-            _pSerializer = serializer;
+            _serializer = serializer;
             _outputQueues = new ConcurrentDictionary<int, BlockingCollection<IEvent>>();
-
         }
 
         /// <summary>
@@ -75,9 +61,8 @@ namespace BlackSP.Core.Endpoints
         /// <param name="outputStream"></param>
         /// <param name="remoteShardId"></param>
         /// <param name="t"></param>
-        public void Egress(Stream outputStream, int remoteShardId, CancellationToken t)
+        public async Task Egress(Stream outputStream, int remoteShardId, CancellationToken t)
         {
-
             BlockingCollection<IEvent> blockingColl;
             if(!_outputQueues.TryGetValue(remoteShardId, out blockingColl))
             {
@@ -89,14 +74,13 @@ namespace BlackSP.Core.Endpoints
             sw.Start();
             double counter = 0;
 
-            
             while(true)
             {
                 t.ThrowIfCancellationRequested();
                 //TODO: consider error scenario where connection closes to not lose event.. or CP?
 
                 IEvent @event = blockingColl.Take(t);
-                _pSerializer.StartSerialization(outputStream, @event);
+                await _serializer.Serialize(outputStream, @event);
                 counter++;
                 if (sw.ElapsedMilliseconds >= 10000) //every 10 seconds..
                 {

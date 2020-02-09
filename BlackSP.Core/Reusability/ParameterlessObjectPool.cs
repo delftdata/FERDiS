@@ -2,10 +2,16 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
+using BlackSP.Interfaces.Utilities;
 
 namespace BlackSP.Core.Reusability
 {
-    public class ParameterlessObjectPool<T> : IObjectPool<T> where T : class, new()
+    /// <summary>
+    /// Provides a Rent/Return interface for renting class instances
+    /// of any type that implements a parameterless constructor.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class ParameterlessObjectPool<T> : IObjectPool<T> where T : new()
     {
         private ConcurrentQueue<T> _objects;
 
