@@ -20,8 +20,8 @@ namespace BlackSP.CRA.Vertices
             var input = new VertexInputEndpoint();
             AddAsyncInputEndpoint($"input", input);
 
-            var apexObjectPool = new ParameterlessObjectPool<ApexEventSerializer>();
-            var ser = new ParallelSerializer<ApexEventSerializer>(apexObjectPool);
+            var apexObjectPool = new ParameterlessObjectPool<NoOpEventSerializer>();
+            var ser = new ParallelSerializer<NoOpEventSerializer>(apexObjectPool);
             var output = new VertexOutputEndpoint(ser);
             AddAsyncOutputEndpoint($"output", output);
 
