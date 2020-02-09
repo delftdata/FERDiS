@@ -46,7 +46,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 while(eventEnumerator.MoveNext())
                 {
                     IEvent @event = eventEnumerator.Current;
-                    _serializer.SerializeEvent(msgBuffer, ref @event);
+                    _serializer.SerializeEvent(msgBuffer, @event);
                 }
 
                 //Set position back to start of stream to be able to read the written messages

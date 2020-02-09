@@ -1,4 +1,7 @@
-﻿using BlackSP.CRA.Endpoints;
+﻿using BlackSP.Core.Reusability;
+using BlackSP.Core.Serialization;
+using BlackSP.Core.Serialization.Parallelization;
+using BlackSP.CRA.Endpoints;
 using CRA.ClientLibrary;
 using System;
 using System.Collections.Generic;
@@ -17,26 +20,21 @@ namespace BlackSP.CRA.Vertices
             var input = new VertexInputEndpoint();
             AddAsyncInputEndpoint($"input", input);
 
-            //var input2 = new VertexInputEndpoint();
-            //AddAsyncInputEndpoint($"input2", input2);
-
-            var output = new VertexOutputEndpoint();
+            var apexObjectPool = new ParameterlessObjectPool<ApexEventSerializer>();
+            var ser = new ParallelSerializer<ApexEventSerializer>(apexObjectPool);
+            var output = new VertexOutputEndpoint(ser);
             AddAsyncOutputEndpoint($"output", output);
 
-            //var output2 = new VertexOutputEndpoint();
-            //AddAsyncOutputEndpoint($"output2", output2);
-            
-            SpawnLoadGeneratingThread(input, output);
 
+            //TODO: remove test crap            
+            SpawnLoadGeneratingThread(input, output);
             Console.WriteLine("Done");
 
-            //_operator.RegisterInputEndpoint(input);
             return Task.CompletedTask;
         }
 
         private void SpawnLoadGeneratingThread(VertexInputEndpoint input, VertexOutputEndpoint output)
-        {
-            //TODO: RAMPUP!!
+        {   //TODO: delete method once served its purpose
             Task.Run(async () =>
             {
 
@@ -60,19 +58,19 @@ namespace BlackSP.CRA.Vertices
                     {
                         if (!input.IsConnected || !output.IsConnected) { continue; }
 
-                        output.EnqueueAll(new SampleEvent("KeyYo" + (r.NextDouble() * 1000), "ValueYo" + (r.NextDouble() * 1000)));
+                        output.EnqueueAll(new SampleEvent($"KeyYo {(r.NextDouble() * 1000)}", $"ValueYo{(r.NextDouble() * 1000)}"));
                     }
 
                     int timeTillSecond = sw.ElapsedMilliseconds < 1000 ? 1000 - (int)sw.ElapsedMilliseconds : 0;
                     await Task.Delay(timeTillSecond);
 
                     secondCounter++;
-                    if(secondCounter % 10 == 0)
+                    if(secondCounter % 5 == 0)
                     {
                         DoGC();
                     }
 
-                    if(secondCounter == 60)
+                    if(secondCounter == 30)
                     {
                         eventsPerSec = eventsPerSec >= 100*1000 ? eventsPerSec * 2 : eventsPerSec * 10;
                         secondCounter = 0;
@@ -87,8 +85,8 @@ namespace BlackSP.CRA.Vertices
 
         private void DoGC()
         {
-            //GC.Collect();
-            //Console.WriteLine("force collected garbage");   
+            GC.Collect();
+            Console.WriteLine("force collected garbage");   
         }
     }
 }

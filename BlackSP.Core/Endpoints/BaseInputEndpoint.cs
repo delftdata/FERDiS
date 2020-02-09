@@ -40,7 +40,7 @@ namespace BlackSP.Core.Endpoints
                 if(nextEvent != null)
                 {   
                     //TODO BRUH JUST IGNORE FOR NOW DUE TO MEMORY ISSUES
-                    //_inputQueue.Enqueue(nextEvent);
+                    _inputQueue.Enqueue(nextEvent);
                     counter++;
                     if(sw.ElapsedMilliseconds >= 10000)
                     {

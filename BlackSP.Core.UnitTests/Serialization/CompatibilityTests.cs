@@ -41,7 +41,7 @@ namespace BlackSP.Core.UnitTests.Serialization
                 while (eventEnumerator.MoveNext())
                 {
                     IEvent @event = eventEnumerator.Current;
-                    _serializer.SerializeEvent(serializeBuffer, ref @event);
+                    _serializer.SerializeEvent(serializeBuffer, @event);
                 }
 
                 //seek back to beginning of stream

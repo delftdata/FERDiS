@@ -1,6 +1,8 @@
 ﻿using Apex.Serialization;
 using BlackSP.Core.Events;
+using BlackSP.Core.Reusability;
 using BlackSP.Core.Serialization;
+using BlackSP.Core.Serialization.Parallelization;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -17,22 +19,22 @@ namespace BlackSP.Core.Endpoints
         //default BlockingCollection implementation is a ConcurrentQueue..
         protected IDictionary<int, BlockingCollection<IEvent>> _outputQueues;
         protected int _shardCount;
-        private IEventSerializer _serializer;
+        private IParallelEventSerializer _pSerializer;
 
-        public BaseOutputEndpoint()
-        {
-            Initialize(new ApexEventSerializer(Binary.Create()));
-        }
+        //public BaseOutputEndpoint()
+        //{
+        //    Initialize(new ApexEventSerializer(Binary.Create()));
+        //}
 
-        public BaseOutputEndpoint(IEventSerializer serializer)
+        public BaseOutputEndpoint(IParallelEventSerializer serializer)
         {
             Initialize(serializer);
         }
 
-        private void Initialize(IEventSerializer serializer)
+        private void Initialize(IParallelEventSerializer serializer)
         {
             _shardCount = 0;
-            _serializer = serializer;
+            _pSerializer = serializer;
             _outputQueues = new ConcurrentDictionary<int, BlockingCollection<IEvent>>();
 
         }
@@ -75,21 +77,26 @@ namespace BlackSP.Core.Endpoints
         /// <param name="t"></param>
         public void Egress(Stream outputStream, int remoteShardId, CancellationToken t)
         {
+
             BlockingCollection<IEvent> blockingColl;
             if(!_outputQueues.TryGetValue(remoteShardId, out blockingColl))
             {
                 throw new ArgumentException($"Remote shard with id {remoteShardId} has not been registered");
             }
+
+            //some test variables
             Stopwatch sw = new Stopwatch();
             sw.Start();
             double counter = 0;
-            while(!t.IsCancellationRequested)
-            {
-                //TODO: consider error scenario where connection closes to not lose event
-                IEvent @event = blockingColl.Take(); //TODO: consider changing ref back to normal even if that means valuecopy? as it already valuecopies now anyway
-                _serializer.SerializeEvent(outputStream, ref @event);
-                ;
 
+            
+            while(true)
+            {
+                t.ThrowIfCancellationRequested();
+                //TODO: consider error scenario where connection closes to not lose event.. or CP?
+
+                IEvent @event = blockingColl.Take(t);
+                _pSerializer.StartSerialization(outputStream, @event);
                 counter++;
                 if (sw.ElapsedMilliseconds >= 10000) //every 10 seconds..
                 {

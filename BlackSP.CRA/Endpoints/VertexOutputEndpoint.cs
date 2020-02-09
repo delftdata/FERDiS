@@ -1,4 +1,7 @@
 ﻿using BlackSP.Core.Endpoints;
+using BlackSP.Core.Reusability;
+using BlackSP.Core.Serialization;
+using BlackSP.Core.Serialization.Parallelization;
 using CRA.ClientLibrary;
 using System;
 using System.Collections.Generic;
@@ -13,6 +16,11 @@ namespace BlackSP.CRA.Endpoints
     public class VertexOutputEndpoint : BaseOutputEndpoint, IAsyncShardedVertexOutputEndpoint
     {
         public bool IsConnected { get; set; }
+
+        public VertexOutputEndpoint(IParallelEventSerializer serializer) : base(serializer)
+        {
+            
+        }
 
         public async Task ToStreamAsync(Stream stream, string otherVertex, int otherShardId, string otherEndpoint, CancellationToken token)
         {

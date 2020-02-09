@@ -12,19 +12,26 @@ namespace BlackSP.Core.Serialization
         private readonly IBinary _apexSerializer;
         private readonly ArrayPool<byte> _arrayPool;
 
+        public ApexEventSerializer()
+        {
+            _apexSerializer = Binary.Create();
+            _arrayPool = ArrayPool<byte>.Shared;
+        }
+
         public ApexEventSerializer(IBinary apexSerializer)
         {
             _apexSerializer = apexSerializer;
             _arrayPool = ArrayPool<byte>.Shared;
         }
 
-        public void SerializeEvent(Stream outputStream, ref IEvent @event)
+        public void SerializeEvent(Stream outputStream, IEvent @event)
         {
             using (Stream apexBuffer = new MemoryStream())
             {
-                //get apex bytes in buffer (+seek back to start)
+                //get apex bytes in buffer & reset stream position
                 _apexSerializer.Write(@event, apexBuffer);
                 apexBuffer.Seek(0, SeekOrigin.Begin);
+                
                 //get msg length in msg buffer
                 byte[] buffLengthBytes = BitConverter.GetBytes((int)apexBuffer.Length);
                 

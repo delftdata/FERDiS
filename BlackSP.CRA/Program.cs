@@ -35,7 +35,12 @@ namespace BlackSP.CRA
         /// <returns></returns>
         static async Task Main(string[] args)
         {
-            if(args.Length < 1)
+            if(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING") == null)
+            {
+                Environment.SetEnvironmentVariable("AZURE_STORAGE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net");
+            }
+
+            if (args.Length < 1)
             {
                 Console.WriteLine("Argument 0 missing: LaunchMode (0: Cluster mode, 1: Worker mode)");
             }
@@ -51,8 +56,6 @@ namespace BlackSP.CRA
             CRAMode CRAMode = (CRAMode)int.Parse(args[1]);
 
             IDataProvider dataProvider = ConstructDataProvider(CRAMode);
-            
-            
 
             switch (launchMode)
             {
@@ -67,7 +70,7 @@ namespace BlackSP.CRA
                     }
                     string instanceName = args[2];
                     int portNum = int.Parse(args[3]);
-                    string ipAddress = args.Length == 5 ? args[4] : null;
+                    string ipAddress = "192.168.178.242";// args.Length == 5 ? args[4] : null;
                     Worker.Launch(instanceName, portNum, dataProvider, ipAddress);
                     break;
                 default:

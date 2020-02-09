@@ -15,7 +15,7 @@ namespace BlackSP.Core.Serialization
         /// </summary>
         /// <param name="outputStream"></param>
         /// <param name="event"></param>
-        void SerializeEvent(Stream outputStream, ref IEvent @event);
+        void SerializeEvent(Stream outputStream, IEvent @event);
         
         /// <summary>
         /// Read next event from the inputstream

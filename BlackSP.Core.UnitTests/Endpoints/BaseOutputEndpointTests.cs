@@ -11,6 +11,7 @@ using System;
 using BlackSP.Core.Serialization;
 using Moq;
 using System.Collections.Generic;
+using BlackSP.Core.Serialization.Parallelization;
 
 namespace BlackSP.Core.UnitTests.Endpoints
 {
@@ -46,13 +47,18 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 new TestEvent("test_key_2", 1339),
             };
 
-            var serializerMock = new Mock<IEventSerializer>();
-            serializerMock
-                .Setup(s => s.SerializeEvent(It.IsAny<Stream>(), ref It.Ref<IEvent>.IsAny))
-                .Callback<Stream, IEvent>((s, e) => s.Write(new byte[]{1}, 0, 1));
+            //var serializerMock = new Mock<IEventSerializer>();
+            //serializerMock
+            //    .Setup(s => s.SerializeEvent(It.IsAny<Stream>(), It.IsAny<IEvent>())) //ref It.Ref<IEvent>.IsAny
+            //    .Callback<Stream, IEvent>((s, e) => s.Write(new byte[] { 1 }, 0, 1));
             //write a byte to the stream to mock serialized result 
-            
-            _testEndpoint = new TestOutputEndpoint(serializerMock.Object);
+
+            var pSerializerMock = new Mock<IParallelEventSerializer>();
+            pSerializerMock
+                .Setup(ps => ps.StartSerialization(It.IsAny<Stream>(), It.IsAny<IEvent>()))
+                .Callback<Stream, IEvent>((s, e) => s.Write(new byte[] { 1 }, 0, 1));
+
+            _testEndpoint = new TestOutputEndpoint(pSerializerMock.Object);
             _ctSource = new CancellationTokenSource();
         }
 
@@ -69,11 +75,16 @@ namespace BlackSP.Core.UnitTests.Endpoints
             // one output stream + full enqueue
             var fakeShardId = 0;
             Assert.IsTrue(_testEndpoint.RegisterRemoteShard(fakeShardId), "Failed to register remote shard");
+            
             var thread = Task.Run(() => _testEndpoint.Egress(_streams[0], fakeShardId, _ctSource.Token));
             _testEndpoint.EnqueueAll(_testEvents.ElementAt(0));
-            await Task.Delay(10);
-            _ctSource.Cancel();
-            await thread;
+            try
+            {
+                await Task.Delay(10);
+                _ctSource.Cancel();
+                await thread;
+            } catch(OperationCanceledException e) {};
+
             Assert.AreEqual(1, _streams[0].Length);
         }
 
@@ -91,9 +102,14 @@ namespace BlackSP.Core.UnitTests.Endpoints
             }
             _testEndpoint.EnqueueAll(_testEvents.ElementAt(0));
             _testEndpoint.EnqueueAll(_testEvents.ElementAt(1));
-            await Task.Delay(10);
-            _ctSource.Cancel();
-            await Task.WhenAll(threads);
+            
+            try
+            {
+                await Task.Delay(100);
+                _ctSource.Cancel();
+                await Task.WhenAll(threads);
+            }
+            catch (OperationCanceledException e) { };
             
             Assert.AreEqual(2, _streams[0].Length);
             Assert.AreEqual(2, _streams[1].Length);

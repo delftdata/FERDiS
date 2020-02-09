@@ -5,7 +5,7 @@ using System.Text;
 
 namespace BlackSP.CRA
 {
-    public struct SampleEvent : IEvent
+    public class SampleEvent : IEvent
     {
         private string _key;
         private string _value;
