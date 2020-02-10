@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Events;
 using BlackSP.Interfaces.Serialization;
@@ -26,14 +27,14 @@ namespace BlackSP.Core.Endpoints
         /// </summary>
         /// <param name="s"></param>
         /// <param name="t"></param>
-        public void Ingress(Stream s, CancellationToken t)
+        public async Task Ingress(Stream s, CancellationToken t)
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
             double counter = 0;
             while (!t.IsCancellationRequested)
             {
-                var nextEvent = _serializer.Deserialize<T>(s, t);
+                var nextEvent = await _serializer.Deserialize<T>(s, t);
                 if(nextEvent != null)
                 {   
                     _inputQueue.Enqueue(nextEvent);

@@ -26,9 +26,12 @@ namespace BlackSP.Serialization.Parallelization
             _serializationTasks.Add(Task.CompletedTask);
         }
 
-        public T1 Deserialize<T1>(Stream inputStream, CancellationToken t)
+        public async Task<T1> Deserialize<T1>(Stream inputStream, CancellationToken t)
         {
-            throw new System.NotImplementedException();
+            var serializer = _serializerPool.Rent();
+            var res = await serializer.Deserialize<T1>(inputStream, t);
+            _serializerPool.Return(serializer);
+            return res;
         }
 
         /// <summary>

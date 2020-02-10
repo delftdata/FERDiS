@@ -31,7 +31,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 .Setup(ser => ser.Deserialize<IEvent>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
                 .Returns<Stream, CancellationToken>((s, e) => {
                     int c = s.ReadByte();
-                    return _testEvents.FirstOrDefault(ev => c == ((TestEvent)ev).Value);
+                    return Task.FromResult(_testEvents.FirstOrDefault(ev => c == ((TestEvent)ev).Value));
                 });
             _serializer = serializerMoq.Object;
 

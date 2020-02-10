@@ -51,7 +51,7 @@ namespace BlackSP.Core.UnitTests.Serialization
                 //read events from stream
                 foreach (var @event in _testEvents)
                 {
-                    IEvent res = _serializer.Deserialize<IEvent>(serializeBuffer, _ctSource.Token);
+                    IEvent res = await _serializer.Deserialize<IEvent>(serializeBuffer, _ctSource.Token);
                     TestEvent castedRes = res as TestEvent;
                     Assert.IsNotNull(castedRes);
                     Assert.AreEqual(res.Key, @event.Key, "Keys");

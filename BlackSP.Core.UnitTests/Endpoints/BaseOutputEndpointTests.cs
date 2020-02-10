@@ -56,7 +56,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 .Returns<Stream, CancellationToken>((s, e) =>
                 {
                     int c = s.ReadByte();
-                    return _testEvents.FirstOrDefault(ev => c == ((TestEvent)ev).Value);
+                    return Task.FromResult(_testEvents.FirstOrDefault(ev => c == ((TestEvent)ev).Value));
                 });
             _serializer = serializerMoq.Object;
 
@@ -80,7 +80,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
             var fakeShardId = 0;
             Assert.IsTrue(_testEndpoint.RegisterRemoteShard(fakeShardId), "Failed to register remote shard");
 
-            var thread = Task.Run(() => _testEndpoint.Egress(_streams[0], fakeShardId, _ctSource.Token));
+            var thread = Task.Run(async () => await _testEndpoint.Egress(_streams[0], fakeShardId, _ctSource.Token));
             _testEndpoint.EnqueueAll(_testEvents.ElementAt(0));
             try
             {
@@ -92,7 +92,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
 
             _streams[0].Seek(0, SeekOrigin.Begin);
             Assert.AreEqual(1, _streams[0].Length);
-            var nextEventFromStream = _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token);
+            var nextEventFromStream = await _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token);
             Assert.AreEqual(_testEvents.ElementAt(0), nextEventFromStream);
         }
 
@@ -107,7 +107,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
             foreach (var shardId in fakeShardIds)
             {
                 Assert.IsTrue(_testEndpoint.RegisterRemoteShard(shardId), "Failed to register remote shard");
-                threads[shardId] = Task.Run(() => _testEndpoint.Egress(_streams[shardId], shardId, _ctSource.Token));
+                threads[shardId] = Task.Run(async () => await _testEndpoint.Egress(_streams[shardId], shardId, _ctSource.Token));
             }
             _testEndpoint.EnqueueAll(_testEvents.ElementAt(0));
             _testEndpoint.EnqueueAll(_testEvents.ElementAt(1));
@@ -124,12 +124,12 @@ namespace BlackSP.Core.UnitTests.Endpoints
             _streams[1].Seek(0, SeekOrigin.Begin);
 
             Assert.AreEqual(2, _streams[0].Length);
-            Assert.AreEqual(_testEvents.ElementAt(0), _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token));
-            Assert.AreEqual(_testEvents.ElementAt(1), _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token));
+            Assert.AreEqual(_testEvents.ElementAt(0), await _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token));
+            Assert.AreEqual(_testEvents.ElementAt(1), await _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token));
 
             Assert.AreEqual(2, _streams[1].Length);
-            Assert.AreEqual(_testEvents.ElementAt(0), _serializer.Deserialize<IEvent>(_streams[1], _ctSource.Token));
-            Assert.AreEqual(_testEvents.ElementAt(1), _serializer.Deserialize<IEvent>(_streams[1], _ctSource.Token));
+            Assert.AreEqual(_testEvents.ElementAt(0), await _serializer.Deserialize<IEvent>(_streams[1], _ctSource.Token));
+            Assert.AreEqual(_testEvents.ElementAt(1), await _serializer.Deserialize<IEvent>(_streams[1], _ctSource.Token));
         }
 
         [Test]

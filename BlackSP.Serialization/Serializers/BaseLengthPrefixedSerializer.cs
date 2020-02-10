@@ -55,7 +55,7 @@ namespace BlackSP.Serialization.Serializers
         /// <param name="inputStream"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        public T Deserialize<T>(Stream inputStream, CancellationToken t)
+        public Task<T> Deserialize<T>(Stream inputStream, CancellationToken t)
         {
             try
             {
@@ -63,7 +63,7 @@ namespace BlackSP.Serialization.Serializers
                 if (nextPackageByteLength <= 0 || t.IsCancellationRequested)
                 { return default; }
 
-                return GetNextObject<T>(inputStream, nextPackageByteLength, t);
+                return Task.FromResult(GetNextObject<T>(inputStream, nextPackageByteLength, t));
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -106,8 +106,7 @@ namespace BlackSP.Serialization.Serializers
         {
             int bytesReceivedCount = 0;
             byte[] nextMsgBytes = _arrayPool.Rent(nextPackageByteLength);
-            T result;
-
+            
             while (bytesReceivedCount < nextPackageByteLength)
             {
                 if (t.IsCancellationRequested)
@@ -117,8 +116,7 @@ namespace BlackSP.Serialization.Serializers
                 bytesReceivedCount += bytesRead;
             }
 
-            result = DoDeserialization<T>(nextMsgBytes);
-
+            T result = DoDeserialization<T>(nextMsgBytes);
             _arrayPool.Return(nextMsgBytes);
             return result;
         }

@@ -23,6 +23,6 @@ namespace BlackSP.Interfaces.Endpoints
         /// <returns></returns>
         bool HasInput();
 
-        void Ingress(Stream s, CancellationToken t);
+        Task Ingress(Stream s, CancellationToken t);
     }
 }

@@ -27,7 +27,7 @@ namespace BlackSP.Interfaces.Serialization
         /// <param name="inputStream"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        T Deserialize<T>(Stream inputStream, CancellationToken t);
+        Task<T> Deserialize<T>(Stream inputStream, CancellationToken t);
 
     }
 }
