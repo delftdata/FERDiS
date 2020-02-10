@@ -8,6 +8,6 @@ namespace BlackSP.CRA.Events
     public class SampleEvent : BaseZeroFormattableEvent
     {
         [Index(1)]
-        public string Value { get; set; }
+        public virtual string Value { get; set; }
     }
 }
