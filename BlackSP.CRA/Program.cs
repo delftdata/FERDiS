@@ -70,7 +70,7 @@ namespace BlackSP.CRA
                     }
                     string instanceName = args[2];
                     int portNum = int.Parse(args[3]);
-                    string ipAddress = "192.168.178.242";//  args.Length == 5 ? args[4] : null;
+                    string ipAddress = args.Length == 5 ? args[4] : null;
                     Worker.Launch(instanceName, portNum, dataProvider, ipAddress);
                     break;
                 default:
