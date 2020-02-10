@@ -1,13 +1,17 @@
 ﻿using BlackSP.Interfaces.Events;
 using BlackSP.Serialization.Events;
+using ProtoBuf;
 using ZeroFormatter;
 
 namespace BlackSP.CRA.Events
 {
-    [ZeroFormattable]
-    public class SampleEvent : BaseZeroFormattableEvent
+    [ProtoContract]
+    public class SampleEvent : IEvent
     {
-        [Index(1)]
-        public virtual string Value { get; set; }
+        [ProtoMember(1)]
+        public string Key { get; set; }
+
+        [ProtoMember(2)]
+        public string Value { get; set; }
     }
 }

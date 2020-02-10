@@ -24,10 +24,10 @@ namespace BlackSP.CRA.Vertices
             var zeroFormatterObjPool = new ParameterlessObjectPool<ZFSerializer>();
             var parallelSerializer = new ProtobufSerializer();//new ParallelSerializer<ZFSerializer>(zeroFormatterObjPool);
 
-            var input = new VertexInputEndpoint<BaseZeroFormattableEvent>(parallelSerializer);
+            var input = new VertexInputEndpoint<IEvent>(parallelSerializer);
             AddAsyncInputEndpoint($"input", input);
             
-            var output = new VertexOutputEndpoint<BaseZeroFormattableEvent>(parallelSerializer);
+            var output = new VertexOutputEndpoint<IEvent>(parallelSerializer);
             AddAsyncOutputEndpoint($"output", output);
 
             //TODO: remove test crap            
@@ -37,7 +37,7 @@ namespace BlackSP.CRA.Vertices
             return Task.CompletedTask;
         }
 
-        private void SpawnLoadGeneratingThread(VertexInputEndpoint<BaseZeroFormattableEvent> input, VertexOutputEndpoint<BaseZeroFormattableEvent> output)
+        private void SpawnLoadGeneratingThread(VertexInputEndpoint<IEvent> input, VertexOutputEndpoint<IEvent> output)
         {   //TODO: delete method once served its purpose
             Task.Run(async () =>
             {
@@ -62,7 +62,7 @@ namespace BlackSP.CRA.Vertices
                     {
                         if (!input.IsConnected || !output.IsConnected) { continue; }
 
-                        BaseZeroFormattableEvent next = input.GetNext() ?? new SampleEvent
+                        IEvent next = input.GetNext() ?? new SampleEvent
                         {
                             Key = $"KeyYo {(r.NextDouble() * 1000)}",
                             Value = $"ValueYo{(r.NextDouble() * 1000)}"
