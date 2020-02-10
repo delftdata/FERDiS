@@ -19,17 +19,16 @@ namespace BlackSP.CRA.Vertices
         {
             Console.Write("Vertex Endpoint Initialization.. ");
 
+            ZFSerializer.RegisterTypes(); //required for serializer to load serializable types
+
             var zeroFormatterObjPool = new ParameterlessObjectPool<ZFSerializer>();
             var parallelSerializer = new ParallelSerializer<ZFSerializer>(zeroFormatterObjPool);
 
             var input = new VertexInputEndpoint<BaseZeroFormattableEvent>(parallelSerializer);
             AddAsyncInputEndpoint($"input", input);
-
-            
             
             var output = new VertexOutputEndpoint<BaseZeroFormattableEvent>(parallelSerializer);
             AddAsyncOutputEndpoint($"output", output);
-
 
             //TODO: remove test crap            
             SpawnLoadGeneratingThread(input, output);

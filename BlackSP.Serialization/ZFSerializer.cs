@@ -14,17 +14,37 @@ namespace BlackSP.Serialization
 
         public ZFSerializer() : base()
         {
+        }
+
+        public static void RegisterTypes()
+        {
             Formatter.AppendDynamicUnionResolver(RegisterZeroFormatterEventTypes);
         }
 
         protected sealed override T DoDeserialization<T>(byte[] input)
         {
-            return ZeroFormatterSerializer.Deserialize<T>(input);
+            try
+            {
+                return ZeroFormatterSerializer.Deserialize<T>(input);
+            } catch(Exception e)
+            {
+                Console.WriteLine("ZF Deserialization Err");
+                Console.WriteLine(e.ToString());
+                return default;
+            }
         }
 
         protected sealed override void DoSerialization<T>(Stream outputStream, T obj)
         {
-            ZeroFormatterSerializer.Serialize(outputStream, obj);
+            try
+            {
+                ZeroFormatterSerializer.Serialize(outputStream, obj);
+            } catch (Exception e)
+            {
+                Console.WriteLine("ZF Serialization Err");
+                Console.WriteLine(e.ToString());
+            }
+
         }
 
         /// <summary>
@@ -34,7 +54,7 @@ namespace BlackSP.Serialization
         /// </summary>
         /// <param name="unionType"></param>
         /// <param name="resolver"></param>
-        private void RegisterZeroFormatterEventTypes(Type unionType, DynamicUnionResolver resolver)
+        private static void RegisterZeroFormatterEventTypes(Type unionType, DynamicUnionResolver resolver)
         {
             var baseEventType = typeof(BaseZeroFormattableEvent);
             if (unionType != baseEventType)
@@ -48,6 +68,7 @@ namespace BlackSP.Serialization
             byte unionKey = 0;
             foreach (Type eventType in eventTypes)
             {
+                Console.WriteLine("REGISTERING " + eventType.FullName);
                 resolver.RegisterSubType(unionKey, eventType);
                 unionKey++;
             }
