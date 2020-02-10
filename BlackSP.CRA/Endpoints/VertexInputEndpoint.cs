@@ -33,7 +33,7 @@ namespace BlackSP.CRA.Endpoints
             {
                 //CRA invokes this method on a background thread so just invoke Ingress on current thread
                 IsConnected = true;
-                Ingress(stream, token);
+                await Ingress(stream, token);
                 IsConnected = false;
             }
             catch (Exception e)
