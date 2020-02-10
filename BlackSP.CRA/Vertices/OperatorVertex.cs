@@ -19,10 +19,10 @@ namespace BlackSP.CRA.Vertices
         {
             Console.Write("Vertex Endpoint Initialization.. ");
 
-            ZFSerializer.RegisterTypes(); //required for serializer to load serializable types
+            //ZFSerializer.RegisterTypes(); //required for serializer to load serializable types
 
             var zeroFormatterObjPool = new ParameterlessObjectPool<ZFSerializer>();
-            var parallelSerializer = new ParallelSerializer<ZFSerializer>(zeroFormatterObjPool);
+            var parallelSerializer = new ProtobufSerializer();//new ParallelSerializer<ZFSerializer>(zeroFormatterObjPool);
 
             var input = new VertexInputEndpoint<BaseZeroFormattableEvent>(parallelSerializer);
             AddAsyncInputEndpoint($"input", input);
@@ -61,11 +61,11 @@ namespace BlackSP.CRA.Vertices
                     for (int i = 0; i < eventsPerSec; i++)
                     {
                         if (!input.IsConnected || !output.IsConnected) { continue; }
-                        var next = new SampleEvent
+
+                        BaseZeroFormattableEvent next = input.GetNext() ?? new SampleEvent
                         {
                             Key = $"KeyYo {(r.NextDouble() * 1000)}",
                             Value = $"ValueYo{(r.NextDouble() * 1000)}"
-
                         };
                         output.EnqueueAll(next);
                     }

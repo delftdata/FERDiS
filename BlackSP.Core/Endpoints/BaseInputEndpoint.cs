@@ -36,7 +36,8 @@ namespace BlackSP.Core.Endpoints
             {
                 var nextEvent = await _serializer.Deserialize<T>(s, t);
                 if(nextEvent != null)
-                {   
+                {
+                    string k = nextEvent.Key;
                     _inputQueue.Enqueue(nextEvent);
                     
                     counter++;

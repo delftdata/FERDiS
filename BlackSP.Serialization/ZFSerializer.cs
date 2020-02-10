@@ -1,6 +1,7 @@
 ﻿using BlackSP.Serialization;
 using BlackSP.Serialization.Events;
 using BlackSP.Serialization.Serializers;
+using BlackSP.Serialization.Utilities;
 using System;
 using System.IO;
 using System.Linq;
@@ -30,7 +31,7 @@ namespace BlackSP.Serialization
             {
                 Console.WriteLine("ZF Deserialization Err");
                 Console.WriteLine(e.ToString());
-                return default;
+                throw;
             }
         }
 
@@ -38,11 +39,14 @@ namespace BlackSP.Serialization
         {
             try
             {
+                //Console.WriteLine("Gonna serialize.. " + obj.GetType().FullName + ", "+obj.ToString());
                 ZeroFormatterSerializer.Serialize(outputStream, obj);
             } catch (Exception e)
             {
                 Console.WriteLine("ZF Serialization Err");
+                Console.WriteLine(obj.ToString());
                 Console.WriteLine(e.ToString());
+                throw;
             }
 
         }
@@ -60,15 +64,11 @@ namespace BlackSP.Serialization
             if (unionType != baseEventType)
             { return; }
 
+            var eventTypes = TypeLoader.GetClassesExtending(baseEventType);
             resolver.RegisterUnionKeyType(typeof(byte));
-            var eventTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(s => s.GetTypes())
-                .Where(p => baseEventType.IsAssignableFrom(p) && p.IsClass && !p.IsAbstract && !p.IsInterface);
-
             byte unionKey = 0;
             foreach (Type eventType in eventTypes)
             {
-                Console.WriteLine("REGISTERING " + eventType.FullName);
                 resolver.RegisterSubType(unionKey, eventType);
                 unionKey++;
             }
