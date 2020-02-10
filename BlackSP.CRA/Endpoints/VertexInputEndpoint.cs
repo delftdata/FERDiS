@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Endpoints
 {
-    public class VertexInputEndpoint : BaseInputEndpoint, IAsyncShardedVertexInputEndpoint
+    public class VertexInputEndpoint<T> : BaseInputEndpoint<T>, IAsyncShardedVertexInputEndpoint where T : class, IEvent
     {
         public bool IsConnected { get; set; }
 

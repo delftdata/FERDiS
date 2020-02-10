@@ -1,6 +1,9 @@
 ﻿using BlackSP.Core.Reusability;
 using BlackSP.CRA.Endpoints;
+using BlackSP.CRA.Events;
+using BlackSP.Interfaces.Events;
 using BlackSP.Serialization;
+using BlackSP.Serialization.Events;
 using BlackSP.Serialization.Parallelization;
 using CRA.ClientLibrary;
 using System;
@@ -16,13 +19,15 @@ namespace BlackSP.CRA.Vertices
         {
             Console.Write("Vertex Endpoint Initialization.. ");
 
-            var input = new VertexInputEndpoint(new ApexSerializer());
+            var zeroFormatterObjPool = new ParameterlessObjectPool<ZFSerializer>();
+            var parallelSerializer = new ParallelSerializer<ZFSerializer>(zeroFormatterObjPool);
+
+            var input = new VertexInputEndpoint<BaseZeroFormattableEvent>(parallelSerializer);
             AddAsyncInputEndpoint($"input", input);
 
-            var apexObjectPool = new ParameterlessObjectPool<ZFSerializer>();
-            var parallelSerializer = new ParallelSerializer<ZFSerializer>(apexObjectPool);
             
-            var output = new VertexOutputEndpoint(parallelSerializer);
+            
+            var output = new VertexOutputEndpoint<BaseZeroFormattableEvent>(parallelSerializer);
             AddAsyncOutputEndpoint($"output", output);
 
 
@@ -33,7 +38,7 @@ namespace BlackSP.CRA.Vertices
             return Task.CompletedTask;
         }
 
-        private void SpawnLoadGeneratingThread(VertexInputEndpoint input, VertexOutputEndpoint output)
+        private void SpawnLoadGeneratingThread(VertexInputEndpoint<BaseZeroFormattableEvent> input, VertexOutputEndpoint<BaseZeroFormattableEvent> output)
         {   //TODO: delete method once served its purpose
             Task.Run(async () =>
             {
@@ -57,8 +62,13 @@ namespace BlackSP.CRA.Vertices
                     for (int i = 0; i < eventsPerSec; i++)
                     {
                         if (!input.IsConnected || !output.IsConnected) { continue; }
+                        var next = new SampleEvent
+                        {
+                            Key = $"KeyYo {(r.NextDouble() * 1000)}",
+                            Value = $"ValueYo{(r.NextDouble() * 1000)}"
 
-                        output.EnqueueAll(new SampleEvent($"KeyYo {(r.NextDouble() * 1000)}", $"ValueYo{(r.NextDouble() * 1000)}"));
+                        };
+                        output.EnqueueAll(next);
                     }
 
                     int timeTillSecond = sw.ElapsedMilliseconds < 1000 ? 1000 - (int)sw.ElapsedMilliseconds : 0;

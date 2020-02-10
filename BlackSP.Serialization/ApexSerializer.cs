@@ -1,4 +1,5 @@
 ﻿using Apex.Serialization;
+using BlackSP.Serialization.Serializers;
 using System.IO;
 
 namespace BlackSP.Serialization

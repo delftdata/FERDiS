@@ -7,19 +7,8 @@ namespace BlackSP.Core.UnitTests.Events
 {
     public class TestEvent : IEvent {
         
-        private byte _value;
-        public string Key { get; }
+        public byte Value { get; set; }
+        public string Key { get; set; }
 
-        public TestEvent(string key, byte value)
-        {
-            Key = key;
-            _value = value;
-        }
-
-
-        public object GetValue()
-        {
-            return _value;
-        }
     }
 }

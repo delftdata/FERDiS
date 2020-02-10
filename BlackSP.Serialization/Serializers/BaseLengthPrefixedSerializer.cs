@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Serialization
+namespace BlackSP.Serialization.Serializers
 {
     /// <summary>
     /// Abstraction layer that introduces reading and 

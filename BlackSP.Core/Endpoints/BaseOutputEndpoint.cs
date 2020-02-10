@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Endpoints
 {
-    public class BaseOutputEndpoint : IOutputEndpoint
+    public class BaseOutputEndpoint<T> : IOutputEndpoint<T> where T : IEvent
     {
         //default BlockingCollection implementation is a ConcurrentQueue..
-        protected IDictionary<int, BlockingCollection<IEvent>> _outputQueues;
+        protected IDictionary<int, BlockingCollection<T>> _outputQueues;
         protected int _shardCount;
         private ISerializer _serializer;
 
@@ -22,7 +22,7 @@ namespace BlackSP.Core.Endpoints
         {
             _shardCount = 0;
             _serializer = serializer;
-            _outputQueues = new ConcurrentDictionary<int, BlockingCollection<IEvent>>();
+            _outputQueues = new ConcurrentDictionary<int, BlockingCollection<T>>();
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace BlackSP.Core.Endpoints
             {
                 return false;
             }
-            _outputQueues.Add(remoteShardId, new BlockingCollection<IEvent>());
+            _outputQueues.Add(remoteShardId, new BlockingCollection<T>());
             return true;
         }
 
@@ -63,7 +63,7 @@ namespace BlackSP.Core.Endpoints
         /// <param name="t"></param>
         public async Task Egress(Stream outputStream, int remoteShardId, CancellationToken t)
         {
-            BlockingCollection<IEvent> blockingColl;
+            BlockingCollection<T> blockingColl;
             if(!_outputQueues.TryGetValue(remoteShardId, out blockingColl))
             {
                 throw new ArgumentException($"Remote shard with id {remoteShardId} has not been registered");
@@ -79,8 +79,10 @@ namespace BlackSP.Core.Endpoints
                 t.ThrowIfCancellationRequested();
                 //TODO: consider error scenario where connection closes to not lose event.. or CP?
 
-                IEvent @event = blockingColl.Take(t);
+                T @event = blockingColl.Take(t);
                 await _serializer.Serialize(outputStream, @event);
+                
+                
                 counter++;
                 if (sw.ElapsedMilliseconds >= 10000) //every 10 seconds..
                 {
@@ -108,7 +110,7 @@ namespace BlackSP.Core.Endpoints
         /// of an operator
         /// </summary>
         /// <param name="event"></param>
-        public void EnqueueAll(IEvent @event)
+        public void EnqueueAll(T @event)
         {
             foreach(var blockingColl in _outputQueues.Values)
             {
@@ -122,7 +124,7 @@ namespace BlackSP.Core.Endpoints
         /// target output queue
         /// </summary>
         /// <param name="event"></param>
-        public void EnqueuePartitioned(IEvent @event)
+        public void EnqueuePartitioned(T @event)
         {
             throw new NotImplementedException("TODO (hash?) partitioning");
         }

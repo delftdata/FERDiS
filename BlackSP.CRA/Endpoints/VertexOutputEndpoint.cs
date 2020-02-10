@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Endpoints;
+using BlackSP.Interfaces.Events;
 using BlackSP.Interfaces.Serialization;
 using CRA.ClientLibrary;
 using System;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Endpoints
 {
-    public class VertexOutputEndpoint : BaseOutputEndpoint, IAsyncShardedVertexOutputEndpoint
+    public class VertexOutputEndpoint<T> : BaseOutputEndpoint<T>, IAsyncShardedVertexOutputEndpoint where T : IEvent
     {
         public bool IsConnected { get; set; }
 
@@ -23,7 +24,7 @@ namespace BlackSP.CRA.Endpoints
             try
             {
                 //CRA invokes current method on a background thread 
-                //so just invoke (the blocking) Egress on this thread
+                //so just invoke Egress on this thread
                 IsConnected = true;
                 await Egress(stream, otherShardId, token);
                 IsConnected = false;
