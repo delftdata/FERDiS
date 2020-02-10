@@ -48,7 +48,7 @@ namespace BlackSP.CRA.Vertices
                 {   //go ham enqueueing events, see how fast we can go..
                     if (!input.IsConnected || !output.IsConnected) { continue; }
                     IEvent next = input.GetNext();
-                    if (next == null)
+                    if (next != null)
                     {
                         output.EnqueueAll(next);
                     }
@@ -78,10 +78,7 @@ namespace BlackSP.CRA.Vertices
                             Key = $"KeyYo {(r.NextDouble() * 1000)}",
                             Value = $"ValueYo{(r.NextDouble() * 1000)}"
                         };
-                        if (next == null)
-                        {
-                            output.EnqueueAll(next);
-                        }
+                        output.EnqueueAll(next);
                     }
 
                     int timeTillSecond = sw.ElapsedMilliseconds < 1000 ? 1000 - (int)sw.ElapsedMilliseconds : 0;
