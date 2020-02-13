@@ -7,6 +7,12 @@ using BlackSP.CRA.Utilities;
 using CRA.DataProvider;
 using CRA.DataProvider.Azure;
 using CRA.DataProvider.File;
+using System.Reflection;
+using System.Linq;
+using BlackSP.Core;
+using BlackSP.Interfaces;
+using BlackSP.Interfaces.Serialization;
+using BlackSP.Serialization;
 
 namespace BlackSP.CRA
 {
@@ -35,10 +41,13 @@ namespace BlackSP.CRA
         /// <returns></returns>
         static async Task Main(string[] args)
         {
+            //Dirty hack because running with visual studio instrumentation
+            //clears environment variables..
             if(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING") == null)
             {
-                Environment.SetEnvironmentVariable("AZURE_STORAGE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net");
+                Environment.SetEnvironmentVariable("AZURE_STORAGE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net");
             }
+            
 
             if (args.Length < 1)
             {
@@ -51,6 +60,7 @@ namespace BlackSP.CRA
                 return;
             }
 
+            ISerializer x = new ApexSerializer();
 
             LaunchMode launchMode = (LaunchMode)int.Parse(args[0]);
             CRAMode CRAMode = (CRAMode)int.Parse(args[1]);
@@ -70,7 +80,7 @@ namespace BlackSP.CRA
                     }
                     string instanceName = args[2];
                     int portNum = int.Parse(args[3]);
-                    string ipAddress = args.Length == 5 ? args[4] : null;
+                    string ipAddress = "192.168.178.242";//  args.Length == 5 ? args[4] : null;
                     Worker.Launch(instanceName, portNum, dataProvider, ipAddress);
                     break;
                 default:
@@ -84,7 +94,7 @@ namespace BlackSP.CRA
             switch(mode)
             {
                 case CRAMode.Azure:
-                    return new AzureDataProvider(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING"));
+                    return new AzureDataProvider();
                 case CRAMode.File:
                     return new FileDataProvider();
                 default:

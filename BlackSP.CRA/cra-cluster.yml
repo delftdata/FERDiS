@@ -34,7 +34,7 @@ spec :
               - containerPort: 1500
               env:
               - name: AZURE_STORAGE_CONN_STRING
-                value:  DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net
+                value: DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net
               args : ["crainst01", "1500"] # CRA instance name: crainst01, exposed on port 1500
               resources:
                 requests:
@@ -67,7 +67,7 @@ spec :
               - containerPort: 1501
               env: 
               - name: AZURE_STORAGE_CONN_STRING
-                value: DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net
+                value: DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net
               args : ["crainst02", "1501"] # CRA instance name: crainst02, exposed on port 1501
               resources:
                 requests:

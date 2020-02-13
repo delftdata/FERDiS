@@ -10,7 +10,7 @@
     "Setup cluster Azure": {
       "commandName": "Project",
       "environmentVariables": {
-        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net"
+        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
       },
       "commandLineArgs": "0 0"
     },
@@ -25,7 +25,7 @@
     "Launch crainst01 Azure": {
       "commandName": "Project",
       "environmentVariables": {
-        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net"
+        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
       },
       "commandLineArgs": "1 0 crainst01 3180 0.0.0.0"
     },
@@ -40,7 +40,7 @@
     "Launch crainst02 Azure": {
       "commandName": "Project",
       "environmentVariables": {
-        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=edgeandvertexstore;AccountKey=XN8F1mII7l0d0eLXaUGLKCxpzeAIt+VUtW4PxF+q3RRsuHf4kQ8FMRCpDSU1YvbVlgjtycl7pBk+Cb0iE6LvOw==;EndpointSuffix=core.windows.net"
+        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
       },
       "commandLineArgs": "1 0 crainst02 3180 0.0.0.0"
     }
