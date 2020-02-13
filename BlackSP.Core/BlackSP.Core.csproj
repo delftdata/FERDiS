@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -15,11 +17,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BlackSP.Interfaces\BlackSP.Interfaces.csproj" />
+    <Folder Include="Events\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Events\" />
+    <ProjectReference Include="..\BlackSP.Interfaces\BlackSP.Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,10 +1,7 @@
-﻿using BlackSP.Core.Reusability;
-using BlackSP.CRA.Endpoints;
+﻿using BlackSP.CRA.Endpoints;
 using BlackSP.CRA.Events;
 using BlackSP.Interfaces.Events;
 using BlackSP.Serialization;
-using BlackSP.Serialization.Events;
-using BlackSP.Serialization.Parallelization;
 using CRA.ClientLibrary;
 using System;
 using System.Diagnostics;
@@ -21,7 +18,7 @@ namespace BlackSP.CRA.Vertices
 
             //ZFSerializer.RegisterTypes(); //required for serializer to load serializable types
 
-            var zeroFormatterObjPool = new ParameterlessObjectPool<ZFSerializer>();
+            //var zeroFormatterObjPool = new ParameterlessObjectPool<ZFSerializer>();
             var parallelSerializer = new ProtobufSerializer();//new ParallelSerializer<ZFSerializer>(zeroFormatterObjPool);
 
             var input = new VertexInputEndpoint<IEvent>(parallelSerializer);
@@ -65,7 +62,7 @@ namespace BlackSP.CRA.Vertices
                 Random r = new Random();
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-                int eventsPerSec = 1000;
+                int eventsPerSec = 10000;
                 int secondCounter = 0;
                 while (true)
                 {   //go ham enqueueing events, see how fast we can go..
