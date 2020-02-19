@@ -1,20 +1,12 @@
-﻿using BlackSP.CRA.Vertices;
-using CRA.ClientLibrary;
-using System;
-using System.Threading.Tasks;
-using CRA.Worker;
-using BlackSP.CRA.Utilities;
+﻿using BlackSP.CRA.Utilities;
+using BlackSP.ThroughputExperiment.Utilities;
 using CRA.DataProvider;
 using CRA.DataProvider.Azure;
 using CRA.DataProvider.File;
-using System.Reflection;
-using System.Linq;
-using BlackSP.Core;
-using BlackSP.Interfaces;
-using BlackSP.Interfaces.Serialization;
-using BlackSP.Serialization;
+using System;
+using System.Threading.Tasks;
 
-namespace BlackSP.CRA
+namespace BlackSP.ThroughputExperiment
 {
 
     public enum LaunchMode
@@ -59,8 +51,6 @@ namespace BlackSP.CRA
                 Console.WriteLine("Expecting CRAMode argument (0: Azure mode, 1: FS mode)");
                 return;
             }
-
-            ISerializer x = new ApexSerializer();
 
             LaunchMode launchMode = (LaunchMode)int.Parse(args[0]);
             CRAMode CRAMode = (CRAMode)int.Parse(args[1]);

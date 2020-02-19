@@ -15,6 +15,22 @@ namespace BlackSP.CRA.Vertices
         public override Task InitializeAsync(int shardId, ShardingInfo shardingInfo, object vertexParameter)
         {
             Console.Write("Vertex Endpoint Initialization.. ");
+            Console.WriteLine(vertexParameter.ToString());
+            //TODO: Configure IOC Container (should use types from vertex param?)
+            //      + register serializer type
+            //      + register operator type
+            //      + register logger?
+            //      + where to get user delegate for operator from?
+            //      + register endpoint input/output (not configurable, per dependency?)
+            //TODO: Use Autofac startup to launch operator thread
+            //      + keep internal cancellationtokensource in operator
+            //      + on exception, cancel + log + throw exception or exit from thread
+            //TODO: endpoints should keep an eye on operator cancellationtoken
+            //      + join it with external cancellationtoken (CRA)
+            //      + exit ingress/egress on cancellation (just throw)
+
+            //TODO: Resolve required instances of endpoints
+            //      + register them with CRA
 
             //ZFSerializer.RegisterTypes(); //required for serializer to load serializable types
 

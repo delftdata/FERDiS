@@ -1,12 +1,14 @@
-﻿using BlackSP.CRA.Vertices;
+﻿using BlackSP.CRA.Utilities;
+using BlackSP.CRA.Vertices;
 using CRA.ClientLibrary;
 using CRA.DataProvider;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.CRA.Utilities
+namespace BlackSP.ThroughputExperiment.Utilities
 {
     public class Cluster
     {
@@ -35,7 +37,7 @@ namespace BlackSP.CRA.Utilities
 
             //Refactor step: launch instance + if not defined do define?
             Console.WriteLine(">> Instantiating operator vertex 1");
-            await client.InstantiateVertexAsync(new[] { "crainst01" }, "operator1", typeof(OperatorVertex).Name.ToLowerInvariant(), new string[] { "arg1", "arg2" }, 1);
+            await client.InstantiateVertexAsync(new[] { "crainst01" }, "operator1", typeof(OperatorVertex).Name.ToLowerInvariant(), new object[] { "arg1", "arg2" }, 1);
 
             Console.WriteLine(">> Instantiating operator vertex 2");
             await client.InstantiateVertexAsync(new[] { "crainst02" }, "operator2", typeof(OperatorVertex).Name.ToLowerInvariant(), null, 1);

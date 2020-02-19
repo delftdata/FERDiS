@@ -14,3 +14,4 @@ scopes
 *.csproj.user
 */css/
 */scripts/
+**/publishprofiles/*

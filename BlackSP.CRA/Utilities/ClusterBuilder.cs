@@ -4,7 +4,7 @@ using CRA.DataProvider.File;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.CRA
+namespace BlackSP.CRA.Utilities
 {
     public class ClusterBuilder
     {

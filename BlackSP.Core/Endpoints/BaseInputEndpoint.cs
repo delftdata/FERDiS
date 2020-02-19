@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using BlackSP.Core.Streams;
 using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Events;
 using BlackSP.Interfaces.Serialization;
@@ -29,17 +30,28 @@ namespace BlackSP.Core.Endpoints
         /// <param name="t"></param>
         public async Task Ingress(Stream s, CancellationToken t)
         {
+            //stopwatch and counter for test purposes
             Stopwatch sw = new Stopwatch();
             sw.Start();
             double counter = 0;
             while (!t.IsCancellationRequested)
             {
+                int nextMsgLength = await s.ReadInt32Async();
+                byte[] buffer = new byte[nextMsgLength]; //TODO: swap for arraypool?
+                int realMsgLength = await s.ReadAllRequiredBytesAsync(buffer, 0, nextMsgLength);
+                if(nextMsgLength != realMsgLength)
+                {
+                    //TODO: log/throw?
+                }
+                //TODO: enqueue buffer
+
+                //TODO: remove event stuff below
                 var nextEvent = await _serializer.Deserialize<T>(s, t);
                 if(nextEvent != null)
                 {
-                    string k = nextEvent.Key;
                     _inputQueue.Enqueue(nextEvent);
                     
+                    //stopwatch and counter for test purposes
                     counter++;
                     if(sw.ElapsedMilliseconds >= 10000)
                     {
