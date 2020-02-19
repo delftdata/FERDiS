@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Interfaces.Endpoints
 {
-    public interface IOutputEndpoint<T> where T : IEvent
+    public interface IOutputEndpoint
     {
 
         /// <summary>
@@ -17,7 +17,7 @@ namespace BlackSP.Interfaces.Endpoints
         /// target output queue
         /// </summary>
         /// <param name="event"></param>
-        void EnqueuePartitioned(T @event);
+        void EnqueuePartitioned(IEvent @event);
 
         /// <summary>
         /// Enqueue event in every output queue
@@ -26,7 +26,7 @@ namespace BlackSP.Interfaces.Endpoints
         /// of an operator
         /// </summary>
         /// <param name="event"></param>
-        void EnqueueAll(T @event);
+        void EnqueueAll(IEvent @event);
 
         /// <summary>
         /// Starts a blocking process that writes enqueued events to the outputstream

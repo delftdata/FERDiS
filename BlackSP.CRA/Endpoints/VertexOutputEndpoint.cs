@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Endpoints
 {
-    public class VertexOutputEndpoint<T> : BaseOutputEndpoint<T>, IAsyncShardedVertexOutputEndpoint where T : IEvent
+    public class VertexOutputEndpoint : BaseOutputEndpoint, IAsyncShardedVertexOutputEndpoint
     {
         public bool IsConnected { get; set; }
 

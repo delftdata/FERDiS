@@ -1,5 +1,8 @@
-﻿using BlackSP.CRA.Endpoints;
+﻿using Autofac;
+using BlackSP.CRA.DI;
+using BlackSP.CRA.Endpoints;
 using BlackSP.CRA.Events;
+using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Events;
 using BlackSP.Serialization;
 using CRA.ClientLibrary;
@@ -11,11 +14,26 @@ namespace BlackSP.CRA.Vertices
 {
     public class OperatorVertex : ShardedVertexBase
     {
+        private IContainer _dependencyContainer;
+        private ILifetimeScope _vertexLifetimeScope;
+
+        ~OperatorVertex() {
+            Dispose(false);
+        }
 
         public override Task InitializeAsync(int shardId, ShardingInfo shardingInfo, object vertexParameter)
         {
-            Console.Write("Vertex Endpoint Initialization.. ");
-            Console.WriteLine(vertexParameter.ToString());
+            Console.Write("Vertex Initialization.. ");
+            VertexParameter param = vertexParameter as VertexParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(VertexParameter)}"); ;
+            
+            _dependencyContainer = new IoC()
+                .RegisterOperator(param.OperatorType)
+                .RegisterSerializer(typeof(ProtobufSerializer))
+                .RegisterInputEndpoint(typeof(VertexInputEndpoint))
+                .RegisterOutputEndpoint(typeof(VertexOutputEndpoint))
+                .BuildContainer();
+            _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();
+            
             //TODO: Configure IOC Container (should use types from vertex param?)
             //      + register serializer type
             //      + register operator type
@@ -27,31 +45,40 @@ namespace BlackSP.CRA.Vertices
             //      + on exception, cancel + log + throw exception or exit from thread
             //TODO: endpoints should keep an eye on operator cancellationtoken
             //      + join it with external cancellationtoken (CRA)
-            //      + exit ingress/egress on cancellation (just throw)
+            //      + exit ingress/egress on cancellation (throw)
 
             //TODO: Resolve required instances of endpoints
             //      + register them with CRA
-
-            //ZFSerializer.RegisterTypes(); //required for serializer to load serializable types
-
-            //var zeroFormatterObjPool = new ParameterlessObjectPool<ZFSerializer>();
-            var parallelSerializer = new ProtobufSerializer();//new ParallelSerializer<ZFSerializer>(zeroFormatterObjPool);
-
-            var input = new VertexInputEndpoint<IEvent>(parallelSerializer);
+            
+            var input = _vertexLifetimeScope.Resolve<IAsyncVertexInputEndpoint>();
             AddAsyncInputEndpoint($"input", input);
             
-            var output = new VertexOutputEndpoint<IEvent>(parallelSerializer);
+            var output = _vertexLifetimeScope.Resolve<IAsyncVertexOutputEndpoint>();
             AddAsyncOutputEndpoint($"output", output);
             
             //TODO: remove test crap            
-            SpawnLoadGeneratingThread(input, output);
-            SpawnPassthroughThread(input, output);
+            SpawnLoadGeneratingThread(input as VertexInputEndpoint, output as VertexOutputEndpoint);
+            SpawnPassthroughThread(input as VertexInputEndpoint, output as VertexOutputEndpoint);
+            
             Console.WriteLine("Done");
-
             return Task.CompletedTask;
         }
 
-        private void SpawnPassthroughThread(VertexInputEndpoint<IEvent> input, VertexOutputEndpoint<IEvent> output)
+        public override void Dispose()
+        {
+            Dispose(true);
+            base.Dispose();
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if(disposing)
+            {
+                _dependencyContainer.Dispose();
+            }
+        }
+
+        private void SpawnPassthroughThread(VertexInputEndpoint input, VertexOutputEndpoint output)
         {   //TODO: delete method once served its purpose
             Task.Run(async () =>
             {
@@ -69,7 +96,7 @@ namespace BlackSP.CRA.Vertices
             });
         }
 
-        private void SpawnLoadGeneratingThread(VertexInputEndpoint<IEvent> input, VertexOutputEndpoint<IEvent> output)
+        private void SpawnLoadGeneratingThread(VertexInputEndpoint input, VertexOutputEndpoint output)
         {   //TODO: delete method once served its purpose
             Task.Run(async () =>
             {

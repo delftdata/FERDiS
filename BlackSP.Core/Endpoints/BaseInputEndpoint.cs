@@ -11,14 +11,14 @@ using BlackSP.Interfaces.Serialization;
 
 namespace BlackSP.Core.Endpoints
 {
-    public class BaseInputEndpoint<T> : IInputEndpoint<T> where T : class, IEvent
+    public class BaseInputEndpoint : IInputEndpoint
     {
-        protected ConcurrentQueue<T> _inputQueue;
+        protected ConcurrentQueue<IEvent> _inputQueue;
         private ISerializer _serializer;
 
         public BaseInputEndpoint(ISerializer serializer)
         {
-            _inputQueue = new ConcurrentQueue<T>();
+            _inputQueue = new ConcurrentQueue<IEvent>();
             _serializer = serializer;// new ApexSerializer<IEvent>(Binary.Create());
         }
 
@@ -46,7 +46,7 @@ namespace BlackSP.Core.Endpoints
                 //TODO: enqueue buffer
 
                 //TODO: remove event stuff below
-                var nextEvent = await _serializer.Deserialize<T>(s, t);
+                var nextEvent = await _serializer.Deserialize<IEvent>(s, t);
                 if(nextEvent != null)
                 {
                     _inputQueue.Enqueue(nextEvent);
@@ -70,9 +70,9 @@ namespace BlackSP.Core.Endpoints
             return !_inputQueue.IsEmpty;
         }
 
-        public T GetNext()
+        public IEvent GetNext()
         {
-            return _inputQueue.TryDequeue(out T result) ? result : null;
+            return _inputQueue.TryDequeue(out IEvent result) ? result : null;
         }
 
     }

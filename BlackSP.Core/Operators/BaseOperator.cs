@@ -21,10 +21,6 @@ namespace BlackSP.Core.Operators
 
         /// <summary>
         /// Starts the deserialization, operating and serialization threads
-        /// will launch each on a fire-forget thread as since this is build 
-        /// primarily for Microsoft.CRA which provides no entrypoint for 
-        /// the operator which can wait for this kind of threads..<br/>
-        /// Should be rewritten in the future to return or block
         /// </summary>
         public void Start()
         {

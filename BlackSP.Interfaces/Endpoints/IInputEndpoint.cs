@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Interfaces.Endpoints
 {
-    public interface IInputEndpoint<T> where T : IEvent
+    public interface IInputEndpoint
     {
 
         /// <summary>
         /// Fetches deserialized event from input channel
         /// </summary>
         /// <returns></returns>
-        T GetNext();
+        IEvent GetNext();
 
         /// <summary>
         /// Check if input channel has any deserialized input ready

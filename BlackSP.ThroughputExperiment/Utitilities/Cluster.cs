@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.ThroughputExperiment.Utilities
 {
+
     public class Cluster
     {
         /// <summary>
@@ -37,10 +38,23 @@ namespace BlackSP.ThroughputExperiment.Utilities
 
             //Refactor step: launch instance + if not defined do define?
             Console.WriteLine(">> Instantiating operator vertex 1");
-            await client.InstantiateVertexAsync(new[] { "crainst01" }, "operator1", typeof(OperatorVertex).Name.ToLowerInvariant(), new object[] { "arg1", "arg2" }, 1);
+            await client.InstantiateVertexAsync(
+                new[] { "crainst01" },
+                "operator1",
+                typeof(OperatorVertex).Name.ToLowerInvariant(),
+                new VertexParameter { 
+                    OperatorType = typeof(Program) 
+                },
+                1
+            ); ;
 
             Console.WriteLine(">> Instantiating operator vertex 2");
-            await client.InstantiateVertexAsync(new[] { "crainst02" }, "operator2", typeof(OperatorVertex).Name.ToLowerInvariant(), null, 1);
+            await client.InstantiateVertexAsync(
+                new[] { "crainst02" }, 
+                "operator2", 
+                typeof(OperatorVertex).Name.ToLowerInvariant(), 
+                null, 
+                1);
 
             //Console.WriteLine(">> Instantiating operator vertex 3");
             //await client.InstantiateVertexAsync(new[] { "crainst03" }, "operator3", typeof(OperatorVertex).Name.ToLowerInvariant(), null, 1);
