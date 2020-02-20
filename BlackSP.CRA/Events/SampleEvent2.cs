@@ -10,8 +10,11 @@ namespace BlackSP.CRA.Events
     {
         [ProtoMember(1)]
         public string Key { get; set; }
-
+        
         [ProtoMember(2)]
+        public string JoinKey { get; set; }
+        
+        [ProtoMember(3)]
         public string Value2 { get; set; }
     }
 }

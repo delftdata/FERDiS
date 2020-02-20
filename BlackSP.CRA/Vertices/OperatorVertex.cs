@@ -73,12 +73,13 @@ namespace BlackSP.CRA.Vertices
             base.Dispose();
         }
 
-        private void Dispose(bool disposing)
+        private new void Dispose(bool disposing)
         {
             if(disposing)
             {
                 _dependencyContainer.Dispose();
             }
+            base.Dispose(disposing);
         }
 
         private void SpawnPassthroughThread(VertexInputEndpoint input, VertexOutputEndpoint output)
