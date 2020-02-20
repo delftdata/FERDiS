@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using BlackSP.Core.Operators;
 using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Operators;
 using BlackSP.Interfaces.Serialization;
@@ -23,12 +24,23 @@ namespace BlackSP.CRA.DI
             return _builder.Build();
         }
 
-        public IoC RegisterOperator(Type operatorType)
+        public IoC RegisterOperator(Type operatorType, IOperatorConfiguration config)
         {
+            config = config ?? throw new ArgumentNullException(nameof(config));
+
             _builder
                 .RegisterType(operatorType)
                 .As<IOperator>()
                 .SingleInstance();
+
+            var configType = config.GetType();
+            var asTypes = configType.GetInterfaces();
+
+            _builder
+                .RegisterInstance(config)
+                .As(asTypes)
+                .SingleInstance();
+
             return this;
         }
 

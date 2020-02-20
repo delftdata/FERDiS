@@ -4,6 +4,7 @@ using BlackSP.CRA.Endpoints;
 using BlackSP.CRA.Events;
 using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Events;
+using BlackSP.Interfaces.Operators;
 using BlackSP.Serialization;
 using CRA.ClientLibrary;
 using System;
@@ -24,10 +25,10 @@ namespace BlackSP.CRA.Vertices
         public override Task InitializeAsync(int shardId, ShardingInfo shardingInfo, object vertexParameter)
         {
             Console.Write("Vertex Initialization.. ");
-            VertexParameter param = vertexParameter as VertexParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(VertexParameter)}"); ;
+            IVertexParameter param = vertexParameter as IVertexParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IVertexParameter)}"); ;
             
             _dependencyContainer = new IoC()
-                .RegisterOperator(param.OperatorType)
+                .RegisterOperator(param.OperatorType, param.OperatorConfiguration)
                 .RegisterSerializer(typeof(ProtobufSerializer))
                 .RegisterInputEndpoint(typeof(VertexInputEndpoint))
                 .RegisterOutputEndpoint(typeof(VertexOutputEndpoint))
@@ -55,7 +56,9 @@ namespace BlackSP.CRA.Vertices
             
             var output = _vertexLifetimeScope.Resolve<IAsyncVertexOutputEndpoint>();
             AddAsyncOutputEndpoint($"output", output);
-            
+
+            var @operator = _vertexLifetimeScope.Resolve<IOperator>();
+
             //TODO: remove test crap            
             SpawnLoadGeneratingThread(input as VertexInputEndpoint, output as VertexOutputEndpoint);
             SpawnPassthroughThread(input as VertexInputEndpoint, output as VertexOutputEndpoint);

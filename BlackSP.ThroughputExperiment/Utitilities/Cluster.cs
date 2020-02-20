@@ -1,5 +1,8 @@
-﻿using BlackSP.CRA.Utilities;
+﻿using BlackSP.Core.Operators;
+using BlackSP.Core.Operators.Concrete;
+using BlackSP.CRA.Utilities;
 using BlackSP.CRA.Vertices;
+using BlackSP.Interfaces.Events;
 using CRA.ClientLibrary;
 using CRA.DataProvider;
 using System;
@@ -13,6 +16,18 @@ namespace BlackSP.ThroughputExperiment.Utilities
 
     public class Cluster
     {
+        public class MyFilterOperatorConfiguration : IFilterOperatorConfiguration
+        {
+            public int? OutputEndpointCount { get; set; }
+
+            public IEvent Filter(IEvent @event)
+            {
+                Console.WriteLine($"Sick yo, filtering {@event.Key}");
+                return @event;
+            }
+        }
+
+
         /// <summary>
         /// Utility method to setup a sample CRA cluster <br/>
         /// primarily useful for development purposes
@@ -43,10 +58,11 @@ namespace BlackSP.ThroughputExperiment.Utilities
                 "operator1",
                 typeof(OperatorVertex).Name.ToLowerInvariant(),
                 new VertexParameter { 
-                    OperatorType = typeof(Program) 
+                    OperatorType = typeof(FilterOperator),
+                    OperatorConfiguration = new MyFilterOperatorConfiguration { OutputEndpointCount = 2 }
                 },
                 1
-            ); ;
+            );
 
             Console.WriteLine(">> Instantiating operator vertex 2");
             await client.InstantiateVertexAsync(

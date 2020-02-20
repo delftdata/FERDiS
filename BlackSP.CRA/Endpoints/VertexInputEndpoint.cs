@@ -1,5 +1,6 @@
 ﻿using BlackSP.Core.Endpoints;
 using BlackSP.Interfaces.Events;
+using BlackSP.Interfaces.Operators;
 using BlackSP.Interfaces.Serialization;
 using CRA.ClientLibrary;
 using System;
@@ -15,9 +16,9 @@ namespace BlackSP.CRA.Endpoints
     {
         public bool IsConnected { get; set; }
 
-        public VertexInputEndpoint(ISerializer serializer) : base(serializer)
+        public VertexInputEndpoint(ISerializer serializer, IOperator @operator) : base(serializer)
         {
-
+            var lmao = @operator;
         }
 
         public async Task FromStreamAsync(Stream stream, string otherVertex, int otherShardId, string otherEndpoint, CancellationToken token)
