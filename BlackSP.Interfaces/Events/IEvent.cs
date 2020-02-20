@@ -7,5 +7,6 @@ namespace BlackSP.Interfaces.Events
     public interface IEvent
     {
         string Key { get; set; }
+        string JoinKey { get; set; }
     }
 }

@@ -6,5 +6,7 @@ namespace BlackSP.Interfaces.Operators
 {
     public interface IOperator
     {
+        void Start();
+        void Stop();
     }
 }

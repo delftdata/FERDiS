@@ -7,11 +7,16 @@ namespace BlackSP.Core.Operators.Concrete
 {
     public class MapOperator : BaseOperator
     {
-        private readonly OnEvent<IEvent, IEnumerable<IEvent>> _userDelegate;
+        private readonly IMapOperatorConfiguration _options;
 
         public MapOperator(IMapOperatorConfiguration options) : base(options)
         {
-            _userDelegate = options.Map;
+            _options = options;
+        }
+
+        protected override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
+        {
+            return _options.Map(@event);
         }
     }
 }

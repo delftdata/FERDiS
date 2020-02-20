@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Interfaces.Events;
 using BlackSP.Interfaces.Operators;
@@ -16,13 +17,10 @@ namespace BlackSP.Core.Operators
     public abstract class BaseOperator : IOperator
     {
         public BlockingCollection<IEvent> InputQueue { get; private set; }
-        //todo create enough outputqueues based on options in ctor
-        public BlockingCollection<IEvent> OutputQueue { get; private set; }
+        public ConcurrentDictionary<int, BlockingCollection<IEvent>> OutputQueues { get; private set; }
 
-
-        private Task deserializationThread;
-        private Task operatingThread;
-        private Task serializationThread;
+        private readonly CancellationTokenSource _cancellationTokenSource;
+        private bool _isRequestedToStop;
 
         /// <summary>
         /// Base constructor for Operators, will throw when passing null options
@@ -31,30 +29,75 @@ namespace BlackSP.Core.Operators
         public BaseOperator(IOperatorConfiguration options)
         {
             var config = options ?? throw new ArgumentNullException(nameof(options));
-            
-            //TODO: instantiate output queues
-            var outputEndpointCount = config.OutputEndpointCount ?? throw new ArgumentNullException(nameof(config.OutputEndpointCount));
-            //...
+            var outputEndpointCount = config.OutputEndpointCount ?? throw new ArgumentNullException(nameof(config.OutputEndpointCount));            
+
             InputQueue = new BlockingCollection<IEvent>();
+            OutputQueues = BuildOutputQueueDict(outputEndpointCount);
 
+            _cancellationTokenSource = new CancellationTokenSource();
+            _isRequestedToStop = false;
         }
-
 
         /// <summary>
-        /// Starts the deserialization, operating and serialization threads
+        /// Starts the operating background thread 
+        /// (take from input, invoke user function, put in all output queues)
         /// </summary>
-        public void Start()
+        public virtual void Start()
         {
-
-
-            //.ContinueWith(task => {
-            //     Console.WriteLine(task.Exception);
-            //     return 0;
-            // }, TaskContinuationOptions.OnlyOnFaulted)
+            _isRequestedToStop = false;
+            Task.Run(StartOperating)
+                .ContinueWith(HandleOperatingThreadException, TaskContinuationOptions.OnlyOnFaulted)
+                .ConfigureAwait(false);
         }
 
-        //protected 
+        /// <summary>
+        /// Stops the operating background thread
+        /// </summary>
+        public virtual void Stop()
+        {
+            _isRequestedToStop = true;
+            if(!_cancellationTokenSource.IsCancellationRequested)
+            {
+                _cancellationTokenSource.Cancel();
+            }
+        }
 
-        
+        protected abstract IEnumerable<IEvent> OperateOnEvent(IEvent @event);
+
+        private void StartOperating()
+        {
+            var inputEnumerable = InputQueue.GetConsumingEnumerable(_cancellationTokenSource.Token);
+            foreach (IEvent @event in inputEnumerable)
+            {
+                OperateOnEvent(@event);
+            }
+        }
+
+        private void HandleOperatingThreadException(Task operatingThread)
+        {
+            if (_isRequestedToStop)
+            {
+                return;
+            }
+            //TODO: change for logging at fatal level?
+            Console.WriteLine($"Exception in operating thread, proceeding to shut down. Exception:\n{operatingThread.Exception}");
+            Stop();
+        }
+
+        private ConcurrentDictionary<int, BlockingCollection<IEvent>> BuildOutputQueueDict(int queueCount)
+        {
+            bool dictInitOk = true;
+            var outputQueueDict = new ConcurrentDictionary<int, BlockingCollection<IEvent>>();
+            for (int i = 0; i < queueCount; i++)
+            {
+                dictInitOk = dictInitOk && outputQueueDict.TryAdd(i, new BlockingCollection<IEvent>());
+            }
+            if (!dictInitOk)
+            {   //TODO: change for custom exception
+                throw new Exception("OutputQueue collection initialization failed");
+            }
+            return outputQueueDict;
+        }
+
     }
 }

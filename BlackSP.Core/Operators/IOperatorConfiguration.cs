@@ -5,12 +5,6 @@ using System.Text;
 
 namespace BlackSP.Core.Operators
 {
-    //before/after are more checkpointing delegates though.. maybe not needed as not user defined?
-    //public delegate void OnBeforeEvent(IEvent target);
-    //public delegate void OnAfterEvent(IEvent target);
-
-    public delegate TOutput OnEvent<TInput, TOutput>(TInput target);
-
     public interface IOperatorConfiguration
     {
         int? OutputEndpointCount { get; set; }
