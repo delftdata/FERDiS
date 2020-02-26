@@ -10,6 +10,8 @@ using BlackSP.Interfaces.Serialization;
 using Moq;
 using System.Linq;
 using BlackSP.Core.Endpoints;
+using BlackSP.Core.Streams;
+using System;
 
 namespace BlackSP.Core.UnitTests.Endpoints
 {
@@ -17,7 +19,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
     {
         ISerializer _serializer;
         IList<IEvent> _testEvents;
-        IInputEndpoint<IEvent> _testEndpoint;
+        IInputEndpoint _testEndpoint;
         CancellationTokenSource _ctSource;
 
         [SetUp]
@@ -26,11 +28,18 @@ namespace BlackSP.Core.UnitTests.Endpoints
             var serializerMoq = new Mock<ISerializer>();
             serializerMoq
                 .Setup(ser => ser.Serialize(It.IsAny<Stream>(), It.IsAny<IEvent>()))
-                .Callback<Stream, IEvent>((s, e) => s.Write(new byte[] { ((TestEvent)e).Value }, 0, 1));
+                .Callback<Stream, IEvent>((s, e) =>
+                {
+                    s.WriteInt32(1);
+                    
+                    s.Write(new byte[] { ((TestEvent)e).Value }, 0, 1);
+                    Console.WriteLine($"Serialized {e.Key}");
+                });
             serializerMoq
                 .Setup(ser => ser.Deserialize<IEvent>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
                 .Returns<Stream, CancellationToken>((s, e) => {
                     int c = s.ReadByte();
+                    Console.WriteLine($"deserializing {c}");
                     return Task.FromResult(_testEvents.FirstOrDefault(ev => c == ((TestEvent)ev).Value));
                 });
             _serializer = serializerMoq.Object;
@@ -41,7 +50,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 new TestEvent{ Key = "test_key_2", Value = 2 },
             };
 
-            var endpointMoq = new Mock<BaseInputEndpoint<IEvent>>(_serializer);
+            var endpointMoq = new Mock<BaseInputEndpoint>(_serializer);
             _testEndpoint = endpointMoq.Object;//new TestInputEndpoint(_serializer);
 
             _ctSource = new CancellationTokenSource();
@@ -64,7 +73,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 //start processing from stream
                 var inputThread = Task.Run(() => _testEndpoint.Ingress(msgBuffer, _ctSource.Token));
                 //a bit hackish but we need to wait for the background thread to do its work
-                await Task.Delay(10);
+                await Task.Delay(100);
                 //cancel reading thread and wait for background thread to exit
                 _ctSource.Cancel(); 
                 await inputThread;

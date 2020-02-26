@@ -17,7 +17,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
     public class BaseOutputEndpointTests
     {
         ICollection<IEvent> _testEvents;
-        IOutputEndpoint<IEvent> _testEndpoint;
+        IOutputEndpoint _testEndpoint;
         ISerializer _serializer;
         CancellationTokenSource _ctSource;
         Stream[] _streams;
@@ -60,7 +60,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 });
             _serializer = serializerMoq.Object;
 
-            var endpointMoq = new Mock<BaseOutputEndpoint<IEvent>>(_serializer);
+            var endpointMoq = new Mock<BaseOutputEndpoint>(_serializer);
             _testEndpoint = endpointMoq.Object;
 
             _ctSource = new CancellationTokenSource();

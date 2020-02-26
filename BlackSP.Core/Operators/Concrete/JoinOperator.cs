@@ -15,7 +15,7 @@ namespace BlackSP.Core.Operators.Concrete
 
         protected override IEnumerable<IEvent> PreWindowInsert(IEvent @event)
         {
-            var matches = _currentWindow.Where(pair => pair.Value.JoinKey == @event.JoinKey);
+            var matches = _currentWindow.Where(pair => _options.Match(pair.Value, @event));
             foreach (var match in matches)
             {
                 yield return _options.Join(@event, match.Value);

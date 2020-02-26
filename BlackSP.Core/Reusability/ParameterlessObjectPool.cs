@@ -11,7 +11,7 @@ namespace BlackSP.Core.Reusability
     /// of any type that implements a parameterless constructor.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class ParameterlessObjectPool<T> : IObjectPool<T> where T : new()
+    public class ParameterlessObjectPool<T> : IObjectPool<T> where T : class, new()
     {
         private ConcurrentQueue<T> _objects;
 
@@ -31,7 +31,7 @@ namespace BlackSP.Core.Reusability
 
         public void Return(T rentee)
         {
-            if(rentee == null) { return; }
+            rentee = rentee ?? throw new ArgumentNullException(nameof(rentee));
             _objects.Enqueue(rentee);
         }
     }

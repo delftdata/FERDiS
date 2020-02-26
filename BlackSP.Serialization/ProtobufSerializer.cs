@@ -11,7 +11,7 @@ using ProtoBuf.Meta;
 
 namespace BlackSP.Serialization
 {
-    public class ProtobufSerializer : ISerializer //BaseLengthPrefixedSerializer
+    public class ProtobufSerializer : ISerializer
     {
         private TypeModel _protobuf;
         private readonly PrefixStyle _prefixStyle;
@@ -45,18 +45,5 @@ namespace BlackSP.Serialization
             _protobuf.SerializeWithLengthPrefix(outputStream, obj, typeof(T), _prefixStyle, 0);
             return Task.CompletedTask;
         }
-
-        /*
-        protected override T DoDeserialization<T>(byte[] input)
-        {
-            _protobuf.DeserializeWithLengthPrefix()
-            return default;
-        }
-
-        protected override void DoSerialization<T>(Stream outputStream, T obj)
-        {
-            outputStream.Write(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, 0, 10);
-        }
-        */
     }
 }

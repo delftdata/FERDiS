@@ -15,7 +15,5 @@ namespace BlackSP.Serialization.Events
     {
         [Index(0)]
         public virtual string Key { get; set; }
-        [Index(1)]
-        public virtual string JoinKey { get; set; }
     }
 }

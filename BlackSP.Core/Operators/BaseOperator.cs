@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Events;
 using BlackSP.Interfaces.Operators;
 
@@ -17,7 +18,9 @@ namespace BlackSP.Core.Operators
     public abstract class BaseOperator : IOperator
     {
         public BlockingCollection<IEvent> InputQueue { get; private set; }
-        public ConcurrentDictionary<int, BlockingCollection<IEvent>> OutputQueues { get; private set; }
+        private readonly ICollection<IOutputEndpoint> _outputEndpoints;
+        public CancellationToken CancellationToken => _cancellationTokenSource.Token;
+
 
         private readonly CancellationTokenSource _cancellationTokenSource;
         private bool _isRequestedToStop;
@@ -32,8 +35,8 @@ namespace BlackSP.Core.Operators
             var outputEndpointCount = config.OutputEndpointCount ?? throw new ArgumentNullException(nameof(config.OutputEndpointCount));            
 
             InputQueue = new BlockingCollection<IEvent>();
-            OutputQueues = BuildOutputQueueDict(outputEndpointCount);
 
+            _outputEndpoints = new List<IOutputEndpoint>();
             _cancellationTokenSource = new CancellationTokenSource();
             _isRequestedToStop = false;
         }
@@ -45,7 +48,7 @@ namespace BlackSP.Core.Operators
         public virtual void Start()
         {
             _isRequestedToStop = false;
-            Task.Run(StartOperating)
+            Task.Run(Operate)
                 .ContinueWith(HandleOperatingThreadException, TaskContinuationOptions.OnlyOnFaulted)
                 .ConfigureAwait(false);
         }
@@ -62,14 +65,35 @@ namespace BlackSP.Core.Operators
             }
         }
 
+        public void RegisterOutputEndpoint(IOutputEndpoint outputEndpoint)
+        {
+            _outputEndpoints.Add(outputEndpoint);
+        }
+
         protected abstract IEnumerable<IEvent> OperateOnEvent(IEvent @event);
 
-        private void StartOperating()
+        protected void EgressOutputEvents(IEnumerable<IEvent> outputs, OutputMode outputMode = OutputMode.Partition)
+        {
+            lock(_outputEndpoints)
+            {
+                foreach (var endpoint in _outputEndpoints)
+                {
+                    endpoint.Enqueue(outputs, outputMode);
+                }
+            }
+        }
+
+        /// <summary>
+        /// The core method that does the endless loop of taking in an event, applying an operation on it
+        /// and forwarding it to output
+        /// </summary>
+        private void Operate()
         {
             var inputEnumerable = InputQueue.GetConsumingEnumerable(_cancellationTokenSource.Token);
             foreach (IEvent @event in inputEnumerable)
             {
-                OperateOnEvent(@event);
+                var results = OperateOnEvent(@event) ?? throw new NullReferenceException("OperateOnEvent returned null instead of enumerable");
+                EgressOutputEvents(results);
             }
         }
 
