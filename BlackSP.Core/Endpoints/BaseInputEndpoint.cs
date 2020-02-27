@@ -19,8 +19,8 @@ namespace BlackSP.Core.Endpoints
         private ISerializer _serializer;
         private ArrayPool<byte> _msgBufferPool;
 
-        private ConcurrentQueue<IEvent> _inputQueue;
         private BlockingCollection<byte[]> _unprocessedMessages;
+        private readonly Task _messageDeserializationThread;
 
         public BaseInputEndpoint(IOperator targetOperator, ISerializer serializer, ArrayPool<byte> byteArrayPool)
         {
@@ -28,8 +28,9 @@ namespace BlackSP.Core.Endpoints
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _msgBufferPool = byteArrayPool ?? throw new ArgumentNullException(nameof(byteArrayPool));
 
-            _inputQueue = new ConcurrentQueue<IEvent>();
-            _unprocessedMessages = new BlockingCollection<byte[]>(); 
+            _unprocessedMessages = new BlockingCollection<byte[]>();
+
+            _messageDeserializationThread = Task.Run(() => DeserializeMessages(_operator.CancellationToken));
         }
 
         /// <summary>
@@ -45,9 +46,8 @@ namespace BlackSP.Core.Endpoints
             {
                 var token = linkedTokenSource.Token;
                 var streamReadingThread = Task.Run(() => ReadMessagesFromStream(s, token));
-                var messageProcessingThread = Task.Run(() => ProcessMessages(token));
 
-                var exitedThread = await Task.WhenAny(streamReadingThread, messageProcessingThread);
+                var exitedThread = await Task.WhenAny(streamReadingThread, _messageDeserializationThread);
                 await exitedThread; //await the exited thread so any thrown exception will be rethrown
             }
         }
@@ -79,13 +79,13 @@ namespace BlackSP.Core.Endpoints
             }
         }
 
-        private async Task ProcessMessages(CancellationToken t)
+        private async Task DeserializeMessages(CancellationToken t)
         {
             while(!t.IsCancellationRequested)
             {
                 //TODO: batch parallelize
                 byte[] nextMsgBuffer = _unprocessedMessages.Take(t);
-                var msgStream = new MemoryStream(nextMsgBuffer);
+                var msgStream = new MemoryStream(nextMsgBuffer); //TODO: check memory usage
                 try
                 {
                     var nextEvent = await _serializer.Deserialize<IEvent>(msgStream, t);
@@ -94,7 +94,7 @@ namespace BlackSP.Core.Endpoints
                         //TODO: log/throw?
                         continue;
                     }
-                    _inputQueue.Enqueue(nextEvent); //TODO enqueue in operator
+                    _operator.InputQueue.Add(nextEvent);
                 } 
                 finally
                 {
@@ -103,16 +103,5 @@ namespace BlackSP.Core.Endpoints
                 }
             }
         }
-
-        public bool HasInput()
-        {
-            return !_inputQueue.IsEmpty;
-        }
-
-        public IEvent GetNext()
-        {
-            return _inputQueue.TryDequeue(out IEvent result) ? result : null;
-        }
-
     }
 }

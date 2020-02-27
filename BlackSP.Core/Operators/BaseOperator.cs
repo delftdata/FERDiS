@@ -18,11 +18,11 @@ namespace BlackSP.Core.Operators
     public abstract class BaseOperator : IOperator
     {
         public BlockingCollection<IEvent> InputQueue { get; private set; }
-        private readonly ICollection<IOutputEndpoint> _outputEndpoints;
         public CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
-
+        private readonly IOperatorConfiguration _options;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly ICollection<IOutputEndpoint> _outputEndpoints;
         private bool _isRequestedToStop;
 
         /// <summary>
@@ -31,18 +31,16 @@ namespace BlackSP.Core.Operators
         /// <param name="options"></param>
         public BaseOperator(IOperatorConfiguration options)
         {
-            var config = options ?? throw new ArgumentNullException(nameof(options));
-            var outputEndpointCount = config.OutputEndpointCount ?? throw new ArgumentNullException(nameof(config.OutputEndpointCount));            
-
             InputQueue = new BlockingCollection<IEvent>();
 
+            _options = options ?? throw new ArgumentNullException(nameof(options));
             _outputEndpoints = new List<IOutputEndpoint>();
             _cancellationTokenSource = new CancellationTokenSource();
             _isRequestedToStop = false;
         }
 
         /// <summary>
-        /// Starts the operating background thread 
+        /// Starts the operating background thread<br/> 
         /// (take from input, invoke user function, put in all output queues)
         /// </summary>
         public virtual void Start()
@@ -72,6 +70,13 @@ namespace BlackSP.Core.Operators
 
         protected abstract IEnumerable<IEvent> OperateOnEvent(IEvent @event);
 
+        /// <summary>
+        /// Forwards provided output events to registered output endpoints</br>
+        /// Protected to allow extending classes to also egress events from
+        /// other channels than the primary working thread
+        /// </summary>
+        /// <param name="outputs"></param>
+        /// <param name="outputMode"></param>
         protected void EgressOutputEvents(IEnumerable<IEvent> outputs, OutputMode outputMode = OutputMode.Partition)
         {
             lock(_outputEndpoints)
@@ -107,21 +112,5 @@ namespace BlackSP.Core.Operators
             Console.WriteLine($"Exception in operating thread, proceeding to shut down. Exception:\n{operatingThread.Exception}");
             Stop();
         }
-
-        private ConcurrentDictionary<int, BlockingCollection<IEvent>> BuildOutputQueueDict(int queueCount)
-        {
-            bool dictInitOk = true;
-            var outputQueueDict = new ConcurrentDictionary<int, BlockingCollection<IEvent>>();
-            for (int i = 0; i < queueCount; i++)
-            {
-                dictInitOk = dictInitOk && outputQueueDict.TryAdd(i, new BlockingCollection<IEvent>());
-            }
-            if (!dictInitOk)
-            {   //TODO: change for custom exception
-                throw new Exception("OutputQueue collection initialization failed");
-            }
-            return outputQueueDict;
-        }
-
     }
 }

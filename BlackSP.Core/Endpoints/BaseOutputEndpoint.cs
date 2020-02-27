@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using BlackSP.Interfaces.Operators;
 using System.Buffers;
 using Microsoft.IO;
+using BlackSP.Core.Streams;
+using System.Linq;
 
 namespace BlackSP.Core.Endpoints
 {
@@ -22,55 +24,26 @@ namespace BlackSP.Core.Endpoints
         //default BlockingCollection implementation is a ConcurrentQueue
         protected IDictionary<int, BlockingCollection<MemoryStream>> _shardedMessageQueues;
 
-        protected int _shardCount;
+        protected int? _shardCount;
 
         private readonly ISerializer _serializer;
         private readonly IOperator _operator;
         private readonly RecyclableMemoryStreamManager _msgBufferPool;
-
         private readonly Task _messageSerializationThread;
 
         public BaseOutputEndpoint(IOperator targetOperator, ISerializer serializer, RecyclableMemoryStreamManager memStreamPool)
         {
-            _operator = targetOperator;//todo: throw
-            _serializer = serializer;//todo: throw
-            _msgBufferPool = memStreamPool;//todo: throw
+            _operator = targetOperator ?? throw new ArgumentNullException(nameof(targetOperator));
+            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+            _msgBufferPool = memStreamPool ?? throw new ArgumentNullException(nameof(memStreamPool));
 
             _outputQueue = new BlockingCollection<Tuple<IEvent, OutputMode>>();
-
-            _shardCount = 0;
             _shardedMessageQueues = new ConcurrentDictionary<int, BlockingCollection<MemoryStream>>();
 
             //The message serialization thread will only die with the output endpoint itself
-            //this only happens when the operator crashes (and if the runtime gets killed we dont care anwyay)
-            _messageSerializationThread = Task.Run(() => PrepareMessages(_operator.CancellationToken));
-        }
-
-        /// <summary>
-        /// Registers a remote shard with given id.
-        /// An outputqueue is provisioned to be used
-        /// during Egress
-        /// </summary>
-        /// <param name="remoteShardId"></param>
-        /// <returns></returns>
-        public bool RegisterRemoteShard(int remoteShardId)
-        {
-            if(_shardedMessageQueues.ContainsKey(remoteShardId))
-            {
-                return false;
-            }
-            _shardedMessageQueues.Add(remoteShardId, new BlockingCollection<MemoryStream>());
-            return true;
-        }
-
-        /// <summary>
-        /// Unregisters a remote shard with given id
-        /// </summary>
-        /// <param name="remoteShardId"></param>
-        /// <returns></returns>
-        public bool UnregisterRemoteShard(int remoteShardId)
-        {
-            return _shardedMessageQueues.Remove(remoteShardId);
+            //this should only happen when the operator crashes (if the runtime gets killed we dont care anyway)
+            _messageSerializationThread = Task.Run(() => SerializeEvents(_operator.CancellationToken));
+            _operator.RegisterOutputEndpoint(this);
         }
 
         /// <summary>
@@ -95,7 +68,64 @@ namespace BlackSP.Core.Endpoints
             }
         }
 
-        private async Task WriteMessagesToStream(Stream outputStream, int remoteShardId, CancellationToken t)
+        public void Enqueue(IEvent @event, OutputMode mode)
+        {
+            _outputQueue.Add(new Tuple<IEvent, OutputMode>(@event, mode));
+        }
+
+        public void Enqueue(IEnumerable<IEvent> events, OutputMode mode)
+        {
+            foreach (var @event in events)
+            {
+                Enqueue(@event, mode);
+            }
+        }
+
+        /// <summary>
+        /// Used in partitioning output over shards
+        /// </summary>
+        /// <param name="shardCount"></param>
+        public void SetRemoteShardCount(int shardCount)
+        {
+            _shardCount = shardCount;
+        }
+
+        /// <summary>
+        /// Registers a remote shard with given id.
+        /// An outputqueue is provisioned to be used
+        /// during Egress
+        /// </summary>
+        /// <param name="remoteShardId"></param>
+        /// <returns></returns>
+        public bool RegisterRemoteShard(int remoteShardId)
+        {
+            if (_shardedMessageQueues.ContainsKey(remoteShardId))
+            {
+                return false;
+            }
+            _shardedMessageQueues.Add(remoteShardId, new BlockingCollection<MemoryStream>());
+            return true;
+        }
+
+        /// <summary>
+        /// Unregisters a remote shard with given id
+        /// </summary>
+        /// <param name="remoteShardId"></param>
+        /// <returns></returns>
+        public bool UnregisterRemoteShard(int remoteShardId)
+        {
+            return _shardedMessageQueues.Remove(remoteShardId);
+        }
+
+        /// <summary>
+        /// Dequeues serialized messages from the appropriate shard queue
+        /// and copies the contents with length prefixed to the output stream
+        /// </summary>
+        /// <param name="outputStream"></param>
+        /// <param name="remoteShardId"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        private Task WriteMessagesToStream(Stream outputStream, int remoteShardId, CancellationToken t)
         {
             BlockingCollection<MemoryStream> msgBuffers;
             if (!_shardedMessageQueues.TryGetValue(remoteShardId, out msgBuffers))
@@ -109,70 +139,61 @@ namespace BlackSP.Core.Endpoints
                 //TODO: consider error scenario where connection closes to not lose event.. or CP?
                 
                 var nextMsgBuffer = msgBuffers.Take(t);
+                outputStream.WriteInt32(Convert.ToInt32(nextMsgBuffer.Length));
+                nextMsgBuffer.Seek(0, SeekOrigin.Begin);
                 nextMsgBuffer.CopyTo(outputStream);
 
-                nextMsgBuffer.SetLength(0); //TODO: check if should do before or after serializing
-                nextMsgBuffer.Dispose(); //return buffer to memory manager
+                nextMsgBuffer.SetLength(0);
+                nextMsgBuffer.Dispose(); //return buffer to manager
             }
         }
 
-        private async Task PrepareMessages(CancellationToken t)
+        /// <summary>
+        /// Serializes events from the outputqueue
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        private async Task SerializeEvents(CancellationToken t)
         {
-            while(true)
+            while(true) //TODO: batch serialize loop
             {
                 t.ThrowIfCancellationRequested();
-                
                 var nextEvent = _outputQueue.Take(t);
-
+                
                 IEvent @event = nextEvent.Item1;
                 OutputMode outputMode = nextEvent.Item2;
 
-                var buffer = _msgBufferPool.GetStream();
-                await _serializer.Serialize(buffer, @event);
-
-                switch (outputMode)
-                {
-                    case OutputMode.Broadcast:
-                        foreach(var shardQueue in _shardedMessageQueues.Values)
-                        {
-                            shardQueue.Add(buffer);
-                            //TODO: how to deal with situation:
-                            // - enqueue memstream in 2 queues
-                            // - first copies to network and disposes stream
-                            // - second tries to copy --> ObjectDisposedException..
-                        }
-                        break;
-                    case OutputMode.Partition:
-                        throw new NotImplementedException("TODO: hash partitioning");
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(outputMode));
-                }
-
-                //TODO: enqueue in correct/all shard queue
+                var msgBuffer = _msgBufferPool.GetStream();
+                await _serializer.Serialize(msgBuffer, @event);
+                EnqueueMessageInAppropriateShardQueue(msgBuffer, outputMode);
             }
         }
 
-
-        /// <summary>
-        /// Used in partitioning output over shards
-        /// </summary>
-        /// <param name="shardCount"></param>
-        public void SetRemoteShardCount(int shardCount)
+        private void EnqueueMessageInAppropriateShardQueue(MemoryStream msgBuffer, OutputMode outputMode)
         {
-            _shardCount = shardCount;
-        }
-
-        public void Enqueue(IEvent @event, OutputMode mode)
-        {
-            _outputQueue.Add(new Tuple<IEvent, OutputMode>(@event, mode));
-        }
-
-        public void Enqueue(IEnumerable<IEvent> events, OutputMode mode)
-        {
-            foreach(var @event in events)
+            switch (outputMode)
             {
-                Enqueue(@event, mode);
+                case OutputMode.Broadcast:
+                    //strategy: copy stream for each shard
+                    //why: avoid risk of two threads trying to dispose the same stream, making it unavailable to the other
+                    Parallel.ForEach(_shardedMessageQueues, (kvShard) =>
+                    {   //TODO: consider sequentializing and using msgBuffer for last shardQueue (1 less copy)
+                        var shardQueue = kvShard.Value;
+                        var bufferCopy = _msgBufferPool.GetStream(null, Convert.ToInt32(msgBuffer.Length));
+                        msgBuffer.Seek(0, SeekOrigin.Begin);
+                        msgBuffer.CopyTo(bufferCopy);
+                        shardQueue.Add(bufferCopy);
+                    });
+                    msgBuffer.Dispose(); //return buffer to recyclemanager
+                    break;
+                case OutputMode.Partition:
+                    int x = _shardCount ?? throw new ArgumentNullException("shard count not set, see: 'SetRemoteShardCount(int)'");
+                    int target = 0; //TODO: hash partition function
+                    var targetShardQueue = _shardedMessageQueues[target];
+                    targetShardQueue.Add(msgBuffer);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(outputMode));
             }
         }
     }

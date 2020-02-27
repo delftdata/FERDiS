@@ -1,4 +1,5 @@
 using BlackSP.Core.Endpoints;
+using BlackSP.Core.Streams;
 using BlackSP.Core.UnitTests.Events;
 using NUnit.Framework;
 using System.IO;
@@ -11,6 +12,9 @@ using System.Collections.Generic;
 using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Events;
 using BlackSP.Interfaces.Serialization;
+using BlackSP.Interfaces.Operators;
+using Microsoft.IO;
+using BlackSP.Core.UnitTests.Utilities;
 
 namespace BlackSP.Core.UnitTests.Endpoints
 {
@@ -19,7 +23,8 @@ namespace BlackSP.Core.UnitTests.Endpoints
         ICollection<IEvent> _testEvents;
         IOutputEndpoint _testEndpoint;
         ISerializer _serializer;
-        CancellationTokenSource _ctSource;
+        CancellationTokenSource _endpointCtSource;
+        CancellationTokenSource _operatorCtSource;
         Stream[] _streams;
         private int _streamCount;
 
@@ -40,6 +45,8 @@ namespace BlackSP.Core.UnitTests.Endpoints
             {
                 _streams[i] = new MemoryStream();
             }
+            _endpointCtSource = new CancellationTokenSource();
+            _operatorCtSource = new CancellationTokenSource();
 
             _testEvents = new List<IEvent>() {
                 new TestEvent{ Key = "test_key_0", Value = 0 },
@@ -47,23 +54,17 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 new TestEvent{ Key = "test_key_2", Value = 2 },
             };
 
-            var serializerMoq = new Mock<ISerializer>();
-            serializerMoq
-                .Setup(ser => ser.Serialize(It.IsAny<Stream>(), It.IsAny<IEvent>()))
-                .Callback<Stream, IEvent>((s, e) => s.Write(new byte[] { ((TestEvent)e).Value }, 0, 1));
-            serializerMoq
-                .Setup(ser => ser.Deserialize<IEvent>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
-                .Returns<Stream, CancellationToken>((s, e) =>
-                {
-                    int c = s.ReadByte();
-                    return Task.FromResult(_testEvents.FirstOrDefault(ev => c == ((TestEvent)ev).Value));
-                });
+            var serializerMoq = MockBuilder.MockSerializer(_testEvents);
             _serializer = serializerMoq.Object;
 
-            var endpointMoq = new Mock<BaseOutputEndpoint>(_serializer);
-            _testEndpoint = endpointMoq.Object;
+            var operatorMoq = new Mock<IOperator>();
+            operatorMoq.Setup(o => o.CancellationToken).Returns(() => _operatorCtSource.Token);
 
-            _ctSource = new CancellationTokenSource();
+            var recycleMemStreamManager = new RecyclableMemoryStreamManager();
+
+            //mock base cause its abstract
+            var endpointMoq = new Mock<BaseOutputEndpoint>(operatorMoq.Object, _serializer, recycleMemStreamManager);
+            _testEndpoint = endpointMoq.Object;
         }
 
         [TearDown]
@@ -80,20 +81,26 @@ namespace BlackSP.Core.UnitTests.Endpoints
             var fakeShardId = 0;
             Assert.IsTrue(_testEndpoint.RegisterRemoteShard(fakeShardId), "Failed to register remote shard");
 
-            var thread = Task.Run(async () => await _testEndpoint.Egress(_streams[0], fakeShardId, _ctSource.Token));
-            _testEndpoint.EnqueueAll(_testEvents.ElementAt(0));
+            var thread = Task.Run(async () => await _testEndpoint.Egress(_streams[0], fakeShardId, _endpointCtSource.Token));
+            _testEndpoint.Enqueue(_testEvents.ElementAt(0), OutputMode.Broadcast);
+            
+            await Task.Delay(50); //wait for threads to do work
+
+            _streams[0].Seek(0, SeekOrigin.Begin);
+
+            //assertions
+            Assert.AreEqual(2, _streams[0].Length);
+            await _streams[0].ReadInt32Async(); //strip leading int
+            var nextEventFromStream = await _serializer.Deserialize<IEvent>(_streams[0], _endpointCtSource.Token);
+            Assert.AreEqual(_testEvents.ElementAt(0), nextEventFromStream);
+
+            //teardown
             try
             {
-                await Task.Delay(10);
-                _ctSource.Cancel();
+                _endpointCtSource.Cancel();
                 await thread;
             }
             catch (OperationCanceledException e) { };
-
-            _streams[0].Seek(0, SeekOrigin.Begin);
-            Assert.AreEqual(1, _streams[0].Length);
-            var nextEventFromStream = await _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token);
-            Assert.AreEqual(_testEvents.ElementAt(0), nextEventFromStream);
         }
 
 
@@ -107,29 +114,35 @@ namespace BlackSP.Core.UnitTests.Endpoints
             foreach (var shardId in fakeShardIds)
             {
                 Assert.IsTrue(_testEndpoint.RegisterRemoteShard(shardId), "Failed to register remote shard");
-                threads[shardId] = Task.Run(async () => await _testEndpoint.Egress(_streams[shardId], shardId, _ctSource.Token));
+                threads[shardId] = Task.Run(async () => await _testEndpoint.Egress(_streams[shardId], shardId, _endpointCtSource.Token));
             }
-            _testEndpoint.EnqueueAll(_testEvents.ElementAt(0));
-            _testEndpoint.EnqueueAll(_testEvents.ElementAt(1));
+            _testEndpoint.Enqueue(_testEvents.ElementAt(0), OutputMode.Broadcast);
+            _testEndpoint.Enqueue(_testEvents.ElementAt(1), OutputMode.Broadcast);
 
+            await Task.Delay(50); //allow threads to work
+
+            foreach(var shardId in fakeShardIds)
+            {
+                _streams[shardId].Seek(0, SeekOrigin.Begin); //to allow reading the streams
+                //do assertions
+                Assert.AreEqual(4, _streams[shardId].Length); //1 byte for leading int + 1 byte for event (only works like this in test)
+                
+                await _streams[shardId].ReadInt32Async(); //strip leading int
+                var nextEvent = await _serializer.Deserialize<IEvent>(_streams[shardId], _endpointCtSource.Token);
+                Assert.AreEqual(_testEvents.ElementAt(0).Key, nextEvent.Key, $"Mismatch on 1st event for shard {shardId}");
+                
+                await _streams[shardId].ReadInt32Async(); //strip leading int
+                nextEvent = await _serializer.Deserialize<IEvent>(_streams[shardId], _endpointCtSource.Token);
+                Assert.AreEqual(_testEvents.ElementAt(1).Key, nextEvent.Key, $"Mismatch on 2nd event for shard {shardId}");
+            }
+
+            //teardown
             try
             {
-                await Task.Delay(100);
-                _ctSource.Cancel();
+                _endpointCtSource.Cancel();
                 await Task.WhenAll(threads);
             }
             catch (OperationCanceledException) { };
-
-            _streams[0].Seek(0, SeekOrigin.Begin);
-            _streams[1].Seek(0, SeekOrigin.Begin);
-
-            Assert.AreEqual(2, _streams[0].Length);
-            Assert.AreEqual(_testEvents.ElementAt(0), await _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token));
-            Assert.AreEqual(_testEvents.ElementAt(1), await _serializer.Deserialize<IEvent>(_streams[0], _ctSource.Token));
-
-            Assert.AreEqual(2, _streams[1].Length);
-            Assert.AreEqual(_testEvents.ElementAt(0), await _serializer.Deserialize<IEvent>(_streams[1], _ctSource.Token));
-            Assert.AreEqual(_testEvents.ElementAt(1), await _serializer.Deserialize<IEvent>(_streams[1], _ctSource.Token));
         }
 
         [Test]

@@ -7,7 +7,6 @@ namespace BlackSP.Core.Operators
 {
     public interface IOperatorConfiguration
     {
-        int? OutputEndpointCount { get; set; }
     }
 
     public interface IFilterOperatorConfiguration : IOperatorConfiguration

@@ -47,13 +47,7 @@ namespace BlackSP.Core.Operators
         {
             var previousWindow = CloseCurrentWindow();
             var operatorOutput = ProcessClosedWindow(previousWindow) ?? throw new Exception("ProcessClosedWindow returned null, expected IEnumerable");
-            foreach (var @event in operatorOutput)
-            {
-                foreach(var outputQueue in OutputQueues.Values)
-                {
-                    outputQueue.Add(@event);
-                }
-            }
+            EgressOutputEvents(operatorOutput);
         }
 
         private IEnumerable<IEvent> CloseCurrentWindow()

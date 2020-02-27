@@ -10,19 +10,14 @@ namespace BlackSP.Interfaces.Endpoints
 {
     public interface IInputEndpoint
     {
-
         /// <summary>
-        /// Fetches deserialized event from input channel
+        /// Starts background threads that read messages from the stream
+        /// and serializes them before enqueueing the results in the 
+        /// inputqueue of linked operator
         /// </summary>
+        /// <param name="s"></param>
+        /// <param name="t"></param>
         /// <returns></returns>
-        IEvent GetNext();
-
-        /// <summary>
-        /// Check if input channel has any deserialized input ready
-        /// </summary>
-        /// <returns></returns>
-        bool HasInput();
-
         Task Ingress(Stream s, CancellationToken t);
     }
 }

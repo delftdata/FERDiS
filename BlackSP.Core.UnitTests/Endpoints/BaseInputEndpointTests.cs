@@ -12,37 +12,25 @@ using System.Linq;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Streams;
 using System;
+using BlackSP.Core.UnitTests.Utilities;
+using System.Buffers;
+using BlackSP.Interfaces.Operators;
 
 namespace BlackSP.Core.UnitTests.Endpoints
 {
     public class BaseInputEndpointTests
     {
+        IOperator _targetOperator;
         ISerializer _serializer;
         IList<IEvent> _testEvents;
         IInputEndpoint _testEndpoint;
-        CancellationTokenSource _ctSource;
-
+        CancellationTokenSource _endpointCtSource;
+        CancellationTokenSource _operatorCtSource;
         [SetUp]
         public void Setup()
         {
-            var serializerMoq = new Mock<ISerializer>();
-            serializerMoq
-                .Setup(ser => ser.Serialize(It.IsAny<Stream>(), It.IsAny<IEvent>()))
-                .Callback<Stream, IEvent>((s, e) =>
-                {
-                    s.WriteInt32(1);
-                    
-                    s.Write(new byte[] { ((TestEvent)e).Value }, 0, 1);
-                    Console.WriteLine($"Serialized {e.Key}");
-                });
-            serializerMoq
-                .Setup(ser => ser.Deserialize<IEvent>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
-                .Returns<Stream, CancellationToken>((s, e) => {
-                    int c = s.ReadByte();
-                    Console.WriteLine($"deserializing {c}");
-                    return Task.FromResult(_testEvents.FirstOrDefault(ev => c == ((TestEvent)ev).Value));
-                });
-            _serializer = serializerMoq.Object;
+            _endpointCtSource = new CancellationTokenSource();
+            _operatorCtSource = new CancellationTokenSource();
 
             _testEvents = new List<IEvent>() {
                 new TestEvent{ Key = "test_key_0", Value = 0 },
@@ -50,41 +38,60 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 new TestEvent{ Key = "test_key_2", Value = 2 },
             };
 
-            var endpointMoq = new Mock<BaseInputEndpoint>(_serializer);
-            _testEndpoint = endpointMoq.Object;//new TestInputEndpoint(_serializer);
+            var serializerMoq = MockBuilder.MockSerializer(_testEvents);
+            _serializer = serializerMoq.Object;
 
-            _ctSource = new CancellationTokenSource();
+            var operatorMoq = MockBuilder.MockOperator(_operatorCtSource);
+            _targetOperator = operatorMoq.Object;
+
+            var arrayPool = ArrayPool<byte>.Create();
+            var endpointMoq = new Mock<BaseInputEndpoint>(_targetOperator, _serializer, arrayPool);
+            _testEndpoint = endpointMoq.Object;
+
+            
         }
 
         [Test]
         public async Task Ingress_Should_ReturnEventsFromStream()
         {
-            using (Stream msgBuffer = new MemoryStream())
+            using (Stream testIngressStream = new MemoryStream())
             {
                 //write test event to stream
                 var eventEnumerator = _testEvents.GetEnumerator();
                 while(eventEnumerator.MoveNext())
                 {
-                    IEvent @event = eventEnumerator.Current;
-                    await _serializer.Serialize(msgBuffer, @event);
+                    using(Stream tempBuffer = new MemoryStream())
+                    {
+                        IEvent @event = eventEnumerator.Current;
+                        await _serializer.Serialize(tempBuffer, @event);
+                        testIngressStream.WriteInt32((int)tempBuffer.Length);
+                        tempBuffer.Seek(0, SeekOrigin.Begin);
+                        tempBuffer.CopyTo(testIngressStream);
+                    }
+                    
                 }
                 //Set position back to start of stream to be able to read the written messages
-                msgBuffer.Seek(0, SeekOrigin.Begin);
+                testIngressStream.Seek(0, SeekOrigin.Begin);
                 //start processing from stream
-                var inputThread = Task.Run(() => _testEndpoint.Ingress(msgBuffer, _ctSource.Token));
+                var inputThread = Task.Run(() => _testEndpoint.Ingress(testIngressStream, _endpointCtSource.Token));
                 //a bit hackish but we need to wait for the background thread to do its work
                 await Task.Delay(100);
-                //cancel reading thread and wait for background thread to exit
-                _ctSource.Cancel(); 
-                await inputThread;
+                
                 //assertions
                 foreach (var @event in _testEvents)
                 {
-                    Assert.IsTrue(_testEndpoint.HasInput(), "No Input");
-                    var resultEvent = (TestEvent)_testEndpoint.GetNext();
+                    Assert.IsTrue(_targetOperator.InputQueue.Any(), "Empty input queue");
+                    var resultEvent = _targetOperator.InputQueue.Take();//do Any() first to prevent blocking on Take()
                     Assert.IsNotNull(resultEvent, "Event is null");
-                    Assert.AreEqual(resultEvent.Value, ((TestEvent)@event).Value, "Unequal values");
+                    Assert.AreEqual(@event.Key, resultEvent.Key);
+                    
+                    Assert.AreEqual(((TestEvent)resultEvent).Value, ((TestEvent)@event).Value, "Unequal values");
                 }
+
+                //teardown
+                //cancel reading thread and wait for background thread to exit
+                _endpointCtSource.Cancel();
+                await inputThread;
             }
         }
 
@@ -94,16 +101,17 @@ namespace BlackSP.Core.UnitTests.Endpoints
             using (Stream inputStream = new MemoryStream())
             {
                 //start processing from stream
-                var inputThread = Task.Run(() => _testEndpoint.Ingress(inputStream, _ctSource.Token));
+                var inputThread = Task.Run(() => _testEndpoint.Ingress(inputStream, _endpointCtSource.Token));
                 //Let the background thread operate for a bit..
                 await Task.Delay(100);
                 //cancel reading thread
-                _ctSource.Cancel();
+
+                //teardown
+                _endpointCtSource.Cancel();
                 await inputThread;
             }
             //assertions
-            Assert.IsFalse(_testEndpoint.HasInput());
-            Assert.IsNull(_testEndpoint.GetNext());
+            Assert.IsFalse(_targetOperator.InputQueue.Any());            
         }
 
     }
