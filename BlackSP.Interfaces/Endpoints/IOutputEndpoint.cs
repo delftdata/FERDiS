@@ -39,7 +39,7 @@ namespace BlackSP.Interfaces.Endpoints
         Task Egress(Stream outputStream, int remoteShardId, CancellationToken t);
 
         bool RegisterRemoteShard(int remoteShardId);
-
         bool UnregisterRemoteShard(int remoteShardId);
+        void SetRemoteShardCount(int shardCount);
     }
 }

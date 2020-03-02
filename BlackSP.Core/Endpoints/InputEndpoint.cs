@@ -13,7 +13,7 @@ using BlackSP.Interfaces.Serialization;
 
 namespace BlackSP.Core.Endpoints
 {
-    public class BaseInputEndpoint : IInputEndpoint
+    public class InputEndpoint : IInputEndpoint
     {
         private IOperator _operator;
         private ISerializer _serializer;
@@ -22,7 +22,7 @@ namespace BlackSP.Core.Endpoints
         private BlockingCollection<byte[]> _unprocessedMessages;
         private readonly Task _messageDeserializationThread;
 
-        public BaseInputEndpoint(IOperator targetOperator, ISerializer serializer, ArrayPool<byte> byteArrayPool)
+        public InputEndpoint(IOperator targetOperator, ISerializer serializer, ArrayPool<byte> byteArrayPool)
         {
             _operator = targetOperator ?? throw new ArgumentNullException(nameof(targetOperator));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));

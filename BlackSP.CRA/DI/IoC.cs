@@ -4,8 +4,11 @@ using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Operators;
 using BlackSP.Interfaces.Serialization;
 using CRA.ClientLibrary;
+using Microsoft.IO;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace BlackSP.CRA.DI
@@ -13,10 +16,11 @@ namespace BlackSP.CRA.DI
     public class IoC
     {
         private ContainerBuilder _builder;
-
+        private IEnumerable<Type> _typesInRuntime;
         public IoC()
         {
             _builder = new ContainerBuilder();
+            _typesInRuntime = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes());
         }
 
         public IContainer BuildContainer()
@@ -24,14 +28,48 @@ namespace BlackSP.CRA.DI
             return _builder.Build();
         }
 
-        public IoC RegisterOperator(Type operatorType, IOperatorConfiguration config)
+        public IoC RegisterBlackSPComponents()
+        {
+            RegisterAllConcreteClassesOfType<IOperator>(true);
+            RegisterAllConcreteClassesOfType<IInputEndpoint>();
+            RegisterAllConcreteClassesOfType<IOutputEndpoint>();
+            RegisterAllConcreteClassesOfType<ISerializer>();
+
+            var bspArrayPool = ArrayPool<byte>.Create();
+            _builder.RegisterInstance(bspArrayPool); //register one arraypool for all components to share
+
+            var bspMemoryStreamPool = new RecyclableMemoryStreamManager();
+            _builder.RegisterInstance(bspMemoryStreamPool); //register one memorystreampool for all components to share
+
+            return this;
+        }
+
+        public IoC RegisterCRAComponents()
+        {
+            //No need to register types of VertexBase, as this gets instantiated by CRA
+            RegisterAllConcreteClassesOfType<IAsyncShardedVertexInputEndpoint>();
+            RegisterAllConcreteClassesOfType<IAsyncShardedVertexOutputEndpoint>();
+            return this;
+        }
+
+        private void RegisterAllConcreteClassesOfType<T>(bool asSingleton = false)
+        {
+            var concreteTypes = _typesInRuntime
+                .Where(p => typeof(T).IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
+
+            foreach (var concreteType in concreteTypes)
+            {
+                var registration = _builder.RegisterType(concreteType).As<T>();
+                if (asSingleton)
+                {
+                    registration.SingleInstance();
+                }
+            }
+        }
+
+        public IoC RegisterOperatorConfiguration(IOperatorConfiguration config)
         {
             config = config ?? throw new ArgumentNullException(nameof(config));
-
-            _builder
-                .RegisterType(operatorType)
-                .As<IOperator>()
-                .SingleInstance();
 
             var configType = config.GetType();
             var asTypes = configType.GetInterfaces();
@@ -41,35 +79,6 @@ namespace BlackSP.CRA.DI
                 .As(asTypes)
                 .SingleInstance();
 
-            return this;
-        }
-
-        public IoC RegisterInputEndpoint(Type inputEndpointType)
-        {
-            _builder
-                .RegisterType(inputEndpointType)
-                .As<IInputEndpoint>()
-                .As<IAsyncVertexInputEndpoint>()
-                .SingleInstance();
-            return this;
-        }
-
-        public IoC RegisterOutputEndpoint(Type outputEndpointType)
-        {
-            _builder
-                .RegisterType(outputEndpointType)
-                .As<IOutputEndpoint>()
-                .As<IAsyncVertexOutputEndpoint>()
-                .SingleInstance();
-            return this;
-        }
-
-        public IoC RegisterSerializer(Type serializerType)
-        {
-            _builder
-                .RegisterType(serializerType)
-                .As<ISerializer>()
-                .InstancePerDependency();
             return this;
         }
     }

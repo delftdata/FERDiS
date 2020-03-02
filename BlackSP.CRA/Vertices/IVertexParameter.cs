@@ -9,12 +9,19 @@ namespace BlackSP.CRA.Vertices
     public interface IVertexParameter
     {
         /// <summary>
+        /// How many input endpoints to start
+        /// </summary>
+        int InputEndpointCount { get; set; }
+
+        /// <summary>
+        /// How many output endpoints to start
+        /// </summary>
+        int OutputEndpointCount { get; set; }
+        
+        /// <summary>
         /// Holds a type reference to the operator the target vertex should instantiate
         /// </summary>
         Type OperatorType { get; set; }
-
-
-        //TODO: check if needed?? Type OperatorConfigurationType { get; set; }
 
         /// <summary>
         /// Holds an object reference to the operator configuration required to instantiate

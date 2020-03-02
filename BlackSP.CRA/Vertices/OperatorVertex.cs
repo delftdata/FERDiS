@@ -1,4 +1,6 @@
 ﻿using Autofac;
+using BlackSP.Core.Endpoints;
+using BlackSP.Core.Operators;
 using BlackSP.CRA.DI;
 using BlackSP.CRA.Endpoints;
 using BlackSP.CRA.Events;
@@ -17,51 +19,56 @@ namespace BlackSP.CRA.Vertices
     {
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
+        private IOperator _bspOperator;
 
+        public OperatorVertex()
+        {
+
+        }
+        
         ~OperatorVertex() {
             Dispose(false);
         }
 
+        private void DoTypeInitialization(IOperatorConfiguration config)
+        {
+            _dependencyContainer = new IoC()
+                .RegisterBlackSPComponents()
+                .RegisterCRAComponents()
+                .RegisterOperatorConfiguration(config)
+                .BuildContainer();
+            // register logger?
+            
+            Console.WriteLine("Dependencies registered");
+            
+            _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();
+        }
+
         public override Task InitializeAsync(int shardId, ShardingInfo shardingInfo, object vertexParameter)
         {
-            Console.Write("Vertex Initialization.. ");
+            Console.WriteLine("Installing dependency container");
             IVertexParameter param = vertexParameter as IVertexParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IVertexParameter)}"); ;
-            
-            _dependencyContainer = new IoC()
-                .RegisterOperator(param.OperatorType, param.OperatorConfiguration)
-                .RegisterSerializer(typeof(ProtobufSerializer))
-                .RegisterInputEndpoint(typeof(VertexInputEndpoint))
-                .RegisterOutputEndpoint(typeof(VertexOutputEndpoint))
-                .BuildContainer();
-            _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();
-            
-            //TODO: Configure IOC Container (should use types from vertex param?)
-            //      + register serializer type
-            //      + register operator type
-            //      + register logger?
-            //      + where to get user delegate for operator from?
-            //      + register endpoint input/output (not configurable, per dependency?)
-            //TODO: Use Autofac startup to launch operator thread
-            //      + keep internal cancellationtokensource in operator
-            //      + on exception, cancel + log + throw exception or exit from thread
-            //TODO: endpoints should keep an eye on operator cancellationtoken
-            //      + join it with external cancellationtoken (CRA)
-            //      + exit ingress/egress on cancellation (throw)
 
-            //TODO: Resolve required instances of endpoints
-            //      + register them with CRA
-            
+            //TODO: better method name, spins up autofac IoC container
+            DoTypeInitialization(param.OperatorConfiguration);
+
+            //TODO: resolve amount required (from vertex parameter)
             var input = _vertexLifetimeScope.Resolve<IAsyncVertexInputEndpoint>();
             AddAsyncInputEndpoint($"input", input);
-            
+
+            //TODO: resolve amount required (from vertex parameter)
             var output = _vertexLifetimeScope.Resolve<IAsyncVertexOutputEndpoint>();
             AddAsyncOutputEndpoint($"output", output);
+            
+            Type operatorType = param.OperatorType;
+            _bspOperator = _vertexLifetimeScope.Resolve(operatorType) as IOperator 
+                ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be converted to {nameof(IOperator)}");
 
-            var @operator = _vertexLifetimeScope.Resolve<IOperator>();
+            _bspOperator.Start();
 
             //TODO: remove test crap            
-            SpawnLoadGeneratingThread(input as VertexInputEndpoint, output as VertexOutputEndpoint);
-            SpawnPassthroughThread(input as VertexInputEndpoint, output as VertexOutputEndpoint);
+            //SpawnLoadGeneratingThread(input as VertexInputEndpoint, output as VertexOutputEndpoint);
+            //SpawnPassthroughThread(input as VertexInputEndpoint, output as VertexOutputEndpoint);
             
             Console.WriteLine("Done");
             return Task.CompletedTask;
@@ -82,7 +89,7 @@ namespace BlackSP.CRA.Vertices
             base.Dispose(disposing);
         }
 
-        private void SpawnPassthroughThread(VertexInputEndpoint input, VertexOutputEndpoint output)
+        /*private void SpawnPassthroughThread(VertexInputEndpoint input, VertexOutputEndpoint output)
         {   //TODO: delete method once served its purpose
             Task.Run(async () =>
             {
@@ -98,9 +105,9 @@ namespace BlackSP.CRA.Vertices
                     }
                 }
             });
-        }
+        }*/
 
-        private void SpawnLoadGeneratingThread(VertexInputEndpoint input, VertexOutputEndpoint output)
+        /*private void SpawnLoadGeneratingThread(VertexInputEndpoint input, VertexOutputEndpoint output)
         {   //TODO: delete method once served its purpose
             Task.Run(async () =>
             {
@@ -133,6 +140,6 @@ namespace BlackSP.CRA.Vertices
                     sw.Restart();
                 }
             });
-        }
+        }*/
     }
 }

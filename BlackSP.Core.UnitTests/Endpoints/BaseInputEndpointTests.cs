@@ -45,7 +45,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
             _targetOperator = operatorMoq.Object;
 
             var arrayPool = ArrayPool<byte>.Create();
-            var endpointMoq = new Mock<BaseInputEndpoint>(_targetOperator, _serializer, arrayPool);
+            var endpointMoq = new Mock<InputEndpoint>(_targetOperator, _serializer, arrayPool);
             _testEndpoint = endpointMoq.Object;
 
             

@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Endpoints;
+using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Events;
 using BlackSP.Interfaces.Serialization;
 using CRA.ClientLibrary;
@@ -9,34 +10,38 @@ using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Endpoints
 {
-    public class VertexOutputEndpoint : BaseOutputEndpoint, IAsyncShardedVertexOutputEndpoint
+    public class VertexOutputEndpoint : IAsyncShardedVertexOutputEndpoint
     {
         public bool IsConnected { get; set; }
+        private readonly IOutputEndpoint _bspOutputEndpoint;
 
-        public VertexOutputEndpoint(ISerializer serializer) : base(serializer)
+
+        public VertexOutputEndpoint(IOutputEndpoint outputEndpoint)
         {
-            
+            _bspOutputEndpoint = outputEndpoint ?? throw new ArgumentNullException(nameof(outputEndpoint));
         }
 
         public async Task ToStreamAsync(Stream stream, string otherVertex, int otherShardId, string otherEndpoint, CancellationToken token)
         {
-            Console.WriteLine("Starting output channel");
             try
             {
                 //CRA invokes current method on a background thread 
                 //so just invoke Egress on this thread
+                Console.WriteLine($"Output channel {otherVertex}${otherEndpoint}${otherShardId} starting");
                 IsConnected = true;
-                await Egress(stream, otherShardId, token);
-                IsConnected = false;
+                await _bspOutputEndpoint.Egress(stream, otherShardId, token);
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Exception on Egress thread for connection {otherVertex}${otherEndpoint}${otherShardId}");
+                Console.WriteLine($"Output channel {otherVertex}${otherEndpoint}${otherShardId} exception");
                 Console.WriteLine(e.ToString());
-                IsConnected = false;
                 throw;
             }
-            Console.WriteLine("Stopped output channel");
+            finally
+            {
+                Console.WriteLine($"Output channel {otherVertex}${otherEndpoint}${otherShardId} stopped");
+                IsConnected = false;
+            }
             token.ThrowIfCancellationRequested();
         }
 
@@ -45,19 +50,19 @@ namespace BlackSP.CRA.Endpoints
             Console.WriteLine($"Updating Sharding info in {this.GetType().Name}");
             foreach (var shardId in shardingInfo.AddedShards)
             {
-                RegisterRemoteShard(shardId);
+                _bspOutputEndpoint.RegisterRemoteShard(shardId);
             }
             foreach(var shardId in shardingInfo.RemovedShards)
             {
-                UnregisterRemoteShard(shardId);
+                _bspOutputEndpoint.UnregisterRemoteShard(shardId);
             }
-            SetRemoteShardCount(shardingInfo.AllShards.Length);
+            _bspOutputEndpoint.SetRemoteShardCount(shardingInfo.AllShards.Length);
         }
 
         public Task ToStreamAsync(Stream stream, string otherVertex, string otherEndpoint, CancellationToken token)
         {
             Console.WriteLine($"Wrong ToStreamAsync in {this.GetType().Name}");
-            //We dont need this method as only the overload with shardId is invoked by CRA.
+            //We dont need this method as we only use sharded CRA vertices
             throw new NotImplementedException();
         }
 

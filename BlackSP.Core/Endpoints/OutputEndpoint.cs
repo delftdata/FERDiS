@@ -17,7 +17,7 @@ using System.Linq;
 namespace BlackSP.Core.Endpoints
 {
 
-    public class BaseOutputEndpoint : IOutputEndpoint
+    public class OutputEndpoint : IOutputEndpoint
     {
         private readonly BlockingCollection<Tuple<IEvent, OutputMode>> _outputQueue;
 
@@ -31,7 +31,7 @@ namespace BlackSP.Core.Endpoints
         private readonly RecyclableMemoryStreamManager _msgBufferPool;
         private readonly Task _messageSerializationThread;
 
-        public BaseOutputEndpoint(IOperator targetOperator, ISerializer serializer, RecyclableMemoryStreamManager memStreamPool)
+        public OutputEndpoint(IOperator targetOperator, ISerializer serializer, RecyclableMemoryStreamManager memStreamPool)
         {
             _operator = targetOperator ?? throw new ArgumentNullException(nameof(targetOperator));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -68,11 +68,21 @@ namespace BlackSP.Core.Endpoints
             }
         }
 
+        /// <summary>
+        /// Enqueue event for egressing
+        /// </summary>
+        /// <param name="event"></param>
+        /// <param name="mode"></param>
         public void Enqueue(IEvent @event, OutputMode mode)
         {
             _outputQueue.Add(new Tuple<IEvent, OutputMode>(@event, mode));
         }
 
+        /// <summary>
+        /// Enqueue events for egressing
+        /// </summary>
+        /// <param name="events"></param>
+        /// <param name="mode"></param>
         public void Enqueue(IEnumerable<IEvent> events, OutputMode mode)
         {
             foreach (var @event in events)
@@ -136,15 +146,17 @@ namespace BlackSP.Core.Endpoints
             while (true)
             {
                 t.ThrowIfCancellationRequested();
-                //TODO: consider error scenario where connection closes to not lose event.. or CP?
-                
+                //TODO: consider error scenario.. CP?
+                //TODO: consider batching network writes for better throughput?
                 var nextMsgBuffer = msgBuffers.Take(t);
+                //first write msg length to outputstream
                 outputStream.WriteInt32(Convert.ToInt32(nextMsgBuffer.Length));
+                //then copy msg buffer to outputstream
                 nextMsgBuffer.Seek(0, SeekOrigin.Begin);
                 nextMsgBuffer.CopyTo(outputStream);
-
+                //finally dipose of msg buffer
                 nextMsgBuffer.SetLength(0);
-                nextMsgBuffer.Dispose(); //return buffer to manager
+                nextMsgBuffer.Dispose();
             }
         }
 

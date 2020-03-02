@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Endpoints;
+using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Events;
 using BlackSP.Interfaces.Operators;
 using BlackSP.Interfaces.Serialization;
@@ -12,13 +13,14 @@ using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Endpoints
 {
-    public class VertexInputEndpoint : BaseInputEndpoint, IAsyncShardedVertexInputEndpoint
+    public class VertexInputEndpoint : IAsyncShardedVertexInputEndpoint
     {
         public bool IsConnected { get; set; }
+        private readonly IInputEndpoint _bspInputEndpoint;
 
-        public VertexInputEndpoint(ISerializer serializer, IOperator @operator) : base(serializer)
+        public VertexInputEndpoint(IInputEndpoint inputEndpoint)
         {
-            var lmao = @operator;
+            _bspInputEndpoint = inputEndpoint ?? throw new ArgumentNullException(nameof(inputEndpoint));    
         }
 
         public async Task FromStreamAsync(Stream stream, string otherVertex, int otherShardId, string otherEndpoint, CancellationToken token)
@@ -34,15 +36,17 @@ namespace BlackSP.CRA.Endpoints
             {
                 //CRA invokes this method on a background thread so just invoke Ingress on current thread
                 IsConnected = true;
-                await Ingress(stream, token);
+                await _bspInputEndpoint.Ingress(stream, token);
                 IsConnected = false;
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Exception on Ingress thread for connection {otherVertex}${otherEndpoint}");
                 Console.WriteLine(e.ToString());
-                IsConnected = false;
                 throw;
+            } finally
+            {
+
             }
             Console.WriteLine("Stopped input channel");
             token.ThrowIfCancellationRequested();

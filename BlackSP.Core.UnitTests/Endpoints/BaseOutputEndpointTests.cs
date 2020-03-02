@@ -63,7 +63,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
             var recycleMemStreamManager = new RecyclableMemoryStreamManager();
 
             //mock base cause its abstract
-            var endpointMoq = new Mock<BaseOutputEndpoint>(operatorMoq.Object, _serializer, recycleMemStreamManager);
+            var endpointMoq = new Mock<OutputEndpoint>(operatorMoq.Object, _serializer, recycleMemStreamManager);
             _testEndpoint = endpointMoq.Object;
         }
 
