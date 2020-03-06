@@ -30,12 +30,11 @@ namespace BlackSP.CRA.Vertices
             Dispose(false);
         }
 
-        private void DoTypeInitialization(IOperatorConfiguration config)
+        private void InitializeIoCContainer(IVertexParameter options)
         {
-            _dependencyContainer = new IoC()
+            _dependencyContainer = new IoC(options)
                 .RegisterBlackSPComponents()
                 .RegisterCRAComponents()
-                .RegisterOperatorConfiguration(config)
                 .BuildContainer();
             // register logger?
             
@@ -49,26 +48,23 @@ namespace BlackSP.CRA.Vertices
             Console.WriteLine("Installing dependency container");
             IVertexParameter param = vertexParameter as IVertexParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IVertexParameter)}"); ;
 
-            //TODO: better method name, spins up autofac IoC container
-            DoTypeInitialization(param.OperatorConfiguration);
+            InitializeIoCContainer(param);
 
-            //TODO: resolve amount required (from vertex parameter)
-            var input = _vertexLifetimeScope.Resolve<IAsyncVertexInputEndpoint>();
-            AddAsyncInputEndpoint($"input", input);
-
-            //TODO: resolve amount required (from vertex parameter)
-            var output = _vertexLifetimeScope.Resolve<IAsyncVertexOutputEndpoint>();
-            AddAsyncOutputEndpoint($"output", output);
-            
             Type operatorType = param.OperatorType;
-            _bspOperator = _vertexLifetimeScope.Resolve(operatorType) as IOperator 
+            _bspOperator = _vertexLifetimeScope.Resolve(operatorType) as IOperator
                 ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be converted to {nameof(IOperator)}");
 
-            _bspOperator.Start();
+            for (int i = 0; i < param.InputEndpointCount; i++)
+            {
+                AddAsyncInputEndpoint($"input#{i}", _vertexLifetimeScope.Resolve<IAsyncShardedVertexInputEndpoint>());
+            }
 
-            //TODO: remove test crap            
-            //SpawnLoadGeneratingThread(input as VertexInputEndpoint, output as VertexOutputEndpoint);
-            //SpawnPassthroughThread(input as VertexInputEndpoint, output as VertexOutputEndpoint);
+            for (int i = 0; i < param.OutputEndpointCount; i++)
+            {
+                AddAsyncOutputEndpoint($"output#{i}", _vertexLifetimeScope.Resolve<IAsyncShardedVertexOutputEndpoint>());
+            }            
+            
+            _bspOperator.Start();
             
             Console.WriteLine("Done");
             return Task.CompletedTask;

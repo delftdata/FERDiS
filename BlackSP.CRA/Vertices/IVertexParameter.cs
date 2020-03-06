@@ -9,24 +9,39 @@ namespace BlackSP.CRA.Vertices
     public interface IVertexParameter
     {
         /// <summary>
+        /// Holds a type reference to the operator the target vertex should instantiate
+        /// </summary>
+        Type OperatorType { get; }
+
+        /// <summary>
+        /// The operator configuration required to instantiate
+        /// the type provided in OperatorType
+        /// </summary>
+        Type OperatorConfiguration { get; }
+
+        /// <summary>
         /// How many input endpoints to start
         /// </summary>
-        int InputEndpointCount { get; set; }
+        int InputEndpointCount { get; }
+
+        /// <summary>
+        /// The input endpoint type the operator should be using
+        /// </summary>
+        Type InputEndpointType { get; }
 
         /// <summary>
         /// How many output endpoints to start
         /// </summary>
-        int OutputEndpointCount { get; set; }
-        
-        /// <summary>
-        /// Holds a type reference to the operator the target vertex should instantiate
-        /// </summary>
-        Type OperatorType { get; set; }
+        int OutputEndpointCount { get; }
 
         /// <summary>
-        /// Holds an object reference to the operator configuration required to instantiate
-        /// the type provided in OperatorType
+        /// The input endpoint type the operator should be using
         /// </summary>
-        IOperatorConfiguration OperatorConfiguration { get; set; }
+        Type OutputEndpointType { get; }
+
+        /// <summary>
+        /// The serializer type the endpoints should use for sending events over the network
+        /// </summary>
+        Type SerializerType { get; }
     }
 }

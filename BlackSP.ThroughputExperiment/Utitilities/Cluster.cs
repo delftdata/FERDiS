@@ -1,8 +1,10 @@
-﻿using BlackSP.Core.Operators;
+﻿using BlackSP.Core.Endpoints;
+using BlackSP.Core.Operators;
 using BlackSP.Core.Operators.Concrete;
 using BlackSP.CRA.Utilities;
 using BlackSP.CRA.Vertices;
 using BlackSP.Interfaces.Events;
+using BlackSP.Serialization;
 using CRA.ClientLibrary;
 using CRA.DataProvider;
 using System;
@@ -18,8 +20,6 @@ namespace BlackSP.ThroughputExperiment.Utilities
     {
         public class MyFilterOperatorConfiguration : IFilterOperatorConfiguration
         {
-            public int? OutputEndpointCount { get; set; }
-
             public IEvent Filter(IEvent @event)
             {
                 Console.WriteLine($"Sick yo, filtering {@event.Key}");
@@ -57,10 +57,7 @@ namespace BlackSP.ThroughputExperiment.Utilities
                 new[] { "crainst01" },
                 "operator1",
                 typeof(OperatorVertex).Name.ToLowerInvariant(),
-                new VertexParameter { 
-                    OperatorType = typeof(FilterOperator),
-                    OperatorConfiguration = new MyFilterOperatorConfiguration { OutputEndpointCount = 2 }
-                },
+                new VertexParameter(typeof(FilterOperator), typeof(MyFilterOperatorConfiguration), 1, typeof(InputEndpoint), 1, typeof(OutputEndpoint), typeof(ProtobufSerializer)),
                 1
             );
 

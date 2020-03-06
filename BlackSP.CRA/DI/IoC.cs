@@ -1,5 +1,7 @@
 ﻿using Autofac;
 using BlackSP.Core.Operators;
+using BlackSP.CRA.Endpoints;
+using BlackSP.CRA.Vertices;
 using BlackSP.Interfaces.Endpoints;
 using BlackSP.Interfaces.Operators;
 using BlackSP.Interfaces.Serialization;
@@ -8,38 +10,54 @@ using Microsoft.IO;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace BlackSP.CRA.DI
 {
     public class IoC
     {
+        private IVertexParameter _options;
         private ContainerBuilder _builder;
         private IEnumerable<Type> _typesInRuntime;
-        public IoC()
+        public IoC(IVertexParameter options)
         {
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+            LoadAllAvailableAssemblies();
+
             _builder = new ContainerBuilder();
             _typesInRuntime = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes());
         }
 
         public IContainer BuildContainer()
         {
+
             return _builder.Build();
+        }
+
+        public IContainer BuildContainerValidated()
+        {
+            var container = BuildContainer();
+            
+            //TODO: validate presence of all required types and throw exception if missing
+            container.IsRegistered<IOperator>();
+            
+            return container;
         }
 
         public IoC RegisterBlackSPComponents()
         {
-            RegisterAllConcreteClassesOfType<IOperator>(true);
-            RegisterAllConcreteClassesOfType<IInputEndpoint>();
-            RegisterAllConcreteClassesOfType<IOutputEndpoint>();
-            RegisterAllConcreteClassesOfType<ISerializer>();
+            RegisterConcreteClassAsType<IOperator>(_options.OperatorType, true);
+            RegisterConcreteClassAsDefined(_options.OperatorConfiguration, true);
 
-            var bspArrayPool = ArrayPool<byte>.Create();
-            _builder.RegisterInstance(bspArrayPool); //register one arraypool for all components to share
+            RegisterConcreteClassAsType<IInputEndpoint>(_options.InputEndpointType);
+            RegisterConcreteClassAsType<IOutputEndpoint>(_options.OutputEndpointType);
+            RegisterConcreteClassAsType<ISerializer>(_options.SerializerType);
 
-            var bspMemoryStreamPool = new RecyclableMemoryStreamManager();
-            _builder.RegisterInstance(bspMemoryStreamPool); //register one memorystreampool for all components to share
+            _builder.RegisterInstance(ArrayPool<byte>.Create()); //register one arraypool for all components to share
+            _builder.RegisterInstance(new RecyclableMemoryStreamManager()); //register one memorystreampool for all components to share
 
             return this;
         }
@@ -52,34 +70,68 @@ namespace BlackSP.CRA.DI
             return this;
         }
 
-        private void RegisterAllConcreteClassesOfType<T>(bool asSingleton = false)
+        //public IoC RegisterOperatorConfiguration(IOperatorConfiguration config)
+        //{
+        //    config = config ?? throw new ArgumentNullException(nameof(config));
+
+        //    var configType = config.GetType();
+
+        //    _builder
+        //        .RegisterInstance(config)
+        //        .AsImplementedInterfaces()
+        //        .SingleInstance();
+
+        //    return this;
+        //}
+
+        private void RegisterConcreteClassAsDefined(Type concreteType, bool asSingleton = false)
+        {
+            var registration = _builder.RegisterType(concreteType).AsImplementedInterfaces().As(concreteType);
+            _ = asSingleton ? registration.SingleInstance() : registration.InstancePerDependency();
+        }
+
+        private void RegisterConcreteClassAsType<T>(Type concreteType, bool asSingleton = false)
+        {
+            var registration = _builder.RegisterType(concreteType).As(typeof(T), concreteType);
+            _ = asSingleton ? registration.SingleInstance() : registration.InstancePerDependency();
+        }
+
+        private void RegisterAllConcreteClassesOfType<T>(string inNamespace = "BlackSP", bool asSingleton = false)
         {
             var concreteTypes = _typesInRuntime
-                .Where(p => typeof(T).IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
+                .Where(p => p.IsAssignableTo<T>() && !p.IsInterface && !p.IsAbstract && p.IsInNamespace(inNamespace));
 
             foreach (var concreteType in concreteTypes)
             {
-                var registration = _builder.RegisterType(concreteType).As<T>();
-                if (asSingleton)
-                {
-                    registration.SingleInstance();
-                }
+                RegisterConcreteClassAsType<T>(concreteType, asSingleton);
             }
         }
 
-        public IoC RegisterOperatorConfiguration(IOperatorConfiguration config)
+        //TODO: move to some typeloader class?
+        private void LoadAllAvailableAssemblies()
         {
-            config = config ?? throw new ArgumentNullException(nameof(config));
+            var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
+            var loadedPaths = loadedAssemblies.Where(a => !a.IsDynamic).Select(a => a.Location).ToArray();
 
-            var configType = config.GetType();
-            var asTypes = configType.GetInterfaces();
+            string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-            _builder
-                .RegisterInstance(config)
-                .As(asTypes)
-                .SingleInstance();
+            var referencedPaths = Directory.GetFiles(assemblyDir, "*.dll");
+            var toLoad = referencedPaths.Where(r => !loadedPaths.Contains(r, StringComparer.InvariantCultureIgnoreCase)).ToList();
+            toLoad.ForEach(path => loadedAssemblies.Add(AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(path))));
 
-            return this;
+        }
+    }
+
+    class AssemblyEqualityComparer : IEqualityComparer<Assembly>
+    {
+        public bool Equals(Assembly x, Assembly y)
+        {
+            return x.FullName.Equals(y.FullName);
+        }
+
+        public int GetHashCode(Assembly obj)
+        {
+            return obj.GetHashCode();
         }
     }
 }
