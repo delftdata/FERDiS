@@ -18,7 +18,7 @@ using BlackSP.Interfaces.Operators;
 
 namespace BlackSP.Core.UnitTests.Endpoints
 {
-    public class BaseInputEndpointTests
+    public class InputEndpointTests
     {
         IOperator _targetOperator;
         ISerializer _serializer;
@@ -26,6 +26,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
         IInputEndpoint _testEndpoint;
         CancellationTokenSource _endpointCtSource;
         CancellationTokenSource _operatorCtSource;
+        
         [SetUp]
         public void Setup()
         {
@@ -45,10 +46,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
             _targetOperator = operatorMoq.Object;
 
             var arrayPool = ArrayPool<byte>.Create();
-            var endpointMoq = new Mock<InputEndpoint>(_targetOperator, _serializer, arrayPool);
-            _testEndpoint = endpointMoq.Object;
-
-            
+            _testEndpoint = new InputEndpoint(_targetOperator, _serializer, arrayPool);
         }
 
         [Test]

@@ -23,6 +23,8 @@ namespace BlackSP.Core.Operators
         private readonly IOperatorConfiguration _options;
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly ICollection<IOutputEndpoint> _outputEndpoints;
+
+        private Task _operatingThread;
         private bool _isRequestedToStop;
 
         /// <summary>
@@ -43,24 +45,28 @@ namespace BlackSP.Core.Operators
         /// Starts the operating background thread<br/> 
         /// (take from input, invoke user function, put in all output queues)
         /// </summary>
-        public virtual void Start()
+        public virtual Task Start()
         {
             _isRequestedToStop = false;
-            Task.Run(Operate)
-                .ContinueWith(HandleOperatingThreadException, TaskContinuationOptions.OnlyOnFaulted)
-                .ConfigureAwait(false);
+            return _operatingThread = Task.Run(Operate);
         }
 
         /// <summary>
         /// Stops the operating background thread
         /// </summary>
-        public virtual void Stop()
+        public virtual Task Stop()
         {
+            if(_operatingThread == null)
+            {
+                throw new Exception("The operator cannot be stopped as it has not been started"); //TODO: custom exception
+            }
+
             _isRequestedToStop = true;
             if(!_cancellationTokenSource.IsCancellationRequested)
             {
                 _cancellationTokenSource.Cancel();
             }
+            return _operatingThread;
         }
 
         public void RegisterOutputEndpoint(IOutputEndpoint outputEndpoint)
@@ -94,23 +100,23 @@ namespace BlackSP.Core.Operators
         /// </summary>
         private void Operate()
         {
-            var inputEnumerable = InputQueue.GetConsumingEnumerable(_cancellationTokenSource.Token);
-            foreach (IEvent @event in inputEnumerable)
+            try
             {
-                var results = OperateOnEvent(@event) ?? throw new NullReferenceException("OperateOnEvent returned null instead of enumerable");
-                EgressOutputEvents(results);
-            }
-        }
-
-        private void HandleOperatingThreadException(Task operatingThread)
-        {
-            if (_isRequestedToStop)
+                var inputEnumerable = InputQueue.GetConsumingEnumerable(_cancellationTokenSource.Token);
+                foreach (IEvent @event in inputEnumerable)
+                {
+                    var results = OperateOnEvent(@event) ?? throw new NullReferenceException("OperateOnEvent returned null instead of enumerable");
+                    EgressOutputEvents(results);
+                }
+            } catch(Exception e)
             {
-                return;
+                //TODO: change for logging at fatal level?
+                Console.WriteLine($"Exception in operating thread, proceeding to shut down. Exception:\n{e}");
+                Stop();
+                
+                throw;
             }
-            //TODO: change for logging at fatal level?
-            Console.WriteLine($"Exception in operating thread, proceeding to shut down. Exception:\n{operatingThread.Exception}");
-            Stop();
+            
         }
     }
 }

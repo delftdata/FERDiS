@@ -9,13 +9,16 @@ namespace BlackSP.Core.Operators
     {
     }
 
-    public interface IFilterOperatorConfiguration : IOperatorConfiguration
+    public interface IFilterOperatorConfiguration<TEvent> : IOperatorConfiguration 
+        where TEvent : class, IEvent
     {
-        IEvent Filter(IEvent @event);
+        TEvent Filter(TEvent @event);
     }
 
-    public interface IMapOperatorConfiguration : IOperatorConfiguration
+    public interface IMapOperatorConfiguration<TIn, TOut> : IOperatorConfiguration 
+        where TIn : class, IEvent
+        where TOut : class, IEvent
     {
-        IEnumerable<IEvent> Map(IEvent @event);
+        IEnumerable<TOut> Map(TIn @event);
     }
 }

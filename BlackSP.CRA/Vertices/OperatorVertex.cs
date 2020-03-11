@@ -52,7 +52,7 @@ namespace BlackSP.CRA.Vertices
 
             Type operatorType = param.OperatorType;
             _bspOperator = _vertexLifetimeScope.Resolve(operatorType) as IOperator
-                ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be converted to {nameof(IOperator)}");
+                ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be converted to {typeof(IOperator)}");
 
             for (int i = 0; i < param.InputEndpointCount; i++)
             {

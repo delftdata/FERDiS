@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BlackSP.Core.Operators
 {
@@ -21,11 +22,11 @@ namespace BlackSP.Core.Operators
             _windowTimer = null;
         }
 
-        public override void Start()
+        public override Task Start()
         {
             //Start timer that will keep closing windows
             _windowTimer = new Timer(OnWindowExpiredTimerTick, null, TimeSpan.FromSeconds(0), _options.WindowSize);
-            base.Start();
+            return base.Start();
         }
 
         protected sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)

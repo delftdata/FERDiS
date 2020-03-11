@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using BlackSP.Interfaces.Operators;
 using System.Collections.Concurrent;
+using BlackSP.Interfaces.Endpoints;
 
 namespace BlackSP.Core.UnitTests.Utilities
 {
@@ -44,6 +45,22 @@ namespace BlackSP.Core.UnitTests.Utilities
                 });
 
             return serializerMoq;
+        }
+
+        public static Mock<IOutputEndpoint> MockOutputEndpoint(Queue<IEvent> targetQueue)
+        {
+            var outputEndpoint = new Mock<IOutputEndpoint>();
+            outputEndpoint.Setup(x => x.Enqueue(It.IsAny<IEvent>(), It.IsAny<OutputMode>()))
+                .Callback((IEvent e, OutputMode m) => targetQueue.Enqueue(e));
+            outputEndpoint.Setup(x => x.Enqueue(It.IsAny<IEnumerable<IEvent>>(), It.IsAny<OutputMode>()))
+                .Callback((IEnumerable<IEvent> es, OutputMode m) =>
+                {
+                    foreach (var e in es)
+                    {
+                        targetQueue.Enqueue(e);
+                    }
+                });
+            return outputEndpoint;
         }
     }
 }

@@ -7,6 +7,7 @@ using BlackSP.Interfaces.Events;
 using BlackSP.Serialization;
 using CRA.ClientLibrary;
 using CRA.DataProvider;
+using ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -18,9 +19,18 @@ namespace BlackSP.ThroughputExperiment.Utilities
 
     public class Cluster
     {
-        public class MyFilterOperatorConfiguration : IFilterOperatorConfiguration
+        [ProtoContract]
+        public class MyEvent : IEvent
         {
-            public IEvent Filter(IEvent @event)
+            [ProtoMember(1)]
+            public string Key { get; set; }
+            [ProtoMember(2)]
+            public string Value { get; set; }
+        }
+
+        public class MyFilterOperatorConfiguration : IFilterOperatorConfiguration<MyEvent>
+        {
+            public MyEvent Filter(MyEvent @event)
             {
                 Console.WriteLine($"Sick yo, filtering {@event.Key}");
                 return @event;
@@ -57,7 +67,7 @@ namespace BlackSP.ThroughputExperiment.Utilities
                 new[] { "crainst01" },
                 "operator1",
                 typeof(OperatorVertex).Name.ToLowerInvariant(),
-                new VertexParameter(typeof(FilterOperator), typeof(MyFilterOperatorConfiguration), 1, typeof(InputEndpoint), 1, typeof(OutputEndpoint), typeof(ProtobufSerializer)),
+                new VertexParameter(typeof(FilterOperator<MyEvent>), typeof(MyFilterOperatorConfiguration), 1, typeof(InputEndpoint), 1, typeof(OutputEndpoint), typeof(ProtobufSerializer)),
                 1
             );
 
