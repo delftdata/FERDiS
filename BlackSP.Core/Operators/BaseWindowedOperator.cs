@@ -11,9 +11,9 @@ namespace BlackSP.Core.Operators
     public abstract class BaseWindowedOperator : BaseOperator
     {
 
-        protected IEnumerable<IEvent> _currentWindow { get; private set; }
-        private Timer _windowTimer;
         private readonly IWindowedOperatorConfiguration _options;
+        private IEnumerable<IEvent> _currentWindow;
+        private Timer _windowTimer;
 
         public BaseWindowedOperator(IWindowedOperatorConfiguration options) : base(options)
         {
@@ -47,6 +47,7 @@ namespace BlackSP.Core.Operators
         private void OnWindowExpiredTimerTick(object _)
         {
             var previousWindow = CloseCurrentWindow();
+            //TODO: make custom exception
             var operatorOutput = ProcessClosedWindow(previousWindow) ?? throw new Exception("ProcessClosedWindow returned null, expected IEnumerable");
             EgressOutputEvents(operatorOutput);
         }

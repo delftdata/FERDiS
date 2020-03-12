@@ -47,7 +47,7 @@ namespace BlackSP.Core.Operators
         {
             if(_cancellationTokenSource.IsCancellationRequested)
             {
-                throw new OperationCanceledException("Could not start operator that was cancelled");
+                throw new OperationCanceledException();
             }
             return _operatingThread = Task.Run(Operate);
         }

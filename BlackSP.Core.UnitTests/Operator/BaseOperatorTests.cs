@@ -62,13 +62,13 @@ namespace BlackSP.Core.UnitTests.Operator
         }
 
         [Test]
-        public async Task Enqueue_ThrowsOnNull()
+        public void Enqueue_ThrowsOnNull()
         {
             Assert.Throws<ArgumentNullException>(() => _operator.Enqueue(null));
         }
 
         [Test]
-        public async Task Enqueue_ThrowsOnCancelled()
+        public void Enqueue_ThrowsOnCancelled()
         {
             var operatorThread = _operator.Start();
             Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
@@ -77,7 +77,7 @@ namespace BlackSP.Core.UnitTests.Operator
         }
 
         [Test]
-        public async Task Stop_ThrowsWhenNotStarted()
+        public void Stop_ThrowsWhenNotStarted()
         {
             //var operatorThread = _operator.Start();
 
@@ -86,7 +86,7 @@ namespace BlackSP.Core.UnitTests.Operator
         }
 
         [Test]
-        public async Task Operator_ThrowsOnNullOperationResult()
+        public void Operator_ThrowsOnNullOperationResult()
         {
             _operator = new NullBaseOperator();
             var operatorThread = _operator.Start();
@@ -97,7 +97,7 @@ namespace BlackSP.Core.UnitTests.Operator
         }
 
         [Test]
-        public async Task Operator_ThrowsOnExceptionOperationResult()
+        public void Operator_ThrowsOnExceptionOperationResult()
         {
             _operator = new ExceptionBaseOperator();
             var operatorThread = _operator.Start();

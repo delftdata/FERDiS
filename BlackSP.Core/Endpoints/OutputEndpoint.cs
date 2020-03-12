@@ -17,7 +17,7 @@ using System.Linq;
 namespace BlackSP.Core.Endpoints
 {
 
-    public class OutputEndpoint : IOutputEndpoint
+    public class OutputEndpoint : IOutputEndpoint, IDisposable
     {
         private readonly BlockingCollection<Tuple<IEvent, OutputMode>> _outputQueue;
 
@@ -85,6 +85,7 @@ namespace BlackSP.Core.Endpoints
         /// <param name="mode"></param>
         public void Enqueue(IEnumerable<IEvent> events, OutputMode mode)
         {
+            _ = events ?? throw new ArgumentNullException(nameof(events));
             foreach (var @event in events)
             {
                 Enqueue(@event, mode);
@@ -137,8 +138,7 @@ namespace BlackSP.Core.Endpoints
         /// <returns></returns>
         private Task WriteMessagesToStream(Stream outputStream, int remoteShardId, CancellationToken t)
         {
-            BlockingCollection<MemoryStream> msgBuffers;
-            if (!_shardedMessageQueues.TryGetValue(remoteShardId, out msgBuffers))
+            if (!_shardedMessageQueues.TryGetValue(remoteShardId, out BlockingCollection<MemoryStream> msgBuffers))
             {
                 throw new ArgumentException($"Remote shard with id {remoteShardId} has not been registered");
             }
@@ -208,5 +208,33 @@ namespace BlackSP.Core.Endpoints
                     throw new ArgumentOutOfRangeException(nameof(outputMode));
             }
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _outputQueue.Dispose();
+                    _messageSerializationThread.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }
