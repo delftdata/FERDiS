@@ -15,7 +15,7 @@ namespace BlackSP.Core.Operators
     //- so operator can just enqueue outgoing events in all output queues
     //- endpoints will write to input or read from assigned output queue
     //      endpoints will respectively handle partitioning among shards etc
-    public abstract class BaseOperator : IOperator
+    public abstract class BaseOperator : IOperator, IDisposable
     {
         public CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
@@ -133,5 +133,30 @@ namespace BlackSP.Core.Operators
             }
             
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _inputQueue?.Dispose();
+                    _cancellationTokenSource?.Dispose();
+                    _operatingThread?.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

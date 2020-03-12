@@ -31,6 +31,7 @@ namespace BlackSP.Core.Operators
 
         protected sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
         {
+            _ = @event ?? throw new ArgumentNullException(nameof(@event));
             _currentWindow.Append(@event);
             return Enumerable.Empty<IEvent>();
         }
@@ -54,10 +55,26 @@ namespace BlackSP.Core.Operators
 
         private IEnumerable<IEvent> CloseCurrentWindow()
         {
-            //TODO: check if not overwriting eventsInWindow with new list
             var eventsInWindow = _currentWindow.ToArray();
             _currentWindow = new List<IEvent>();
             return eventsInWindow;
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _windowTimer?.Dispose();
+                }
+                disposedValue = true;
+            }
+            base.Dispose(disposing);
+        }
+        #endregion
     }
 }
