@@ -25,7 +25,6 @@ namespace BlackSP.Core.Operators
         private readonly BlockingCollection<IEvent> _inputQueue;
 
         private Task _operatingThread;
-        private bool _isRequestedToStop;
 
         /// <summary>
         /// Base constructor for Operators, will throw when passing null options
@@ -38,7 +37,6 @@ namespace BlackSP.Core.Operators
             _outputEndpoints = new List<IOutputEndpoint>();
             _inputQueue = new BlockingCollection<IEvent>();
             _cancellationTokenSource = new CancellationTokenSource();
-            _isRequestedToStop = false;
         }
 
         /// <summary>
@@ -47,7 +45,10 @@ namespace BlackSP.Core.Operators
         /// </summary>
         public virtual Task Start()
         {
-            _isRequestedToStop = false;
+            if(_cancellationTokenSource.IsCancellationRequested)
+            {
+                throw new OperationCanceledException("Could not start operator that was cancelled");
+            }
             return _operatingThread = Task.Run(Operate);
         }
 
@@ -61,8 +62,6 @@ namespace BlackSP.Core.Operators
                 //TODO: make custom exception
                 throw new Exception("Error: Attempted to stop operator that was not started.");
             }
-
-            _isRequestedToStop = true;
             if(!_cancellationTokenSource.IsCancellationRequested)
             {
                 _cancellationTokenSource.Cancel();
@@ -85,6 +84,7 @@ namespace BlackSP.Core.Operators
 
         public void RegisterOutputEndpoint(IOutputEndpoint outputEndpoint)
         {
+            _ = outputEndpoint ?? throw new ArgumentNullException(nameof(outputEndpoint));
             _outputEndpoints.Add(outputEndpoint);
         }
 
@@ -122,7 +122,8 @@ namespace BlackSP.Core.Operators
                     var results = OperateOnEvent(@event) ?? throw new NullReferenceException("OperateOnEvent returned null instead of enumerable");
                     EgressOutputEvents(results);
                 }
-            } catch(Exception e)
+            } 
+            catch(Exception e)
             {
                 //TODO: change for logging at fatal level?
                 Console.WriteLine($"Exception in operating thread, proceeding to shut down. Exception:\n{e}");
