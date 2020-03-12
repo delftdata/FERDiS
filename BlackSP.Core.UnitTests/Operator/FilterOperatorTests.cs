@@ -72,7 +72,7 @@ namespace BlackSP.Core.UnitTests.Operator
             
             var operatorThread = _passthroughOperator.Start();
 
-            _passthroughOperator.InputQueue.Add(_testEvents[0]);
+            _passthroughOperator.Enqueue(_testEvents[0]);
             
             await Task.Delay(50); //give background thread some time to perform the operation
             Assert.ThrowsAsync<OperationCanceledException>(_passthroughOperator.Stop);
@@ -92,7 +92,7 @@ namespace BlackSP.Core.UnitTests.Operator
             var operatorThread = _passthroughOperator.Start();
 
             foreach (var e in _testEvents) {
-                _passthroughOperator.InputQueue.Add(e);
+                _passthroughOperator.Enqueue(e);
             }
 
             await Task.Delay(50); //give background thread some time to perform the operation
@@ -123,7 +123,7 @@ namespace BlackSP.Core.UnitTests.Operator
 
             foreach (var e in _testEvents)
             {
-                _passthroughOperator.InputQueue.Add(e);
+                _passthroughOperator.Enqueue(e);
             }
 
             await Task.Delay(50); //give background thread some time to perform the operation
@@ -153,11 +153,8 @@ namespace BlackSP.Core.UnitTests.Operator
 
             foreach (var e in _testEvents)
             {
-                _distinctOperator.InputQueue.Add(e);
-            }
-            foreach (var e in _testEvents) //Add the events twice, so the seconds can get filtered
-            {
-                _distinctOperator.InputQueue.Add(e);
+                _distinctOperator.Enqueue(e);
+                _distinctOperator.Enqueue(e);//Add the events twice, so the seconds can get filtered
             }
 
             await Task.Delay(50); //give background thread some time to perform the operation
@@ -181,7 +178,7 @@ namespace BlackSP.Core.UnitTests.Operator
 
             var operatorThread = _distinctOperator.Start();
 
-            _distinctOperator.InputQueue.Add(new TestEvent2()); //enqueue unexpected event type
+            _distinctOperator.Enqueue(new TestEvent2()); //enqueue unexpected event type
 
             await Task.Delay(50); //give background thread some time to perform the operation
             Assert.ThrowsAsync<ArgumentException>(async () => await operatorThread);

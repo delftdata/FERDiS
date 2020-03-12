@@ -56,7 +56,7 @@ namespace BlackSP.Core.UnitTests.Operator
             
             var operatorThread = _mapOperator.Start();
 
-            _mapOperator.InputQueue.Add(_testEvents[0]);
+            _mapOperator.Enqueue(_testEvents[0]);
             
             await Task.Delay(50); //give background thread some time to perform the operation
             Assert.ThrowsAsync<OperationCanceledException>(_mapOperator.Stop);
@@ -66,8 +66,9 @@ namespace BlackSP.Core.UnitTests.Operator
             
             var transformedEvent = mockedOutputQueue.Dequeue() as TestEvent2;
             Assert.IsNotNull(transformedEvent);
+
             Assert.IsTrue(transformedEvent.Key.StartsWith("Transformed"));
-            Assert.AreEqual((_testEvents[0] as TestEvent).Value, transformedEvent.Value);
+            Assert.AreEqual((_testEvents[0] as TestEvent).Value, transformedEvent.Value);//byte transformed to int
         }
 
     }

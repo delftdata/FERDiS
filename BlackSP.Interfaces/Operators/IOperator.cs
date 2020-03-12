@@ -11,10 +11,6 @@ namespace BlackSP.Interfaces.Operators
 {
     public interface IOperator
     {
-        /// <summary>
-        /// Handle for input endpoints to place events in operator queue
-        /// </summary>
-        BlockingCollection<IEvent> InputQueue { get; }
 
         /// <summary>
         /// Public cancellation token for processes that can observe the operator
@@ -35,5 +31,10 @@ namespace BlackSP.Interfaces.Operators
         Task Stop();
         
         void RegisterOutputEndpoint(IOutputEndpoint outputEndpoint);
+
+        /// <summary>
+        /// Places an event in the operator's input queue
+        /// </summary>
+        void Enqueue(IEvent @event); // BlockingCollection<IEvent> InputQueue { get; }
     }
 }

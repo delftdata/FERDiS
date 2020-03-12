@@ -15,12 +15,15 @@ using System;
 using BlackSP.Core.UnitTests.Utilities;
 using System.Buffers;
 using BlackSP.Interfaces.Operators;
+using System.Collections.Concurrent;
 
 namespace BlackSP.Core.UnitTests.Endpoints
 {
     public class InputEndpointTests
     {
         IOperator _targetOperator;
+        BlockingCollection<IEvent> _targetOperatorInputqueue;
+
         ISerializer _serializer;
         IList<IEvent> _testEvents;
         IInputEndpoint _testEndpoint;
@@ -42,7 +45,8 @@ namespace BlackSP.Core.UnitTests.Endpoints
             var serializerMoq = MockBuilder.MockSerializer(_testEvents);
             _serializer = serializerMoq.Object;
 
-            var operatorMoq = MockBuilder.MockOperator(_operatorCtSource);
+            _targetOperatorInputqueue = new BlockingCollection<IEvent>();
+            var operatorMoq = MockBuilder.MockOperator(_operatorCtSource, _targetOperatorInputqueue);
             _targetOperator = operatorMoq.Object;
 
             var arrayPool = ArrayPool<byte>.Create();
@@ -78,8 +82,8 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 //assertions
                 foreach (var @event in _testEvents)
                 {
-                    Assert.IsTrue(_targetOperator.InputQueue.Any(), "Empty input queue");
-                    var resultEvent = _targetOperator.InputQueue.Take();//do Any() first to prevent blocking on Take()
+                    Assert.IsTrue(_targetOperatorInputqueue.Any(), "Empty input queue");
+                    var resultEvent = _targetOperatorInputqueue.Take();
                     Assert.IsNotNull(resultEvent, "Event is null");
                     Assert.AreEqual(@event.Key, resultEvent.Key);
                     
@@ -109,7 +113,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 await inputThread;
             }
             //assertions
-            Assert.IsFalse(_targetOperator.InputQueue.Any());            
+            Assert.IsFalse(_targetOperatorInputqueue.Any());            
         }
 
     }

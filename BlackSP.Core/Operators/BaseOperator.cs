@@ -17,12 +17,12 @@ namespace BlackSP.Core.Operators
     //      endpoints will respectively handle partitioning among shards etc
     public abstract class BaseOperator : IOperator
     {
-        public BlockingCollection<IEvent> InputQueue { get; private set; }
         public CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
         private readonly IOperatorConfiguration _options;
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly ICollection<IOutputEndpoint> _outputEndpoints;
+        private readonly BlockingCollection<IEvent> _inputQueue;
 
         private Task _operatingThread;
         private bool _isRequestedToStop;
@@ -33,10 +33,10 @@ namespace BlackSP.Core.Operators
         /// <param name="options"></param>
         public BaseOperator(IOperatorConfiguration options)
         {
-            InputQueue = new BlockingCollection<IEvent>();
-
             _options = options ?? throw new ArgumentNullException(nameof(options));
+
             _outputEndpoints = new List<IOutputEndpoint>();
+            _inputQueue = new BlockingCollection<IEvent>();
             _cancellationTokenSource = new CancellationTokenSource();
             _isRequestedToStop = false;
         }
@@ -58,7 +58,8 @@ namespace BlackSP.Core.Operators
         {
             if(_operatingThread == null)
             {
-                throw new Exception("The operator cannot be stopped as it has not been started"); //TODO: custom exception
+                //TODO: make custom exception
+                throw new Exception("Error: Attempted to stop operator that was not started.");
             }
 
             _isRequestedToStop = true;
@@ -67,6 +68,19 @@ namespace BlackSP.Core.Operators
                 _cancellationTokenSource.Cancel();
             }
             return _operatingThread;
+        }
+
+        public void Enqueue(IEvent @event)
+        {
+            _ = @event ?? throw new ArgumentNullException(nameof(@event));
+            if(!_inputQueue.TryAdd(@event, int.MaxValue, CancellationToken))
+            {   //adding to input queue failed without exception
+
+                //TODO: change for logging at warning/error level?
+                Console.WriteLine($"Error: failed to add event to input queue");
+                //TODO: make custom exception
+                throw new Exception("Error: failed to add event to input queue");
+            }
         }
 
         public void RegisterOutputEndpoint(IOutputEndpoint outputEndpoint)
@@ -102,7 +116,7 @@ namespace BlackSP.Core.Operators
         {
             try
             {
-                var inputEnumerable = InputQueue.GetConsumingEnumerable(_cancellationTokenSource.Token);
+                var inputEnumerable = _inputQueue.GetConsumingEnumerable(_cancellationTokenSource.Token);
                 foreach (IEvent @event in inputEnumerable)
                 {
                     var results = OperateOnEvent(@event) ?? throw new NullReferenceException("OperateOnEvent returned null instead of enumerable");

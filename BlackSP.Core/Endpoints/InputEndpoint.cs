@@ -94,7 +94,7 @@ namespace BlackSP.Core.Endpoints
                         //TODO: log/throw?
                         continue;
                     }
-                    _operator.InputQueue.Add(nextEvent);
+                    _operator.Enqueue(nextEvent);
                 } 
                 finally
                 {
