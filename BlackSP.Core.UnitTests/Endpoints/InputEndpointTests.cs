@@ -77,7 +77,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 //start processing from stream
                 var inputThread = Task.Run(() => _testEndpoint.Ingress(testIngressStream, _endpointCtSource.Token));
                 //a bit hackish but we need to wait for the background thread to do its work
-                await Task.Delay(100);
+                await Task.Delay(10);
                 
                 //assertions
                 foreach (var @event in _testEvents)
@@ -105,7 +105,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 //start processing from stream
                 var inputThread = Task.Run(() => _testEndpoint.Ingress(inputStream, _endpointCtSource.Token));
                 //Let the background thread operate for a bit..
-                await Task.Delay(100);
+                await Task.Delay(1);
                 //cancel reading thread
 
                 //teardown

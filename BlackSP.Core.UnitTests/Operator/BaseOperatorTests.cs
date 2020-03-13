@@ -27,25 +27,10 @@ namespace BlackSP.Core.UnitTests.Operator
         }
     }
 
-    class NullBaseOperator : TestBaseOperator
-    {
-        protected override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
-        {
-            return null;
-        }
-    }
-
-    class ExceptionBaseOperator : TestBaseOperator
-    {
-        protected override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public class BaseOperatorTests
     {
-        private IOperator _operator;
+        private BaseOperator _operator;
+        private Task _operatorThread;
         private IList<IEvent> _testEvents;
 
         [SetUp]
@@ -59,6 +44,8 @@ namespace BlackSP.Core.UnitTests.Operator
                 _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
             }
 
+            _operatorThread = _operator.Start();
+
         }
 
         [Test]
@@ -70,43 +57,20 @@ namespace BlackSP.Core.UnitTests.Operator
         [Test]
         public void Enqueue_ThrowsOnCancelled()
         {
-            var operatorThread = _operator.Start();
             Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
+            Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
             Assert.Throws<OperationCanceledException>(() => _operator.Enqueue(new TestEvent()));
         }
 
         [Test]
         public void Stop_ThrowsWhenNotStarted()
         {
-            //var operatorThread = _operator.Start();
-
+            var testoperator = new TestBaseOperator();
             //TODO: update when custom exception implemented
-            Assert.ThrowsAsync<Exception>(_operator.Stop);
+            Assert.ThrowsAsync<Exception>(testoperator.Stop);
         }
 
-        [Test]
-        public void Operator_ThrowsOnNullOperationResult()
-        {
-            _operator = new NullBaseOperator();
-            var operatorThread = _operator.Start();
-            _operator.Enqueue(new TestEvent());
-            Assert.ThrowsAsync<NullReferenceException>(async () => await operatorThread);
-            //also assert that after exception on operating thread the internal state is cancelled
-            Assert.Throws<OperationCanceledException>(() => _operator.Enqueue(new TestEvent()));
-        }
-
-        [Test]
-        public void Operator_ThrowsOnExceptionOperationResult()
-        {
-            _operator = new ExceptionBaseOperator();
-            var operatorThread = _operator.Start();
-            _operator.Enqueue(new TestEvent());
-            Assert.ThrowsAsync<NotImplementedException>(async () => await operatorThread);
-            
-            //also assert that after an exception on the operating thread the operator has been cancelled and stopped processing
-            Assert.Throws<OperationCanceledException>(() => _operator.Enqueue(new TestEvent()));
-        }
+        
 
         [Test]
         public async Task Operator_PassesAnEventThrough()
@@ -115,13 +79,9 @@ namespace BlackSP.Core.UnitTests.Operator
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
             _operator.RegisterOutputEndpoint(outputEndpoint.Object);
 
-            var operatorThread = _operator.Start();
-
             _operator.Enqueue(_testEvents[0]);
 
-            await Task.Delay(50); //give background thread some time to perform the operation
-            Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
+            await Task.Delay(1); //give background thread some time to perform the operation
 
             Assert.IsTrue(mockedOutputQueue.Any());
             Assert.AreEqual(_testEvents[0], mockedOutputQueue.Dequeue());
@@ -134,17 +94,13 @@ namespace BlackSP.Core.UnitTests.Operator
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
             _operator.RegisterOutputEndpoint(outputEndpoint.Object);
 
-            var operatorThread = _operator.Start();
-
             foreach (var e in _testEvents)
             {
                 _operator.Enqueue(e);
             }
 
-            await Task.Delay(50); //give background thread some time to perform the operation
-            Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
-
+            await Task.Delay(1); //give background thread some time to perform the operation
+            
             Assert.IsTrue(mockedOutputQueue.Any());
             foreach (var e in _testEvents)
             {
@@ -165,17 +121,12 @@ namespace BlackSP.Core.UnitTests.Operator
                 outputQueues.Add(mockedOutputQueue);
             }
 
-            var operatorThread = _operator.Start();
-
             foreach (var e in _testEvents)
             {
                 _operator.Enqueue(e);
             }
 
-            await Task.Delay(50); //give background thread some time to perform the operation
-
-            Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
+            await Task.Delay(1); //give background thread some time to perform the operation
 
             foreach (var outputQueue in outputQueues) //for every output enpoint..
             {
@@ -185,6 +136,15 @@ namespace BlackSP.Core.UnitTests.Operator
                     Assert.AreEqual(e, outputQueue.Dequeue());
                 }
             }
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
+            Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
+
+            _operator.Dispose();
         }
     }
 }

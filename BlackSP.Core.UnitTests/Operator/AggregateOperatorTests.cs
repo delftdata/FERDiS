@@ -32,14 +32,14 @@ namespace BlackSP.Core.UnitTests.Operator
     public class AggregateOperatorTests
     {
         private TimeSpan _windowSize;
-
-        private IOperator _operator;
+        private Task _operatorThread;
+        private AggregateOperator<TestEvent, TestEvent2> _operator;
         private IList<IEvent> _testEvents;
 
         [SetUp]
         public void SetUp()
         {
-            _windowSize = TimeSpan.FromMilliseconds(100);
+            _windowSize = TimeSpan.FromMilliseconds(50);
             _operator = new AggregateOperator<TestEvent, TestEvent2>(new EventCounterAggregateConfiguration
             {
                 WindowSize = _windowSize
@@ -49,6 +49,7 @@ namespace BlackSP.Core.UnitTests.Operator
             {
                 _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
             }
+            _operatorThread = _operator.Start();
         }
 
         [Test]
@@ -58,23 +59,21 @@ namespace BlackSP.Core.UnitTests.Operator
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
             _operator.RegisterOutputEndpoint(outputEndpoint.Object);
 
-            var operatorThread = _operator.Start();
+            await Task.Delay(1); //slightly skew of window barriers
             foreach (var e in _testEvents)
             {
                 _operator.Enqueue(e);
             }
 
             await Task.Delay(_windowSize); //let the window close
-            await Task.Delay(_windowSize / 10); //give background thread some time to perform the operation
             
-            Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
-
+            
             Assert.IsTrue(mockedOutputQueue.Any());
 
             var windowResult = mockedOutputQueue.Dequeue() as TestEvent2;
             Assert.NotNull(windowResult);
             Assert.AreEqual(_testEvents.Count(), windowResult.Value);
+
             Assert.IsFalse(mockedOutputQueue.Any());
         }
 
@@ -85,14 +84,13 @@ namespace BlackSP.Core.UnitTests.Operator
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
             _operator.RegisterOutputEndpoint(outputEndpoint.Object);
 
-            var operatorThread = _operator.Start();
+            await Task.Delay(_windowSize / 10); //slightly skew off operator window barriers
             foreach (var e in _testEvents)
             {
                 _operator.Enqueue(e);
             }
             
             await Task.Delay(_windowSize); //let the window close
-            await Task.Delay(_windowSize / 10); //give background thread some time to perform the operation
 
             foreach (var e in _testEvents)
             {
@@ -100,10 +98,8 @@ namespace BlackSP.Core.UnitTests.Operator
                 _operator.Enqueue(e); //second window put double events
             }
             await Task.Delay(_windowSize); //let the window close
-            await Task.Delay(_windowSize / 10); //give background thread some time to perform the operation
 
-            await Task.Delay(_windowSize);
-            //await Task.Delay(_windowSize / 10);//leave third window empty
+            await Task.Delay(_windowSize); //leave third window empty
 
             foreach (var e in _testEvents)
             {
@@ -111,27 +107,27 @@ namespace BlackSP.Core.UnitTests.Operator
                 _operator.Enqueue(e); _operator.Enqueue(e); //fourth window put quadruple events
             }
             await Task.Delay(_windowSize); //let the window close
-            await Task.Delay(_windowSize / 10);
 
-            Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
-
-            for(int i = 1; i <= 4; i++)
-            {   //two iterations for the two expected windows
-                Assert.IsTrue(mockedOutputQueue.Any());
-                var windowResult = mockedOutputQueue.Dequeue() as TestEvent2;
-                Assert.NotNull(windowResult);
-                var expectedEvents = i == 3 ? 0 : _testEvents.Count() * i; //third window is empty in test
-                Assert.AreEqual(expectedEvents, windowResult.Value);
+            lock(mockedOutputQueue)
+            {
+                for (int i = 1; i <= 4; i++)
+                {   //two iterations for the two expected windows
+                    Assert.IsTrue(mockedOutputQueue.Any());
+                    var windowResult = mockedOutputQueue.Dequeue() as TestEvent2;
+                    Assert.NotNull(windowResult);
+                    var expectedEvents = i == 3 ? 0 : _testEvents.Count() * i; //third window is empty in test
+                    Assert.AreEqual(expectedEvents, windowResult.Value);
+                }
             }
-            Assert.IsFalse(mockedOutputQueue.Any());
-
         }
 
         [TearDown]
         public void TearDown()
         {
-            //Assert.Fail();
+            Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
+            Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
+
+            _operator.Dispose();
         }
     }
 }

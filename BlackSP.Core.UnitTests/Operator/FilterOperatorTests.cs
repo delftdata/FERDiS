@@ -36,8 +36,8 @@ namespace BlackSP.Core.UnitTests.Operator
 
     public class FilterOperatorTests
     {
-        private IOperator _distinctOperator;
-
+        private FilterOperator<TestEvent> _distinctOperator;
+        private Task _operatorThread;
         private IList<IEvent> _testEvents;
 
         [SetUp]
@@ -49,6 +49,8 @@ namespace BlackSP.Core.UnitTests.Operator
             {
                 _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
             }
+            _operatorThread = _distinctOperator.Start();
+
         }
 
         [Test]
@@ -58,18 +60,14 @@ namespace BlackSP.Core.UnitTests.Operator
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
             _distinctOperator.RegisterOutputEndpoint(outputEndpoint.Object);
 
-            var operatorThread = _distinctOperator.Start();
-
             foreach (var e in _testEvents)
             {
                 _distinctOperator.Enqueue(e);
                 _distinctOperator.Enqueue(e);//Add the events twice, so the seconds can get filtered
             }
 
-            await Task.Delay(50); //give background thread some time to perform the operation
-            Assert.ThrowsAsync<OperationCanceledException>(_distinctOperator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
-
+            await Task.Delay(1); //give background thread some time to perform the operation
+            
             Assert.IsTrue(mockedOutputQueue.Any());
             foreach (var e in _testEvents)
             {
@@ -78,19 +76,13 @@ namespace BlackSP.Core.UnitTests.Operator
             Assert.IsFalse(mockedOutputQueue.Any()); //crucial statement for this test, the queue should be empty at this point to reflect the filtered out events
         }
 
-        [Test]
-        public async Task FilterOperator_ThrowsOnUnexpectedType()
+        [TearDown]
+        public void TearDown()
         {
-            var mockedOutputQueue = new Queue<IEvent>();
-            var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            _distinctOperator.RegisterOutputEndpoint(outputEndpoint.Object);
+            Assert.ThrowsAsync<OperationCanceledException>(_distinctOperator.Stop);
+            Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
 
-            var operatorThread = _distinctOperator.Start();
-            _distinctOperator.Enqueue(new TestEvent2()); //enqueue unexpected event type
-
-            await Task.Delay(50); //give background thread some time to perform the operation
-            Assert.ThrowsAsync<ArgumentException>(async () => await operatorThread);
+            _distinctOperator.Dispose();
         }
-
     }
 }
