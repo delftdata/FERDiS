@@ -27,7 +27,7 @@ namespace BlackSP.Core.Operators
         public override Task Start()
         {
             //Start timer that will keep closing windows
-            _windowTimer = new Timer(OnWindowExpiredTimerTick, null, _options.WindowSize, _options.WindowSize)
+            _windowTimer = new Timer(OnWindowExpiredTimerTick, null, _options.WindowSize, _options.WindowSize);
             return base.Start();
         }
 

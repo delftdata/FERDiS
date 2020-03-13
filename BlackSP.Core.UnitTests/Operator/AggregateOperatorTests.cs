@@ -66,7 +66,7 @@ namespace BlackSP.Core.UnitTests.Operator
 
 
             await Task.Delay(_windowSize); //let the window close
-            await Task.Delay(_windowSize / 4); //give background thread some time to perform the operation
+            await Task.Delay(_windowSize / 10); //give background thread some time to perform the operation
             Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
             Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
 
@@ -93,7 +93,7 @@ namespace BlackSP.Core.UnitTests.Operator
             }
             
             await Task.Delay(_windowSize); //let the window close
-            await Task.Delay(_windowSize / 4); //give background thread some time to perform the operation
+            await Task.Delay(_windowSize / 10); //give background thread some time to perform the operation
 
             foreach (var e in _testEvents)
             {
@@ -102,7 +102,7 @@ namespace BlackSP.Core.UnitTests.Operator
             }
             await Task.Delay(_windowSize); //let the window close
 
-            await Task.Delay(_windowSize / 4); //give background thread some time to perform the operation
+            await Task.Delay(_windowSize / 10); //give background thread some time to perform the operation
             Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
             Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
 
