@@ -5,17 +5,19 @@ using System.Text;
 
 namespace BlackSP.Core.Operators.Concrete
 {
-    public class AggregateOperator : BaseWindowedOperator
+    public class AggregateOperator<TIn, TOut> : BaseWindowedOperator<TIn, TOut>
+        where TIn : class, IEvent
+        where TOut : class, IEvent
     {
 
-        private readonly IAggregateOperatorConfiguration _options;
+        private readonly IAggregateOperatorConfiguration<TIn, TOut> _options;
 
-        public AggregateOperator(IAggregateOperatorConfiguration options) : base(options)
+        public AggregateOperator(IAggregateOperatorConfiguration<TIn, TOut> options) : base(options)
         {
             _options = options;
         }
 
-        protected override IEnumerable<IEvent> ProcessClosedWindow(IEnumerable<IEvent> closedWindow)
+        protected override IEnumerable<TOut> ProcessClosedWindow(IEnumerable<TIn> closedWindow)
         {
             return _options.Aggregate(closedWindow);
         }

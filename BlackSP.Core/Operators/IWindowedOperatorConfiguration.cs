@@ -29,8 +29,11 @@ namespace BlackSP.Core.Operators
         IEvent Join(IEvent matchA, IEvent matchB);
     }
 
-    public interface IAggregateOperatorConfiguration : IWindowedOperatorConfiguration
+    public interface IAggregateOperatorConfiguration<TIn, TOut> : IWindowedOperatorConfiguration
+        where TIn : class, IEvent
+        where TOut : class, IEvent
+
     {
-        IEnumerable<IEvent> Aggregate(IEnumerable<IEvent> window);
+        IEnumerable<TOut> Aggregate(IEnumerable<TIn> window);
     }
 }

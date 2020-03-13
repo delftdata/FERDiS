@@ -8,35 +8,38 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Operators
 {
-    public abstract class BaseWindowedOperator : BaseOperator
+    public abstract class BaseWindowedOperator<TIn, TOut> : BaseOperator
+        where TIn : class, IEvent
+        where TOut : class, IEvent
     {
 
         private readonly IWindowedOperatorConfiguration _options;
-        private IEnumerable<IEvent> _currentWindow;
+        private IEnumerable<TIn> _currentWindow;
         private Timer _windowTimer;
 
         public BaseWindowedOperator(IWindowedOperatorConfiguration options) : base(options)
         {
             _options = options;
-            _currentWindow = new List<IEvent>();
+            _currentWindow = new List<TIn>();
             _windowTimer = null;
         }
 
         public override Task Start()
         {
             //Start timer that will keep closing windows
-            _windowTimer = new Timer(OnWindowExpiredTimerTick, null, TimeSpan.FromSeconds(0), _options.WindowSize);
+            _windowTimer = new Timer(OnWindowExpiredTimerTick, null, _options.WindowSize, _options.WindowSize)
             return base.Start();
         }
 
         protected sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
-            _currentWindow.Append(@event);
+            var typedEvent = @event as TIn ?? throw new ArgumentException($"Argument {nameof(@event)} was of type {@event.GetType()}, expected: {typeof(TIn)}");
+            _currentWindow = _currentWindow.Append(typedEvent);
             return Enumerable.Empty<IEvent>();
         }
 
-        protected abstract IEnumerable<IEvent> ProcessClosedWindow(IEnumerable<IEvent> closedWindow);
+        protected abstract IEnumerable<TOut> ProcessClosedWindow(IEnumerable<TIn> closedWindow);
 
         /// <summary>
         /// Gets invoked by timer and is responsible for:<br/>
@@ -47,16 +50,21 @@ namespace BlackSP.Core.Operators
         /// <param name="_"></param>
         private void OnWindowExpiredTimerTick(object _)
         {
+            CancellationToken.ThrowIfCancellationRequested();
+
             var previousWindow = CloseCurrentWindow();
             //TODO: make custom exception
-            var operatorOutput = ProcessClosedWindow(previousWindow) ?? throw new Exception("ProcessClosedWindow returned null, expected IEnumerable");
+            var operatorOutput = ProcessClosedWindow(previousWindow) 
+                ?? throw new Exception("ProcessClosedWindow returned null, expected IEnumerable");
+            
+            
             EgressOutputEvents(operatorOutput);
         }
 
-        private IEnumerable<IEvent> CloseCurrentWindow()
+        private IEnumerable<TIn> CloseCurrentWindow()
         {
             var eventsInWindow = _currentWindow.ToArray();
-            _currentWindow = new List<IEvent>();
+            _currentWindow = new List<TIn>();
             return eventsInWindow;
         }
 
