@@ -8,8 +8,9 @@ namespace BlackSP.Core.Operators
 {
     public abstract class BaseSlidingWindowedOperator : BaseOperator
     {
+        protected IEnumerable<KeyValuePair<DateTime, IEvent>> CurrentWindow => _currentWindow;
 
-        protected IEnumerable<KeyValuePair<DateTime, IEvent>> _currentWindow { get; private set; }
+        private IEnumerable<KeyValuePair<DateTime, IEvent>> _currentWindow;
         private readonly IWindowedOperatorConfiguration _options;
 
         public BaseSlidingWindowedOperator(IWindowedOperatorConfiguration options) : base(options)

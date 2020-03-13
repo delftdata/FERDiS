@@ -98,7 +98,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 _endpointCtSource.Cancel();
                 await thread;
             }
-            catch (OperationCanceledException e) { };
+            catch (OperationCanceledException) { };
         }
 
 
@@ -144,7 +144,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
         }
 
         [Test]
-        public async Task RegisterWithSameShardIdShouldReturnFalse()
+        public void RegisterWithSameShardIdShouldReturnFalse()
         {
             Assert.IsTrue(_testEndpoint.RegisterRemoteShard(0));
             Assert.IsTrue(_testEndpoint.RegisterRemoteShard(1));

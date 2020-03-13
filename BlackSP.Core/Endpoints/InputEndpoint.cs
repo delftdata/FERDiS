@@ -13,7 +13,7 @@ using BlackSP.Interfaces.Serialization;
 
 namespace BlackSP.Core.Endpoints
 {
-    public class InputEndpoint : IInputEndpoint
+    public class InputEndpoint : IInputEndpoint, IDisposable
     {
         private IOperator _operator;
         private ISerializer _serializer;
@@ -47,8 +47,8 @@ namespace BlackSP.Core.Endpoints
                 var token = linkedTokenSource.Token;
                 var streamReadingThread = Task.Run(() => ReadMessagesFromStream(s, token));
 
-                var exitedThread = await Task.WhenAny(streamReadingThread, _messageDeserializationThread);
-                await exitedThread; //await the exited thread so any thrown exception will be rethrown
+                var exitedThread = await Task.WhenAny(streamReadingThread, _messageDeserializationThread).ConfigureAwait(true);
+                await exitedThread.ConfigureAwait(true); //await the exited thread so any thrown exception will be rethrown
             }
         }
 
@@ -62,15 +62,15 @@ namespace BlackSP.Core.Endpoints
         {
             while (!t.IsCancellationRequested)
             {
-                int nextMsgLength = await s.ReadInt32Async();
+                int nextMsgLength = await s.ReadInt32Async().ConfigureAwait(true);
                 if (nextMsgLength <= 0) { continue; }
 
                 byte[] buffer = _msgBufferPool.Rent(nextMsgLength);
-                int realMsgLength = await s.ReadAllRequiredBytesAsync(buffer, 0, nextMsgLength);
+                int realMsgLength = await s.ReadAllRequiredBytesAsync(buffer, 0, nextMsgLength).ConfigureAwait(true);
                 if (nextMsgLength != realMsgLength)
                 {
                     //TODO: log/throw?
-                    _msgBufferPool.Return(buffer); //gotta return the buffer in this case
+                    _msgBufferPool.Return(buffer); //gotta return the buffer due to error
                 }
                 else
                 {
@@ -88,7 +88,7 @@ namespace BlackSP.Core.Endpoints
                 var msgStream = new MemoryStream(nextMsgBuffer); //TODO: check memory usage
                 try
                 {
-                    var nextEvent = await _serializer.Deserialize<IEvent>(msgStream, t);
+                    var nextEvent = await _serializer.Deserialize<IEvent>(msgStream, t).ConfigureAwait(true);
                     if (nextEvent == null)
                     {
                         //TODO: log/throw?
@@ -103,5 +103,30 @@ namespace BlackSP.Core.Endpoints
                 }
             }
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _messageDeserializationThread.Dispose();
+                    _unprocessedMessages.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

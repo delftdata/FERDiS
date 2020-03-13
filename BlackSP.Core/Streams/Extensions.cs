@@ -34,6 +34,8 @@ namespace BlackSP.Core.Streams
         /// <param name="value"></param>
         public static void WriteInt32Fixed(this Stream stream, int value)
         {
+            _ = stream ?? throw new ArgumentNullException(nameof(stream));
+
             stream.WriteByte((byte)(value & 0xFF));
             stream.WriteByte((byte)((value >> 0x8) & 0xFF));
             stream.WriteByte((byte)((value >> 0x10) & 0xFF));
@@ -47,6 +49,8 @@ namespace BlackSP.Core.Streams
         /// <returns></returns>
         public static int ReadInt32(this Stream stream)
         {
+            _ = stream ?? throw new ArgumentNullException(nameof(stream));
+
             var currentByte = (uint)stream.ReadByte();
             byte read = 1;
             uint result = currentByte & 0x7FU;
@@ -72,8 +76,10 @@ namespace BlackSP.Core.Streams
         /// <returns></returns>
         public async static Task<int> ReadInt32Async(this Stream stream)
         {
+            _ = stream ?? throw new ArgumentNullException(nameof(stream));
+
             byte[] buffer = new byte[1];
-            await stream.ReadAsync(buffer, 0, 1);
+            await stream.ReadAsync(buffer, 0, 1).ConfigureAwait(false); //TODO: verify configure await works as expected
             var currentByte = (uint)buffer[0];
             byte read = 1;
             uint result = currentByte & 0x7FU;
@@ -81,7 +87,7 @@ namespace BlackSP.Core.Streams
             while ((currentByte & 0x80) != 0)
             {
                 byte[] tmpBuffer = new byte[1];
-                await stream.ReadAsync(tmpBuffer, 0, 1);
+                await stream.ReadAsync(tmpBuffer, 0, 1).ConfigureAwait(false); //TODO: verify configure await works as expected
                 currentByte = (uint)tmpBuffer[0];
                 read++;
                 result |= (currentByte & 0x7FU) << shift;
@@ -101,6 +107,8 @@ namespace BlackSP.Core.Streams
         /// <param name="value"></param>
         public static void WriteInt32(this Stream stream, int value)
         {
+            _ = stream ?? throw new ArgumentNullException(nameof(stream));
+
             var zigZagEncoded = unchecked((uint)((value << 1) ^ (value >> 31)));
             while ((zigZagEncoded & ~0x7F) != 0)
             {
@@ -118,10 +126,8 @@ namespace BlackSP.Core.Streams
         /// <param name="value"></param>
         public static void WriteByteArray(this Stream stream, byte[] value)
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException("value");
-            }
+            _ = stream ?? throw new ArgumentNullException(nameof(stream));
+            _ = value ?? throw new ArgumentNullException(nameof(value));
 
             stream.WriteInt32(value.Length);
             if (value.Length > 0)
@@ -137,6 +143,8 @@ namespace BlackSP.Core.Streams
         /// <returns></returns>
         public static byte[] ReadByteArray(this Stream stream)
         {
+            _ = stream ?? throw new ArgumentNullException(nameof(stream));
+
             int arraySize = stream.ReadInt32();
             var array = new byte[arraySize];
             if (arraySize > 0)
@@ -156,6 +164,8 @@ namespace BlackSP.Core.Streams
         /// <returns></returns>
         public static int ReadAllRequiredBytes(this Stream stream, byte[] buffer, int offset, int count)
         {
+            _ = stream ?? throw new ArgumentNullException(nameof(stream));
+
             int toRead = count;
             int currentOffset = offset;
             int currentRead;
@@ -179,12 +189,14 @@ namespace BlackSP.Core.Streams
         /// <returns></returns>
         public static async Task<int> ReadAllRequiredBytesAsync(this Stream stream, byte[] buffer, int offset, int count)
         {
+            _ = stream ?? throw new ArgumentNullException(nameof(stream));
+
             int toRead = count;
             int currentOffset = offset;
             int currentRead;
             do
             {
-                currentRead = await stream.ReadAsync(buffer, currentOffset, toRead);
+                currentRead = await stream.ReadAsync(buffer, currentOffset, toRead).ConfigureAwait(false); //TODO: verify configure await works as expected
                 currentOffset += currentRead;
                 toRead -= currentRead;
             }

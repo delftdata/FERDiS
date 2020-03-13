@@ -20,16 +20,12 @@ namespace BlackSP.Core.Endpoints
     public class OutputEndpoint : IOutputEndpoint, IDisposable
     {
         private readonly BlockingCollection<Tuple<IEvent, OutputMode>> _outputQueue;
-
-        //default BlockingCollection implementation is a ConcurrentQueue
-        protected IDictionary<int, BlockingCollection<MemoryStream>> _shardedMessageQueues;
-
-        protected int? _shardCount;
-
+        private readonly IDictionary<int, BlockingCollection<MemoryStream>> _shardedMessageQueues; //default BlockingCollection implementation is a ConcurrentQueue
         private readonly ISerializer _serializer;
         private readonly IOperator _operator;
         private readonly RecyclableMemoryStreamManager _msgBufferPool;
         private readonly Task _messageSerializationThread;
+        private int? _shardCount;
 
         public OutputEndpoint(IOperator targetOperator, ISerializer serializer, RecyclableMemoryStreamManager memStreamPool)
         {
@@ -63,8 +59,8 @@ namespace BlackSP.Core.Endpoints
                 var token = linkedTokenSource.Token;
                 var streamWritingThread = Task.Run(() => WriteMessagesToStream(outputStream, remoteShardId, token));
 
-                var exitedThread = await Task.WhenAny(streamWritingThread, _messageSerializationThread);
-                await exitedThread; //await the exited thread so any thrown exception will be rethrown
+                var exitedThread = await Task.WhenAny(streamWritingThread, _messageSerializationThread).ConfigureAwait(false);
+                await exitedThread.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
             }
         }
 
@@ -167,7 +163,7 @@ namespace BlackSP.Core.Endpoints
         /// <returns></returns>
         private async Task SerializeEvents(CancellationToken t)
         {
-            while(true) //TODO: batch serialize loop
+            while(true) //TODO: batch parallelize loop
             {
                 t.ThrowIfCancellationRequested();
                 var nextEvent = _outputQueue.Take(t);
@@ -176,7 +172,7 @@ namespace BlackSP.Core.Endpoints
                 OutputMode outputMode = nextEvent.Item2;
 
                 var msgBuffer = _msgBufferPool.GetStream();
-                await _serializer.Serialize(msgBuffer, @event);
+                await _serializer.Serialize(msgBuffer, @event).ConfigureAwait(false);
                 EnqueueMessageInAppropriateShardQueue(msgBuffer, outputMode);
             }
         }
