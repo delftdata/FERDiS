@@ -16,12 +16,13 @@ namespace BlackSP.Core.Operators
         private readonly IWindowedOperatorConfiguration _options;
         private IEnumerable<TIn> _currentWindow;
         private Timer _windowTimer;
-
+        private object _windowLock;
         public BaseWindowedOperator(IWindowedOperatorConfiguration options) : base(options)
         {
             _options = options;
             _currentWindow = new List<TIn>();
             _windowTimer = null;
+            _windowLock = new object();
         }
 
         public override Task Start()
@@ -35,7 +36,10 @@ namespace BlackSP.Core.Operators
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
             var typedEvent = @event as TIn ?? throw new ArgumentException($"Argument {nameof(@event)} was of type {@event.GetType()}, expected: {typeof(TIn)}");
-            _currentWindow = _currentWindow.Append(typedEvent);
+            lock (_windowLock)
+            {
+                _currentWindow = _currentWindow.Append(typedEvent);
+            }
             return Enumerable.Empty<IEvent>();
         }
 
@@ -50,9 +54,14 @@ namespace BlackSP.Core.Operators
         /// <param name="_"></param>
         private void OnWindowExpiredTimerTick(object _)
         {
-            CancellationToken.ThrowIfCancellationRequested();
+            if(CancellationToken.IsCancellationRequested)
+            {
+                _windowTimer.Change(int.MaxValue, int.MaxValue); //stop ticking (disposing is handled by IDisposable)
+                return; //stop processing if cancelled
+            }
 
             var previousWindow = CloseCurrentWindow();
+            //TODO: log diagnostics/debug stuff?
             //TODO: make custom exception
             var operatorOutput = ProcessClosedWindow(previousWindow) 
                 ?? throw new Exception("ProcessClosedWindow returned null, expected IEnumerable");
@@ -63,9 +72,13 @@ namespace BlackSP.Core.Operators
 
         private IEnumerable<TIn> CloseCurrentWindow()
         {
-            var eventsInWindow = _currentWindow.ToArray();
-            _currentWindow = new List<TIn>();
-            return eventsInWindow;
+            lock(_windowLock)
+            {
+                var eventsInWindow = _currentWindow.ToArray();
+                _currentWindow = new List<TIn>();
+                return eventsInWindow;
+            }
+            
         }
 
         #region IDisposable Support

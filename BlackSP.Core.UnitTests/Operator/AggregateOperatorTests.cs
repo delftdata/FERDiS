@@ -64,9 +64,9 @@ namespace BlackSP.Core.UnitTests.Operator
                 _operator.Enqueue(e);
             }
 
-
             await Task.Delay(_windowSize); //let the window close
             await Task.Delay(_windowSize / 10); //give background thread some time to perform the operation
+            
             Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
             Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
 
@@ -77,7 +77,6 @@ namespace BlackSP.Core.UnitTests.Operator
             Assert.AreEqual(_testEvents.Count(), windowResult.Value);
             Assert.IsFalse(mockedOutputQueue.Any());
         }
-
 
         [Test]
         public async Task AggregateOperator_EmitsMultipleResults()
@@ -101,20 +100,38 @@ namespace BlackSP.Core.UnitTests.Operator
                 _operator.Enqueue(e); //second window put double events
             }
             await Task.Delay(_windowSize); //let the window close
-
             await Task.Delay(_windowSize / 10); //give background thread some time to perform the operation
+
+            await Task.Delay(_windowSize);
+            //await Task.Delay(_windowSize / 10);//leave third window empty
+
+            foreach (var e in _testEvents)
+            {
+                _operator.Enqueue(e); _operator.Enqueue(e);
+                _operator.Enqueue(e); _operator.Enqueue(e); //fourth window put quadruple events
+            }
+            await Task.Delay(_windowSize); //let the window close
+            await Task.Delay(_windowSize / 10);
+
             Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
             Assert.ThrowsAsync<OperationCanceledException>(async () => await operatorThread);
 
-            for(int i = 1; i <= 2; i++)
+            for(int i = 1; i <= 4; i++)
             {   //two iterations for the two expected windows
                 Assert.IsTrue(mockedOutputQueue.Any());
                 var windowResult = mockedOutputQueue.Dequeue() as TestEvent2;
                 Assert.NotNull(windowResult);
-                Assert.AreEqual(_testEvents.Count() * i, windowResult.Value);
+                var expectedEvents = i == 3 ? 0 : _testEvents.Count() * i; //third window is empty in test
+                Assert.AreEqual(expectedEvents, windowResult.Value);
             }
             Assert.IsFalse(mockedOutputQueue.Any());
+
         }
 
+        [TearDown]
+        public void TearDown()
+        {
+            //Assert.Fail();
+        }
     }
 }
