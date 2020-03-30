@@ -10,7 +10,7 @@ namespace BlackSP.Serialization.UnitTests.Utilities
     [ZeroFormattable]
     public class ZeroFormatterTestEvent : BaseZeroFormattableEvent
     {
-        [Index(1)]
+        [Index(2)]
         public virtual IDictionary<string, int> Values { get; set; }
 
         public ZeroFormatterTestEvent()
