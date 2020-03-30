@@ -1,4 +1,5 @@
-﻿using BlackSP.Interfaces.Events;
+﻿using BlackSP.Core.Windows;
+using BlackSP.Interfaces.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,37 +15,32 @@ namespace BlackSP.Core.Operators
     {
 
         private readonly IWindowedOperatorConfiguration _options;
-        private IEnumerable<TIn> _currentWindow;
-        private Timer _windowTimer;
-        private object _windowLock;
+        private FixedEventWindow<TIn> _currentWindow;
+        
         public BaseWindowedOperator(IWindowedOperatorConfiguration options) : base(options)
         {
-            _options = options;
-            _currentWindow = new List<TIn>();
-            _windowTimer = null;
-            _windowLock = new object();
+            _options = options;            
         }
 
-        public override Task Start()
+        public override Task Start(DateTime at)
         {
-            //Start timer that will keep closing windows
-            _windowTimer = new Timer(OnWindowExpiredTimerTick, null, _options.WindowSize, _options.WindowSize);
-            return base.Start();
+            _currentWindow = new FixedEventWindow<TIn>(at, _options.WindowSize);
+            return base.Start(at);
         }
 
         protected sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
             var typedEvent = @event as TIn ?? throw new ArgumentException($"Argument {nameof(@event)} was of type {@event.GetType()}, expected: {typeof(TIn)}");
-            lock (_windowLock)
-            {
-                _currentWindow = _currentWindow.Append(typedEvent);
-            }
-            return Enumerable.Empty<IEvent>();
+
+            var closedWindow = _currentWindow.Add(typedEvent);
+            return !closedWindow.Any() ? Enumerable.Empty<IEvent>() : ProcessClosedWindow(closedWindow)
+                ?? throw new Exception("ProcessClosedWindow returned null, expected IEnumerable");
         }
 
         protected abstract IEnumerable<TOut> ProcessClosedWindow(IEnumerable<TIn> closedWindow);
 
+        /*
         /// <summary>
         /// Gets invoked by timer and is responsible for:<br/>
         /// 1. Closing the current window.<br/>
@@ -60,7 +56,9 @@ namespace BlackSP.Core.Operators
                 return; //stop processing if cancelled
             }
 
-            var previousWindow = CloseCurrentWindow();
+
+
+            var previousWindow = _currentWindow.Find();
             //TODO: log diagnostics/debug stuff?
             //TODO: make custom exception
             var operatorOutput = ProcessClosedWindow(previousWindow) 
@@ -68,18 +66,7 @@ namespace BlackSP.Core.Operators
             
             
             EgressOutputEvents(operatorOutput);
-        }
-
-        private IEnumerable<TIn> CloseCurrentWindow()
-        {
-            lock(_windowLock)
-            {
-                var eventsInWindow = _currentWindow.ToArray();
-                _currentWindow = new List<TIn>();
-                return eventsInWindow;
-            }
-            
-        }
+        }*/
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
@@ -90,7 +77,7 @@ namespace BlackSP.Core.Operators
             {
                 if (disposing)
                 {
-                    _windowTimer?.Dispose();
+                    //_windowTimer?.Dispose();
                 }
                 disposedValue = true;
             }

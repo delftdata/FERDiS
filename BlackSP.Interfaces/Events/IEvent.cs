@@ -6,6 +6,8 @@ namespace BlackSP.Interfaces.Events
 {
     public interface IEvent
     {
-        string Key { get; set; }
+        string Key { get; }
+
+        DateTime EventTime { get; }
     }
 }

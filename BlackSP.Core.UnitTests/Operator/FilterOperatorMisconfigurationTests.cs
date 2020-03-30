@@ -24,7 +24,7 @@ namespace BlackSP.Core.UnitTests.Operator
         public void SetUp()
         {
             _distinctOperator = new FilterOperator<TestEvent>(new FilterOperatorConfigurationNoDoubleKeys());
-            _operatorThread = _distinctOperator.Start();
+            _operatorThread = _distinctOperator.Start(DateTime.Now);
 
         }
 

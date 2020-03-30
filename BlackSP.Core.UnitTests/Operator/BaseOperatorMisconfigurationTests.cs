@@ -29,7 +29,7 @@ namespace BlackSP.Core.UnitTests.Operator
         public void Operator_ThrowsOnNullOperationResult()
         {
             var testoperator = new NullBaseOperator();
-            var operatorThread = testoperator.Start();
+            var operatorThread = testoperator.Start(DateTime.Now);
             testoperator.Enqueue(new TestEvent());
             Assert.ThrowsAsync<NullReferenceException>(async () => await operatorThread);
             //also assert that after exception on operating thread the internal state is cancelled
@@ -40,7 +40,7 @@ namespace BlackSP.Core.UnitTests.Operator
         public void Operator_ThrowsOnExceptionOperationResult()
         {
             var testoperator = new ExceptionBaseOperator();
-            var operatorThread = testoperator.Start();
+            var operatorThread = testoperator.Start(DateTime.Now);
             testoperator.Enqueue(new TestEvent());
             Assert.ThrowsAsync<NotImplementedException>(async () => await operatorThread);
 

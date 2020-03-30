@@ -3,6 +3,7 @@ using BlackSP.Interfaces.Serialization;
 using BlackSP.Serialization;
 using BlackSP.Serialization.UnitTests.Utilities;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,10 +29,10 @@ namespace BlackSP.Core.UnitTests.Serialization
             _serializer = new ProtobufSerializer();
 
             _testEvents = new List<IEvent> {
-                new ProtoBufTestEvent { Key = "test_key_0", Value = 420 },
-                new ProtoBufTestEvent2 { Key = "test_key_02", Value = "420 Yo" },
-                new ProtoBufTestEvent { Key = "test_key_1", Value = 420 },
-                new ProtoBufTestEvent2 { Key = "test_key_12", Value = "420 Yo" }
+                new ProtoBufTestEvent("test_key_0", DateTime.Now, 420),
+                new ProtoBufTestEvent2("test_key_1", DateTime.Now, "yeah 420"),
+                new ProtoBufTestEvent("test_key_2", DateTime.Now, 420),
+                new ProtoBufTestEvent2("test_key_3", DateTime.Now, "yeah 420")
             };
 
             _ctSource = new CancellationTokenSource();

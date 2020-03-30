@@ -22,7 +22,7 @@ namespace BlackSP.Interfaces.Operators
         /// Starts the operating background thread<br/> 
         /// Returns said thread as Task
         /// </summary>
-        Task Start();
+        Task Start(DateTime at);
         
         /// <summary>
         /// Stops the operating background thread<br/>

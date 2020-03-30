@@ -49,7 +49,7 @@ namespace BlackSP.Core.UnitTests.Operator
             {
                 _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
             }
-            _operatorThread = _distinctOperator.Start();
+            _operatorThread = _distinctOperator.Start(DateTime.Now);
 
         }
 

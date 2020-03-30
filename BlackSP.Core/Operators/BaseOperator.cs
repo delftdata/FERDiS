@@ -43,7 +43,7 @@ namespace BlackSP.Core.Operators
         /// Starts the operating background thread<br/> 
         /// (take from input, invoke user function, put in all output queues)
         /// </summary>
-        public virtual Task Start()
+        public virtual Task Start(DateTime at)
         {
             if(_cancellationTokenSource.IsCancellationRequested)
             {
@@ -72,6 +72,9 @@ namespace BlackSP.Core.Operators
         public void Enqueue(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
+            //TODO: consider implementing a high prio / control message queue separately
+            //why? if input channel blocks (chandylamport) have to be able to read control messages still
+
             if(!_inputQueue.TryAdd(@event, int.MaxValue, CancellationToken))
             {   //adding to input queue failed without exception
 

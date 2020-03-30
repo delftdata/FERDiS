@@ -32,24 +32,26 @@ namespace BlackSP.Core.UnitTests.Operator
     public class AggregateOperatorTests
     {
         private TimeSpan _windowSize;
+        private DateTime _startTime;
         private Task _operatorThread;
         private AggregateOperator<TestEvent, TestEvent2> _operator;
-        private IList<IEvent> _testEvents;
+        private IList<TestEvent> _testEvents;
 
         [SetUp]
         public void SetUp()
         {
-            _windowSize = TimeSpan.FromMilliseconds(50);
+            _startTime = DateTime.Now;
+            _windowSize = TimeSpan.FromSeconds(5);
             _operator = new AggregateOperator<TestEvent, TestEvent2>(new EventCounterAggregateConfiguration
             {
                 WindowSize = _windowSize
             });
-            _testEvents = new List<IEvent>();
+            _testEvents = new List<TestEvent>();
             for(int i = 0; i < 10; i++)
             {
-                _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
+                _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i, EventTime = _startTime.AddMilliseconds(i) });
             }
-            _operatorThread = _operator.Start();
+            _operatorThread = _operator.Start(_startTime);
         }
 
         [Test]
@@ -59,15 +61,23 @@ namespace BlackSP.Core.UnitTests.Operator
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
             _operator.RegisterOutputEndpoint(outputEndpoint.Object);
 
-            await Task.Delay(1); //slightly skew of window barriers
+            
             foreach (var e in _testEvents)
             {
-                _operator.Enqueue(e);
+                _operator.Enqueue(e); //enqueue events in window
             }
 
-            await Task.Delay(_windowSize); //let the window close
-            
-            
+            //insert extra event that is in the next window, thus closing the current window
+            var windowCloser = new TestEvent
+            {
+                Key = "K_closer",
+                EventTime = _startTime + _windowSize,
+                Value = 10
+            };
+            _operator.Enqueue(windowCloser);
+
+            await Task.Delay(20); //process events
+
             Assert.IsTrue(mockedOutputQueue.Any());
 
             var windowResult = mockedOutputQueue.Dequeue() as TestEvent2;
@@ -84,38 +94,39 @@ namespace BlackSP.Core.UnitTests.Operator
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
             _operator.RegisterOutputEndpoint(outputEndpoint.Object);
 
-            await Task.Delay(_windowSize / 10); //slightly skew off operator window barriers
-            foreach (var e in _testEvents)
+            var testStartTimes = new DateTime[] { DateTime.Now, DateTime.Now + _windowSize, DateTime.Now + (3 * _windowSize) };
+            foreach (var startTime in testStartTimes)
             {
-                _operator.Enqueue(e);
+                var testEvents = new List<TestEvent>();
+                for (int i = 0; i < 10; i++)
+                {
+                    testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i, EventTime = startTime });
+                }
+
+                foreach (var e in testEvents)
+                {
+                    _operator.Enqueue(e); //enqueue events in window
+                }
             }
+
+            var windowCloser = new TestEvent
+            {
+                Key = "K_closer",
+                EventTime = testStartTimes.Last().Add(_windowSize),
+                Value = 10
+            };
+            _operator.Enqueue(windowCloser); //enqueue events in window
             
-            await Task.Delay(_windowSize); //let the window close
+            await Task.Delay(100);
 
-            foreach (var e in _testEvents)
+            lock (mockedOutputQueue)
             {
-                _operator.Enqueue(e);
-                _operator.Enqueue(e); //second window put double events
-            }
-            await Task.Delay(_windowSize); //let the window close
-
-            await Task.Delay(_windowSize); //leave third window empty
-
-            foreach (var e in _testEvents)
-            {
-                _operator.Enqueue(e); _operator.Enqueue(e);
-                _operator.Enqueue(e); _operator.Enqueue(e); //fourth window put quadruple events
-            }
-            await Task.Delay(_windowSize); //let the window close
-
-            lock(mockedOutputQueue)
-            {
-                for (int i = 1; i <= 4; i++)
-                {   //two iterations for the two expected windows
+                for (int i = 1; i <= 3; i++)
+                {   //expect three window results (one empty in the middle does not get emitted)
                     Assert.IsTrue(mockedOutputQueue.Any());
                     var windowResult = mockedOutputQueue.Dequeue() as TestEvent2;
                     Assert.NotNull(windowResult);
-                    var expectedEvents = i == 3 ? 0 : _testEvents.Count() * i; //third window is empty in test
+                    var expectedEvents = _testEvents.Count();
                     Assert.AreEqual(expectedEvents, windowResult.Value);
                 }
             }

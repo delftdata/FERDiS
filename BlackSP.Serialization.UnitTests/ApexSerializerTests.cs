@@ -2,6 +2,7 @@
 using BlackSP.Interfaces.Serialization;
 using BlackSP.Serialization;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -62,6 +63,9 @@ namespace BlackSP.Core.UnitTests.Serialization
         private class TestEvent : IEvent
         {
             public string Key { get; set; }
+
+            public DateTime EventTime { get; set; }
+
             private IDictionary<string, int> _values;
 
             public TestEvent(string key, IDictionary<string, int> values)

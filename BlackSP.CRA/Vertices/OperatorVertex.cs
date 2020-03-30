@@ -64,7 +64,7 @@ namespace BlackSP.CRA.Vertices
                 AddAsyncOutputEndpoint($"output#{i}", _vertexLifetimeScope.Resolve<IAsyncShardedVertexOutputEndpoint>());
             }            
             
-            _bspOperator.Start();
+            _bspOperator.Start(DateTime.Now);
             
             Console.WriteLine("Done");
             return Task.CompletedTask;

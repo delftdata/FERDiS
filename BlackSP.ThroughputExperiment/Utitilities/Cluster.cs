@@ -26,6 +26,9 @@ namespace BlackSP.ThroughputExperiment.Utilities
             public string Key { get; set; }
             [ProtoMember(2)]
             public string Value { get; set; }
+
+            //TODO: change for protobuf event base?
+            public DateTime EventTime => throw new NotImplementedException();
         }
 
         public class MyFilterOperatorConfiguration : IFilterOperatorConfiguration<MyEvent>

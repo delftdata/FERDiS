@@ -10,7 +10,10 @@ namespace BlackSP.Core.Operators
         TimeSpan WindowSize { get; set; }
     }
 
-    public interface IJoinOperatorConfiguration : IWindowedOperatorConfiguration
+    public interface IJoinOperatorConfiguration<TInA, TInB, TOut> : IWindowedOperatorConfiguration
+        where TInA : class, IEvent
+        where TInB : class, IEvent
+        where TOut : class, IEvent
     {
         /// <summary>
         /// Checks if two events are a match for a join or not
@@ -18,7 +21,7 @@ namespace BlackSP.Core.Operators
         /// <param name="testA"></param>
         /// <param name="testB"></param>
         /// <returns></returns>
-        bool Match(IEvent testA, IEvent testB);
+        bool Match(TInA testA, TInB testB);
 
         /// <summary>
         /// This method performs the actual join of two events
@@ -26,7 +29,7 @@ namespace BlackSP.Core.Operators
         /// <param name="matchA"></param>
         /// <param name="matchB"></param>
         /// <returns></returns>
-        IEvent Join(IEvent matchA, IEvent matchB);
+        TOut Join(TInA matchA, TInB matchB);
     }
 
     public interface IAggregateOperatorConfiguration<TIn, TOut> : IWindowedOperatorConfiguration
