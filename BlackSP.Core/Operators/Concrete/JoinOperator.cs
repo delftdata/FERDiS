@@ -27,7 +27,7 @@ namespace BlackSP.Core.Operators.Concrete
 
         private IEnumerable<TOut> PerformJoinLogic(TInA targetEvent)
         {
-            IEnumerable<TInB> windowBs = GetWindow(typeof(TInB)).Events as IEnumerable<TInB>;
+            IEnumerable<TInB> windowBs = GetWindow(typeof(TInB)).Events.Cast<TInB>();
 
             var matches = windowBs.Where(wEvent => _options.Match(targetEvent, wEvent));
             foreach (var match in matches)
@@ -38,7 +38,7 @@ namespace BlackSP.Core.Operators.Concrete
 
         private IEnumerable<TOut> PerformJoinLogic(TInB targetEvent)
         {
-            IEnumerable<TInA> windowAs = GetWindow(typeof(TInA)).Events as IEnumerable<TInA>;
+            IEnumerable<TInA> windowAs = GetWindow(typeof(TInA)).Events.Cast<TInA>();
 
             var matches = windowAs.Where(wEvent => _options.Match(wEvent, targetEvent));
             foreach (var match in matches)

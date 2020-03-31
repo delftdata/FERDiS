@@ -22,11 +22,11 @@ namespace BlackSP.Core.Operators
         protected sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
-
-            //TODO: implement custom exception
-            var preInsertResults = PreWindowInsert(@event) ?? throw new Exception("PreWindowInsert returned null, expected IEnumerable");
+            
             GetWindow(@event.GetType()).Add(@event);
-            return preInsertResults;
+            
+            //TODO: implement custom exception
+            return PreWindowInsert(@event) ?? throw new Exception("PreWindowInsert returned null, expected IEnumerable");            
         }
 
         /// <summary>
@@ -35,11 +35,20 @@ namespace BlackSP.Core.Operators
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        protected abstract IEnumerable<IEvent> PreWindowInsert(IEvent @event);
+        protected abstract IEnumerable<IEvent> PreWindowInsert(IEvent @event);//TODO: rename this
 
-
+        /// <summary>
+        /// Handle for subclasses to access the sliding window with events of provided type
+        /// </summary>
+        /// <param name="eventType"></param>
+        /// <returns></returns>
         protected SlidingEventWindow<IEvent> GetWindow(Type eventType)
         {
+            _ = eventType ?? throw new ArgumentNullException(nameof(eventType));
+            if(!_currentWindows.ContainsKey(eventType))
+            {
+                _currentWindows.Add(eventType, new SlidingEventWindow<IEvent>(_options.WindowSize));
+            }
             if (_currentWindows.TryGetValue(eventType, out var eventWindow))
             {
                 return eventWindow;
