@@ -81,8 +81,8 @@ namespace BlackSP.Core.UnitTests.Serialization
 
         [Test]
         public async Task SerializeAndDeserializeAreCompatibleInMultipleIterations()
-        {            
-            using(Stream serializeBuffer = new MemoryStream())
+        {
+            using (Stream serializeBuffer = new MemoryStream())
             {
                 //serialize multiple events to stream
                 var eventEnumerator = _testEvents.GetEnumerator();

@@ -15,3 +15,4 @@ scopes
 */css/
 */scripts/
 **/publishprofiles/*
+/test-coverage-report/**
