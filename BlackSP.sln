@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.CRA", "BlackSP.CRA\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Serialization", "BlackSP.Serialization\BlackSP.Serialization.csproj", "{75160FB5-1468-428F-8DCE-D4DFC4FC0779}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Interfaces", "BlackSP.Interfaces\BlackSP.Interfaces.csproj", "{CF85803A-0D10-4EA0-9384-4B7E6B71A45C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Kernel", "BlackSP.Kernel\BlackSP.Kernel.csproj", "{CF85803A-0D10-4EA0-9384-4B7E6B71A45C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{D3425C26-5CD8-4C72-88A6-0DDDDC3048CB}"
 EndProject

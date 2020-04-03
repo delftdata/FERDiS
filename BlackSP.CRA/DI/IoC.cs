@@ -2,9 +2,9 @@
 using BlackSP.Core.Operators;
 using BlackSP.CRA.Endpoints;
 using BlackSP.CRA.Vertices;
-using BlackSP.Interfaces.Endpoints;
-using BlackSP.Interfaces.Operators;
-using BlackSP.Interfaces.Serialization;
+using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Operators;
+using BlackSP.Kernel.Serialization;
 using CRA.ClientLibrary;
 using Microsoft.IO;
 using System;

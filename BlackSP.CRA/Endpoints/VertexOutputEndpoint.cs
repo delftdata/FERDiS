@@ -1,7 +1,7 @@
 ﻿using BlackSP.Core.Endpoints;
-using BlackSP.Interfaces.Endpoints;
-using BlackSP.Interfaces.Events;
-using BlackSP.Interfaces.Serialization;
+using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Serialization;
 using CRA.ClientLibrary;
 using System;
 using System.IO;

@@ -1,5 +1,5 @@
-﻿using BlackSP.Interfaces.Events;
-using BlackSP.Interfaces.Serialization;
+﻿using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Serialization;
 using BlackSP.Serialization.Serializers;
 using NUnit.Framework;
 using System;

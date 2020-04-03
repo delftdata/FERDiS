@@ -9,10 +9,10 @@ using System.Linq;
 using System;
 using Moq;
 using System.Collections.Generic;
-using BlackSP.Interfaces.Endpoints;
-using BlackSP.Interfaces.Events;
-using BlackSP.Interfaces.Serialization;
-using BlackSP.Interfaces.Operators;
+using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Serialization;
+using BlackSP.Kernel.Operators;
 using Microsoft.IO;
 using BlackSP.Core.UnitTests.Utilities;
 

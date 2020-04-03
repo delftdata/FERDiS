@@ -2,9 +2,9 @@
 using BlackSP.Core.Operators.Concrete;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
-using BlackSP.Interfaces.Endpoints;
-using BlackSP.Interfaces.Events;
-using BlackSP.Interfaces.Operators;
+using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Operators;
 using Moq;
 using NUnit.Framework;
 using System;

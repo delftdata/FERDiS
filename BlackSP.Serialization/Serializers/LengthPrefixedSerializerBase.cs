@@ -1,4 +1,4 @@
-﻿using BlackSP.Interfaces.Serialization;
+﻿using BlackSP.Kernel.Serialization;
 using System;
 using System.Buffers;
 using System.Collections.Generic;

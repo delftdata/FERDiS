@@ -1,5 +1,5 @@
-﻿using BlackSP.Interfaces.Events;
-using BlackSP.Interfaces.Serialization;
+﻿using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Serialization;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -10,9 +10,9 @@ using BlackSP.Core.Streams;
 using BlackSP.Core.UnitTests.Events;
 using System.Threading.Tasks;
 using System.Linq;
-using BlackSP.Interfaces.Operators;
+using BlackSP.Kernel.Operators;
 using System.Collections.Concurrent;
-using BlackSP.Interfaces.Endpoints;
+using BlackSP.Kernel.Endpoints;
 
 namespace BlackSP.Core.UnitTests.Utilities
 {

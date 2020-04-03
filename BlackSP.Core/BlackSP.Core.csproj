@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BlackSP.Interfaces\BlackSP.Interfaces.csproj" />
+    <ProjectReference Include="..\BlackSP.Kernel\BlackSP.Kernel.csproj" />
   </ItemGroup>
 
 </Project>

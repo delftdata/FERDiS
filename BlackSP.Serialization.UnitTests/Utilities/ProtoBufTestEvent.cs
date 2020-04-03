@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using BlackSP.Interfaces.Events;
+using BlackSP.Kernel.Events;
 using ProtoBuf;
 namespace BlackSP.Serialization.UnitTests.Utilities
 {

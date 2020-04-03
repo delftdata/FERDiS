@@ -4,9 +4,9 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Generic;
-using BlackSP.Interfaces.Endpoints;
-using BlackSP.Interfaces.Events;
-using BlackSP.Interfaces.Serialization;
+using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Serialization;
 using Moq;
 using System.Linq;
 using BlackSP.Core.Endpoints;
@@ -14,7 +14,7 @@ using BlackSP.Core.Streams;
 using System;
 using BlackSP.Core.UnitTests.Utilities;
 using System.Buffers;
-using BlackSP.Interfaces.Operators;
+using BlackSP.Kernel.Operators;
 using System.Collections.Concurrent;
 
 namespace BlackSP.Core.UnitTests.Endpoints

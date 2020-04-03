@@ -1,8 +1,8 @@
 ﻿using BlackSP.Core.Operators;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
-using BlackSP.Interfaces.Events;
-using BlackSP.Interfaces.Operators;
+using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Operators;
 using Moq;
 using NUnit.Framework;
 using System;

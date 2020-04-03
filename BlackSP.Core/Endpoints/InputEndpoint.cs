@@ -6,10 +6,10 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Core.Streams;
-using BlackSP.Interfaces.Endpoints;
-using BlackSP.Interfaces.Events;
-using BlackSP.Interfaces.Operators;
-using BlackSP.Interfaces.Serialization;
+using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Operators;
+using BlackSP.Kernel.Serialization;
 
 namespace BlackSP.Core.Endpoints
 {

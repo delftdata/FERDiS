@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Interfaces.Serialization
+namespace BlackSP.Kernel.Serialization
 {
     public interface ISerializer
     {

@@ -2,8 +2,8 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using BlackSP.Interfaces.Events;
-using BlackSP.Interfaces.Serialization;
+using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Serialization;
 using BlackSP.Serialization.Serializers;
 using BlackSP.Serialization.Utilities;
 using ProtoBuf;

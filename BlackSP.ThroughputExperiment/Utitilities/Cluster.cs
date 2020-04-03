@@ -3,7 +3,7 @@ using BlackSP.Core.Operators;
 using BlackSP.Core.Operators.Concrete;
 using BlackSP.CRA.Utilities;
 using BlackSP.CRA.Vertices;
-using BlackSP.Interfaces.Events;
+using BlackSP.Kernel.Events;
 using BlackSP.Serialization.Serializers;
 using CRA.ClientLibrary;
 using CRA.DataProvider;

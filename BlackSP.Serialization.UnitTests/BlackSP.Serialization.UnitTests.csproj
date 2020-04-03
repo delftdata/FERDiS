@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BlackSP.Interfaces\BlackSP.Interfaces.csproj" />
+    <ProjectReference Include="..\BlackSP.Kernel\BlackSP.Kernel.csproj" />
     <ProjectReference Include="..\BlackSP.Serialization\BlackSP.Serialization.csproj" />
   </ItemGroup>
 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Interfaces.Utilities
+namespace BlackSP.Kernel.Utilities
 {
     public interface IObjectPool<T>
     {

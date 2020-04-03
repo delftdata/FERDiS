@@ -1,4 +1,4 @@
-﻿using BlackSP.Interfaces.Events;
+﻿using BlackSP.Kernel.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;

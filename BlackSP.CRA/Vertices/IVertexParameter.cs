@@ -1,5 +1,5 @@
 ﻿using BlackSP.Core.Operators;
-using BlackSP.Interfaces.Operators;
+using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Text;
