@@ -20,17 +20,17 @@ namespace BlackSP.Core.UnitTests.Windows
             var testEvent = new TestEvent { Key = "key", EventTime = startTime.AddSeconds(5), Value = 1 };
             Assert.IsEmpty(window.Events); //assert empty on start
             
-            window.Add(testEvent);
+            window.Insert(testEvent);
             Assert.AreEqual(1, window.Events.Count);
             
             testEvent.EventTime = startTime.AddSeconds(7);
-            var addResult = window.Add(testEvent);
+            var addResult = window.Insert(testEvent);
             Assert.IsEmpty(addResult);
             Assert.AreEqual(2, window.Events.Count);
             
             //insert event in new window so it returns the previous window
             testEvent.EventTime = startTime.Add(windowSize);
-            addResult = window.Add(testEvent);
+            addResult = window.Insert(testEvent);
             Assert.AreEqual(2, addResult.Count());
             Assert.AreEqual(1, window.Events.Count);
         }
@@ -47,18 +47,18 @@ namespace BlackSP.Core.UnitTests.Windows
             
             Assert.IsEmpty(window.Events); //assert empty on start
 
-            window.Add(testEvent1);
-            window.Add(testEvent2);
-            window.Add(testEvent3);
+            window.Insert(testEvent1);
+            window.Insert(testEvent2);
+            window.Insert(testEvent3);
             for (int i = 0; i < 5; i++)
             {
                 Assert.AreEqual(3, window.Events.Count);
                 testEvent1.EventTime = testEvent1.EventTime.Add(windowSize);
                 testEvent2.EventTime = testEvent2.EventTime.Add(windowSize);
                 testEvent3.EventTime = testEvent3.EventTime.Add(windowSize);
-                Assert.AreEqual(3, window.Add(testEvent1).Count()); //this is in a new window
-                window.Add(testEvent2);
-                window.Add(testEvent3);
+                Assert.AreEqual(3, window.Insert(testEvent1).Count()); //this is in a new window
+                window.Insert(testEvent2);
+                window.Insert(testEvent3);
             }
         }
 
@@ -72,10 +72,10 @@ namespace BlackSP.Core.UnitTests.Windows
 
             Assert.IsEmpty(window.Events); //assert empty on start
 
-            window.Add(testEvent);
-            window.Add(testEvent);
-            window.Add(testEvent);
-            window.Add(testEvent);
+            window.Insert(testEvent);
+            window.Insert(testEvent);
+            window.Insert(testEvent);
+            window.Insert(testEvent);
 
             Assert.AreEqual(4, window.Events.Count);
         }
@@ -91,13 +91,13 @@ namespace BlackSP.Core.UnitTests.Windows
 
             Assert.IsEmpty(window.Events); //assert empty on start
 
-            window.Add(testEvent);
-            window.Add(testEvent);
-            window.Add(testEvent);
-            window.Add(testEvent);
+            window.Insert(testEvent);
+            window.Insert(testEvent);
+            window.Insert(testEvent);
+            window.Insert(testEvent);
             Assert.AreEqual(4, window.Events.Count); //4 events in window
 
-            var closedWindow = window.Add(testEvent2); //now we add event which is in next window
+            var closedWindow = window.Insert(testEvent2); //now we add event which is in next window
             Assert.IsNotEmpty(closedWindow);
             Assert.AreEqual(4, closedWindow.Count()); //previous 4 events in closed window
             Assert.AreEqual(1, window.Events.Count); //now only testEvent2 in window

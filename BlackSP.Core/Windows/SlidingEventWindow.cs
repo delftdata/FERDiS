@@ -13,24 +13,28 @@ namespace BlackSP.Core.Windows
         {
         }
 
-        protected override IEnumerable<TEvent> OnWaterMarkAdvanced(long newWatermark)
+        protected override IEnumerable<TEvent> OnWaterMarkAdvanced()
         {
-            var oldestEventTick = SortedEvents.FirstOrDefault().Key;
-            var lowerBoundary = newWatermark - WindowSize.Ticks;
-
-            if (oldestEventTick != default && oldestEventTick <= lowerBoundary)
-            {   //only prune if we know there is something to prune
-                Prune(lowerBoundary);
-            }
+            Prune();
             return Enumerable.Empty<TEvent>();
         }
 
         /// <summary>
-        /// Removes all events from the current window older than the provided datetime
+        /// Removes all events from the current window based on watermark.<br/>
+        /// (anything that slid out will be removed)</br>
+        /// Wont perform any pruning when there is nothing to prune
         /// </summary>
         /// <param name="maxAge"></param>
-        private void Prune(long maxAge)
+        public void Prune()
         {
+            var maxAge = LatestEventTime - WindowSize.Ticks;
+
+            var oldestEventTick = SortedEvents.FirstOrDefault().Key;
+            if (oldestEventTick == default || oldestEventTick > maxAge)
+            {   //only prune if we know there is something to prune
+                return;
+            }
+
             var eventKeys = SortedEvents.Keys.ToList();
             int expiredIndex = eventKeys.BinarySearch(maxAge);
             //either the element with maxAge exists (unlikely) or we get the next bigger index as bitwise complement

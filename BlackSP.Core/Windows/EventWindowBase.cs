@@ -12,7 +12,11 @@ namespace BlackSP.Core.Windows
         public ICollection<TEvent> Events => SortedEvents.Values;
         protected SortedList<long, TEvent> SortedEvents { get; private set; }
         protected TimeSpan WindowSize { get; private set; }
-        private long LatestEventTime { get; set; }
+        
+        /// <summary>
+        /// Represents a watermark, a lower bound to determine which events to discard from the window
+        /// </summary>
+        protected long LatestEventTime { get; set; }
 
         private readonly object _windowLock;
         
@@ -27,21 +31,21 @@ namespace BlackSP.Core.Windows
         }
 
         /// <summary>
-        /// Adds an event to the window, may<br/>
+        /// Inserts an event in the window and updates watermarks, may<br/>
         /// a. return a closed window or <br/>
         /// b. drop expired events from the public Events collection
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        public IEnumerable<TEvent> Add(TEvent @event)
+        public IEnumerable<TEvent> Insert(TEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
 
             lock (_windowLock)
             {
                 long eventTimeTicks = @event.EventTime.Ticks;
-                var events = eventTimeTicks > LatestEventTime 
-                    ? OnWaterMarkAdvanced(LatestEventTime = eventTimeTicks)
+                var events = TryUpdateWatermark(@event) 
+                    ? OnWaterMarkAdvanced()
                     : Enumerable.Empty<TEvent>();
                 
                 SafeAddEventToWindow(eventTimeTicks, @event);
@@ -50,12 +54,31 @@ namespace BlackSP.Core.Windows
         }
 
         /// <summary>
+        /// Handle for updating the watermark of the current window.<br/>
+        /// Only updates if the provided event watermark is larger than the current watermark
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
+        public bool TryUpdateWatermark(TEvent @event)
+        {
+            _ = @event ?? throw new ArgumentNullException(nameof(@event));
+
+            long eventTimeTicks = @event.EventTime.Ticks;
+            if(eventTimeTicks > LatestEventTime)
+            {
+                LatestEventTime = eventTimeTicks;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Handle for implementing different window behaviors<br/>
         /// Can return values in case a window closed<br/>
         /// Gets invoked BEFORE adding the event with the advanced watermark to the current window
         /// </summary>
         /// <returns></returns>
-        protected abstract IEnumerable<TEvent> OnWaterMarkAdvanced(long newWatermark);
+        protected abstract IEnumerable<TEvent> OnWaterMarkAdvanced();
 
 
         /// <summary>

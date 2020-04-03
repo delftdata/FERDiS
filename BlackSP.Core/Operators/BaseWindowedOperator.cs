@@ -33,7 +33,7 @@ namespace BlackSP.Core.Operators
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
             var typedEvent = @event as TIn ?? throw new ArgumentException($"Argument {nameof(@event)} was of type {@event.GetType()}, expected: {typeof(TIn)}");
 
-            var closedWindow = _currentWindow.Add(typedEvent);
+            var closedWindow = _currentWindow.Insert(typedEvent);
             return !closedWindow.Any() ? Enumerable.Empty<IEvent>() : ProcessClosedWindow(closedWindow)
                 ?? throw new Exception("ProcessClosedWindow returned null, expected IEnumerable");
         }

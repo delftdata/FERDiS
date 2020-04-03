@@ -17,9 +17,9 @@ namespace BlackSP.Core.Windows
             LowerBoundary = startTime.Ticks;
         }
 
-        protected override IEnumerable<TEvent> OnWaterMarkAdvanced(long newWatermark)
+        protected override IEnumerable<TEvent> OnWaterMarkAdvanced()
         {
-            if(newWatermark >= UpperBoundary)
+            if(LatestEventTime >= UpperBoundary)
             {   //the window has closed as events beyond the upper boundary are arriving..
                 //clear the window and set the new window boundaries
                 var closedWindow = Events.ToArray();

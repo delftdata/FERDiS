@@ -88,10 +88,10 @@ namespace BlackSP.Core.UnitTests.Operator
             IList<IEvent> events = new List<IEvent>();
 
             events.Add(new TestEvent { Key = "K1_A", EventTime = _startTime.AddSeconds(1), Value = 1 });
-            events.Add(new TestEvent2 { Key = "K2_A", EventTime = _startTime.AddSeconds(1), Value = 1 });
-            events.Add(new TestEvent { Key = "K1_B", EventTime = _startTime.AddSeconds(1), Value = 0 });
-            events.Add(new TestEvent2 { Key = "K2_B", EventTime = _startTime.AddSeconds(1), Value = 2 });
-            events.Add(new TestEvent2 { Key = "K2_C", EventTime = _startTime.AddSeconds(1), Value = 1 });
+            events.Add(new TestEvent2 { Key = "K2_A", EventTime = _startTime.AddSeconds(2), Value = 1 });
+            events.Add(new TestEvent { Key = "K1_B", EventTime = _startTime.AddSeconds(3), Value = 0 });
+            events.Add(new TestEvent2 { Key = "K2_B", EventTime = _startTime.AddSeconds(4), Value = 2 });
+            events.Add(new TestEvent2 { Key = "K2_C", EventTime = _startTime.AddSeconds(5), Value = 1 });
             //matches are on value so (K1_A, K2_A) and (K2_C, K1_A)
             foreach (var @event in events)
             {
@@ -140,6 +140,7 @@ namespace BlackSP.Core.UnitTests.Operator
             Assert.IsNotNull(outputEvent);
             Assert.AreEqual(4, outputEvent.Value);
             Assert.AreEqual("K1_B+K2_A", outputEvent.Key);
+            
             Assert.IsEmpty(mockedOutputQueue);
         }
 

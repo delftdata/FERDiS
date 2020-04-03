@@ -22,20 +22,20 @@ namespace BlackSP.Core.Operators
         protected sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
-            
-            GetWindow(@event.GetType()).Add(@event);
-            
+
+            UpdateAllWindows(@event);
+
             //TODO: implement custom exception
-            return PreWindowInsert(@event) ?? throw new Exception("PreWindowInsert returned null, expected IEnumerable");            
+            return OperateWithUpdatedWindows(@event) ?? throw new Exception("OperateWithUpdatedWindows returned null, expected IEnumerable");            
         }
 
         /// <summary>
-        /// Provides a handle for implementing pre-window-insertion logic<br/>
+        /// Handle for implementing post-window-insertion logic<br/>
         /// A typical use would be to override this method to perform join logic
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        protected abstract IEnumerable<IEvent> PreWindowInsert(IEvent @event);//TODO: rename this
+        protected abstract IEnumerable<IEvent> OperateWithUpdatedWindows(IEvent @event);
 
         /// <summary>
         /// Handle for subclasses to access the sliding window with events of provided type
@@ -53,7 +53,30 @@ namespace BlackSP.Core.Operators
             {
                 return eventWindow;
             }
+            //TODO: custom exception
             throw new Exception($"Missing type for sliding window, was trying to find ${eventType}");
+        }
+
+        /// <summary>
+        /// Inserts provided event in the right window and updates watermarks of any other
+        /// </summary>
+        /// <param name="event"></param>
+        private void UpdateAllWindows(IEvent @event)
+        {
+            foreach(var window in _currentWindows)
+            {
+                var type = window.Key;
+                var slidingWindow = window.Value;
+
+                if(type == @event.GetType()) //if this window holds this type of event
+                {
+                    slidingWindow.Insert(@event); //then insert the event
+                } 
+                else if(slidingWindow.TryUpdateWatermark(@event)) //else if this event advances the watermark
+                {
+                    slidingWindow.Prune(); //prune any expired events from window
+                }
+            }
         }
     }
 }

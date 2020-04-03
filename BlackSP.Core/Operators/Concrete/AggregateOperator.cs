@@ -19,6 +19,7 @@ namespace BlackSP.Core.Operators.Concrete
 
         protected override IEnumerable<TOut> ProcessClosedWindow(IEnumerable<TIn> closedWindow)
         {
+            _ = closedWindow ?? throw new ArgumentNullException(nameof(closedWindow));
             return _options.Aggregate(closedWindow);
         }
     }

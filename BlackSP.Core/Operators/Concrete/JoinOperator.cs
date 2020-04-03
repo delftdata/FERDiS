@@ -14,13 +14,18 @@ namespace BlackSP.Core.Operators.Concrete
         public JoinOperator(IJoinOperatorConfiguration<TInA, TInB, TOut> options) : base(options)
         {
             _options = options;
+
+            //ensures both windows that we need have been created on time
+            GetWindow(typeof(TInA));
+            GetWindow(typeof(TInB));
         }
 
-        protected override IEnumerable<IEvent> PreWindowInsert(IEvent @event)
+        protected override IEnumerable<IEvent> OperateWithUpdatedWindows(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
 
             var isInputTypeA = @event.GetType().Equals(typeof(TInA));
+            Console.WriteLine("GONNA TRY JOIN " + @event.Key);
             return isInputTypeA ? PerformJoinLogic(@event as TInA) : PerformJoinLogic(@event as TInB);
             
         }

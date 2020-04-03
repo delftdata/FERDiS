@@ -82,7 +82,7 @@ namespace BlackSP.Core.UnitTests.Serialization
         [Test]
         public async Task SerializeAndDeserializeAreCompatibleInMultipleIterations()
         {
-            using (Stream serializeBuffer = new MemoryStream())
+            /*using (Stream serializeBuffer = new MemoryStream())
             {
                 //serialize multiple events to stream
                 var eventEnumerator = _testEvents.GetEnumerator();
@@ -132,7 +132,8 @@ namespace BlackSP.Core.UnitTests.Serialization
                         Assert.AreEqual(((ZeroFormatterTestEvent)@event).Values, ((ZeroFormatterTestEvent)@event).Values);
                     }
                 }
-            }
+            }*/
+            Assert.Fail();
         }
     }
 }
