@@ -13,12 +13,12 @@ namespace BlackSP.Core.Windows
         {
         }
 
-        protected override IEnumerable<TEvent> OnWaterMarkAdvanced(DateTime newWatermark)
+        protected override IEnumerable<TEvent> OnWaterMarkAdvanced(long newWatermark)
         {
-            var oldestEvent = SortedEvents.FirstOrDefault().Value;
-            var lowerBoundary = newWatermark - WindowSize;
+            var oldestEventTick = SortedEvents.FirstOrDefault().Key;
+            var lowerBoundary = newWatermark - WindowSize.Ticks;
 
-            if (oldestEvent != null && oldestEvent.EventTime <= lowerBoundary)
+            if (oldestEventTick != default && oldestEventTick <= lowerBoundary)
             {   //only prune if we know there is something to prune
                 Prune(lowerBoundary);
             }
@@ -29,7 +29,7 @@ namespace BlackSP.Core.Windows
         /// Removes all events from the current window older than the provided datetime
         /// </summary>
         /// <param name="maxAge"></param>
-        private void Prune(DateTime maxAge)
+        private void Prune(long maxAge)
         {
             var eventKeys = SortedEvents.Keys.ToList();
             int expiredIndex = eventKeys.BinarySearch(maxAge);

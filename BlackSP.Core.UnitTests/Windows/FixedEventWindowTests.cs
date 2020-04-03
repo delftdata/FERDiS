@@ -12,24 +12,6 @@ namespace BlackSP.Core.UnitTests.Windows
     {
 
         [Test]
-        public void Add_DoesNotThrowOnDuplicateKey()
-        {
-            var startTime = DateTime.Now;
-            var windowSize = TimeSpan.FromSeconds(10);
-            var window = new FixedEventWindow<TestEvent>(startTime, windowSize);
-            var testEvent = new TestEvent { Key = "key", EventTime = startTime.AddSeconds(5), Value = 1 };
-            
-            Assert.IsEmpty(window.Events); //assert empty on start
-
-            window.Add(testEvent);
-            window.Add(testEvent);
-            window.Add(testEvent);
-            window.Add(testEvent);
-
-            Assert.AreEqual(4, window.Events.Count);
-        }
-
-        [Test]
         public void Add_ReturnsWindowOnReceivingAdvancedWaterMark()
         {
             var startTime = DateTime.Now;
@@ -78,6 +60,48 @@ namespace BlackSP.Core.UnitTests.Windows
                 window.Add(testEvent2);
                 window.Add(testEvent3);
             }
+        }
+
+        [Test]
+        public void Add_DoesNotThrowOnDuplicateKey()
+        {
+            var startTime = DateTime.Now;
+            var windowSize = TimeSpan.FromSeconds(10);
+            var window = new FixedEventWindow<TestEvent>(startTime, windowSize);
+            var testEvent = new TestEvent { Key = "key", EventTime = startTime.AddSeconds(5), Value = 1 };
+
+            Assert.IsEmpty(window.Events); //assert empty on start
+
+            window.Add(testEvent);
+            window.Add(testEvent);
+            window.Add(testEvent);
+            window.Add(testEvent);
+
+            Assert.AreEqual(4, window.Events.Count);
+        }
+
+        [Test]
+        public void Add_ReturnsWindowCorrectlyWithDuplicateKeys()
+        {
+            var startTime = DateTime.Now;
+            var windowSize = TimeSpan.FromSeconds(10);
+            var window = new FixedEventWindow<TestEvent>(startTime, windowSize);
+            var testEvent = new TestEvent { Key = "key", EventTime = startTime.AddSeconds(5), Value = 1 };
+            var testEvent2 = new TestEvent { Key = "key", EventTime = startTime.Add(windowSize).AddSeconds(5), Value = 1 };
+
+            Assert.IsEmpty(window.Events); //assert empty on start
+
+            window.Add(testEvent);
+            window.Add(testEvent);
+            window.Add(testEvent);
+            window.Add(testEvent);
+            Assert.AreEqual(4, window.Events.Count); //4 events in window
+
+            var closedWindow = window.Add(testEvent2); //now we add event which is in next window
+            Assert.IsNotEmpty(closedWindow);
+            Assert.AreEqual(4, closedWindow.Count()); //previous 4 events in closed window
+            Assert.AreEqual(1, window.Events.Count); //now only testEvent2 in window
+
         }
     }
 }
