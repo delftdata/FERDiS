@@ -1,8 +1,6 @@
 ﻿using BlackSP.Interfaces.Events;
-using BlackSP.Serialization.Events;
 using ProtoBuf;
 using System;
-using ZeroFormatter;
 
 namespace BlackSP.CRA.Events
 {
