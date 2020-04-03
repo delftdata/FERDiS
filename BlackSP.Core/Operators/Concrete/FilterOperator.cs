@@ -6,7 +6,7 @@ using System.Text;
 
 namespace BlackSP.Core.Operators.Concrete
 {
-    public class FilterOperator<TEvent> : BaseOperator 
+    public class FilterOperator<TEvent> : OperatorBase 
         where TEvent : class, IEvent
     {
         private readonly IFilterOperatorConfiguration<TEvent> _options;

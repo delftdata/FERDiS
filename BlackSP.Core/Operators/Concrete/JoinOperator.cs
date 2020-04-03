@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace BlackSP.Core.Operators.Concrete
 {
-    public class JoinOperator<TInA, TInB, TOut> : BaseSlidingWindowedOperator
+    public class JoinOperator<TInA, TInB, TOut> : SlidingWindowedOperatorBase
         where TInA : class, IEvent
         where TInB : class, IEvent
         where TOut : class, IEvent

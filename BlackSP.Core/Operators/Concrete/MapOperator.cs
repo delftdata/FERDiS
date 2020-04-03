@@ -5,7 +5,7 @@ using System.Text;
 
 namespace BlackSP.Core.Operators.Concrete
 {
-    public class MapOperator<TIn, TOut> : BaseOperator
+    public class MapOperator<TIn, TOut> : OperatorBase
         where TIn : class, IEvent
         where TOut : class, IEvent
     {

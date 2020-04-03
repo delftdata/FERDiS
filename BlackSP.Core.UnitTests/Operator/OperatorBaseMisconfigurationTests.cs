@@ -7,7 +7,7 @@ using System.Text;
 
 namespace BlackSP.Core.UnitTests.Operator
 {
-    public class BaseOperatorMisconfigurationTests
+    public class OperatorBaseMisconfigurationTests
     {
         class NullBaseOperator : TestBaseOperator
         {

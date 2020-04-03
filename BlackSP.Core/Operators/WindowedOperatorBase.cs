@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Operators
 {
-    public abstract class BaseWindowedOperator<TIn, TOut> : BaseOperator
+    public abstract class WindowedOperatorBase<TIn, TOut> : OperatorBase
         where TIn : class, IEvent
         where TOut : class, IEvent
     {
@@ -17,7 +17,7 @@ namespace BlackSP.Core.Operators
         private readonly IWindowedOperatorConfiguration _options;
         private FixedEventWindow<TIn> _currentWindow;
         
-        public BaseWindowedOperator(IWindowedOperatorConfiguration options) : base(options)
+        public WindowedOperatorBase(IWindowedOperatorConfiguration options) : base(options)
         {
             _options = options;            
         }
@@ -39,34 +39,6 @@ namespace BlackSP.Core.Operators
         }
 
         protected abstract IEnumerable<TOut> ProcessClosedWindow(IEnumerable<TIn> closedWindow);
-
-        /*
-        /// <summary>
-        /// Gets invoked by timer and is responsible for:<br/>
-        /// 1. Closing the current window.<br/>
-        /// 2. Invoking subclass method processing the window.<br/>
-        /// 3. Enqueueing the output as this method gets invoked outside the base processing loop
-        /// </summary>
-        /// <param name="_"></param>
-        private void OnWindowExpiredTimerTick(object _)
-        {
-            if(CancellationToken.IsCancellationRequested)
-            {
-                _windowTimer.Change(int.MaxValue, int.MaxValue); //stop ticking (disposing is handled by IDisposable)
-                return; //stop processing if cancelled
-            }
-
-
-
-            var previousWindow = _currentWindow.Find();
-            //TODO: log diagnostics/debug stuff?
-            //TODO: make custom exception
-            var operatorOutput = ProcessClosedWindow(previousWindow) 
-                ?? throw new Exception("ProcessClosedWindow returned null, expected IEnumerable");
-            
-            
-            EgressOutputEvents(operatorOutput);
-        }*/
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

@@ -15,7 +15,7 @@ namespace BlackSP.Core.Operators
     //- so operator can just enqueue outgoing events in all output queues
     //- endpoints will write to input or read from assigned output queue
     //      endpoints will respectively handle partitioning among shards etc
-    public abstract class BaseOperator : IOperator, IDisposable
+    public abstract class OperatorBase : IOperator, IDisposable
     {
         public CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
@@ -30,7 +30,7 @@ namespace BlackSP.Core.Operators
         /// Base constructor for Operators, will throw when passing null options
         /// </summary>
         /// <param name="options"></param>
-        public BaseOperator(IOperatorConfiguration options)
+        public OperatorBase(IOperatorConfiguration options)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
 

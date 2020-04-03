@@ -16,7 +16,7 @@ namespace BlackSP.Core.UnitTests.Operator
     class BaseOperatorConfiguration : IOperatorConfiguration
     {}
 
-    class TestBaseOperator : BaseOperator
+    class TestBaseOperator : OperatorBase
     {
         public TestBaseOperator() : base(new BaseOperatorConfiguration())
         {}
@@ -27,9 +27,9 @@ namespace BlackSP.Core.UnitTests.Operator
         }
     }
 
-    public class BaseOperatorTests
+    public class OperatorBaseTests
     {
-        private BaseOperator _operator;
+        private OperatorBase _operator;
         private Task _operatorThread;
         private IList<IEvent> _testEvents;
 

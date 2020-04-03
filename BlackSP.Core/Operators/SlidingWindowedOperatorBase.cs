@@ -8,12 +8,12 @@ using System.Text;
 namespace BlackSP.Core.Operators
 {
 
-    public abstract class BaseSlidingWindowedOperator : BaseOperator
+    public abstract class SlidingWindowedOperatorBase : OperatorBase
     {
         private readonly IWindowedOperatorConfiguration _options;
         private readonly IDictionary<Type, SlidingEventWindow<IEvent>> _currentWindows;
 
-        public BaseSlidingWindowedOperator(IWindowedOperatorConfiguration options) : base(options)
+        public SlidingWindowedOperatorBase(IWindowedOperatorConfiguration options) : base(options)
         {
             _options = options;
             _currentWindows = new Dictionary<Type, SlidingEventWindow<IEvent>>();

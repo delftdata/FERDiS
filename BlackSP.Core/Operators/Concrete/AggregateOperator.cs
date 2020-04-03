@@ -5,7 +5,7 @@ using System.Text;
 
 namespace BlackSP.Core.Operators.Concrete
 {
-    public class AggregateOperator<TIn, TOut> : BaseWindowedOperator<TIn, TOut>
+    public class AggregateOperator<TIn, TOut> : WindowedOperatorBase<TIn, TOut>
         where TIn : class, IEvent
         where TOut : class, IEvent
     {
