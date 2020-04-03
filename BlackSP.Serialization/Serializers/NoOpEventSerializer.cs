@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using BlackSP.Serialization.Serializers;
 
-namespace BlackSP.Serialization
+namespace BlackSP.Serialization.Serializers
 {
-    public class NoOpEventSerializer : BaseLengthPrefixedSerializer
+    public class NoOpEventSerializer : LengthPrefixedSerializerBase
     {
 
         public NoOpEventSerializer() : base()

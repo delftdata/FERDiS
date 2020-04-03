@@ -2,9 +2,9 @@
 using BlackSP.Serialization.Serializers;
 using System.IO;
 
-namespace BlackSP.Serialization
+namespace BlackSP.Serialization.Serializers
 {
-    public class ApexSerializer : BaseLengthPrefixedSerializer
+    public class ApexSerializer : LengthPrefixedSerializerBase
     {
         private readonly IBinary _apexSerializer;
 

@@ -1,6 +1,6 @@
 ﻿using BlackSP.Interfaces.Events;
 using BlackSP.Interfaces.Serialization;
-using BlackSP.Serialization;
+using BlackSP.Serialization.Serializers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;

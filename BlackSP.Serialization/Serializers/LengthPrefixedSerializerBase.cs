@@ -17,11 +17,11 @@ namespace BlackSP.Serialization.Serializers
     /// network streams
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class BaseLengthPrefixedSerializer : ISerializer
+    public abstract class LengthPrefixedSerializerBase : ISerializer
     {
         private readonly ArrayPool<byte> _arrayPool;
 
-        public BaseLengthPrefixedSerializer()
+        public LengthPrefixedSerializerBase()
         {
             _arrayPool = ArrayPool<byte>.Shared;
         }

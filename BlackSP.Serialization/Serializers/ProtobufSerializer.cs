@@ -9,7 +9,7 @@ using BlackSP.Serialization.Utilities;
 using ProtoBuf;
 using ProtoBuf.Meta;
 
-namespace BlackSP.Serialization
+namespace BlackSP.Serialization.Serializers
 {
     public class ProtobufSerializer : ISerializer
     {

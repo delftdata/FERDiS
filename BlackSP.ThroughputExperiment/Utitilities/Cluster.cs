@@ -4,7 +4,7 @@ using BlackSP.Core.Operators.Concrete;
 using BlackSP.CRA.Utilities;
 using BlackSP.CRA.Vertices;
 using BlackSP.Interfaces.Events;
-using BlackSP.Serialization;
+using BlackSP.Serialization.Serializers;
 using CRA.ClientLibrary;
 using CRA.DataProvider;
 using ProtoBuf;
