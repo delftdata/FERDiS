@@ -168,10 +168,10 @@ namespace BlackSP.Core.Endpoints
             while(true) //TODO: batch parallelize loop
             {
                 t.ThrowIfCancellationRequested();
-                var nextEvent = _outputQueue.Take(t);
+                var nextTuple = _outputQueue.Take(t);
                 
-                IEvent @event = nextEvent.Item1;
-                OutputMode outputMode = nextEvent.Item2;
+                IEvent @event = nextTuple.Item1;
+                OutputMode outputMode = nextTuple.Item2;
 
                 var msgBuffer = _msgBufferPool.GetStream();
                 await _serializer.Serialize(msgBuffer, @event).ConfigureAwait(false);
