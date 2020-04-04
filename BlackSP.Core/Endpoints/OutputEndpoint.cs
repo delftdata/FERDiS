@@ -197,6 +197,8 @@ namespace BlackSP.Core.Endpoints
                     msgBuffer.Dispose(); //return buffer to recyclemanager
                     break;
                 case OutputMode.Partition:
+                    string key = "";
+                    
                     int x = _shardCount ?? throw new ArgumentNullException("shard count not set, see: 'SetRemoteShardCount(int)'");
                     int target = 0; //TODO: hash partition function
                     var targetShardQueue = _shardedMessageQueues[target];

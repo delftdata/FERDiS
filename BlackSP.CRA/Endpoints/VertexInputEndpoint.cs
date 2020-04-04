@@ -25,7 +25,7 @@ namespace BlackSP.CRA.Endpoints
 
         public async Task FromStreamAsync(Stream stream, string otherVertex, int otherShardId, string otherEndpoint, CancellationToken token)
         {
-            //wraps overload as for input channels we dont care which shard of other vertex it came from
+            //wraps overload as for input channels, we dont care which shard of other vertex it came from
             await FromStreamAsync(stream, otherVertex, $"{otherEndpoint}${otherShardId}", token);
         }
 

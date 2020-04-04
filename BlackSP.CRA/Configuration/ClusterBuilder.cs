@@ -1,13 +1,21 @@
-﻿using CRA.ClientLibrary;
+﻿using BlackSP.Core.Operators;
+using BlackSP.CRA.Events;
+using CRA.ClientLibrary;
 using CRA.DataProvider;
 using CRA.DataProvider.File;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.CRA.Utilities
+namespace BlackSP.CRA.Configuration
 {
     public class ClusterBuilder
     {
+        //ClusterBuilder API
+        // - track list of nodes to create
+        // + NewSource : BSPSource (static?)
+        // + Generate K8s yaml
+
         private CRAClientLibrary _craClient;
         private IVertexInfoProvider _vertexInfoProvider => _craClient.DataProvider.GetVertexInfoProvider();
         private IEndpointInfoProvider _endpointInfoProvider => _craClient.DataProvider.GetEndpointInfoProvider();
@@ -37,5 +45,38 @@ namespace BlackSP.CRA.Utilities
                 .Concat(shardedVertexInfoDeleteTasks)
             );
         }
+
+        public async Task TestMethod()
+        {
+            var source = new SourceOperatorConfigurator<SampleEvent>(_craClient, "crainst01", "source01");
+            var filter = new FilterOperatorConfigurator<SampleFilterOperatorConfiguration, SampleEvent>(_craClient, "crainst02", "filter01");
+            await source.AppendAsync(filter);
+
+            var mapper = new MapOperatorConfigurator<SampleMapOperatorConfiguration, SampleEvent, SampleEvent2>(_craClient, "crainst03", "map01");
+            await filter.AppendAsync(mapper);
+
+            var sink = new SinkOperatorConfigurator<SampleEvent2>("crainst04", "sink01");
+            await mapper.AppendAsync(sink);
+            //await mapper.AppendAsync(filter);
+
+
+        }
     }
+
+    class SampleMapOperatorConfiguration : IMapOperatorConfiguration<SampleEvent, SampleEvent2>
+    {
+        public IEnumerable<SampleEvent2> Map(SampleEvent @event)
+        {
+            throw new System.NotImplementedException();
+        }
+    }
+
+    class SampleFilterOperatorConfiguration : IFilterOperatorConfiguration<SampleEvent>
+    {
+        public SampleEvent Filter(SampleEvent @event)
+        {
+            throw new System.NotImplementedException();
+        }
+    }
+
 }

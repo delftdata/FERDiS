@@ -9,6 +9,18 @@ namespace BlackSP.Core.Operators
     {
     }
 
+    public interface ISourceOperatorConfiguration<TEvent> : IOperatorConfiguration
+        where TEvent : class, IEvent
+    {
+        string KafkaTopicName { get; }
+    }
+
+    public interface ISinkOperatorConfiguration<TEvent> : IOperatorConfiguration
+        where TEvent : class, IEvent
+    {
+        string KafkaTopicName { get; }
+    }
+
     public interface IFilterOperatorConfiguration<TEvent> : IOperatorConfiguration 
         where TEvent : class, IEvent
     {

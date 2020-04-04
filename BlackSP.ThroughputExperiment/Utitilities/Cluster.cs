@@ -1,7 +1,7 @@
 ﻿using BlackSP.Core.Endpoints;
 using BlackSP.Core.Operators;
 using BlackSP.Core.Operators.Concrete;
-using BlackSP.CRA.Utilities;
+using BlackSP.CRA.Configuration;
 using BlackSP.CRA.Vertices;
 using BlackSP.Kernel.Events;
 using BlackSP.Serialization.Serializers;
@@ -66,20 +66,26 @@ namespace BlackSP.ThroughputExperiment.Utilities
 
             //Refactor step: launch instance + if not defined do define?
             Console.WriteLine(">> Instantiating operator vertex 1");
+            var nameOperator1 = "operator1";
+            var inputEndpointsOperator1 = new string[] { "input1" };
+            var outputEndpointsOperator1 = new string[] { "output1" };
             await client.InstantiateVertexAsync(
                 new[] { "crainst01" },
-                "operator1",
+                nameOperator1,
                 typeof(OperatorVertex).Name.ToLowerInvariant(),
-                new VertexParameter(typeof(FilterOperator<MyEvent>), typeof(MyFilterOperatorConfiguration), 1, typeof(InputEndpoint), 1, typeof(OutputEndpoint), typeof(ProtobufSerializer)),
+                new VertexParameter(typeof(FilterOperator<MyEvent>), typeof(MyFilterOperatorConfiguration), inputEndpointsOperator1, typeof(InputEndpoint), outputEndpointsOperator1, typeof(OutputEndpoint), typeof(ProtobufSerializer)),
                 1
             );
 
             Console.WriteLine(">> Instantiating operator vertex 2");
+            var nameOperator2 = "operator2";
+            var inputEndpointsOperator2 = new string[] { "input1" };
+            var outputEndpointsOperator2 = new string[] { "output1" };
             await client.InstantiateVertexAsync(
-                new[] { "crainst02" }, 
-                "operator2", 
-                typeof(OperatorVertex).Name.ToLowerInvariant(), 
-                null, 
+                new[] { "crainst02" },
+                nameOperator2, 
+                typeof(OperatorVertex).Name.ToLowerInvariant(),
+                new VertexParameter(typeof(FilterOperator<MyEvent>), typeof(MyFilterOperatorConfiguration), inputEndpointsOperator2, typeof(InputEndpoint), outputEndpointsOperator2, typeof(OutputEndpoint), typeof(ProtobufSerializer)), 
                 1);
 
             //Console.WriteLine(">> Instantiating operator vertex 3");
@@ -88,7 +94,15 @@ namespace BlackSP.ThroughputExperiment.Utilities
 
             //Refactor step: connect endpoints instantiated on vertices to one another
             Console.WriteLine(">> Connecting vertices");
-            await client.ConnectAsync("operator1", "output", "operator2", "input");
+
+            foreach(string op1Input in inputEndpointsOperator1)
+            {
+                foreach (string op2Output in outputEndpointsOperator2)
+                {
+                    await client.ConnectAsync("operator1", "output", "operator2", "input");
+
+                }
+            }
             //await client.ConnectAsync("operator1", "output2", "operator3", "input");
 
             await client.ConnectAsync("operator2", "output", "operator1", "input");
