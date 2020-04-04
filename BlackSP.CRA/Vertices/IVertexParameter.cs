@@ -22,7 +22,7 @@ namespace BlackSP.CRA.Vertices
         /// <summary>
         /// How many input endpoints to start
         /// </summary>
-        int InputEndpointCount { get; }
+        string[] InputEndpointNames { get; }
 
         /// <summary>
         /// The input endpoint type the operator should be using
@@ -32,7 +32,7 @@ namespace BlackSP.CRA.Vertices
         /// <summary>
         /// How many output endpoints to start
         /// </summary>
-        int OutputEndpointCount { get; }
+        string[] OutputEndpointNames { get; }
 
         /// <summary>
         /// The input endpoint type the operator should be using
