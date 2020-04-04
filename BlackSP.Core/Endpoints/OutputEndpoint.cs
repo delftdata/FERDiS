@@ -71,6 +71,8 @@ namespace BlackSP.Core.Endpoints
         /// <param name="mode"></param>
         public void Enqueue(IEvent @event, OutputMode mode)
         {
+            _ = @event ?? throw new ArgumentNullException(nameof(@event));
+
             _outputQueue.Add(new Tuple<IEvent, OutputMode>(@event, mode));
         }
 

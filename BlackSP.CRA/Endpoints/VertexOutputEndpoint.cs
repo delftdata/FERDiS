@@ -12,7 +12,6 @@ namespace BlackSP.CRA.Endpoints
 {
     public class VertexOutputEndpoint : IAsyncShardedVertexOutputEndpoint
     {
-        public bool IsConnected { get; set; }
         private readonly IOutputEndpoint _bspOutputEndpoint;
 
 
@@ -28,7 +27,6 @@ namespace BlackSP.CRA.Endpoints
                 //CRA invokes current method on a background thread 
                 //so just invoke Egress on this thread
                 Console.WriteLine($"Output channel {otherVertex}${otherEndpoint}${otherShardId} starting");
-                IsConnected = true;
                 await _bspOutputEndpoint.Egress(stream, otherShardId, token);
             }
             catch (Exception e)
@@ -40,7 +38,6 @@ namespace BlackSP.CRA.Endpoints
             finally
             {
                 Console.WriteLine($"Output channel {otherVertex}${otherEndpoint}${otherShardId} stopped");
-                IsConnected = false;
             }
             token.ThrowIfCancellationRequested();
         }
