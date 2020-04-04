@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.UnitTests.Serialization
+namespace BlackSP.Serialization.UnitTests.Serialization
 {
     public class ProtoBufSerializerTests
     {
