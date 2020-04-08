@@ -17,7 +17,7 @@ namespace BlackSP.CRA.Configuration
         public override Type OperatorType => typeof(FilterOperator<TEvent>);
         public override Type OperatorConfigurationType => typeof(TOperator);
 
-        public FilterOperatorConfigurator(CRAClientLibrary craClient, string instanceName, string operatorName) : base(craClient, instanceName, operatorName)
+        public FilterOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }
     }
 }

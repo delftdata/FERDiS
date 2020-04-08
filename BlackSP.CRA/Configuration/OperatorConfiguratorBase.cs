@@ -13,7 +13,7 @@ namespace BlackSP.CRA.Configuration
         /// <summary>
         /// The name of the machine instance where the operator will be executing
         /// </summary>
-        public string InstanceName { get; }
+        public string[] InstanceNames { get; }
 
         /// <summary>
         /// Equivalent of CRA's 'VertexName'
@@ -27,27 +27,29 @@ namespace BlackSP.CRA.Configuration
 
         public abstract Type OperatorConfigurationType { get; }
 
-        protected ICollection<string> InputEndpointNames { get; private set; }
-        protected ICollection<string> OutputEndpointNames { get; private set; }
+        public ICollection<string> InputEndpointNames { get; private set; }
+        public ICollection<string> OutputEndpointNames { get; private set; }
+        public virtual ICollection<Edge> OutgoingEdges { get; private set; }
 
-        public OperatorConfiguratorBase(string instanceName, string operatorName)
+        public OperatorConfiguratorBase(string[] instanceNames, string operatorName)
         {
-            InstanceName = instanceName;
+            InstanceNames = instanceNames;
             OperatorName = operatorName;
             InputEndpointNames = new List<string>();
             OutputEndpointNames = new List<string>();
+            OutgoingEdges = new List<Edge>();
         }
 
         public string GetAvailableInputEndpoint()
         {
-            string inputEndpointName = $"input#{InputEndpointNames.Count}";
+            string inputEndpointName = $"input{InputEndpointNames.Count}";
             InputEndpointNames.Add(inputEndpointName);
             return inputEndpointName;
         }
 
         public string GetAvailableOutputEndpoint()
         {
-            string outputEndpointName = $"output#{OutputEndpointNames.Count}";
+            string outputEndpointName = $"output{OutputEndpointNames.Count}";
             OutputEndpointNames.Add(outputEndpointName);
             return outputEndpointName;
         }

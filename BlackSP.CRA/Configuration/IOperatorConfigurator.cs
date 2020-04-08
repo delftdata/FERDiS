@@ -7,29 +7,28 @@ using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Configuration
 {
+
     public interface IOperatorConfigurator
     {
-        string InstanceName { get; }
+        string[] InstanceNames { get; }
         string OperatorName { get; }
         Type OperatorType { get; }
         Type OperatorConfigurationType { get; }
+        ICollection<string> InputEndpointNames { get; }
+        ICollection<string> OutputEndpointNames { get; }
+        ICollection<Edge> OutgoingEdges { get; }
 
+        /// <summary>
+        /// Returns a new unique identifier for an output endpoint, gets persisted in OutputEndpointNames property
+        /// </summary>
+        /// <returns></returns>
         string GetAvailableOutputEndpoint();
+
+        /// <summary>
+        /// Returns a new unique identifier for an input endpoint, gets persisted in InputEndpointNames property
+        /// </summary>
+        /// <returns></returns>
         string GetAvailableInputEndpoint();
-
-        //do vertext register..? no, do in graphbuilder
-        //do vertex create
-        //do connection create
-        //- get free input endpoint
-        //- get free output endpoint
-    }
-    
-    public interface IProducingOperatorConfigurator<T> : IOperatorConfigurator
-    {
-        Task AppendAsync(IConsumingOperatorConfigurator<T> otherOperator);
-        Task AppendAsync<T2>(IConsumingOperatorConfigurator<T, T2> otherOperator);
-        Task AppendAsync<T2>(IConsumingOperatorConfigurator<T2, T> otherOperator);
-
     }
 
     /// <summary>
@@ -46,6 +45,13 @@ namespace BlackSP.CRA.Configuration
     /// <typeparam name="T2"></typeparam>
     public interface IConsumingOperatorConfigurator<T1, T2> : IConsumingOperatorConfigurator<T1>
     { }
+
+    public interface IProducingOperatorConfigurator<T> : IOperatorConfigurator
+    {
+        void Append(IConsumingOperatorConfigurator<T> otherOperator);
+        void Append<T2>(IConsumingOperatorConfigurator<T, T2> otherOperator);
+        void Append<T2>(IConsumingOperatorConfigurator<T2, T> otherOperator);
+    }
 
     public interface ISinkOperatorConfigurator<TOperator, TEvent> : IConsumingOperatorConfigurator<TEvent>
         where TOperator : ISinkOperatorConfiguration<TEvent>

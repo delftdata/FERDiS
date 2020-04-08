@@ -1,48 +1,27 @@
 {
   "profiles": {
-    "Setup cluster FS": {
-      "commandName": "Project",
-      "environmentVariables": {
-      },
-      "commandLineArgs": "0 1"
-    },
-
-    "Setup cluster Azure": {
+    "Setup cluster": {
       "commandName": "Project",
       "environmentVariables": {
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
       },
-      "commandLineArgs": "0 0"
+      "commandLineArgs": "0"
     },
 
-    "Launch crainst01 FS": {
-      "commandName": "Project",
-      "environmentVariables": {
-      },
-      "commandLineArgs": "1 1 crainst01 3180 0.0.0.0"
-    },
-
-    "Launch crainst01 Azure": {
+    "Launch crainst01": {
       "commandName": "Project",
       "environmentVariables": {
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
       },
-      "commandLineArgs": "1 0 crainst01 3180 0.0.0.0"
+      "commandLineArgs": "1 crainst01 3180 0.0.0.0"
     },
 
-    "Launch crainst02 FS": {
-      "commandName": "Project",
-      "environmentVariables": {
-      },
-      "commandLineArgs": "1 1 crainst02 3180 0.0.0.0"
-    },
-
-    "Launch crainst02 Azure": {
+    "Launch crainst02": {
       "commandName": "Project",
       "environmentVariables": {
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
       },
-      "commandLineArgs": "1 0 crainst02 3180 0.0.0.0"
+      "commandLineArgs": "1 crainst02 3180 0.0.0.0"
     }
   }
 }

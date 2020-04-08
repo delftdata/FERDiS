@@ -13,43 +13,23 @@ namespace BlackSP.CRA.Configuration
     public abstract class ProducingOperatorConfiguratorBase<T> : OperatorConfiguratorBase, IProducingOperatorConfigurator<T>
     {
 
-        private readonly CRAClientLibrary _client;
-
-        public ProducingOperatorConfiguratorBase(CRAClientLibrary craClient, string instanceName, string operatorName) : base(instanceName, operatorName)
+        public ProducingOperatorConfiguratorBase(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         {
-            _client = craClient;
         }
 
-        public async Task RegisterCRAVertexAsync()
+        public void Append(IConsumingOperatorConfigurator<T> otherOperator)
         {
-            await _client.InstantiateVertexAsync(
-                new[] { InstanceName },
-                OperatorName,
-                typeof(OperatorVertex).Name.ToLowerInvariant(),
-                new VertexParameter(OperatorType, 
-                                    OperatorConfigurationType, 
-                                    InputEndpointNames.ToArray(), 
-                                    typeof(InputEndpoint), 
-                                    OutputEndpointNames.ToArray(), 
-                                    typeof(OutputEndpoint), 
-                                    typeof(ProtobufSerializer)),
-                1
-            );
+            OutgoingEdges.Add(new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint()));
         }
 
-        public async Task AppendAsync(IConsumingOperatorConfigurator<T> otherOperator)
+        public void Append<T2>(IConsumingOperatorConfigurator<T, T2> otherOperator)
         {
-            await _client.ConnectAsync(InstanceName, GetAvailableOutputEndpoint(), otherOperator.OperatorName, otherOperator.GetAvailableInputEndpoint());
+            OutgoingEdges.Add(new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint()));
         }
 
-        public async Task AppendAsync<T2>(IConsumingOperatorConfigurator<T, T2> otherOperator)
+        public void Append<T2>(IConsumingOperatorConfigurator<T2, T> otherOperator)
         {
-            await _client.ConnectAsync(InstanceName, GetAvailableOutputEndpoint(), otherOperator.OperatorName, otherOperator.GetAvailableInputEndpoint());
-        }
-
-        public async Task AppendAsync<T2>(IConsumingOperatorConfigurator<T2, T> otherOperator)
-        {
-            await _client.ConnectAsync(InstanceName, GetAvailableOutputEndpoint(), otherOperator.OperatorName, otherOperator.GetAvailableInputEndpoint());
+            OutgoingEdges.Add(new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint()));
         }
     }
 }

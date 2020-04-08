@@ -18,7 +18,7 @@ namespace BlackSP.CRA.Configuration
         public override Type OperatorType => typeof(AggregateOperator<TIn, TOut>);
         public override Type OperatorConfigurationType => typeof(TOperator);
 
-        public AggregateOperatorConfigurator(CRAClientLibrary craClient, string instanceName, string operatorName) : base(craClient, instanceName, operatorName)
+        public AggregateOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }
     }
 }

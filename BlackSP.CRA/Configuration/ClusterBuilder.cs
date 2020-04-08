@@ -1,5 +1,6 @@
 ﻿using BlackSP.Core.Operators;
 using BlackSP.CRA.Events;
+using BlackSP.CRA.Kubernetes;
 using CRA.ClientLibrary;
 using CRA.DataProvider;
 using CRA.DataProvider.File;
@@ -48,15 +49,26 @@ namespace BlackSP.CRA.Configuration
 
         public async Task TestMethod()
         {
-            var source = new SourceOperatorConfigurator<SampleEvent>(_craClient, "crainst01", "source01");
-            var filter = new FilterOperatorConfigurator<SampleFilterOperatorConfiguration, SampleEvent>(_craClient, "crainst02", "filter01");
-            await source.AppendAsync(filter);
+            IOperatorGraphConfigurator graphConfigurator = new OperatorGraphConfigurator(new KubernetesDeploymentUtility(), new CRAClientLibrary());
+            var filter1 = graphConfigurator.AddFilter<SampleFilterOperatorConfiguration, SampleEvent>(2);
 
-            var mapper = new MapOperatorConfigurator<SampleMapOperatorConfiguration, SampleEvent, SampleEvent2>(_craClient, "crainst03", "map01");
-            await filter.AppendAsync(mapper);
+            var mapper1 = graphConfigurator.AddMap<SampleMapOperatorConfiguration, SampleEvent, SampleEvent2>(2);
 
-            var sink = new SinkOperatorConfigurator<SampleEvent2>("crainst04", "sink01");
-            await mapper.AppendAsync(sink);
+            filter1.Append(mapper1);
+            //mapper1.Append(filter1);
+
+            await graphConfigurator.BuildGraph();
+            
+
+            //var source = new SourceOperatorConfigurator<SampleEvent>(_craClient, "crainst01", "source01");
+            //var filter = new FilterOperatorConfigurator<SampleFilterOperatorConfiguration, SampleEvent>(_craClient, "crainst02", "filter01");
+            //await source.AppendAsync(filter);
+
+            //var mapper = new MapOperatorConfigurator<SampleMapOperatorConfiguration, SampleEvent, SampleEvent2>(_craClient, "crainst03", "map01");
+            //await filter.AppendAsync(mapper);
+
+            //var sink = new SinkOperatorConfigurator<SampleEvent2>("crainst04", "sink01");
+            //await mapper.AppendAsync(sink);
             //await mapper.AppendAsync(filter);
 
 

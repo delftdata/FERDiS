@@ -7,7 +7,7 @@ namespace BlackSP.CRA.Vertices
 {
     public class VertexParameter : IVertexParameter
     {
-        //yeah public setters .. but some parameters get lost in serialization if we make them private
+        //using public setters because some parameters get lost in cra's serialization if we make them private
         public Type OperatorType { get; set; }
         public Type OperatorConfiguration { get; set; }
         public Type InputEndpointType { get; set; }

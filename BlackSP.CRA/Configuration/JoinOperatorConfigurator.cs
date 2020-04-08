@@ -19,7 +19,7 @@ namespace BlackSP.CRA.Configuration
         public override Type OperatorType => typeof(JoinOperator<TIn1, TIn2, TOut>);
         public override Type OperatorConfigurationType => typeof(TOperator);
 
-        public JoinOperatorConfigurator(CRAClientLibrary craClient, string instanceName, string operatorName) : base(craClient, instanceName, operatorName)
+        public JoinOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }
     }
 }

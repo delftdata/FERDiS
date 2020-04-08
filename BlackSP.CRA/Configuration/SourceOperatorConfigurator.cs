@@ -14,7 +14,7 @@ namespace BlackSP.CRA.Configuration
         public override Type OperatorType => throw new NotImplementedException(); //TODO: fill when SourceOperator exists in core library
         public override Type OperatorConfigurationType => typeof(TOperator);
 
-        public SourceOperatorConfigurator(CRAClientLibrary craClient, string instanceName, string operatorName) : base(craClient, instanceName, operatorName)
+        public SourceOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }
     }
 }

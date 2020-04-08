@@ -1,0 +1,103 @@
+
+kind : Deployment
+apiVersion : apps/v1
+metadata :
+    name : crainst01
+    namespace : blacksp
+    labels :
+        app : map01
+        name : crainst
+spec :
+    replicas : 1
+    selector:
+        matchLabels:
+            app: crainst01
+    template :
+        metadata :
+            name : crainst01
+            labels:
+                app: map01
+                name : blacksp
+#consider operator name here, could serve for checking logs of all shards at the same time
+        spec:
+            containers:
+            - name : crainst01
+              image : mdzwart/cra-net2.1:latest
+              ports:
+              - containerPort: 1500
+              env:
+              - name: AZURE_STORAGE_CONN_STRING
+                value: DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net
+              args : ["crainst01", 1500] # CRA instance name: crainst01, exposed on port 1500
+              resources:
+        #requests:
+        #cpu: "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
+------------------------
+kind : Deployment
+apiVersion : apps/v1
+metadata :
+    name : crainst02
+    namespace : blacksp
+    labels :
+        app : map01
+        name : crainst
+spec :
+    replicas : 1
+    selector:
+        matchLabels:
+            app: crainst02
+    template :
+        metadata :
+            name : crainst02
+            labels:
+                app: map01
+                name : blacksp
+#consider operator name here, could serve for checking logs of all shards at the same time
+        spec:
+            containers:
+            - name : crainst02
+              image : mdzwart/cra-net2.1:latest
+              ports:
+              - containerPort: 1500
+              env:
+              - name: AZURE_STORAGE_CONN_STRING
+                value: DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net
+              args : ["crainst02", 1500] # CRA instance name: crainst02, exposed on port 1500
+              resources:
+        #requests:
+        #cpu: "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
+------------------------
+kind : Deployment
+apiVersion : apps/v1
+metadata :
+    name : crainst03
+    namespace : blacksp
+    labels :
+        app : filter01
+        name : crainst
+spec :
+    replicas : 1
+    selector:
+        matchLabels:
+            app: crainst03
+    template :
+        metadata :
+            name : crainst03
+            labels:
+                app: filter01
+                name : blacksp
+#consider operator name here, could serve for checking logs of all shards at the same time
+        spec:
+            containers:
+            - name : crainst03
+              image : mdzwart/cra-net2.1:latest
+              ports:
+              - containerPort: 1500
+              env:
+              - name: AZURE_STORAGE_CONN_STRING
+                value: DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net
+              args : ["crainst03", 1500] # CRA instance name: crainst03, exposed on port 1500
+              resources:
+        #requests:
+        #cpu: "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
+------------------------
