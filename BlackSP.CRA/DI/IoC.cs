@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using BlackSP.Core.Operators;
+using BlackSP.Core.OperatorSockets;
 using BlackSP.CRA.Endpoints;
 using BlackSP.CRA.Vertices;
 using BlackSP.Kernel.Endpoints;
@@ -42,14 +42,14 @@ namespace BlackSP.CRA.DI
             var container = BuildContainer();
             
             //TODO: validate presence of all required types and throw exception if missing
-            container.IsRegistered<IOperator>();
+            container.IsRegistered<IOperatorSocket>();
             
             return container;
         }
 
         public IoC RegisterBlackSPComponents()
         {
-            RegisterConcreteClassAsType<IOperator>(_options.OperatorType, true);
+            RegisterConcreteClassAsType<IOperatorSocket>(_options.OperatorType, true);
             RegisterConcreteClassAsDefined(_options.OperatorConfiguration, true);
 
             RegisterConcreteClassAsType<IInputEndpoint>(_options.InputEndpointType);

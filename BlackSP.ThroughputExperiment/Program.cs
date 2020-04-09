@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.Operators;
+﻿using BlackSP.Core.OperatorSockets;
 using BlackSP.CRA;
 using BlackSP.CRA.Configuration;
 using BlackSP.CRA.Kubernetes;

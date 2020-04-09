@@ -1,21 +1,22 @@
 ﻿using BlackSP.Core.Windows;
 using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Core.Operators
+namespace BlackSP.Core.OperatorSockets
 {
 
-    public abstract class SlidingWindowedOperatorBase : OperatorBase
+    public abstract class SlidingWindowedOperatorSocketBase : OperatorSocketBase
     {
-        private readonly IWindowedOperatorConfiguration _options;
+        private readonly IWindowedOperator _pluggedInOperator;
         private readonly IDictionary<Type, SlidingEventWindow<IEvent>> _currentWindows;
 
-        public SlidingWindowedOperatorBase(IWindowedOperatorConfiguration options) : base(options)
+        public SlidingWindowedOperatorSocketBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)
         {
-            _options = options;
+            _pluggedInOperator = pluggedInOperator;
             _currentWindows = new Dictionary<Type, SlidingEventWindow<IEvent>>();
         }
 
@@ -47,7 +48,7 @@ namespace BlackSP.Core.Operators
             _ = eventType ?? throw new ArgumentNullException(nameof(eventType));
             if(!_currentWindows.ContainsKey(eventType))
             {
-                _currentWindows.Add(eventType, new SlidingEventWindow<IEvent>(_options.WindowSize));
+                _currentWindows.Add(eventType, new SlidingEventWindow<IEvent>(_pluggedInOperator.WindowSize));
             }
             if (_currentWindows.TryGetValue(eventType, out var eventWindow))
             {

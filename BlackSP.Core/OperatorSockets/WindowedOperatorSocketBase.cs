@@ -1,5 +1,6 @@
 ﻿using BlackSP.Core.Windows;
 using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,24 +8,24 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Operators
+namespace BlackSP.Core.OperatorSockets
 {
-    public abstract class WindowedOperatorBase<TIn, TOut> : OperatorBase
+    public abstract class WindowedOperatorSocketBase<TIn, TOut> : OperatorSocketBase
         where TIn : class, IEvent
         where TOut : class, IEvent
     {
 
-        private readonly IWindowedOperatorConfiguration _options;
+        private readonly IWindowedOperator _pluggedInOperator;
         private FixedEventWindow<TIn> _currentWindow;
         
-        public WindowedOperatorBase(IWindowedOperatorConfiguration options) : base(options)
+        public WindowedOperatorSocketBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)
         {
-            _options = options;            
+            _pluggedInOperator = pluggedInOperator;            
         }
 
         public override Task Start(DateTime at)
         {
-            _currentWindow = new FixedEventWindow<TIn>(at, _options.WindowSize);
+            _currentWindow = new FixedEventWindow<TIn>(at, _pluggedInOperator.WindowSize);
             return base.Start(at);
         }
 

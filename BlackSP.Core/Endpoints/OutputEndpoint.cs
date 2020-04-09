@@ -22,12 +22,12 @@ namespace BlackSP.Core.Endpoints
         private readonly BlockingCollection<Tuple<IEvent, OutputMode>> _outputQueue;
         private readonly IDictionary<int, BlockingCollection<MemoryStream>> _shardedMessageQueues; //default BlockingCollection implementation is a ConcurrentQueue
         private readonly ISerializer _serializer;
-        private readonly IOperator _operator;
+        private readonly IOperatorSocket _operator;
         private readonly RecyclableMemoryStreamManager _msgBufferPool;
         private readonly Task _messageSerializationThread;
         private int? _shardCount;
 
-        public OutputEndpoint(IOperator targetOperator, ISerializer serializer, RecyclableMemoryStreamManager memStreamPool)
+        public OutputEndpoint(IOperatorSocket targetOperator, ISerializer serializer, RecyclableMemoryStreamManager memStreamPool)
         {
             _operator = targetOperator ?? throw new ArgumentNullException(nameof(targetOperator));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));

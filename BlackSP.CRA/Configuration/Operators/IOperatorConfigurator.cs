@@ -1,5 +1,5 @@
-﻿using BlackSP.Core.Operators;
-using BlackSP.Kernel.Events;
+﻿using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -54,39 +54,39 @@ namespace BlackSP.CRA.Configuration.Operators
     }
 
     public interface ISinkOperatorConfigurator<TOperator, TEvent> : IConsumingOperatorConfigurator<TEvent>
-        where TOperator : ISinkOperatorConfiguration<TEvent>
+        where TOperator : ISinkOperator<TEvent>
         where TEvent : class, IEvent
     {
     }
 
     public interface ISourceOperatorConfigurator<TOperator, TEvent> : IProducingOperatorConfigurator<TEvent>
-        where TOperator : ISourceOperatorConfiguration<TEvent>
+        where TOperator : ISourceOperator<TEvent>
         where TEvent : class, IEvent
     {
     }
 
     public interface IMapOperatorConfigurator<TOperator, TIn, TOut> : IConsumingOperatorConfigurator<TIn>, IProducingOperatorConfigurator<TOut>
-        where TOperator : IMapOperatorConfiguration<TIn, TOut>
+        where TOperator : IMapOperator<TIn, TOut>
         where TIn : class, IEvent
         where TOut : class, IEvent
     {
     }
 
     public interface IFilterOperatorConfigurator<TOperator, TEvent> : IConsumingOperatorConfigurator<TEvent>, IProducingOperatorConfigurator<TEvent>
-        where TOperator : IFilterOperatorConfiguration<TEvent>
+        where TOperator : IFilterOperator<TEvent>
         where TEvent : class, IEvent
     {
     }
 
     public interface IAggregateOperatorConfigurator<TOperator, TIn, TOut> : IConsumingOperatorConfigurator<TIn>, IProducingOperatorConfigurator<TOut>
-        where TOperator : IAggregateOperatorConfiguration<TIn, TOut>
+        where TOperator : IAggregateOperator<TIn, TOut>
         where TOut : class, IEvent
         where TIn : class, IEvent
     {
     }
 
     public interface IJoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut> : IConsumingOperatorConfigurator<TIn1, TIn2>, IProducingOperatorConfigurator<TOut>
-        where TOperator : IJoinOperatorConfiguration<TIn1, TIn2, TOut>
+        where TOperator : IJoinOperator<TIn1, TIn2, TOut>
         where TOut : class, IEvent
         where TIn1 : class, IEvent
         where TIn2 : class, IEvent

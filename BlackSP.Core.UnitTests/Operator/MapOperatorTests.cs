@@ -1,5 +1,5 @@
-﻿using BlackSP.Core.Operators;
-using BlackSP.Core.Operators.Concrete;
+﻿using BlackSP.Core.OperatorSockets;
+using BlackSP.Core.OperatorSockets;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Endpoints;
@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.UnitTests.Operator
 {
-    class MapOperatorConfigurationForTest : IMapOperatorConfiguration<TestEvent, TestEvent2>
+    class MapOperatorConfigurationForTest : IMapOperator<TestEvent, TestEvent2>
     {
         public IEnumerable<TestEvent2> Map(TestEvent @event)
         {
@@ -30,14 +30,14 @@ namespace BlackSP.Core.UnitTests.Operator
 
     public class MapOperatorTests
     {
-        private MapOperator<TestEvent, TestEvent2> _mapOperator;
+        private MapOperatorSocket<TestEvent, TestEvent2> _mapOperator;
         private Task _operatorThread;
         private IList<TestEvent> _testEvents;
 
         [SetUp]
         public void SetUp()
         {
-            _mapOperator = new MapOperator<TestEvent, TestEvent2>(new MapOperatorConfigurationForTest());
+            _mapOperator = new MapOperatorSocket<TestEvent, TestEvent2>(new MapOperatorConfigurationForTest());
 
             _testEvents = new List<TestEvent>();
             for(int i = 0; i < 10; i++)

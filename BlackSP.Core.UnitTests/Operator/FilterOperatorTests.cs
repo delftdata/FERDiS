@@ -1,5 +1,5 @@
-﻿using BlackSP.Core.Operators;
-using BlackSP.Core.Operators.Concrete;
+﻿using BlackSP.Core.OperatorSockets;
+using BlackSP.Core.OperatorSockets;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Endpoints;
@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.UnitTests.Operator
 {
-    class FilterOperatorConfigurationNoDoubleKeys : IFilterOperatorConfiguration<TestEvent>
+    class FilterOperatorConfigurationNoDoubleKeys : IFilterOperator<TestEvent>
     {
         private IList<string> previousKeys;
         public FilterOperatorConfigurationNoDoubleKeys()
@@ -36,14 +36,14 @@ namespace BlackSP.Core.UnitTests.Operator
 
     public class FilterOperatorTests
     {
-        private FilterOperator<TestEvent> _distinctOperator;
+        private FilterOperatorSocket<TestEvent> _distinctOperator;
         private Task _operatorThread;
         private IList<IEvent> _testEvents;
 
         [SetUp]
         public void SetUp()
         {
-            _distinctOperator = new FilterOperator<TestEvent>(new FilterOperatorConfigurationNoDoubleKeys());
+            _distinctOperator = new FilterOperatorSocket<TestEvent>(new FilterOperatorConfigurationNoDoubleKeys());
             _testEvents = new List<IEvent>();
             for(int i = 0; i < 10; i++)
             {

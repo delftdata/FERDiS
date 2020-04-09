@@ -7,9 +7,9 @@ using System.Text;
 
 namespace BlackSP.Core.UnitTests.Operator
 {
-    public class OperatorBaseMisconfigurationTests
+    public class OperatorSocketBaseMisconfigurationTests
     {
-        class NullBaseOperator : TestBaseOperator
+        class NullBaseOperatorSocket : TestBaseOperatorSocket
         {
             protected override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
             {
@@ -17,7 +17,7 @@ namespace BlackSP.Core.UnitTests.Operator
             }
         }
 
-        class ExceptionBaseOperator : TestBaseOperator
+        class ExceptionBaseOperatorSocket : TestBaseOperatorSocket
         {
             protected override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
             {
@@ -28,7 +28,7 @@ namespace BlackSP.Core.UnitTests.Operator
         [Test]
         public void Operator_ThrowsOnNullOperationResult()
         {
-            var testoperator = new NullBaseOperator();
+            var testoperator = new NullBaseOperatorSocket();
             var operatorThread = testoperator.Start(DateTime.Now);
             testoperator.Enqueue(new TestEvent());
             Assert.ThrowsAsync<NullReferenceException>(async () => await operatorThread);
@@ -39,7 +39,7 @@ namespace BlackSP.Core.UnitTests.Operator
         [Test]
         public void Operator_ThrowsOnExceptionOperationResult()
         {
-            var testoperator = new ExceptionBaseOperator();
+            var testoperator = new ExceptionBaseOperatorSocket();
             var operatorThread = testoperator.Start(DateTime.Now);
             testoperator.Enqueue(new TestEvent());
             Assert.ThrowsAsync<NotImplementedException>(async () => await operatorThread);

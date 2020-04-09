@@ -1,6 +1,6 @@
 ﻿using Autofac;
 using BlackSP.Core.Endpoints;
-using BlackSP.Core.Operators;
+using BlackSP.Core.OperatorSockets;
 using BlackSP.CRA.DI;
 using BlackSP.CRA.Endpoints;
 using BlackSP.CRA.Events;
@@ -19,7 +19,7 @@ namespace BlackSP.CRA.Vertices
     {
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
-        private IOperator _bspOperator;
+        private IOperatorSocket _bspOperator;
         private IVertexParameter _options;
         
         public OperatorVertex()
@@ -60,11 +60,11 @@ namespace BlackSP.CRA.Vertices
             _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();
         }
 
-        private IOperator ResolveOperator()
+        private IOperatorSocket ResolveOperator()
         {
             Type operatorType = _options.OperatorType;
-            return _vertexLifetimeScope.Resolve(operatorType) as IOperator
-                ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be casted to {typeof(IOperator)}");
+            return _vertexLifetimeScope.Resolve(operatorType) as IOperatorSocket
+                ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be casted to {typeof(IOperatorSocket)}");
         }
 
         private void SetupInputEndpoints()

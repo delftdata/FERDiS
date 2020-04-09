@@ -1,14 +1,11 @@
-﻿using BlackSP.Core.Operators;
-using BlackSP.Kernel.Events;
-using CRA.ClientLibrary;
+﻿using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Operators;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace BlackSP.CRA.Configuration.Operators
 {
     public class SourceOperatorConfigurator<TOperator, TOut> : ProducingOperatorConfiguratorBase<TOut>, ISourceOperatorConfigurator<TOperator, TOut>
-        where TOperator : ISourceOperatorConfiguration<TOut>, new()
+        where TOperator : ISourceOperator<TOut>, new()
         where TOut : class, IEvent
     {
         public override Type OperatorType => throw new NotImplementedException(); //TODO: fill when SourceOperator exists in core library

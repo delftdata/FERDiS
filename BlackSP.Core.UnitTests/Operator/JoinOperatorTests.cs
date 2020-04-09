@@ -1,8 +1,9 @@
-﻿using BlackSP.Core.Operators;
-using BlackSP.Core.Operators.Concrete;
+﻿using BlackSP.Core.OperatorSockets;
+using BlackSP.Core.OperatorSockets;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Operators;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.UnitTests.Operator
 {
-    class JoinOperatorConfigurationForTest : IJoinOperatorConfiguration<TestEvent, TestEvent2, TestEvent2>
+    class JoinOperatorConfigurationForTest : IJoinOperator<TestEvent, TestEvent2, TestEvent2>
     {
         public TimeSpan WindowSize { get; set; }
 
@@ -35,7 +36,7 @@ namespace BlackSP.Core.UnitTests.Operator
     public class JoinOperatorTests
     {
 
-        private JoinOperator<TestEvent, TestEvent2, TestEvent2> _operator;
+        private JoinOperatorSocket<TestEvent, TestEvent2, TestEvent2> _operator;
         private TimeSpan _windowSize;
         private DateTime _startTime;
         private Task _operatorThread;
@@ -45,7 +46,7 @@ namespace BlackSP.Core.UnitTests.Operator
         {
             _startTime = DateTime.Now;
             _windowSize = TimeSpan.FromSeconds(10);
-            _operator = new JoinOperator<TestEvent, TestEvent2, TestEvent2>(new JoinOperatorConfigurationForTest { WindowSize = _windowSize });
+            _operator = new JoinOperatorSocket<TestEvent, TestEvent2, TestEvent2>(new JoinOperatorConfigurationForTest { WindowSize = _windowSize });
             _operatorThread = _operator.Start(_startTime);
         }
         

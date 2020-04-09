@@ -21,7 +21,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
 {
     public class InputEndpointTests
     {
-        IOperator _targetOperator;
+        IOperatorSocket _targetOperator;
         BlockingCollection<IEvent> _targetOperatorInputqueue;
 
         ISerializer _serializer;

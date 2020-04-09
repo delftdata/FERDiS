@@ -1,19 +1,20 @@
 ﻿using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BlackSP.Core.Operators.Concrete
+namespace BlackSP.Core.OperatorSockets
 {
-    public class JoinOperator<TInA, TInB, TOut> : SlidingWindowedOperatorBase
+    public class JoinOperatorSocket<TInA, TInB, TOut> : SlidingWindowedOperatorSocketBase
         where TInA : class, IEvent
         where TInB : class, IEvent
         where TOut : class, IEvent
     {
-        private readonly IJoinOperatorConfiguration<TInA, TInB, TOut> _options;
-        public JoinOperator(IJoinOperatorConfiguration<TInA, TInB, TOut> options) : base(options)
+        private readonly IJoinOperator<TInA, TInB, TOut> _pluggedInOperator;
+        public JoinOperatorSocket(IJoinOperator<TInA, TInB, TOut> pluggedInOperator) : base(pluggedInOperator)
         {
-            _options = options;
+            _pluggedInOperator = pluggedInOperator;
 
             //ensures both windows that we need have been created on time
             GetWindow(typeof(TInA));
@@ -25,7 +26,7 @@ namespace BlackSP.Core.Operators.Concrete
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
 
             var isInputTypeA = @event.GetType().Equals(typeof(TInA));
-            Console.WriteLine("GONNA TRY JOIN " + @event.Key);
+            //Console.WriteLine("GONNA TRY JOIN " + @event.Key);
             return isInputTypeA ? PerformJoinLogic(@event as TInA) : PerformJoinLogic(@event as TInB);
             
         }
@@ -34,10 +35,10 @@ namespace BlackSP.Core.Operators.Concrete
         {
             IEnumerable<TInB> windowBs = GetWindow(typeof(TInB)).Events.Cast<TInB>();
 
-            var matches = windowBs.Where(wEvent => _options.Match(targetEvent, wEvent));
+            var matches = windowBs.Where(wEvent => _pluggedInOperator.Match(targetEvent, wEvent));
             foreach (var match in matches)
             {
-                yield return _options.Join(targetEvent, match);
+                yield return _pluggedInOperator.Join(targetEvent, match);
             }
         }
 
@@ -45,10 +46,10 @@ namespace BlackSP.Core.Operators.Concrete
         {
             IEnumerable<TInA> windowAs = GetWindow(typeof(TInA)).Events.Cast<TInA>();
 
-            var matches = windowAs.Where(wEvent => _options.Match(wEvent, targetEvent));
+            var matches = windowAs.Where(wEvent => _pluggedInOperator.Match(wEvent, targetEvent));
             foreach (var match in matches)
             {
-                yield return _options.Join(match, targetEvent);
+                yield return _pluggedInOperator.Join(match, targetEvent);
             }
         }
     }

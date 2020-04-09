@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.Operators;
+﻿using BlackSP.Core.OperatorSockets;
 using System;
 using System.Collections.Generic;
 using System.Text;

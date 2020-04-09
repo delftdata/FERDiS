@@ -1,13 +1,12 @@
-﻿using BlackSP.Core.Operators;
-using BlackSP.Kernel.Events;
+﻿using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace BlackSP.CRA.Configuration.Operators
 {
     public class SinkOperatorConfigurator<TOperator, TIn> : OperatorConfiguratorBase, ISinkOperatorConfigurator<TOperator, TIn>
-        where TOperator : ISinkOperatorConfiguration<TIn>
+        where TOperator : ISinkOperator<TIn>
         where TIn : class, IEvent
     {
 

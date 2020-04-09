@@ -3,14 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.Operators
+namespace BlackSP.Kernel.Operators
 {
-    public interface IWindowedOperatorConfiguration : IOperatorConfiguration
+    public interface IWindowedOperator : IOperator
     {
         TimeSpan WindowSize { get; set; }
     }
 
-    public interface IJoinOperatorConfiguration<TInA, TInB, TOut> : IWindowedOperatorConfiguration
+    public interface IJoinOperator<TInA, TInB, TOut> : IWindowedOperator
         where TInA : class, IEvent
         where TInB : class, IEvent
         where TOut : class, IEvent
@@ -32,7 +32,7 @@ namespace BlackSP.Core.Operators
         TOut Join(TInA matchA, TInB matchB);
     }
 
-    public interface IAggregateOperatorConfiguration<TIn, TOut> : IWindowedOperatorConfiguration
+    public interface IAggregateOperator<TIn, TOut> : IWindowedOperator
         where TIn : class, IEvent
         where TOut : class, IEvent
 
