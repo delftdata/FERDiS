@@ -7,7 +7,7 @@ namespace BlackSP.Kernel.Operators
 {
     public interface IWindowedOperator : IOperator
     {
-        TimeSpan WindowSize { get; set; }
+        TimeSpan WindowSize { get; }
     }
 
     public interface IJoinOperator<TInA, TInB, TOut> : IWindowedOperator

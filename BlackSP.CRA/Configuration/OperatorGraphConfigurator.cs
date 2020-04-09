@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Configuration
 {
-    internal class OperatorGraphConfigurator : CRAOperatorGraphConfiguratorBase, IOperatorGraphConfigurator
+    public class OperatorGraphConfigurator : CRAOperatorGraphConfiguratorBase, IOperatorGraphConfigurator
     {
 
         private readonly KubernetesDeploymentUtility k8sDeploymentUtil;

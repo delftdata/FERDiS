@@ -1,5 +1,4 @@
 ﻿using BlackSP.Core.OperatorSockets;
-using BlackSP.Core.OperatorSockets;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Endpoints;

@@ -18,7 +18,7 @@ namespace BlackSP.CRA.Configuration
     //print launch and inspect commands on console?
     public class CRAOperatorGraphConfiguratorBase
     {
-        protected ICollection<IOperatorConfigurator> Configurators { get; }
+        public ICollection<IOperatorConfigurator> Configurators { get; }
 
         private Dictionary<string, int> usedOperatorNameCount;
         private int usedInstanceCount;
