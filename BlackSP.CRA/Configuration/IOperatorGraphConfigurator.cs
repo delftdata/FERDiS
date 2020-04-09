@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Operators;
+using BlackSP.CRA.Configuration.Operators;
 using BlackSP.Kernel.Events;
 using System;
 using System.Collections.Generic;
@@ -9,8 +10,6 @@ namespace BlackSP.CRA.Configuration
 {
     public interface IOperatorGraphConfigurator
     {
-        Task BuildGraph();
-
         ISinkOperatorConfigurator<TOperator, TIn> AddSink<TOperator, TIn>(int shardCount)
             where TOperator : ISinkOperatorConfiguration<TIn>, new()
             where TIn : class, IEvent;

@@ -17,19 +17,18 @@ namespace BlackSP.ThroughputExperiment
     public class Program
     {
 
-        class ThroughputExperimentGraphConfiguration : BlackSPConfiguration
+        class ThroughputExperimentGraphConfiguration : BlackSPGraphConfiguration
         {
-            public void ConfigureGraph(IOperatorGraphConfigurator graphConfigurator)
+            public void Configure(IOperatorGraphConfigurator graph)
             {
-                var mapper = graphConfigurator.AddMap<SampleMapOperatorConfiguration, SampleEvent, SampleEvent2>(2);
-                var filter = graphConfigurator.AddFilter<SampleFilterOperatorConfiguration, SampleEvent>(1);
+                var mapper = graph.AddMap<SampleMapOperatorConfiguration, SampleEvent, SampleEvent2>(2);
+                var filter = graph.AddFilter<SampleFilterOperatorConfiguration, SampleEvent>(1);
                 filter.Append(mapper);
             }
         }
 
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-
             BlackSPClient.LaunchWith<ThroughputExperimentGraphConfiguration, AzureDataProvider>(args);            
         }
     }

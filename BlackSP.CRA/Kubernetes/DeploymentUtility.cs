@@ -1,4 +1,5 @@
 ﻿using BlackSP.CRA.Configuration;
+using BlackSP.CRA.Configuration.Operators;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,8 @@ namespace BlackSP.CRA.Kubernetes
     public class KubernetesDeploymentUtility
     {
         private ICollection<IOperatorConfigurator> _configurators;
+        private string lastWrittenYamlFile;
+        private string K8sNamespace => "blacksp";
 
         public KubernetesDeploymentUtility()
         {}
@@ -16,6 +19,7 @@ namespace BlackSP.CRA.Kubernetes
         public KubernetesDeploymentUtility(ICollection<IOperatorConfigurator> configurators)
         {
             _configurators = configurators ?? throw new ArgumentNullException(nameof(configurators));
+            lastWrittenYamlFile = string.Empty;
         }
 
         public KubernetesDeploymentUtility With(ICollection<IOperatorConfigurator> configurators)
@@ -25,8 +29,24 @@ namespace BlackSP.CRA.Kubernetes
         }
 
         public void WriteDeploymentYaml()
-        {            
-            File.WriteAllText(GetCurrentProjectPath("deployment.yaml"), GetDeploymentYamlString());
+        {
+            lastWrittenYamlFile = GetCurrentProjectPath("deployment.yaml");
+            File.WriteAllText(lastWrittenYamlFile, GetDeploymentYamlString());
+        }
+
+        public void PrintUsage()
+        {
+            if(string.IsNullOrEmpty(lastWrittenYamlFile))
+            {
+                Console.WriteLine("No yaml has been written yet, cannot print usage");
+                return;
+            }
+            Console.WriteLine($"");
+            Console.WriteLine($"=============================== Launching on Kubernetes ===============================");
+            Console.WriteLine($"> kubectl delete all --all -n {K8sNamespace}");
+            Console.WriteLine($"> kubectl apply -f {lastWrittenYamlFile}");
+            Console.WriteLine($"=======================================================================================");
+            Console.WriteLine($"");
         }
 
         private string GetCurrentProjectPath(string filename = "")
@@ -61,7 +81,7 @@ kind : Deployment
 apiVersion : apps/v1
 metadata :
     name : {instanceName}
-    namespace : blacksp
+    namespace : {K8sNamespace}
     labels :
         app : {configurator.OperatorName}
         name : crainst

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.CRA.Configuration
+namespace BlackSP.CRA.Configuration.Operators
 {
     public class SourceOperatorConfigurator<TOperator, TOut> : ProducingOperatorConfiguratorBase<TOut>, ISourceOperatorConfigurator<TOperator, TOut>
         where TOperator : ISourceOperatorConfiguration<TOut>, new()

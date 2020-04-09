@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Endpoints;
+using BlackSP.CRA.Configuration.Operators;
 using BlackSP.CRA.Extensions;
 using BlackSP.CRA.Vertices;
 using BlackSP.Serialization.Serializers;
@@ -15,7 +16,7 @@ namespace BlackSP.CRA.Configuration
     //kubernetes requirements..
     //make deployment.yaml file in folder?
     //print launch and inspect commands on console?
-    public class OperatorGraphConfiguratorBase
+    public class CRAOperatorGraphConfiguratorBase
     {
         protected ICollection<IOperatorConfigurator> Configurators { get; }
 
@@ -23,7 +24,7 @@ namespace BlackSP.CRA.Configuration
         private int usedInstanceCount;
         private readonly CRAClientLibrary craClient;
 
-        protected OperatorGraphConfiguratorBase(CRAClientLibrary craclient)
+        protected CRAOperatorGraphConfiguratorBase(CRAClientLibrary craclient)
         {
             craClient = craclient ?? throw new ArgumentNullException(nameof(craclient));
             Configurators = new List<IOperatorConfigurator>();

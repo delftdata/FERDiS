@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.CRA.Configuration
+namespace BlackSP.CRA.Configuration.Operators
 {
     public class SinkOperatorConfigurator<TOperator, TIn> : OperatorConfiguratorBase, ISinkOperatorConfigurator<TOperator, TIn>
         where TOperator : ISinkOperatorConfiguration<TIn>

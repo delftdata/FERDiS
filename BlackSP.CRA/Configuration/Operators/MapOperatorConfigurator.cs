@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.CRA.Configuration
+namespace BlackSP.CRA.Configuration.Operators
 {
     public class MapOperatorConfigurator<TOperator, TIn, TOut> : ProducingOperatorConfiguratorBase<TOut>, IMapOperatorConfigurator<TOperator, TIn, TOut>
         where TOperator : IMapOperatorConfiguration<TIn, TOut>

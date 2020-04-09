@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.CRA.Configuration
+namespace BlackSP.CRA.Configuration.Operators
 {
 
     public class JoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut> : ProducingOperatorConfiguratorBase<TOut>, IJoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut>

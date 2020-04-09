@@ -1,4 +1,5 @@
-﻿using BlackSP.CRA.Kubernetes;
+﻿using BlackSP.CRA.Configuration.Operators;
+using BlackSP.CRA.Kubernetes;
 using CRA.ClientLibrary;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Configuration
 {
-    public class OperatorGraphConfigurator : OperatorGraphConfiguratorBase, IOperatorGraphConfigurator
+    internal class OperatorGraphConfigurator : CRAOperatorGraphConfiguratorBase, IOperatorGraphConfigurator
     {
 
         private readonly KubernetesDeploymentUtility k8sDeploymentUtil;
@@ -18,10 +19,15 @@ namespace BlackSP.CRA.Configuration
             k8sDeploymentUtil = k8sUtil ?? throw new ArgumentNullException(nameof(k8sUtil));
         }
 
+        /// <summary>
+        /// Registers the constructed operator graph with cra and prepares deployment files for kubernetes
+        /// </summary>
+        /// <returns></returns>
         public async Task BuildGraph()
         {
             await RegisterGraphWithCRA();
             k8sDeploymentUtil.With(Configurators).WriteDeploymentYaml();
+            k8sDeploymentUtil.PrintUsage();
         }
 
         //Note the explicit interface implementations below, this is to avoid duplicating generic type constraints from the interface
