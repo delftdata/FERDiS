@@ -1,5 +1,6 @@
 ﻿using BlackSP.CRA.Configuration.Operators;
 using BlackSP.CRA.Kubernetes;
+using BlackSP.Kernel.Operators;
 using CRA.ClientLibrary;
 using System;
 using System.Collections.Generic;

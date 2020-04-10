@@ -21,6 +21,10 @@ namespace BlackSP.CRA.UnitTests
 
     class SampleMapOperator : IMapOperator<EventA, EventB>
     {
+        //public SampleMapOperator(string x)
+        //{
+
+        //}
         public IEnumerable<EventB> Map(EventA @event)
         {
             throw new System.NotImplementedException();

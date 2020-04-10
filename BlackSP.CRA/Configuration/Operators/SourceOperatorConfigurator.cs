@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.Events;
+﻿using BlackSP.Core.OperatorSockets;
+using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using System;
 
@@ -8,7 +9,7 @@ namespace BlackSP.CRA.Configuration.Operators
         where TOperator : ISourceOperator<TOut>, new()
         where TOut : class, IEvent
     {
-        public override Type OperatorType => throw new NotImplementedException(); //TODO: fill when SourceOperator exists in core library
+        public override Type OperatorType => typeof(SourceOperatorSocket<TOut>);
         public override Type OperatorConfigurationType => typeof(TOperator);
 
         public SourceOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)

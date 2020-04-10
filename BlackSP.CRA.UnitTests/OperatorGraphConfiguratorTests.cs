@@ -1,3 +1,4 @@
+using BlackSP.Core.OperatorSockets;
 using BlackSP.CRA.Configuration;
 using BlackSP.CRA.Kubernetes;
 using BlackSP.CRA.UnitTests.Events;
@@ -49,7 +50,7 @@ namespace BlackSP.CRA.UnitTests
             //    .Returns(Task.FromResult(CRAErrorCode.Success));
 
             var kubernetesUtility = new Mock<KubernetesDeploymentUtility>();
-            kubernetesUtility.Setup(x => x.WriteDeploymentYaml());
+            //kubernetesUtility.Setup(x => x.WriteDeploymentYaml());
 
             configurator = new OperatorGraphConfigurator(kubernetesUtility.Object, craClientLibrary.Object);
         }
@@ -58,11 +59,13 @@ namespace BlackSP.CRA.UnitTests
         public async Task GraphConstruction_NoDuplicationOfImportantKeys()
         {
             var source = publicConfigurator.AddSource<SampleSourceOperator, EventA>(1);
+
             var filter = publicConfigurator.AddFilter<SampleFilterOperator, EventA>(1);
             source.Append(filter);
             //filter.Append(source); // this wont compile, awesome
-            
+
             var map = publicConfigurator.AddMap<SampleMapOperator, EventA, EventB>(1);
+
             filter.Append(map);
             //map.Append(filter); //this wont compile, awesome
 
@@ -94,6 +97,57 @@ namespace BlackSP.CRA.UnitTests
                 Assert.IsFalse(usedNames.Contains(configurator.OperatorName), "Duplicate operatorname returned");
                 usedNames.Add(configurator.OperatorName);
             }
+        }
+
+        [Test]
+        public void Source_CorrectConfiguration()
+        {
+            var source = publicConfigurator.AddSource<SampleSourceOperator, EventA>(1);
+            Assert.AreEqual(typeof(SampleSourceOperator), source.OperatorConfigurationType);
+            //TODO: Assert.AreEqual(typeof(SourceOperatorSocket), source.OperatorType);
+            Assert.Fail();
+        }
+
+        [Test]
+        public void Filter_CorrectConfiguration()
+        {
+            var filter = publicConfigurator.AddFilter<SampleFilterOperator, EventA>(1);
+            Assert.AreEqual(typeof(SampleFilterOperator), filter.OperatorConfigurationType);
+            Assert.AreEqual(typeof(FilterOperatorSocket<EventA>), filter.OperatorType);
+        }
+
+        [Test]
+        public void Map_CorrectConfiguration()
+        {
+            var map = publicConfigurator.AddMap<SampleMapOperator, EventA, EventB>(1);
+            Assert.AreEqual(typeof(SampleMapOperator), map.OperatorConfigurationType);
+            Assert.AreEqual(typeof(MapOperatorSocket<EventA, EventB>), map.OperatorType);
+        }
+
+        [Test]
+        public void Join_CorrectConfiguration()
+        {
+            var join = publicConfigurator.AddJoin<SampleJoinOperator, EventA, EventB, EventC>(1);
+            Assert.AreEqual(typeof(SampleJoinOperator), join.OperatorConfigurationType);
+            Assert.AreEqual(typeof(JoinOperatorSocket<EventA, EventB, EventC>), join.OperatorType);
+        }
+
+        [Test]
+        public void Aggregate_CorrectConfiguration()
+        {
+
+            var aggregate = publicConfigurator.AddAggregate<SampleAggregateOperator, EventC, EventD>(1);
+            Assert.AreEqual(typeof(SampleAggregateOperator), aggregate.OperatorConfigurationType);
+            Assert.AreEqual(typeof(AggregateOperatorSocket<EventC, EventD>), aggregate.OperatorType);
+        }
+
+        [Test]
+        public void Sink_CorrectConfiguration()
+        {
+            var sink = publicConfigurator.AddSink<SampleSinkOperator, EventD>(1);
+            Assert.AreEqual(typeof(SampleSinkOperator), sink.OperatorConfigurationType);
+            //TODO: Assert.AreEqual(typeof(SinkOperatorSocket<EventD>), sink.OperatorType);
+            Assert.Fail();
         }
     }
 }
