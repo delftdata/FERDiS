@@ -15,6 +15,7 @@
   
   <ItemGroup>
     <ProjectReference Include="..\BlackSP.CRA\BlackSP.CRA.csproj" />
+    <ProjectReference Include="..\BlackSP.InMemory\BlackSP.InMemory.csproj" />
   </ItemGroup>
 
 </Project>

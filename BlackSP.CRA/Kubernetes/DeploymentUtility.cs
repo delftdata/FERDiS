@@ -1,5 +1,4 @@
-﻿using BlackSP.CRA.Configuration;
-using BlackSP.CRA.Configuration.Operators;
+﻿using BlackSP.Infrastructure.Configuration.Operators;
 using System;
 using System.Collections.Generic;
 using System.IO;

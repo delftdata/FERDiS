@@ -3,7 +3,7 @@ using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using System;
 
-namespace BlackSP.CRA.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Operators
 {
     public class SourceOperatorConfigurator<TOperator, TOut> : ProducingOperatorConfiguratorBase<TOut>, ISourceOperatorConfigurator<TOperator, TOut>
         where TOperator : ISourceOperator<TOut>, new()

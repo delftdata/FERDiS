@@ -1,25 +1,15 @@
-﻿using BlackSP.Core.OperatorSockets;
-using BlackSP.CRA;
-using BlackSP.CRA.Configuration;
-using BlackSP.CRA.Kubernetes;
-using BlackSP.CRA.Utilities;
+﻿using BlackSP.Infrastructure.Configuration;
 using BlackSP.ThroughputExperiment.Events;
-using CRA.DataProvider;
 using CRA.DataProvider.Azure;
-using CRA.DataProvider.File;
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace BlackSP.ThroughputExperiment
 {
-
     public class Program
     {
-
-        class ThroughputExperimentGraphConfiguration : BlackSPGraphConfiguration
+        class ThroughputExperimentGraphConfiguration : IGraphConfiguration
         {
-            public void Configure(IOperatorGraphConfigurator graph)
+            public void Configure(IOperatorGraphBuilder graph)
             {
                 var mapper = graph.AddMap<SampleMapOperatorConfiguration, SampleEvent, SampleEvent2>(2);
                 var filter = graph.AddFilter<SampleFilterOperatorConfiguration, SampleEvent>(1);
@@ -27,9 +17,12 @@ namespace BlackSP.ThroughputExperiment
             }
         }
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            BlackSPClient.LaunchWith<ThroughputExperimentGraphConfiguration, AzureDataProvider>(args);            
+            //CRA runtime usage..
+            await BlackSP.CRA.Launcher.LaunchWithAsync<ThroughputExperimentGraphConfiguration, AzureDataProvider>(args);
+            //In Memory runtime usage..
+            await BlackSP.InMemory.Launcher.LaunchWithAsync< ThroughputExperimentGraphConfiguration>(args);
         }
     }
 }

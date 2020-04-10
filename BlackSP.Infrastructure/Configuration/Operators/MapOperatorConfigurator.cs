@@ -3,7 +3,7 @@ using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using System;
 
-namespace BlackSP.CRA.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Operators
 {
     public class MapOperatorConfigurator<TOperator, TIn, TOut> : ProducingOperatorConfiguratorBase<TOut>, IMapOperatorConfigurator<TOperator, TIn, TOut>
         where TOperator : IMapOperator<TIn, TOut>

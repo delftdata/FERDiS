@@ -1,14 +1,5 @@
-﻿using BlackSP.Core.Endpoints;
-using BlackSP.CRA.Vertices;
-using BlackSP.Serialization.Serializers;
-using CRA.ClientLibrary;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BlackSP.CRA.Configuration.Operators
+﻿
+namespace BlackSP.Infrastructure.Configuration.Operators
 {
     public abstract class ProducingOperatorConfiguratorBase<T> : OperatorConfiguratorBase, IProducingOperatorConfigurator<T>
     {

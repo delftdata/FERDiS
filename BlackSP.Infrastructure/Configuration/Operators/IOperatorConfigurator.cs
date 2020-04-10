@@ -2,12 +2,9 @@
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BlackSP.CRA.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Operators
 {
-
     public interface IOperatorConfigurator
     {
         string[] InstanceNames { get; }

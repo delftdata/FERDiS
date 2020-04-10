@@ -1,9 +1,9 @@
-﻿using BlackSP.CRA.Configuration.Operators;
+﻿using BlackSP.Infrastructure.Configuration.Operators;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.CRA.Configuration
+namespace BlackSP.Infrastructure.Configuration
 {
     /// <summary>
     /// Model class that holds data regarding an edge in an operator graph

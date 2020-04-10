@@ -1,4 +1,4 @@
-﻿using BlackSP.CRA.Configuration.Operators;
+﻿using BlackSP.Infrastructure.Configuration.Operators;
 using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using System;
@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.CRA.Configuration
+namespace BlackSP.Infrastructure.Configuration
 {
-    public interface IOperatorGraphConfigurator
+    public interface IOperatorGraphBuilder
     {
 
         /// <summary>

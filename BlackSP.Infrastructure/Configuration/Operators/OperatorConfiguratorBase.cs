@@ -1,12 +1,7 @@
-﻿using BlackSP.Core.Endpoints;
-using BlackSP.CRA.Vertices;
-using BlackSP.Serialization.Serializers;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BlackSP.CRA.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Operators
 {
     public abstract class OperatorConfiguratorBase : IOperatorConfigurator
     {

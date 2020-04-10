@@ -1,16 +1,9 @@
 ﻿using Autofac;
-using BlackSP.Core.Endpoints;
-using BlackSP.Core.OperatorSockets;
 using BlackSP.CRA.DI;
-using BlackSP.CRA.Endpoints;
-using BlackSP.CRA.Events;
-using BlackSP.Kernel.Endpoints;
-using BlackSP.Kernel.Events;
+using BlackSP.Infrastructure.Configuration;
 using BlackSP.Kernel.Operators;
-using BlackSP.Serialization;
 using CRA.ClientLibrary;
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Vertices
@@ -20,7 +13,7 @@ namespace BlackSP.CRA.Vertices
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
         private IOperatorSocket _bspOperator;
-        private IVertexParameter _options;
+        private IHostParameter _options;
         
         public OperatorVertex()
         {
@@ -33,7 +26,7 @@ namespace BlackSP.CRA.Vertices
         public override Task InitializeAsync(int shardId, ShardingInfo shardingInfo, object vertexParameter)
         {
             Console.WriteLine("Starting CRA Vertex initialization");
-            _options = vertexParameter as IVertexParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IVertexParameter)}"); ;
+            _options = vertexParameter as IHostParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IHostParameter)}"); ;
             
             Console.WriteLine("Installing dependency container");
             InitializeIoCContainer();

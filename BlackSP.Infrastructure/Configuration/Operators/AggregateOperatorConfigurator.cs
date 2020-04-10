@@ -3,9 +3,8 @@ using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using System;
 
-namespace BlackSP.CRA.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Operators
 {
-
     public class AggregateOperatorConfigurator<TOperator, TIn, TOut> : ProducingOperatorConfiguratorBase<TOut>, IAggregateOperatorConfigurator<TOperator, TIn, TOut>
         where TOperator : IAggregateOperator<TIn, TOut>
         where TIn : class, IEvent

@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.CRA.Vertices
+namespace BlackSP.Infrastructure.Configuration
 {
-    public interface IVertexParameter
+    public interface IHostParameter
     {
         /// <summary>
         /// Holds a type reference to the operator the target vertex should instantiate

@@ -1,26 +1,25 @@
 ﻿using BlackSP.CRA.Configuration;
 using BlackSP.CRA.Kubernetes;
 using BlackSP.CRA.Utilities;
+using BlackSP.Infrastructure.Configuration;
 using CRA.ClientLibrary;
 using CRA.DataProvider;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BlackSP.CRA
 {
-    public interface BlackSPGraphConfiguration
-    {
-        void Configure(IOperatorGraphConfigurator graph);
-    }
     
-    public static class BlackSPClient
+    
+    public static class Launcher
     {
         /// <summary>
         /// Holds reference solely used during BlackSP startup
         /// </summary>
-        private static BlackSPGraphConfiguration userGraphConfiguration;
+        private static IGraphConfiguration userGraphConfiguration;
 
         /// <summary>
         /// Holds reference solely used during BlackSP startup
@@ -39,17 +38,17 @@ namespace BlackSP.CRA
         /// <typeparam name="TConfiguration"></typeparam>
         /// <typeparam name="TDataProvider"></typeparam>
         /// <param name="args"></param>
-        public static void LaunchWith<TConfiguration, TDataProvider>(string[] args)
-            where TConfiguration : BlackSPGraphConfiguration, new()
+        public static async Task LaunchWithAsync<TConfiguration, TDataProvider>(string[] args)
+            where TConfiguration : IGraphConfiguration, new()
             where TDataProvider : IDataProvider, new()
         {
             EnforceEnvironmentVariables();
             userDataProvider = Activator.CreateInstance<TDataProvider>();
             userGraphConfiguration = Activator.CreateInstance<TConfiguration>();
-            Launch(args);
+            await LaunchAsync(args);
         }
 
-        private static void Launch(string[] args)
+        private static async Task LaunchAsync(string[] args)
         {
             if (args.Length < 1)
             {
@@ -61,7 +60,7 @@ namespace BlackSP.CRA
             switch (launchMode)
             {
                 case LaunchMode.ClusterSetup:
-                    LaunchClusterSetup();
+                    await LaunchClusterSetupAsync();
                     break;
                 case LaunchMode.LocalWorker:
                     LaunchLocalWorker(args.Skip(1).ToArray());
@@ -75,12 +74,12 @@ namespace BlackSP.CRA
         /// <summary>
         /// Launches cluster setup (depends on usergraph configuration being set)
         /// </summary>
-        private static void LaunchClusterSetup()
+        private static async Task LaunchClusterSetupAsync()
         {
             var craClientLibrary = new CRAClientLibrary(userDataProvider);
-            var graphConfigurator = new OperatorGraphConfigurator(new KubernetesDeploymentUtility(), craClientLibrary);
+            var graphConfigurator = new CRAOperatorGraphBuilder(new KubernetesDeploymentUtility(), craClientLibrary);
             userGraphConfiguration.Configure(graphConfigurator); //pass configurator to user defined class
-            graphConfigurator.BuildGraph().Wait();
+            await graphConfigurator.BuildGraph();
         }
 
         /// <summary>

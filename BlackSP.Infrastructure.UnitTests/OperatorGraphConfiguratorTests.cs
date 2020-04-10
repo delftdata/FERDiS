@@ -1,58 +1,30 @@
 using BlackSP.Core.OperatorSockets;
-using BlackSP.CRA.Configuration;
-using BlackSP.CRA.Kubernetes;
 using BlackSP.CRA.UnitTests.Events;
-using CRA.ClientLibrary;
-using CRA.DataProvider;
+using BlackSP.Infrastructure.Configuration;
 using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace BlackSP.CRA.UnitTests
 {
-    public class OperatorGraphConfiguratorTests
+    class TestOperatorGraphBuilder : OperatorGraphBuilderBase
     {
-        private OperatorGraphConfigurator configurator;
-        private IOperatorGraphConfigurator publicConfigurator => configurator;
+        public override Task<object> BuildGraph()
+        {
+            return Task.FromResult<object>(null);
+        }
+    }
+
+    public class OperatorGraphBuilderTests
+    {
+        private TestOperatorGraphBuilder configurator;
+        private IOperatorGraphBuilder publicConfigurator => configurator;
         [SetUp]
         public void Setup()
         {
-            // Note: due to terrible testability of CRA
-            //       the choice has been made to not test these components of the system
-            //       it would require refactoring the original project which does not
-            //       fit in my schedule.
-
-            //var craVertexProvider = new Mock<IVertexInfoProvider>();
-            //craVertexProvider.SetReturnsDefault(Task.CompletedTask);
-            //var craEndpointProvider = new Mock<IEndpointInfoProvider>();
-            //craEndpointProvider.SetReturnsDefault(Task.CompletedTask);
-            //var craConnectionProvider = new Mock<IVertexConnectionInfoProvider>();
-            //craConnectionProvider.SetReturnsDefault(Task.CompletedTask);
-            //var craShardProvider = new Mock<IShardedVertexInfoProvider>();
-            //craShardProvider.SetReturnsDefault(Task.CompletedTask);
-
-            var craDataProvider = new Mock<IDataProvider>();
-            //craDataProvider.Setup(x => x.GetVertexInfoProvider()).Returns(craVertexProvider.Object);
-            //craDataProvider.Setup(x => x.GetEndpointInfoProvider()).Returns(craEndpointProvider.Object);
-            //craDataProvider.Setup(x => x.GetVertexConnectionInfoProvider()).Returns(craConnectionProvider.Object);
-            //craDataProvider.Setup(x => x.GetShardedVertexInfoProvider()).Returns(craShardProvider.Object);
-
-            //Below behavior is not overridable due to CRAClientLibrary being a purely concrete class. (needs interface)
-            var craClientLibrary = new Mock<CRAClientLibrary>(craDataProvider.Object);
-            //craClientLibrary.Setup(x => x.DefineVertexAsync(It.IsAny<string>(), It.IsAny<Expression<Func<IShardedVertex>>>()))
-            //    .Returns(Task.FromResult(CRAErrorCode.Success));
-            //craClientLibrary.Setup(x => x.InstantiateVertexAsync(It.IsAny<string[]>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<int>(), null))
-            //    .Returns(Task.FromResult(CRAErrorCode.Success));
-            //craClientLibrary.Setup(x => x.ConnectAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-            //    .Returns(Task.FromResult(CRAErrorCode.Success));
-
-            var kubernetesUtility = new Mock<KubernetesDeploymentUtility>();
-            //kubernetesUtility.Setup(x => x.WriteDeploymentYaml());
-
-            configurator = new OperatorGraphConfigurator(kubernetesUtility.Object, craClientLibrary.Object);
+            configurator = new TestOperatorGraphBuilder();
         }
 
         [Test]
@@ -104,8 +76,7 @@ namespace BlackSP.CRA.UnitTests
         {
             var source = publicConfigurator.AddSource<SampleSourceOperator, EventA>(1);
             Assert.AreEqual(typeof(SampleSourceOperator), source.OperatorConfigurationType);
-            //TODO: Assert.AreEqual(typeof(SourceOperatorSocket), source.OperatorType);
-            Assert.Fail();
+            Assert.AreEqual(typeof(SourceOperatorSocket<EventA>), source.OperatorType);
         }
 
         [Test]
@@ -135,7 +106,6 @@ namespace BlackSP.CRA.UnitTests
         [Test]
         public void Aggregate_CorrectConfiguration()
         {
-
             var aggregate = publicConfigurator.AddAggregate<SampleAggregateOperator, EventC, EventD>(1);
             Assert.AreEqual(typeof(SampleAggregateOperator), aggregate.OperatorConfigurationType);
             Assert.AreEqual(typeof(AggregateOperatorSocket<EventC, EventD>), aggregate.OperatorType);
@@ -146,8 +116,7 @@ namespace BlackSP.CRA.UnitTests
         {
             var sink = publicConfigurator.AddSink<SampleSinkOperator, EventD>(1);
             Assert.AreEqual(typeof(SampleSinkOperator), sink.OperatorConfigurationType);
-            //TODO: Assert.AreEqual(typeof(SinkOperatorSocket<EventD>), sink.OperatorType);
-            Assert.Fail();
+            Assert.AreEqual(typeof(SinkOperatorSocket<EventD>), sink.OperatorType);
         }
     }
 }

@@ -1,11 +1,12 @@
 ﻿using BlackSP.Core.OperatorSockets;
+using BlackSP.Infrastructure.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.CRA.Vertices
+namespace BlackSP.Infrastructure.Configuration
 {
-    public class VertexParameter : IVertexParameter
+    public class HostParameter : IHostParameter
     {
         //using public setters because some parameters get lost in cra's serialization if we make them private
         public Type OperatorType { get; set; }
@@ -16,7 +17,7 @@ namespace BlackSP.CRA.Vertices
         public string[] OutputEndpointNames { get; set; }
         public Type SerializerType { get; set; }
 
-        public VertexParameter(Type operatorType, Type operatorConfigType, string[] inputNames, Type inputEndpointType, string[] outputNames, Type outputEndpointType, Type serializerType)
+        public HostParameter(Type operatorType, Type operatorConfigType, string[] inputNames, Type inputEndpointType, string[] outputNames, Type outputEndpointType, Type serializerType)
         {
             OperatorType = operatorType;
             OperatorConfiguration = operatorConfigType;

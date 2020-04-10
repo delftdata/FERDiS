@@ -1,12 +1,9 @@
 ﻿using BlackSP.Core.OperatorSockets;
 using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
-using CRA.ClientLibrary;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace BlackSP.CRA.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Operators
 {
 
     public class JoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut> : ProducingOperatorConfiguratorBase<TOut>, IJoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut>

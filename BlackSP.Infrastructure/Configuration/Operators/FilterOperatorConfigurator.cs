@@ -3,7 +3,7 @@ using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using System;
 
-namespace BlackSP.CRA.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Operators
 {
     public class FilterOperatorConfigurator<TOperator, TEvent> : ProducingOperatorConfiguratorBase<TEvent>, IFilterOperatorConfigurator<TOperator, TEvent>
         where TOperator : IFilterOperator<TEvent>

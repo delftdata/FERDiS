@@ -2,6 +2,7 @@
 using BlackSP.Core.OperatorSockets;
 using BlackSP.CRA.Endpoints;
 using BlackSP.CRA.Vertices;
+using BlackSP.Infrastructure.Configuration;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Operators;
 using BlackSP.Kernel.Serialization;
@@ -19,10 +20,10 @@ namespace BlackSP.CRA.DI
 {
     public class IoC
     {
-        private IVertexParameter _options;
+        private IHostParameter _options;
         private ContainerBuilder _builder;
         private IEnumerable<Type> _typesInRuntime;
-        public IoC(IVertexParameter options)
+        public IoC(IHostParameter options)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             LoadAllAvailableAssemblies();
@@ -122,16 +123,4 @@ namespace BlackSP.CRA.DI
         }
     }
 
-    class AssemblyEqualityComparer : IEqualityComparer<Assembly>
-    {
-        public bool Equals(Assembly x, Assembly y)
-        {
-            return x.FullName.Equals(y.FullName);
-        }
-
-        public int GetHashCode(Assembly obj)
-        {
-            return obj.GetHashCode();
-        }
-    }
 }

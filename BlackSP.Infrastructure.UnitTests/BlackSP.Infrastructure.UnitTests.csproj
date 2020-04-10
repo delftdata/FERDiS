@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BlackSP.CRA\BlackSP.CRA.csproj" />
+    <ProjectReference Include="..\BlackSP.Infrastructure\BlackSP.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
