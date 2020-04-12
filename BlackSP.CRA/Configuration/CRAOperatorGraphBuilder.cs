@@ -4,6 +4,7 @@ using BlackSP.CRA.Kubernetes;
 using BlackSP.CRA.Vertices;
 using BlackSP.Infrastructure.Configuration;
 using BlackSP.Infrastructure.Configuration.Operators;
+using BlackSP.Infrastructure.IoC;
 using BlackSP.Serialization.Serializers;
 using CRA.ClientLibrary;
 using System;
@@ -49,7 +50,7 @@ namespace BlackSP.CRA.Configuration
             {
                 await _craClient.ConnectAsync(edge.FromOperator.OperatorName, edge.FromEndpoint, edge.ToOperator.OperatorName, edge.ToEndpoint);
             }
-        }
+        } 
 
         private async Task RegisterCRAVertexAsync(IOperatorConfigurator target, string vertexDefinition)
         {

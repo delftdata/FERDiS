@@ -1,2 +1,2 @@
 BLACK SP
-Barebone Library for Actor-based Containerized Key-value Stream Processing
+Barebone Library for Anonymous Containerized Key-value Stream Processing

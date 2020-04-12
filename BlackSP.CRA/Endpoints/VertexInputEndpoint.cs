@@ -26,7 +26,7 @@ namespace BlackSP.CRA.Endpoints
         public async Task FromStreamAsync(Stream stream, string otherVertex, int otherShardId, string otherEndpoint, CancellationToken token)
         {
             //wraps overload as for input channels, we dont care which shard of other vertex it came from
-            await FromStreamAsync(stream, otherVertex, $"{otherEndpoint}${otherShardId}", token);
+            await FromStreamAsync(stream, otherVertex, $"{otherEndpoint}${otherShardId}", token).ConfigureAwait(false);
         }
 
         public async Task FromStreamAsync(Stream stream, string otherVertex, string otherEndpoint, CancellationToken token)
@@ -36,7 +36,7 @@ namespace BlackSP.CRA.Endpoints
             {
                 //CRA invokes this method on a background thread so just invoke Ingress on current thread
                 IsConnected = true;
-                await _bspInputEndpoint.Ingress(stream, token);
+                await _bspInputEndpoint.Ingress(stream, token).ConfigureAwait(false);
                 IsConnected = false;
             }
             catch (Exception e)
@@ -66,7 +66,8 @@ namespace BlackSP.CRA.Endpoints
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
-            {}
+            {
+            }
         }
     }
 }

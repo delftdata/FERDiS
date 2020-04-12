@@ -1,5 +1,7 @@
-﻿using BlackSP.Core.Endpoints;
+﻿using Autofac;
+using BlackSP.Core.Endpoints;
 using BlackSP.Infrastructure.Configuration;
+using BlackSP.Infrastructure.IoC;
 using BlackSP.InMemory.Core;
 using BlackSP.InMemory.Extensions;
 using BlackSP.Serialization.Serializers;
@@ -11,82 +13,56 @@ using System.Threading.Tasks;
 
 namespace BlackSP.InMemory.Configuration
 {
-    class InMemoryOperatorGraphBuilder : OperatorGraphBuilderBase<VertexGraph>
+    class InMemoryOperatorGraphBuilder : OperatorGraphBuilderBase<IContainer>
     {
 
         private readonly ConnectionTable _connectionTable;
-
-        public InMemoryOperatorGraphBuilder(ConnectionTable connectionTable) : base()
+        private readonly IdentityTable _identityTable;
+        public InMemoryOperatorGraphBuilder(ConnectionTable connectionTable, IdentityTable identityTable) : base()
         {
             _connectionTable = connectionTable ?? throw new ArgumentNullException(nameof(connectionTable));
+            _identityTable = identityTable ?? throw new ArgumentNullException(nameof(identityTable));
         }
 
-        public override Task<VertexGraph> BuildGraph()
+        public override Task<IContainer> BuildGraph()
         {
             //failure & restart functionality?
-
-            //introduce vertex type
-            //- Start(hostparameter, connectiontable)
-            //-- create IoC scope!
-            //--- hostparameter with types (go generics?)
-            //-- get connectiontable
-            //-- instantiate shell hosts
-            //-- start host
-            //- die() forces threads to die
-
-            //operatorshellhost
-            //- instantiated through ioc
-            //- ioperator injected
-            //- connectionhost injected
-            //- start(at)
-            //-- start operator
-            //-- start connectionhost
-
-            //connectionhost
-            //- instantiated through ioc
-            //- input and output endpoint injected
-            //- connectiontable injected
-            //- start()
-            //-- fetches streams from connectiontable
-            //-- invokes ingress/egress for each stream
-            //-- joins all threads
-
-            //connection
-            //- represents connection from shard to shard
-
-            //connectiontable
-            //- singleton global ioc scope?
-            //- considers shards
-            //- getIncomingConnections(operatorName, instanceName, endpointName)
-            //-- returns collection
-            //- getOutGoingConnections(operatorName, instanceName, endpointName)
-            //-- returns collection
-            
-            foreach (var configurator in Configurators)
+   
+            foreach (var edge in Configurators.SelectMany(c => c.OutgoingEdges))
             {
-                //configurator.InstanceNames.Length; //number local of shards
-
-                var vertexParameter = new HostParameter(
-                    configurator.OperatorType,
-                    configurator.OperatorConfigurationType,
-                    configurator.InputEndpointNames.ToArray(),
-                    typeof(InputEndpoint),
-                    configurator.OutputEndpointNames.ToArray(),
-                    typeof(OutputEndpoint),
-                    typeof(ProtobufSerializer)
-                );
-
-                foreach (var edge in configurator.OutgoingEdges)
+                foreach (var connection in edge.ToConnections())
                 {
-                    //edge.ToOperator.InstanceNames.Length; //number of remote shards
-                    foreach(var connection in edge.ToConnections())
-                    {
-                        _connectionTable.RegisterConnection(connection);
-                    }
+                    _connectionTable.RegisterConnection(connection);
                 }
             }
 
-            return Task.FromResult<VertexGraph>(null);
+            foreach (var configurator in Configurators)
+            {
+                foreach (var instanceName in configurator.InstanceNames) {
+                    var vertexParameter = new HostParameter(
+                        configurator.OperatorType,
+                        configurator.OperatorConfigurationType,
+                        configurator.InputEndpointNames.ToArray(),
+                        typeof(InputEndpoint),
+                        configurator.OutputEndpointNames.ToArray(),
+                        typeof(OutputEndpoint),
+                        typeof(ProtobufSerializer)
+                    );
+                    _identityTable.Add(instanceName, vertexParameter);
+                }
+            }
+            var builder = new ContainerBuilder();
+
+            //builder.RegisterConcreteClassAsType<IOperatorShellHost>(typeof(OperatorShellHost), true);
+            builder.RegisterType<Vertex>();
+            builder.RegisterType<VertexGraph>();
+            builder.RegisterType<OperatorShellHost>();
+            builder.RegisterType<InputEndpointHost>();
+            builder.RegisterType<OutputEndpointHost>();
+            builder.RegisterInstance(_connectionTable);//.AsImplementedInterfaces();
+            builder.RegisterInstance(_identityTable);//.AsImplementedInterfaces();
+
+            return Task.FromResult(builder.Build());
         }
     }
 }

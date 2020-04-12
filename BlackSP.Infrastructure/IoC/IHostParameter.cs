@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Infrastructure.Configuration
+namespace BlackSP.Infrastructure.IoC
 {
     public interface IHostParameter
     {

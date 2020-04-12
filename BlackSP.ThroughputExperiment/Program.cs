@@ -13,14 +13,16 @@ namespace BlackSP.ThroughputExperiment
             {
                 var mapper = graph.AddMap<SampleMapOperatorConfiguration, SampleEvent, SampleEvent2>(2);
                 var filter = graph.AddFilter<SampleFilterOperatorConfiguration, SampleEvent>(1);
-                filter.Append(mapper);
+                var filter2 = graph.AddFilter<SampleFilterOperatorConfiguration, SampleEvent>(2);
+                filter.Append(filter2);
+                filter2.Append(mapper);
             }
         }
 
         static async Task Main(string[] args)
         {
             //CRA runtime usage..
-            await BlackSP.CRA.Launcher.LaunchWithAsync<ThroughputExperimentGraphConfiguration, AzureDataProvider>(args);
+            //await BlackSP.CRA.Launcher.LaunchWithAsync<ThroughputExperimentGraphConfiguration, AzureDataProvider>(args);
             //In Memory runtime usage..
             await BlackSP.InMemory.Launcher.LaunchWithAsync< ThroughputExperimentGraphConfiguration>(args);
         }

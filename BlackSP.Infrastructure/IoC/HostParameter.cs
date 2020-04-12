@@ -4,11 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Infrastructure.Configuration
+namespace BlackSP.Infrastructure.IoC
 {
     public class HostParameter : IHostParameter
     {
-        //using public setters because some parameters get lost in cra's serialization if we make them private
         public Type OperatorType { get; set; }
         public Type OperatorConfiguration { get; set; }
         public Type InputEndpointType { get; set; }

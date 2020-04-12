@@ -1,6 +1,5 @@
 ﻿using Autofac;
-using BlackSP.CRA.DI;
-using BlackSP.Infrastructure.Configuration;
+using BlackSP.Infrastructure.IoC;
 using BlackSP.Kernel.Operators;
 using CRA.ClientLibrary;
 using System;
@@ -43,11 +42,11 @@ namespace BlackSP.CRA.Vertices
 
         private void InitializeIoCContainer()
         {
-            _dependencyContainer = new IoC(_options)
+            _dependencyContainer = new DependencyContainerBuilder(_options)
                 .RegisterBlackSPComponents()
-                .RegisterCRAComponents()
+                .RegisterAllConcreteClassesOfType<IAsyncShardedVertexInputEndpoint>()
+                .RegisterAllConcreteClassesOfType<IAsyncShardedVertexOutputEndpoint>()
                 .BuildContainer();
-            //TODO: register logger?
 
             Console.WriteLine("IoC setup completed");
             _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();

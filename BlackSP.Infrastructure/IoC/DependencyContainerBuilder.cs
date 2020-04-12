@@ -1,12 +1,7 @@
 ﻿using Autofac;
-using BlackSP.Core.OperatorSockets;
-using BlackSP.CRA.Endpoints;
-using BlackSP.CRA.Vertices;
-using BlackSP.Infrastructure.Configuration;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Operators;
 using BlackSP.Kernel.Serialization;
-using CRA.ClientLibrary;
 using Microsoft.IO;
 using System;
 using System.Buffers;
@@ -16,14 +11,15 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace BlackSP.CRA.DI
+namespace BlackSP.Infrastructure.IoC
 {
-    public class IoC
+
+    public class DependencyContainerBuilder
     {
         private IHostParameter _options;
         private ContainerBuilder _builder;
         private IEnumerable<Type> _typesInRuntime;
-        public IoC(IHostParameter options)
+        public DependencyContainerBuilder(IHostParameter options)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             LoadAllAvailableAssemblies();
@@ -41,14 +37,16 @@ namespace BlackSP.CRA.DI
         public IContainer BuildContainerValidated()
         {
             var container = BuildContainer();
-            
+
             //TODO: validate presence of all required types and throw exception if missing
             container.IsRegistered<IOperatorSocket>();
-            
+            container.IsRegistered<IOutputEndpoint>();
+            container.IsRegistered<IInputEndpoint>();
+            container.IsRegistered<IOperator>();
             return container;
         }
 
-        public IoC RegisterBlackSPComponents()
+        public DependencyContainerBuilder RegisterBlackSPComponents()
         {
             RegisterConcreteClassAsType<IOperatorSocket>(_options.OperatorType, true);
             RegisterConcreteClassAsDefined(_options.OperatorConfiguration, true);
@@ -57,47 +55,29 @@ namespace BlackSP.CRA.DI
             RegisterConcreteClassAsType<IOutputEndpoint>(_options.OutputEndpointType);
             RegisterConcreteClassAsType<ISerializer>(_options.SerializerType);
 
+            //TODO: register logger?
+
             _builder.RegisterInstance(ArrayPool<byte>.Create()); //register one arraypool for all components to share
             _builder.RegisterInstance(new RecyclableMemoryStreamManager()); //register one memorystreampool for all components to share
 
             return this;
         }
 
-        public IoC RegisterCRAComponents()
-        {
-            //No need to register types of VertexBase, as this gets instantiated by CRA
-            RegisterAllConcreteClassesOfType<IAsyncShardedVertexInputEndpoint>();
-            RegisterAllConcreteClassesOfType<IAsyncShardedVertexOutputEndpoint>();
-            return this;
-        }
-
-        //public IoC RegisterOperatorConfiguration(IOperatorConfiguration config)
-        //{
-        //    config = config ?? throw new ArgumentNullException(nameof(config));
-
-        //    var configType = config.GetType();
-
-        //    _builder
-        //        .RegisterInstance(config)
-        //        .AsImplementedInterfaces()
-        //        .SingleInstance();
-
-        //    return this;
-        //}
-
-        private void RegisterConcreteClassAsDefined(Type concreteType, bool asSingleton = false)
+        public DependencyContainerBuilder RegisterConcreteClassAsDefined(Type concreteType, bool asSingleton = false)
         {
             var registration = _builder.RegisterType(concreteType).AsImplementedInterfaces().As(concreteType);
             _ = asSingleton ? registration.SingleInstance() : registration.InstancePerDependency();
+            return this;
         }
 
-        private void RegisterConcreteClassAsType<T>(Type concreteType, bool asSingleton = false)
+        public DependencyContainerBuilder RegisterConcreteClassAsType<T>(Type concreteType, bool asSingleton = false)
         {
             var registration = _builder.RegisterType(concreteType).As(typeof(T), concreteType);
             _ = asSingleton ? registration.SingleInstance() : registration.InstancePerDependency();
+            return this;
         }
 
-        private void RegisterAllConcreteClassesOfType<T>(string inNamespace = "BlackSP", bool asSingleton = false)
+        public DependencyContainerBuilder RegisterAllConcreteClassesOfType<T>(string inNamespace = "BlackSP", bool asSingleton = false)
         {
             var concreteTypes = _typesInRuntime
                 .Where(p => p.IsAssignableTo<T>() && !p.IsInterface && !p.IsAbstract && p.IsInNamespace(inNamespace));
@@ -106,9 +86,12 @@ namespace BlackSP.CRA.DI
             {
                 RegisterConcreteClassAsType<T>(concreteType, asSingleton);
             }
+            return this;
         }
-
-        //TODO: move to some typeloader class?
+        
+        /// <summary>
+        /// Loads all assembly files found in the executing assembly's folder
+        /// </summary>
         private void LoadAllAvailableAssemblies()
         {
             var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
@@ -122,5 +105,4 @@ namespace BlackSP.CRA.DI
 
         }
     }
-
 }
