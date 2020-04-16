@@ -19,14 +19,12 @@ namespace BlackSP.InMemory.Core
     {
         private readonly ILifetimeScope _parentScope;
         private readonly IdentityTable _identityTable;
-        private readonly ConnectionTable _connectionTable;
         private readonly CancellationTokenSource _vertexTokenSource;
         
-        public Vertex(ILifetimeScope parentScope, IdentityTable identityTable, ConnectionTable connectionTable)
+        public Vertex(ILifetimeScope parentScope, IdentityTable identityTable)
         {
             _parentScope = parentScope ?? throw new ArgumentNullException(nameof(parentScope));
             _identityTable = identityTable ?? throw new ArgumentNullException(nameof(identityTable));
-            _connectionTable = connectionTable ?? throw new ArgumentNullException(nameof(connectionTable));
             _vertexTokenSource = new CancellationTokenSource();
         }
 
@@ -35,39 +33,38 @@ namespace BlackSP.InMemory.Core
             _ = instanceName ?? throw new ArgumentNullException(nameof(instanceName));
 
             IHostParameter hostParameter = _identityTable.GetHostParameter(instanceName);
-            
+            var dependencyScope = _parentScope.BeginLifetimeScope(b => b.RegisterBlackSPComponents(hostParameter));
             try
             {
-                using (var dependencyScope = _parentScope.BeginLifetimeScope(b => b.RegisterBlackSPComponents(hostParameter)))
+                var threads = new List<Task>();
+                var operatorHost = dependencyScope.Resolve<OperatorShellHost>();
+                foreach (var endpointName in hostParameter.InputEndpointNames)
                 {
-                    var threads = new List<Task>();
-                    var operatorHost = dependencyScope.Resolve<OperatorShellHost>();
-                    threads.Add(Task.Run(() => operatorHost.Start(instanceName)));
-                    foreach (var endpointName in hostParameter.InputEndpointNames)
-                    {
-                        var endpoint = dependencyScope.Resolve<InputEndpointHost>();
-                        threads.Add(endpoint.Start(instanceName, endpointName, _vertexTokenSource.Token));
-                    }
-
-                    foreach (var endpointName in hostParameter.OutputEndpointNames)
-                    {
-                        var endpoint = dependencyScope.Resolve<OutputEndpointHost>();
-                        threads.Add(endpoint.Start(instanceName, endpointName, _vertexTokenSource.Token));
-                    }
-
-                    await await Task.WhenAny(threads); //double await as whenany returns the task that completed
-                                                       //TODO: consider waiting for everything to end? stop vertex? use cancellation?
+                    var endpoint = dependencyScope.Resolve<InputEndpointHost>();
+                    threads.Add(endpoint.Start(instanceName, endpointName, _vertexTokenSource.Token));
                 }
+
+                foreach (var endpointName in hostParameter.OutputEndpointNames)
+                {
+                    var endpoint = dependencyScope.Resolve<OutputEndpointHost>();
+                    threads.Add(endpoint.Start(instanceName, endpointName, _vertexTokenSource.Token));
+                }
+                
+                threads.Add(Task.Run(() => operatorHost.Start(instanceName)));
+
+                await await Task.WhenAny(threads); //double await as whenany returns the task that completed
+                                                   //TODO: consider waiting for everything to end? stop vertex? use cancellation?
             } 
             catch(Exception e)
             {
-                Console.WriteLine(e.ToString());
+                Console.WriteLine($"{instanceName} - Exception in Vertex:\n{e}");
+                _vertexTokenSource.Cancel();
                 throw;
+            } 
+            finally
+            {
+                dependencyScope.Dispose();
             }
-            
-
-
         }
-
     }
 }

@@ -26,14 +26,14 @@ namespace BlackSP.InMemory.Core
         /// <returns></returns>
         public async Task Start(string instanceName, string endpointName, CancellationToken token)
         {
-            var incomingStreams = _connectionTable.GetOutgoingStreams(instanceName, endpointName);
-            var incomingConnections = _connectionTable.GetOutgoingConnections(instanceName, endpointName);
+            var outgoingStreams = _connectionTable.GetOutgoingStreams(instanceName, endpointName);
+            var outgoingConnections = _connectionTable.GetOutgoingConnections(instanceName, endpointName);
 
             var threads = new List<Task>();
-            for(var shardId = 0; shardId < incomingConnections.Length; shardId++)
+            for(var shardId = 0; shardId < outgoingConnections.Length; shardId++)
             {
-                Stream s = incomingStreams[shardId];
-                Connection c = incomingConnections[shardId];
+                Stream s = outgoingStreams[shardId];
+                Connection c = outgoingConnections[shardId];
                 Console.WriteLine($"{instanceName} - Starting output endpoint {endpointName}, shard {shardId}");
                 _outputEndpoint.RegisterRemoteShard(c.ToShardId);
                 _outputEndpoint.SetRemoteShardCount(c.ToShardCount);

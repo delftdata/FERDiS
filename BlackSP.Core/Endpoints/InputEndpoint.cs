@@ -19,7 +19,7 @@ namespace BlackSP.Core.Endpoints
         private ISerializer _serializer;
         private ArrayPool<byte> _msgBufferPool;
 
-        private BlockingCollection<byte[]> _unprocessedMessages;
+        private BlockingCollection<Tuple<int, byte[]>> _unprocessedMessages;
         private readonly Task _messageDeserializationThread;
 
         public InputEndpoint(IOperatorSocket targetOperator, ISerializer serializer, ArrayPool<byte> byteArrayPool)
@@ -28,7 +28,7 @@ namespace BlackSP.Core.Endpoints
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _msgBufferPool = byteArrayPool ?? throw new ArgumentNullException(nameof(byteArrayPool));
 
-            _unprocessedMessages = new BlockingCollection<byte[]>();
+            _unprocessedMessages = new BlockingCollection<Tuple<int, byte[]>>();
 
             _messageDeserializationThread = Task.Run(() => DeserializeMessages(_operator.CancellationToken));
         }
@@ -60,21 +60,24 @@ namespace BlackSP.Core.Endpoints
         /// <returns></returns>
         private async Task ReadMessagesFromStream(Stream s, CancellationToken t)
         {
-            while (!t.IsCancellationRequested)
+            while (!t.IsCancellationRequested) 
+                //this must be the bottleneck, loop bashes s.read causing the immense cpu usage
             {
-                int nextMsgLength = await s.ReadInt32Async().ConfigureAwait(true);
+                int nextMsgLength = await s.ReadInt32Async().ConfigureAwait(false);
                 if (nextMsgLength <= 0) { continue; }
 
                 byte[] buffer = _msgBufferPool.Rent(nextMsgLength);
-                int realMsgLength = await s.ReadAllRequiredBytesAsync(buffer, 0, nextMsgLength).ConfigureAwait(true);
+                int realMsgLength = await s.ReadAllRequiredBytesAsync(buffer, 0, nextMsgLength).ConfigureAwait(false);
+                
                 if (nextMsgLength != realMsgLength)
                 {
                     //TODO: log/throw?
+                    Console.WriteLine("This shouldnt happen");
                     _msgBufferPool.Return(buffer); //gotta return the buffer due to error
                 }
                 else
                 {
-                    _unprocessedMessages.Add(buffer);
+                    _unprocessedMessages.Add(Tuple.Create(nextMsgLength, buffer));
                 }
             }
         }
@@ -84,8 +87,10 @@ namespace BlackSP.Core.Endpoints
             while(!t.IsCancellationRequested)
             {
                 //TODO: batch parallelize
-                byte[] nextMsgBuffer = _unprocessedMessages.Take(t);
-                var msgStream = new MemoryStream(nextMsgBuffer); //TODO: check memory usage
+                var tuple = _unprocessedMessages.Take(t);
+                int nextMsgLength = tuple.Item1;
+                byte[] nextMsgBuffer = tuple.Item2;
+                var msgStream = new MemoryStream(nextMsgBuffer, 0, nextMsgLength); //TODO: check memory usage
                 try
                 {
                     var nextEvent = await _serializer.Deserialize<IEvent>(msgStream, t).ConfigureAwait(true);
@@ -96,6 +101,11 @@ namespace BlackSP.Core.Endpoints
                     }
                     _operator.Enqueue(nextEvent);
                 } 
+                /*catch(Exception e)
+                {
+                    //throw;
+                    Console.WriteLine("oops");
+                }*/
                 finally
                 {
                     _msgBufferPool.Return(nextMsgBuffer);

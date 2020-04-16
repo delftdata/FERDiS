@@ -27,7 +27,7 @@ namespace BlackSP.Serialization.Serializers
         public Task<T> Deserialize<T>(Stream inputStream, CancellationToken t)
         {
             return Task.FromResult(
-                (T)_protobuf.Deserialize(inputStream, null, typeof(T))
+                (T)_protobuf.Deserialize(inputStream, null, typeof(T), inputStream.Length)
             );
 
         }

@@ -51,7 +51,7 @@ namespace BlackSP.InMemory.Configuration
                 _outgoingConnectionDict.Add(fromKey, outConnections);
             }
 
-            var shareableStream = new ProducerConsumerStream();
+            var shareableStream = Stream.Synchronized(new ProducerConsumerStream());//new ProducerConsumerStream();// Stream.Synchronized(new ProducerConsumerStream());
 
             inStreams[connection.FromShardId] = shareableStream;
             inConnections[connection.FromShardId] = connection;

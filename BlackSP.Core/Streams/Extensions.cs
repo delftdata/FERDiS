@@ -200,7 +200,7 @@ namespace BlackSP.Core.Streams
                 currentOffset += currentRead;
                 toRead -= currentRead;
             }
-            while (toRead > 0 && currentRead != 0);
+            while (toRead > 0);//&& currentRead != 0
             return currentOffset - offset;
         }
     }

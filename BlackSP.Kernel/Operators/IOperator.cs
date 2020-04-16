@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BlackSP.Kernel.Operators
 {
@@ -13,12 +14,21 @@ namespace BlackSP.Kernel.Operators
         where TEvent : class, IEvent
     {
         string KafkaTopicName { get; }
+
+        IEnumerable<TEvent> GetTestEvents();
     }
 
     public interface ISinkOperator<TEvent> : IOperator
         where TEvent : class, IEvent
     {
         string KafkaTopicName { get; }
+
+        /// <summary>
+        /// Last step in the streaming process, emits event to external system
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
+        Task Sink(TEvent @event);
     }
 
     public interface IFilterOperator<TEvent> : IOperator 

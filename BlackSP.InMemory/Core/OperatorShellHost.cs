@@ -16,10 +16,10 @@ namespace BlackSP.InMemory.Core
             _operator = @operator ?? throw new ArgumentNullException(nameof(@operator));
         }
 
-        public async Task Start(string instanceName)
+        public Task Start(string instanceName)
         {
-            Console.WriteLine($"{instanceName} - Starting operator socket");
-            await _operator.Start(DateTime.Now);
+            Console.WriteLine($"{instanceName} - Starting operator shell {_operator.GetType()}");
+            return _operator.Start(DateTime.Now);
         }
     }
 }

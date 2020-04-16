@@ -20,8 +20,10 @@ namespace BlackSP.Core.OperatorSockets
 
         protected override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
         {
+            _ = @event ?? throw new ArgumentNullException(nameof(@event));
+            var tEvent = @event as TEvent ?? throw new ArgumentException($"Argument {nameof(@event)} was not of expected type {typeof(TEvent)}");
             //TODO: sink event into kafka? more generic?
-
+            _pluggedInOperator.Sink(tEvent);
             return Enumerable.Empty<IEvent>();
         }
 

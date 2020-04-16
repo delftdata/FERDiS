@@ -20,8 +20,20 @@ namespace BlackSP.Core.OperatorSockets
 
         public override Task Start(DateTime at)
         {
-            //TODO: start producing..?
-            return base.Start(at);
+            //TODO: swap test for real producing
+            var t =  base.Start(at);
+            var t2 = Task.Run(async () =>
+            {
+                //await Task.Delay(1000);
+                while(!CancellationToken.IsCancellationRequested)
+                {
+                    EgressOutputEvents(_pluggedInOperator.GetTestEvents());
+                    await Task.Delay(1).ConfigureAwait(false);
+                }
+
+                CancellationToken.ThrowIfCancellationRequested();
+            });
+            return Task.WhenAny(t,t2);
         }
 
         /// <summary>

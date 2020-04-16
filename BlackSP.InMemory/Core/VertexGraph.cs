@@ -22,38 +22,32 @@ namespace BlackSP.InMemory.Core
         {
             foreach (var instanceName in _identityTable.GetAllInstanceNames())
             {
-                yield return StartVertexWithAutoRestart(instanceName);
+                yield return StartVertexWithAutoRestart(instanceName, 0, TimeSpan.FromSeconds(1));
             }
         }
 
-        private Task StartVertexWithAutoRestart(string instanceName)
+        private async Task StartVertexWithAutoRestart(string instanceName, int maxRestarts, TimeSpan restartTimeout)
         {
             Vertex v = _lifetimeScope.Resolve<Vertex>();
-            return Retry(() => v.StartAs(instanceName), int.MaxValue, 1000); 
-                
-        }
-
-        private static Task<T> Retry<T>(Func<T> func, int retryCount, int delay, TaskCompletionSource<T> tcs = null)
-        {
-            if (tcs == null)
-                tcs = new TaskCompletionSource<T>();
-            Task.Run(func).ContinueWith(_original =>
+            while(true)
             {
-                Console.WriteLine("Vertex thread exited");
-                if (_original.IsFaulted)
+                try
                 {
-                    if (retryCount == 0)
-                        tcs.SetException(_original.Exception.InnerExceptions);
-                    else
-                        Console.WriteLine($"Restarting in {delay}ms");
-                        Task.Delay(delay).Wait();
-                        Retry(func, retryCount - 1, delay, tcs);
+                    await v.StartAs(instanceName);
+                    Console.WriteLine($"{instanceName} - Vertex exited without exceptions");
+                    return;
+                } 
+                catch(Exception e)
+                {
+                    if(maxRestarts-- == 0)
+                    {
+                        Console.WriteLine($"{instanceName} - Vertex exited with exceptions, not going to restart: exceeded maxRestarts.");
+                        throw;
+                    }
+                    Console.WriteLine($"{instanceName} - Vertex exited with exceptions, going to restart.\n{e}");
+                    await Task.Delay(restartTimeout);
                 }
-                else
-                    tcs.SetResult(_original.Result);
-            });
-            return tcs.Task;
+            }             
         }
-
     }
 }

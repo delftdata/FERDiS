@@ -165,9 +165,8 @@ namespace BlackSP.Core.Endpoints
         /// <returns></returns>
         private async Task SerializeEvents(CancellationToken t)
         {
-            while(true) //TODO: batch parallelize loop
+            while(!t.IsCancellationRequested) //TODO: batch parallelize loop
             {
-                t.ThrowIfCancellationRequested();
                 var nextTuple = _outputQueue.Take(t);
                 
                 IEvent @event = nextTuple.Item1;
@@ -177,6 +176,7 @@ namespace BlackSP.Core.Endpoints
                 await _serializer.Serialize(msgBuffer, @event).ConfigureAwait(false);
                 EnqueueMessageInAppropriateShardQueue(msgBuffer, outputMode);
             }
+            t.ThrowIfCancellationRequested();
         }
 
         private void EnqueueMessageInAppropriateShardQueue(MemoryStream msgBuffer, OutputMode outputMode)

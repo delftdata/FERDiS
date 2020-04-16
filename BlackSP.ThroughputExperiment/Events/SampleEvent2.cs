@@ -16,6 +16,8 @@ namespace BlackSP.ThroughputExperiment.Events
         [ProtoMember(3)]
         public string Value2 { get; set; }
 
+        public SampleEvent2() { }
+
         public SampleEvent2(string key, DateTime? eventTime, string value2)
         {
             Key = key;
