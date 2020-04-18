@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Pipelines;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using BlackSP.Core.Streams;
+using BlackSP.Core.Extensions;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using BlackSP.Kernel.Serialization;
+using Nerdbank.Streams;
 
 namespace BlackSP.Core.Endpoints
 {
@@ -19,7 +23,7 @@ namespace BlackSP.Core.Endpoints
         private ISerializer _serializer;
         private ArrayPool<byte> _msgBufferPool;
 
-        private BlockingCollection<Tuple<int, byte[]>> _unprocessedMessages;
+        private BlockingCollection<Stream> _unprocessedMessages;
         private readonly Task _messageDeserializationThread;
 
         public InputEndpoint(IOperatorSocket targetOperator, ISerializer serializer, ArrayPool<byte> byteArrayPool)
@@ -28,7 +32,7 @@ namespace BlackSP.Core.Endpoints
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _msgBufferPool = byteArrayPool ?? throw new ArgumentNullException(nameof(byteArrayPool));
 
-            _unprocessedMessages = new BlockingCollection<Tuple<int, byte[]>>();
+            _unprocessedMessages = new BlockingCollection<Stream>();
 
             _messageDeserializationThread = Task.Run(() => DeserializeMessages(_operator.CancellationToken));
         }
@@ -60,57 +64,49 @@ namespace BlackSP.Core.Endpoints
         /// <returns></returns>
         private async Task ReadMessagesFromStream(Stream s, CancellationToken t)
         {
+            var reader = s.UsePipeReader(0, null, t); //PipeReader.Create(s, new StreamPipeReaderOptions());
             while (!t.IsCancellationRequested) 
-                //this must be the bottleneck, loop bashes s.read causing the immense cpu usage
             {
-                int nextMsgLength = await s.ReadInt32Async().ConfigureAwait(false);
-                if (nextMsgLength <= 0) { continue; }
-
-                byte[] buffer = _msgBufferPool.Rent(nextMsgLength);
-                int realMsgLength = await s.ReadAllRequiredBytesAsync(buffer, 0, nextMsgLength).ConfigureAwait(false);
-                
-                if (nextMsgLength != realMsgLength)
+                ReadResult readRes = await reader.ReadAsync(t);
+                if(reader.TryReadMessage(readRes, out var msgbodySequence, out var bufferAfterRead))
                 {
-                    //TODO: log/throw?
-                    Console.WriteLine("This shouldnt happen");
-                    _msgBufferPool.Return(buffer); //gotta return the buffer due to error
+                    //and queue the message sequence for later processing
+                    PrepareMessageForProcessing(msgbodySequence);
                 }
-                else
-                {
-                    _unprocessedMessages.Add(Tuple.Create(nextMsgLength, buffer));
-                }
+                reader.AdvanceTo(bufferAfterRead.Start);
             }
+        }
+
+        private void PrepareMessageForProcessing(ReadOnlySequence<byte> msgBody)
+        {
+            Span<byte> msgCopy = stackalloc byte[(int)msgBody.Length];
+            msgBody.CopyTo(msgCopy);
+            _unprocessedMessages.Add(new MemoryStream(msgCopy.ToArray()));
+
         }
 
         private async Task DeserializeMessages(CancellationToken t)
         {
-            while(!t.IsCancellationRequested)
+            //TODO: batch parallelize
+            foreach (var msgStream in _unprocessedMessages.GetConsumingEnumerable(t))
             {
-                //TODO: batch parallelize
-                var tuple = _unprocessedMessages.Take(t);
-                int nextMsgLength = tuple.Item1;
-                byte[] nextMsgBuffer = tuple.Item2;
-                var msgStream = new MemoryStream(nextMsgBuffer, 0, nextMsgLength); //TODO: check memory usage
                 try
                 {
-                    var nextEvent = await _serializer.Deserialize<IEvent>(msgStream, t).ConfigureAwait(true);
+                    var nextEvent = await _serializer.Deserialize<IEvent>(msgStream, t).ConfigureAwait(false);
                     if (nextEvent == null)
                     {
                         //TODO: log/throw?
+                        Console.WriteLine("This absolutely shouldnt happen");
                         continue;
                     }
                     _operator.Enqueue(nextEvent);
                 } 
-                /*catch(Exception e)
+                catch(Exception e)
                 {
+                    var x = 3;
                     //throw;
-                    Console.WriteLine("oops");
-                }*/
-                finally
-                {
-                    _msgBufferPool.Return(nextMsgBuffer);
-                    msgStream.Dispose();
                 }
+                  
             }
         }
 

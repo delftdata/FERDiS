@@ -9,31 +9,36 @@ using System.Threading.Tasks;
 
 namespace BlackSP.ThroughputExperiment
 {
+
+    static class Constants
+    {
+        public static int TotalEventsToSent = 100 * 10000;
+        public static int EventsBeforeProgressLog = 10 * 10000;
+    }
+
     class SampleSourceOperator : ISourceOperator<SampleEvent>
     {
         public string KafkaTopicName => throw new NotImplementedException();
 
         private int counter = 0;
 
-        public SampleSourceOperator()
-        {
-            //LocalStateExample_Counter = 0;
-        }
-
         public IEnumerable<SampleEvent> GetTestEvents()
         {
             var events = new List<SampleEvent>();
             
-            for(int i = 0; i < 15000; i++)
+            for(int i = 0; i < 100; i++)
             {
-                if(counter > 10 * 1000 * 1000) { break; }
+                if (counter > 0 && counter % Constants.EventsBeforeProgressLog == 0)
+                {
+                    Console.WriteLine($">> Source emitted {Constants.EventsBeforeProgressLog} events");
+                }
+
+                if (counter > Constants.TotalEventsToSent) //emit at most this many events
+                {
+                    return events.AsEnumerable();
+                }
                 events.Add(new SampleEvent($"Key_{counter}", DateTime.Now, $"Key_{counter}"));
                 counter++;
-            }
-
-            if(counter % 100000 == 0)
-            {
-                Console.WriteLine($">> Source emitting 100.000 events");
             }
             return events.AsEnumerable();
         }
@@ -43,6 +48,7 @@ namespace BlackSP.ThroughputExperiment
     {
         public string KafkaTopicName => throw new NotImplementedException();
 
+        private int totalEventCount = 0;
         public int EventCount { get; set; }
         public double TotalLatencyMs { get; set; }
         public DateTime StartTime { get; set; }
@@ -59,10 +65,11 @@ namespace BlackSP.ThroughputExperiment
             {
                 isfirst = false;
             }
+            totalEventCount++;
             EventCount++;
             var latency = DateTime.Now - @event.EventTime;
             TotalLatencyMs += latency.TotalMilliseconds;
-            if (EventCount % 100000 == 0)
+            if (EventCount % Constants.EventsBeforeProgressLog == 0)
             {
 
                 //throughput
@@ -76,7 +83,7 @@ namespace BlackSP.ThroughputExperiment
                 var avgLatencyMs = TotalLatencyMs / EventCount;
                 //- min
                 //- max
-                Console.WriteLine($">> Sink stats - time: {runningTimeSeconds:0.00}s - events: {EventCount} - throughput: {avgThroughputPerSec:0.00} e/s - latency: {avgLatencyMs:0}ms");
+                Console.WriteLine($">> Sink stats - time: {runningTimeSeconds:0.00}s - events: {totalEventCount} - throughput: {avgThroughputPerSec:0.00} e/s - latency: {avgLatencyMs:0}ms");
                 StartTime = DateTime.Now;
                 EventCount = 0;
                 TotalLatencyMs = 0;
@@ -95,7 +102,7 @@ namespace BlackSP.ThroughputExperiment
         {
             counter++;
 
-            if(counter%100000 == 0)
+            if(counter%Constants.EventsBeforeProgressLog == 0)
             {
                 Console.WriteLine($">> Mapper is at {counter}");
 

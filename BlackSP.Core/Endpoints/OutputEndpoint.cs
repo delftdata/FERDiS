@@ -11,8 +11,9 @@ using System.Threading.Tasks;
 using BlackSP.Kernel.Operators;
 using System.Buffers;
 using Microsoft.IO;
-using BlackSP.Core.Streams;
+using BlackSP.Core.Extensions;
 using System.Linq;
+using Nerdbank.Streams;
 
 namespace BlackSP.Core.Endpoints
 {
@@ -134,28 +135,48 @@ namespace BlackSP.Core.Endpoints
         /// <param name="remoteShardId"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        private Task WriteMessagesToStream(Stream outputStream, int remoteShardId, CancellationToken t)
+        private async Task WriteMessagesToStream(Stream outputStream, int remoteShardId, CancellationToken t)
         {
             if (!_shardedMessageQueues.TryGetValue(remoteShardId, out BlockingCollection<MemoryStream> msgBuffers))
             {
                 throw new ArgumentException($"Remote shard with id {remoteShardId} has not been registered");
             }
-
-            while (true)
+            var writer = outputStream.UsePipeWriter();
+            var writtenBytes = 0;
+            var currentWriteBuffer = writer.GetMemory();
+            foreach(var nextMsgBuffer in msgBuffers.GetConsumingEnumerable(t))
             {
-                t.ThrowIfCancellationRequested();
-                //TODO: consider error scenario.. CP?
-                //TODO: consider batching network writes for better throughput?
-                var nextMsgBuffer = msgBuffers.Take(t);
-                //first write msg length to outputstream
-                outputStream.WriteInt32(Convert.ToInt32(nextMsgBuffer.Length));
-                //then copy msg buffer to outputstream
-                nextMsgBuffer.Seek(0, SeekOrigin.Begin);
-                nextMsgBuffer.CopyTo(outputStream);
-                //finally dipose of msg buffer
+                int nextMsgLength = Convert.ToInt32(nextMsgBuffer.Length);
+                Memory<byte> nextMsgLengthBytes = BitConverter.GetBytes(nextMsgLength).AsMemory();
+                Memory<byte> nextMsgBodyBytes = nextMsgBuffer.GetBuffer().AsMemory().Slice(0, nextMsgLength);
+                
+                //reserve at least enough space for the actual message + 4 bytes for the leading size integer
+                int bytesToWrite = nextMsgLength + 4;
+                
+                if(writtenBytes + bytesToWrite > currentWriteBuffer.Length)
+                {
+                    //buffer will overflow, flush first
+                    writer.Advance(writtenBytes);
+                    await writer.FlushAsync();
+                    writtenBytes = 0;
+
+                    currentWriteBuffer = writer.GetMemory(bytesToWrite);
+                }                
+                
+                var msgLengthBufferSegment = currentWriteBuffer.Slice(writtenBytes, 4);
+                nextMsgLengthBytes.CopyTo(msgLengthBufferSegment);
+
+                var msgBodyBufferSegment = currentWriteBuffer.Slice(writtenBytes + 4, nextMsgLength);
+                nextMsgBodyBytes.CopyTo(msgBodyBufferSegment);
+
+                writtenBytes += bytesToWrite;
+                
+                //finally dipose of msg buffer (it came from the memstream manager)
                 nextMsgBuffer.SetLength(0);
                 nextMsgBuffer.Dispose();
             }
+
+            t.ThrowIfCancellationRequested();
         }
 
         /// <summary>

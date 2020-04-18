@@ -10,7 +10,7 @@ using BlackSP.Kernel.Serialization;
 using Moq;
 using System.Linq;
 using BlackSP.Core.Endpoints;
-using BlackSP.Core.Streams;
+using BlackSP.Core.Extensions;
 using System;
 using BlackSP.Core.UnitTests.Utilities;
 using System.Buffers;

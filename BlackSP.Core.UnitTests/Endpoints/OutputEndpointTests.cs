@@ -1,5 +1,5 @@
 using BlackSP.Core.Endpoints;
-using BlackSP.Core.Streams;
+using BlackSP.Core.Extensions;
 using BlackSP.Core.UnitTests.Events;
 using NUnit.Framework;
 using System.IO;

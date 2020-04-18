@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
-using BlackSP.Core.Streams;
+using BlackSP.Core.Extensions;
 using BlackSP.Core.UnitTests.Events;
 using System.Threading.Tasks;
 using System.Linq;
