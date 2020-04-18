@@ -5,6 +5,7 @@ using BlackSP.CRA.Vertices;
 using BlackSP.Infrastructure.Configuration;
 using BlackSP.Infrastructure.Configuration.Operators;
 using BlackSP.Infrastructure.IoC;
+using BlackSP.Serialization.Extensions;
 using BlackSP.Serialization.Serializers;
 using CRA.ClientLibrary;
 using System;
@@ -68,7 +69,7 @@ namespace BlackSP.CRA.Configuration
                 target.InstanceNames,
                 target.OperatorName,
                 vertexDefinition,
-                vertexParameter,
+                vertexParameter.BinarySerialize(),
                 1
             );
         }

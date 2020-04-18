@@ -23,7 +23,7 @@ namespace BlackSP.Infrastructure.Extensions
                    .As(typeof(IOperatorSocket), hostParameter.OperatorType)
                    .InstancePerLifetimeScope();
 
-            builder.RegisterConcreteClassAsDefined(hostParameter.OperatorConfiguration, true);
+            builder.RegisterConcreteClassAsDefined(hostParameter.OperatorType, true);
             builder.RegisterConcreteClassAsType<IInputEndpoint>(hostParameter.InputEndpointType);
             builder.RegisterConcreteClassAsType<IOutputEndpoint>(hostParameter.OutputEndpointType);
             builder.RegisterConcreteClassAsType<ISerializer>(hostParameter.SerializerType);

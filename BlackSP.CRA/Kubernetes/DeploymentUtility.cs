@@ -42,9 +42,16 @@ namespace BlackSP.CRA.Kubernetes
             }
             Console.WriteLine($"");
             Console.WriteLine($"=============================== Launching on Kubernetes ===============================");
-            Console.WriteLine($"> kubectl delete all --all -n {K8sNamespace}");
             Console.WriteLine($"> kubectl apply -f {lastWrittenYamlFile}");
+            Console.WriteLine($"> kubectl delete -f {lastWrittenYamlFile}");
             Console.WriteLine($"=======================================================================================");
+            Console.WriteLine($"DOCKER");
+            //run with environment
+            Console.Write($"docker run --env AZURE_STORAGE_CONN_STRING=\"{Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING")}\" mdzwart/cra-net2.1:latest crainst01 1500");
+            //container
+            Console.Write($"mdzwart/cra-net2.1:latest");
+            //commandline args
+            Console.Write($"crainst01 1500");
             Console.WriteLine($"");
         }
 
@@ -76,40 +83,38 @@ namespace BlackSP.CRA.Kubernetes
         private string BuildDeploymentSection(IOperatorConfigurator configurator, string instanceName)
         {
             return $@"
-kind : Deployment
-apiVersion : apps/v1
-metadata :
-    name : {instanceName}
-    namespace : {K8sNamespace}
-    labels :
-        app : {configurator.OperatorName}
-        name : crainst
-spec :
-    replicas : 1
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+    namespace: default
+    name: {instanceName}
+    labels:
+        operator: {configurator.OperatorName}
+        instance: {instanceName}
+spec:
+    replicas: 1
     selector:
         matchLabels:
-            app: {instanceName}
-    template :
-        metadata :
-            name : {instanceName}
+            instance: {instanceName}
+    template:
+        metadata:
+            name: {instanceName}
             labels:
-                app: {configurator.OperatorName}
-                name : blacksp
-#consider operator name here, could serve for checking logs of all shards at the same time
+                operator: {configurator.OperatorName}
+                instance: {instanceName}
         spec:
             containers:
-            - name : {instanceName}
-              image : mdzwart/cra-net2.1:latest
+            - name: {instanceName}
+              image: mdzwart/cra-net2.1:latest
               ports:
               - containerPort: 1500
               env:
               - name: AZURE_STORAGE_CONN_STRING
-                value: DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net
-              args : [""{instanceName}"", 1500] # CRA instance name: {instanceName}, exposed on port 1500
-              resources:
-        #requests:
-        #cpu: ""500m"" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
-------------------------";
+                value: {Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING")}
+              args: [""{instanceName}"", ""1500""] #CRA instance name {instanceName}, exposed on port 1500
+              #resources: #requests #cpu ""500m"" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
+---
+";
         }
     }
 }

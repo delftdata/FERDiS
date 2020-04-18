@@ -1,8 +1,11 @@
 ﻿using Autofac;
+using BlackSP.Infrastructure.Extensions;
 using BlackSP.Infrastructure.IoC;
 using BlackSP.Kernel.Operators;
+using BlackSP.Serialization.Extensions;
 using CRA.ClientLibrary;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Vertices
@@ -25,7 +28,11 @@ namespace BlackSP.CRA.Vertices
         public override Task InitializeAsync(int shardId, ShardingInfo shardingInfo, object vertexParameter)
         {
             Console.WriteLine("Starting CRA Vertex initialization");
-            _options = vertexParameter as IHostParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IHostParameter)}"); ;
+
+            //AppDomain.CurrentDomain.LoadAllAvailableAssemblies(Assembly.GetEntryAssembly()); //ensure dependency types are loaded (otherwise they remain invisible)
+
+
+            _options = (vertexParameter as byte[])?.BinaryDeserialize() as IHostParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IHostParameter)}"); ;
             
             Console.WriteLine("Installing dependency container");
             InitializeIoCContainer();
@@ -42,11 +49,11 @@ namespace BlackSP.CRA.Vertices
 
         private void InitializeIoCContainer()
         {
-            _dependencyContainer = new DependencyContainerBuilder(_options)
-                .RegisterBlackSPComponents()
+
+            _dependencyContainer = new ContainerBuilder().RegisterBlackSPComponents(_options)
                 .RegisterAllConcreteClassesOfType<IAsyncShardedVertexInputEndpoint>()
                 .RegisterAllConcreteClassesOfType<IAsyncShardedVertexOutputEndpoint>()
-                .BuildContainer();
+                .Build();
 
             Console.WriteLine("IoC setup completed");
             _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();

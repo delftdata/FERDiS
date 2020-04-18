@@ -4,6 +4,8 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using BlackSP.InMemory.Streams;
+using Nerdbank.Streams;
+using System.IO.Pipelines;
 
 namespace BlackSP.InMemory.Configuration
 {
@@ -51,7 +53,7 @@ namespace BlackSP.InMemory.Configuration
                 _outgoingConnectionDict.Add(fromKey, outConnections);
             }
 
-            var shareableStream = Stream.Synchronized(new ProducerConsumerStream());//new ProducerConsumerStream();// Stream.Synchronized(new ProducerConsumerStream());
+            var shareableStream = new HalfDuplexStream();//new ProducerConsumerStream();// Stream.Synchronized(new ProducerConsumerStream());
 
             inStreams[connection.FromShardId] = shareableStream;
             inConnections[connection.FromShardId] = connection;

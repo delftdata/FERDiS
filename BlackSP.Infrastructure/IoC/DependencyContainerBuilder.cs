@@ -48,8 +48,8 @@ namespace BlackSP.Infrastructure.IoC
 
         public DependencyContainerBuilder RegisterBlackSPComponents()
         {
-            RegisterConcreteClassAsType<IOperatorSocket>(_options.OperatorType, true);
-            RegisterConcreteClassAsDefined(_options.OperatorConfiguration, true);
+            RegisterConcreteClassAsType<IOperatorSocket>(_options.OperatorShellType, true);
+            RegisterConcreteClassAsDefined(_options.OperatorType, true);
 
             RegisterConcreteClassAsType<IInputEndpoint>(_options.InputEndpointType);
             RegisterConcreteClassAsType<IOutputEndpoint>(_options.OutputEndpointType);

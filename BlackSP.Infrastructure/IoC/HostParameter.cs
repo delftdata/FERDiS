@@ -6,28 +6,38 @@ using System.Text;
 
 namespace BlackSP.Infrastructure.IoC
 {
+    [Serializable]
     public class HostParameter : IHostParameter
     {
-        public Type OperatorType { get; set; }
-        public Type OperatorConfiguration { get; set; }
-        public Type InputEndpointType { get; set; }
-        public string[] InputEndpointNames { get; set; }
-        public Type OutputEndpointType { get; set; }
-        public string[] OutputEndpointNames { get; set; }
-        public Type SerializerType { get; set; }
+        public Type OperatorShellType => Type.GetType(_operatorShellTypeString);
+        private string _operatorShellTypeString;
 
-        public HostParameter(Type operatorType, Type operatorConfigType, string[] inputNames, Type inputEndpointType, string[] outputNames, Type outputEndpointType, Type serializerType)
+        public Type OperatorType => Type.GetType(_operatorTypeString);
+        private string _operatorTypeString;
+
+        public Type InputEndpointType => Type.GetType(_inputEndpointTypeString);
+        private string _inputEndpointTypeString;
+        public string[] InputEndpointNames { get; set; }
+        
+        public Type OutputEndpointType => Type.GetType(_outputEndpointTypeString);
+        private string _outputEndpointTypeString;
+        public string[] OutputEndpointNames { get; set; }
+        
+        public Type SerializerType => Type.GetType(_serializerTypeString);
+        private string _serializerTypeString;
+
+        public HostParameter(Type operatorShellType, Type operatorType, string[] inputNames, Type inputEndpointType, string[] outputNames, Type outputEndpointType, Type serializerType)
         {
-            OperatorType = operatorType;
-            OperatorConfiguration = operatorConfigType;
+            _operatorShellTypeString = operatorShellType?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(operatorShellType));
+            _operatorTypeString = operatorType?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(operatorType));
 
             InputEndpointNames = inputNames;
-            InputEndpointType = inputEndpointType;
+            _inputEndpointTypeString = inputEndpointType?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(inputEndpointType));
 
             OutputEndpointNames = outputNames;
-            OutputEndpointType = outputEndpointType;
+            _outputEndpointTypeString = outputEndpointType?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(outputEndpointType));
 
-            SerializerType = serializerType;
+            _serializerTypeString = serializerType?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(serializerType));
         }
     }
 }

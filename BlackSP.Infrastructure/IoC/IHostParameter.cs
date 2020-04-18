@@ -11,13 +11,13 @@ namespace BlackSP.Infrastructure.IoC
         /// <summary>
         /// Holds a type reference to the operator the target vertex should instantiate
         /// </summary>
-        Type OperatorType { get; }
+        Type OperatorShellType { get; }
 
         /// <summary>
         /// The operator configuration required to instantiate
         /// the type provided in OperatorType
         /// </summary>
-        Type OperatorConfiguration { get; }
+        Type OperatorType { get; }
 
         /// <summary>
         /// How many input endpoints to start

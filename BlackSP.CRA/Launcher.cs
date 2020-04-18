@@ -93,9 +93,9 @@ namespace BlackSP.CRA
                 Console.WriteLine("Worker mode has 2 required (r) and 1 optional (o) arguments: instanceName (r), portNumber (r), ipAddress (o)");
                 return;
             }
-            string instanceName = args[1];
-            int portNum = int.Parse(args[2]);
-            string ipAddress = args.Length == 4 ? args[3] : null;
+            string instanceName = args[0];
+            int portNum = int.Parse(args[1]);
+            string ipAddress = args.Length == 3 ? args[2] : null;
             Worker.Launch(instanceName, portNum, userDataProvider, ipAddress);
         }
 
