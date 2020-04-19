@@ -5,7 +5,6 @@ using BlackSP.Kernel.Operators;
 using BlackSP.Serialization.Extensions;
 using CRA.ClientLibrary;
 using System;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Vertices
@@ -31,13 +30,11 @@ namespace BlackSP.CRA.Vertices
 
             //AppDomain.CurrentDomain.LoadAllAvailableAssemblies(Assembly.GetEntryAssembly()); //ensure dependency types are loaded (otherwise they remain invisible)
 
-
             _options = (vertexParameter as byte[])?.BinaryDeserialize() as IHostParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IHostParameter)}"); ;
-            
             Console.WriteLine("Installing dependency container");
             InitializeIoCContainer();
             
-            _bspOperator = ResolveOperator();
+            _bspOperator = ResolveOperatorShell();
             SetupInputEndpoints();
             SetupOutputEndpoints();
                    
@@ -59,9 +56,9 @@ namespace BlackSP.CRA.Vertices
             _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();
         }
 
-        private IOperatorSocket ResolveOperator()
+        private IOperatorSocket ResolveOperatorShell()
         {
-            Type operatorType = _options.OperatorType;
+            Type operatorType = _options.OperatorShellType;
             return _vertexLifetimeScope.Resolve(operatorType) as IOperatorSocket
                 ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be casted to {typeof(IOperatorSocket)}");
         }

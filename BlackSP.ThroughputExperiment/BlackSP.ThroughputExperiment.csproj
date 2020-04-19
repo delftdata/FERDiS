@@ -3,21 +3,21 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <OutputType>Exe</OutputType>
     <SignAssembly>false</SignAssembly>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\BlackSP.CRA\BlackSP.CRA.csproj" />
     <ProjectReference Include="..\BlackSP.InMemory\BlackSP.InMemory.csproj" />
-    <ProjectReference Include="..\BlackSP.Core\BlackSP.Core.csproj" />
-
   </ItemGroup>
+
 
 </Project>

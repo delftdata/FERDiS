@@ -5,7 +5,6 @@ using System.Text;
 using System.Linq;
 using BlackSP.InMemory.Streams;
 using Nerdbank.Streams;
-using System.IO.Pipelines;
 
 namespace BlackSP.InMemory.Configuration
 {
