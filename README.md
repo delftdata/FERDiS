@@ -62,3 +62,6 @@ When specific runtime arguments are passed to the Launcher of this module it wil
 **Type: Console application**
 An example of an end-user implementation of BlackSP. It contains some operator implementations and a graph configuration with can be passed to the launcher of either  **BlackSP.InMemory** for local operation or **BlackSP.CRA** to prepare launch on a kubernetes cluster with CRA workers.
 
+### BlackSP.*.UnitTests
+**Type: Test application**
+Each of these contain unit tests for the module with matching name. Currently a few tests are failing due to recent performance improvements, these will be updated to be in line with the changes that were made.
