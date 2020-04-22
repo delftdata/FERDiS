@@ -156,8 +156,7 @@ namespace BlackSP.Core.Endpoints
                 int bytesToWrite = nextMsgLength + 4;
                 
                 if(writtenBytes + bytesToWrite > currentWriteBuffer.Length)
-                {
-                    //buffer will overflow, flush first
+                {   //the writebuffer is about to overflow, flush first
                     writer.Advance(writtenBytes);
                     await writer.FlushAsync();
                     writtenBytes = 0;
