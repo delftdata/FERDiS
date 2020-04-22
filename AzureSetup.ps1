@@ -22,10 +22,9 @@ az aks create `
 	--location $location `
 	--node-vm-size $vmSize `
 	--generate-ssh-keys
-
-Write-Output "Done.. Exiting in 60 seconds"
-# Wait for azure to propagate the service principal creation
-Start-Sleep -Seconds 60
 #	--enable-cluster-autoscaler `
 #	--min-count $minScale `
 #	--max-count $maxScale `
+
+Write-Output "Done.. Exiting in 60 seconds"
+Start-Sleep -Seconds 60
