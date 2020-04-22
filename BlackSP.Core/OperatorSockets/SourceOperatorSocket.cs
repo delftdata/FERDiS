@@ -24,8 +24,8 @@ namespace BlackSP.Core.OperatorSockets
             var t =  base.Start(at);
             var t2 = Task.Run(async () =>
             {
-
-                await Task.Delay(2500);
+                Console.WriteLine("Starting in 10 seconds");
+                await Task.Delay(4 * 2500);
                 while(!CancellationToken.IsCancellationRequested)
                 {
                     EgressOutputEvents(_pluggedInOperator.GetTestEvents());

@@ -26,18 +26,18 @@ namespace BlackSP.CRA.Endpoints
             {
                 //CRA invokes current method on a background thread 
                 //so just invoke Egress on this thread
-                Console.WriteLine($"Output channel {otherVertex}${otherEndpoint}${otherShardId} starting");
+                Console.WriteLine($"Output channel connecting to {otherVertex}${otherEndpoint}${otherShardId} starting");
                 await _bspOutputEndpoint.Egress(stream, otherShardId, token);
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Output channel {otherVertex}${otherEndpoint}${otherShardId} exception");
+                Console.WriteLine($"Output channel connecting to {otherVertex}${otherEndpoint}${otherShardId} exception");
                 Console.WriteLine(e.ToString());
                 throw;
             }
             finally
             {
-                Console.WriteLine($"Output channel {otherVertex}${otherEndpoint}${otherShardId} stopped");
+                Console.WriteLine($"Output channel connecting to {otherVertex}${otherEndpoint}${otherShardId} stopped");
             }
             token.ThrowIfCancellationRequested();
         }

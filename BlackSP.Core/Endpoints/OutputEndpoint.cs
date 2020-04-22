@@ -20,11 +20,13 @@ namespace BlackSP.Core.Endpoints
 
     public class OutputEndpoint : IOutputEndpoint, IDisposable
     {
-        private readonly BlockingCollection<Tuple<IEvent, OutputMode>> _outputQueue;
-        private readonly IDictionary<int, BlockingCollection<MemoryStream>> _shardedMessageQueues; //default BlockingCollection implementation is a ConcurrentQueue
+
         private readonly ISerializer _serializer;
         private readonly IOperatorSocket _operator;
         private readonly RecyclableMemoryStreamManager _msgBufferPool;
+
+        private readonly BlockingCollection<Tuple<IEvent, OutputMode>> _outputQueue;
+        private readonly IDictionary<int, BlockingCollection<MemoryStream>> _shardedMessageQueues; //default BlockingCollection implementation is a ConcurrentQueue
         private readonly Task _messageSerializationThread;
         private int? _shardCount;
 

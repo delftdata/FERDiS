@@ -47,11 +47,9 @@ namespace BlackSP.CRA.Kubernetes
             Console.WriteLine($"=======================================================================================");
             Console.WriteLine($"DOCKER");
             //run with environment
-            Console.Write($"docker run --env AZURE_STORAGE_CONN_STRING=\"{Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING")}\" mdzwart/cra-net2.1:latest crainst01 1500");
-            //container
-            Console.Write($"mdzwart/cra-net2.1:latest");
-            //commandline args
-            Console.Write($"crainst01 1500");
+            Console.Write($"docker run --env AZURE_STORAGE_CONN_STRING=\"{Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING")}\"");
+            Console.Write($" mdzwart/cra-net2.1:latest"); //container spec
+            Console.Write($" crainst01 1500"); //commandline args
             Console.WriteLine($"");
         }
 
@@ -110,7 +108,7 @@ spec:
               - containerPort: 1500
               env:
               - name: AZURE_STORAGE_CONN_STRING
-                value: {Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING")}
+                value: ""{Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING")}""
               args: [""{instanceName}"", ""1500""] #CRA instance name {instanceName}, exposed on port 1500
               #resources: #requests #cpu ""500m"" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
 ---

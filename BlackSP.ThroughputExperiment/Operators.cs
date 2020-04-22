@@ -26,7 +26,7 @@ namespace BlackSP.ThroughputExperiment
         {
             var events = new List<SampleEvent>();
             
-            for(int i = 0; i < 100; i++)
+            for(int i = 0; i < 10000; i++)
             {
                 if (counter > 0 && counter % Constants.EventsBeforeProgressLog == 0)
                 {
