@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.OperatorSockets;
+﻿using BlackSP.Core.OperatorShells;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Endpoints;
@@ -33,7 +33,7 @@ namespace BlackSP.Core.UnitTests.Operator
         private TimeSpan _windowSize;
         private DateTime _startTime;
         private Task _operatorThread;
-        private AggregateOperatorSocket<TestEvent, TestEvent2> _operator;
+        private AggregateOperatorShell<TestEvent, TestEvent2> _operator;
         private IList<TestEvent> _testEvents;
 
         [SetUp]
@@ -41,7 +41,7 @@ namespace BlackSP.Core.UnitTests.Operator
         {
             _startTime = DateTime.Now;
             _windowSize = TimeSpan.FromSeconds(5);
-            _operator = new AggregateOperatorSocket<TestEvent, TestEvent2>(new EventCounterAggregateConfiguration
+            _operator = new AggregateOperatorShell<TestEvent, TestEvent2>(new EventCounterAggregateConfiguration
             {
                 WindowSize = _windowSize
             });

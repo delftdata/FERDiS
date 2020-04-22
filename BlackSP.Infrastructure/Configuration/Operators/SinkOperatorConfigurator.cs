@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.OperatorSockets;
+﻿using BlackSP.Core.OperatorShells;
 using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using System;
@@ -11,7 +11,7 @@ namespace BlackSP.Infrastructure.Configuration.Operators
         where TIn : class, IEvent
     {
 
-        public override Type OperatorType => typeof(SinkOperatorSocket<TIn>);
+        public override Type OperatorType => typeof(SinkOperatorShell<TIn>);
         public override Type OperatorConfigurationType => typeof(TOperator);
         public override ICollection<Edge> OutgoingEdges => new List<Edge>(); //always return empty list, sink has no outgoing edges ever
 

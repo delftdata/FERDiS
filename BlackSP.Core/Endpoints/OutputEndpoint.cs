@@ -22,7 +22,7 @@ namespace BlackSP.Core.Endpoints
     {
 
         private readonly ISerializer _serializer;
-        private readonly IOperatorSocket _operator;
+        private readonly IOperatorShell _operator;
         private readonly RecyclableMemoryStreamManager _msgBufferPool;
 
         private readonly BlockingCollection<Tuple<IEvent, OutputMode>> _outputQueue;
@@ -30,7 +30,7 @@ namespace BlackSP.Core.Endpoints
         private readonly Task _messageSerializationThread;
         private int? _shardCount;
 
-        public OutputEndpoint(IOperatorSocket targetOperator, ISerializer serializer, RecyclableMemoryStreamManager memStreamPool)
+        public OutputEndpoint(IOperatorShell targetOperator, ISerializer serializer, RecyclableMemoryStreamManager memStreamPool)
         {
             _operator = targetOperator ?? throw new ArgumentNullException(nameof(targetOperator));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));

@@ -39,7 +39,7 @@ namespace BlackSP.Infrastructure.IoC
             var container = BuildContainer();
 
             //TODO: validate presence of all required types and throw exception if missing
-            container.IsRegistered<IOperatorSocket>();
+            container.IsRegistered<IOperatorShell>();
             container.IsRegistered<IOutputEndpoint>();
             container.IsRegistered<IInputEndpoint>();
             container.IsRegistered<IOperator>();
@@ -48,7 +48,7 @@ namespace BlackSP.Infrastructure.IoC
 
         public DependencyContainerBuilder RegisterBlackSPComponents()
         {
-            RegisterConcreteClassAsType<IOperatorSocket>(_options.OperatorShellType, true);
+            RegisterConcreteClassAsType<IOperatorShell>(_options.OperatorShellType, true);
             RegisterConcreteClassAsDefined(_options.OperatorType, true);
 
             RegisterConcreteClassAsType<IInputEndpoint>(_options.InputEndpointType);

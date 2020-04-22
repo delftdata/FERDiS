@@ -4,15 +4,15 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.OperatorSockets
+namespace BlackSP.Core.OperatorShells
 {
-    public class MapOperatorSocket<TIn, TOut> : OperatorSocketBase
+    public class MapOperatorShell<TIn, TOut> : OperatorShellBase
         where TIn : class, IEvent
         where TOut : class, IEvent
     {
         private readonly IMapOperator<TIn, TOut> _pluggedInOperator;
 
-        public MapOperatorSocket(IMapOperator<TIn, TOut> pluggedInOperator) : base(pluggedInOperator)
+        public MapOperatorShell(IMapOperator<TIn, TOut> pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator;
         }

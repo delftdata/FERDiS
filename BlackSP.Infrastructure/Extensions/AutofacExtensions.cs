@@ -20,7 +20,7 @@ namespace BlackSP.Infrastructure.Extensions
             _ = hostParameter ?? throw new ArgumentNullException(nameof(hostParameter));
 
             builder.RegisterType(hostParameter.OperatorShellType)
-                   .As(typeof(IOperatorSocket), hostParameter.OperatorShellType)
+                   .As(typeof(IOperatorShell), hostParameter.OperatorShellType)
                    .InstancePerLifetimeScope();
 
             builder.RegisterConcreteClassAsDefined(hostParameter.OperatorType, true);

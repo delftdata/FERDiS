@@ -18,9 +18,9 @@ namespace BlackSP.Core.UnitTests.Utilities
 {
     public static class MockBuilder
     {
-        public static Mock<IOperatorSocket> MockOperator(CancellationTokenSource operatorCtSource, BlockingCollection<IEvent> inputQueue)
+        public static Mock<IOperatorShell> MockOperator(CancellationTokenSource operatorCtSource, BlockingCollection<IEvent> inputQueue)
         {
-            var operatorMoq = new Mock<IOperatorSocket>();
+            var operatorMoq = new Mock<IOperatorShell>();
             operatorMoq.Setup(o => o.CancellationToken).Returns(() => operatorCtSource.Token);
             operatorMoq.Setup(o => o.Enqueue(It.IsAny<IEvent>()))
                 .Callback((IEvent e) => inputQueue.Add(e));

@@ -8,13 +8,13 @@ using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 
-namespace BlackSP.Core.OperatorSockets
+namespace BlackSP.Core.OperatorShells
 {
     //- each operator pair will have their own endpoints connected --> not shared among operators
     //- operator can just enqueue outgoing events in all output queues
     //- endpoints will write to input or read from assigned output queue
     //      endpoints will respectively handle partitioning among shards etc
-    public abstract class OperatorSocketBase : IOperatorSocket, IDisposable
+    public abstract class OperatorShellBase : IOperatorShell, IDisposable
     {
         public CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
@@ -29,7 +29,7 @@ namespace BlackSP.Core.OperatorSockets
         /// Base constructor for Operators, will throw when passing null options
         /// </summary>
         /// <param name="options"></param>
-        public OperatorSocketBase(IOperator pluggedInOperator)
+        public OperatorShellBase(IOperator pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
 

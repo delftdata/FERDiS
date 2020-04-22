@@ -8,9 +8,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.OperatorSockets
+namespace BlackSP.Core.OperatorShells
 {
-    public abstract class WindowedOperatorSocketBase<TIn, TOut> : OperatorSocketBase
+    public abstract class WindowedOperatorShellBase<TIn, TOut> : OperatorShellBase
         where TIn : class, IEvent
         where TOut : class, IEvent
     {
@@ -18,7 +18,7 @@ namespace BlackSP.Core.OperatorSockets
         private readonly IWindowedOperator _pluggedInOperator;
         private FixedEventWindow<TIn> _currentWindow;
         
-        public WindowedOperatorSocketBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)
+        public WindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator;            
         }

@@ -57,7 +57,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
             var serializerMoq = MockBuilder.MockSerializer(_testEvents);
             _serializer = serializerMoq.Object;
 
-            var operatorMoq = new Mock<IOperatorSocket>();
+            var operatorMoq = new Mock<IOperatorShell>();
             operatorMoq.Setup(o => o.CancellationToken).Returns(() => _operatorCtSource.Token);
 
             var recycleMemStreamManager = new RecyclableMemoryStreamManager();

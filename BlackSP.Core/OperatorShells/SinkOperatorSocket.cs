@@ -6,14 +6,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.OperatorSockets
+namespace BlackSP.Core.OperatorShells
 {
-    public class SinkOperatorSocket<TEvent> : OperatorSocketBase 
+    public class SinkOperatorShell<TEvent> : OperatorShellBase 
         where TEvent : class, IEvent
     {
         private readonly ISinkOperator<TEvent> _pluggedInOperator;
 
-        public SinkOperatorSocket(ISinkOperator<TEvent> pluggedInOperator) : base(pluggedInOperator)
+        public SinkOperatorShell(ISinkOperator<TEvent> pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator;
         }

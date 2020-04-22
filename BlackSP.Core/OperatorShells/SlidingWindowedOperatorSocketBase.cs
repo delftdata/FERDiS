@@ -6,15 +6,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Core.OperatorSockets
+namespace BlackSP.Core.OperatorShells
 {
 
-    public abstract class SlidingWindowedOperatorSocketBase : OperatorSocketBase
+    public abstract class SlidingWindowedOperatorShellBase : OperatorShellBase
     {
         private readonly IWindowedOperator _pluggedInOperator;
         private readonly IDictionary<Type, SlidingEventWindow<IEvent>> _currentWindows;
 
-        public SlidingWindowedOperatorSocketBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)
+        public SlidingWindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator;
             _currentWindows = new Dictionary<Type, SlidingEventWindow<IEvent>>();

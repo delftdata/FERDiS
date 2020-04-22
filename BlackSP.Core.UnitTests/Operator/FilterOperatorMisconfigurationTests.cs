@@ -1,5 +1,5 @@
-﻿using BlackSP.Core.OperatorSockets;
-using BlackSP.Core.OperatorSockets;
+﻿using BlackSP.Core.OperatorShells;
+using BlackSP.Core.OperatorShells;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Endpoints;
@@ -17,13 +17,13 @@ namespace BlackSP.Core.UnitTests.Operator
 {
     public class FilterOperatorMisconfigurationTests
     {
-        private FilterOperatorSocket<TestEvent> _distinctOperator;
+        private FilterOperatorShell<TestEvent> _distinctOperator;
         private Task _operatorThread;
 
         [SetUp]
         public void SetUp()
         {
-            _distinctOperator = new FilterOperatorSocket<TestEvent>(new FilterOperatorConfigurationNoDoubleKeys());
+            _distinctOperator = new FilterOperatorShell<TestEvent>(new FilterOperatorConfigurationNoDoubleKeys());
             _operatorThread = _distinctOperator.Start(DateTime.Now);
 
         }

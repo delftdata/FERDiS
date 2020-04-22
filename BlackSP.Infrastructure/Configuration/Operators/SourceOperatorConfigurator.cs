@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.OperatorSockets;
+﻿using BlackSP.Core.OperatorShells;
 using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using System;
@@ -9,7 +9,7 @@ namespace BlackSP.Infrastructure.Configuration.Operators
         where TOperator : ISourceOperator<TOut>, new()
         where TOut : class, IEvent
     {
-        public override Type OperatorType => typeof(SourceOperatorSocket<TOut>);
+        public override Type OperatorType => typeof(SourceOperatorShell<TOut>);
         public override Type OperatorConfigurationType => typeof(TOperator);
 
         public SourceOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)

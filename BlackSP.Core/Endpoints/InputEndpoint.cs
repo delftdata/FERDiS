@@ -19,14 +19,14 @@ namespace BlackSP.Core.Endpoints
 {
     public class InputEndpoint : IInputEndpoint, IDisposable
     {
-        private IOperatorSocket _operator;
+        private IOperatorShell _operator;
         private ISerializer _serializer;
         private ArrayPool<byte> _msgBufferPool;
 
         private BlockingCollection<Stream> _unprocessedMessages;
         private readonly Task _messageDeserializationThread;
 
-        public InputEndpoint(IOperatorSocket targetOperator, ISerializer serializer, ArrayPool<byte> byteArrayPool)
+        public InputEndpoint(IOperatorShell targetOperator, ISerializer serializer, ArrayPool<byte> byteArrayPool)
         {
             _operator = targetOperator ?? throw new ArgumentNullException(nameof(targetOperator));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));

@@ -4,16 +4,16 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.OperatorSockets
+namespace BlackSP.Core.OperatorShells
 {
-    public class AggregateOperatorSocket<TIn, TOut> : WindowedOperatorSocketBase<TIn, TOut>
+    public class AggregateOperatorShell<TIn, TOut> : WindowedOperatorShellBase<TIn, TOut>
         where TIn : class, IEvent
         where TOut : class, IEvent
     {
 
         private readonly IAggregateOperator<TIn, TOut> _pluggedInOperator;
 
-        public AggregateOperatorSocket(IAggregateOperator<TIn, TOut> pluggedInOperator) : base(pluggedInOperator)
+        public AggregateOperatorShell(IAggregateOperator<TIn, TOut> pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator;
         }

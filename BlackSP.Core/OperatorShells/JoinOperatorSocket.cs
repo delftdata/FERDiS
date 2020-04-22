@@ -4,15 +4,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BlackSP.Core.OperatorSockets
+namespace BlackSP.Core.OperatorShells
 {
-    public class JoinOperatorSocket<TInA, TInB, TOut> : SlidingWindowedOperatorSocketBase
+    public class JoinOperatorShell<TInA, TInB, TOut> : SlidingWindowedOperatorShellBase
         where TInA : class, IEvent
         where TInB : class, IEvent
         where TOut : class, IEvent
     {
         private readonly IJoinOperator<TInA, TInB, TOut> _pluggedInOperator;
-        public JoinOperatorSocket(IJoinOperator<TInA, TInB, TOut> pluggedInOperator) : base(pluggedInOperator)
+        public JoinOperatorShell(IJoinOperator<TInA, TInB, TOut> pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator;
 

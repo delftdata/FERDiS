@@ -1,5 +1,5 @@
-﻿using BlackSP.Core.OperatorSockets;
-using BlackSP.Core.OperatorSockets;
+﻿using BlackSP.Core.OperatorShells;
+using BlackSP.Core.OperatorShells;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Endpoints;
@@ -30,14 +30,14 @@ namespace BlackSP.Core.UnitTests.Operator
 
     public class MapOperatorTests
     {
-        private MapOperatorSocket<TestEvent, TestEvent2> _mapOperator;
+        private MapOperatorShell<TestEvent, TestEvent2> _mapOperator;
         private Task _operatorThread;
         private IList<TestEvent> _testEvents;
 
         [SetUp]
         public void SetUp()
         {
-            _mapOperator = new MapOperatorSocket<TestEvent, TestEvent2>(new MapOperatorConfigurationForTest());
+            _mapOperator = new MapOperatorShell<TestEvent, TestEvent2>(new MapOperatorConfigurationForTest());
 
             _testEvents = new List<TestEvent>();
             for(int i = 0; i < 10; i++)

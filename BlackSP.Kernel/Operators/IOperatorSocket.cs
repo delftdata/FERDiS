@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Kernel.Operators
 {
-    public interface IOperatorSocket
+    public interface IOperatorShell
     {
 
         /// <summary>

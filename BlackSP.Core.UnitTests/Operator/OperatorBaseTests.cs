@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.OperatorSockets;
+﻿using BlackSP.Core.OperatorShells;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Events;
@@ -16,9 +16,9 @@ namespace BlackSP.Core.UnitTests.Operator
     class BaseOperator : IOperator
     {}
 
-    class TestBaseOperatorSocket : OperatorSocketBase
+    class TestBaseOperatorShell : OperatorShellBase
     {
-        public TestBaseOperatorSocket() : base(new BaseOperator())
+        public TestBaseOperatorShell() : base(new BaseOperator())
         {}
 
         protected override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
@@ -27,16 +27,16 @@ namespace BlackSP.Core.UnitTests.Operator
         }
     }
 
-    public class OperatorSocketBaseTests
+    public class OperatorShellBaseTests
     {
-        private OperatorSocketBase _operator;
+        private OperatorShellBase _operator;
         private Task _operatorThread;
         private IList<IEvent> _testEvents;
 
         [SetUp]
         public void SetUp()
         {
-            _operator = new TestBaseOperatorSocket();
+            _operator = new TestBaseOperatorShell();
 
             _testEvents = new List<IEvent>();
             for (int i = 0; i < 10; i++)
@@ -65,7 +65,7 @@ namespace BlackSP.Core.UnitTests.Operator
         [Test]
         public void Stop_ThrowsWhenNotStarted()
         {
-            var testoperator = new TestBaseOperatorSocket();
+            var testoperator = new TestBaseOperatorShell();
             //TODO: update when custom exception implemented
             Assert.ThrowsAsync<Exception>(testoperator.Stop);
         }

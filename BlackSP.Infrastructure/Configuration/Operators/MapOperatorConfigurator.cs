@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.OperatorSockets;
+﻿using BlackSP.Core.OperatorShells;
 using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using System;
@@ -11,7 +11,7 @@ namespace BlackSP.Infrastructure.Configuration.Operators
         where TOut : class, IEvent
     {
 
-        public override Type OperatorType => typeof(MapOperatorSocket<TIn, TOut>);
+        public override Type OperatorType => typeof(MapOperatorShell<TIn, TOut>);
         public override Type OperatorConfigurationType => typeof(TOperator);
         public MapOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         {}

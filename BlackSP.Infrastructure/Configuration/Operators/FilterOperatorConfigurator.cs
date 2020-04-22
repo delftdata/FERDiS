@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.OperatorSockets;
+﻿using BlackSP.Core.OperatorShells;
 using BlackSP.Kernel.Events;
 using BlackSP.Kernel.Operators;
 using System;
@@ -10,7 +10,7 @@ namespace BlackSP.Infrastructure.Configuration.Operators
         where TEvent : class, IEvent
     {
 
-        public override Type OperatorType => typeof(FilterOperatorSocket<TEvent>);
+        public override Type OperatorType => typeof(FilterOperatorShell<TEvent>);
         public override Type OperatorConfigurationType => typeof(TOperator);
 
         public FilterOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)

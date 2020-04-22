@@ -1,4 +1,4 @@
-using BlackSP.Core.OperatorSockets;
+using BlackSP.Core.OperatorShells;
 using BlackSP.CRA.UnitTests.Events;
 using BlackSP.Infrastructure.Configuration;
 using Moq;
@@ -76,7 +76,7 @@ namespace BlackSP.CRA.UnitTests
         {
             var source = publicConfigurator.AddSource<SampleSourceOperator, EventA>(1);
             Assert.AreEqual(typeof(SampleSourceOperator), source.OperatorConfigurationType);
-            Assert.AreEqual(typeof(SourceOperatorSocket<EventA>), source.OperatorType);
+            Assert.AreEqual(typeof(SourceOperatorShell<EventA>), source.OperatorType);
         }
 
         [Test]
@@ -84,7 +84,7 @@ namespace BlackSP.CRA.UnitTests
         {
             var filter = publicConfigurator.AddFilter<SampleFilterOperator, EventA>(1);
             Assert.AreEqual(typeof(SampleFilterOperator), filter.OperatorConfigurationType);
-            Assert.AreEqual(typeof(FilterOperatorSocket<EventA>), filter.OperatorType);
+            Assert.AreEqual(typeof(FilterOperatorShell<EventA>), filter.OperatorType);
         }
 
         [Test]
@@ -92,7 +92,7 @@ namespace BlackSP.CRA.UnitTests
         {
             var map = publicConfigurator.AddMap<SampleMapOperator, EventA, EventB>(1);
             Assert.AreEqual(typeof(SampleMapOperator), map.OperatorConfigurationType);
-            Assert.AreEqual(typeof(MapOperatorSocket<EventA, EventB>), map.OperatorType);
+            Assert.AreEqual(typeof(MapOperatorShell<EventA, EventB>), map.OperatorType);
         }
 
         [Test]
@@ -100,7 +100,7 @@ namespace BlackSP.CRA.UnitTests
         {
             var join = publicConfigurator.AddJoin<SampleJoinOperator, EventA, EventB, EventC>(1);
             Assert.AreEqual(typeof(SampleJoinOperator), join.OperatorConfigurationType);
-            Assert.AreEqual(typeof(JoinOperatorSocket<EventA, EventB, EventC>), join.OperatorType);
+            Assert.AreEqual(typeof(JoinOperatorShell<EventA, EventB, EventC>), join.OperatorType);
         }
 
         [Test]
@@ -108,7 +108,7 @@ namespace BlackSP.CRA.UnitTests
         {
             var aggregate = publicConfigurator.AddAggregate<SampleAggregateOperator, EventC, EventD>(1);
             Assert.AreEqual(typeof(SampleAggregateOperator), aggregate.OperatorConfigurationType);
-            Assert.AreEqual(typeof(AggregateOperatorSocket<EventC, EventD>), aggregate.OperatorType);
+            Assert.AreEqual(typeof(AggregateOperatorShell<EventC, EventD>), aggregate.OperatorType);
         }
 
         [Test]
@@ -116,7 +116,7 @@ namespace BlackSP.CRA.UnitTests
         {
             var sink = publicConfigurator.AddSink<SampleSinkOperator, EventD>(1);
             Assert.AreEqual(typeof(SampleSinkOperator), sink.OperatorConfigurationType);
-            Assert.AreEqual(typeof(SinkOperatorSocket<EventD>), sink.OperatorType);
+            Assert.AreEqual(typeof(SinkOperatorShell<EventD>), sink.OperatorType);
         }
     }
 }

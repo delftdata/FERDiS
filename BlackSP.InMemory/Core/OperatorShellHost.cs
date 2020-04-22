@@ -9,9 +9,9 @@ namespace BlackSP.InMemory.Core
     public class OperatorShellHost
     {
 
-        private readonly IOperatorSocket _operator;
+        private readonly IOperatorShell _operator;
 
-        public OperatorShellHost(IOperatorSocket @operator)
+        public OperatorShellHost(IOperatorShell @operator)
         {
             _operator = @operator ?? throw new ArgumentNullException(nameof(@operator));
         }

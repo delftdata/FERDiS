@@ -13,7 +13,7 @@ namespace BlackSP.CRA.Vertices
     {
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
-        private IOperatorSocket _bspOperator;
+        private IOperatorShell _bspOperator;
         private IHostParameter _options;
         
         public OperatorVertex()
@@ -56,11 +56,11 @@ namespace BlackSP.CRA.Vertices
             _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();
         }
 
-        private IOperatorSocket ResolveOperatorShell()
+        private IOperatorShell ResolveOperatorShell()
         {
             Type operatorType = _options.OperatorShellType;
-            return _vertexLifetimeScope.Resolve(operatorType) as IOperatorSocket
-                ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be casted to {typeof(IOperatorSocket)}");
+            return _vertexLifetimeScope.Resolve(operatorType) as IOperatorShell
+                ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be casted to {typeof(IOperatorShell)}");
         }
 
         private void SetupInputEndpoints()

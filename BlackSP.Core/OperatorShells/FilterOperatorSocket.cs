@@ -5,14 +5,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Core.OperatorSockets
+namespace BlackSP.Core.OperatorShells
 {
-    public class FilterOperatorSocket<TEvent> : OperatorSocketBase 
+    public class FilterOperatorShell<TEvent> : OperatorShellBase 
         where TEvent : class, IEvent
     {
         private readonly IFilterOperator<TEvent> _pluggedInOperator;
 
-        public FilterOperatorSocket(IFilterOperator<TEvent> pluggedInOperator) : base(pluggedInOperator)
+        public FilterOperatorShell(IFilterOperator<TEvent> pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator;
         }
