@@ -28,7 +28,7 @@ Defines application-wide interfaces and primarily serves as a root dependency fo
 
 ### BlackSP.Core
 **Type: Class library**
-Implements OperatorShell and Endpoint interfaces as defined in **BlackSP.Kernel**. Provides abstract and concrete implementations for regular and windowed operators, for example: Source-/Sink-/Join-/Map-OperatorSocket. Each OperatorSocket consumes an Operator which is user defined and adheres to relevant interfaces. For example the MapOperator which requires a Map method to be implemented. These Operator classes are ment to be implemented by the consumer of the library and can be statefull through class properties.
+Implements OperatorShell and Endpoint interfaces as defined in **BlackSP.Kernel**. Provides abstract and concrete implementations for regular and windowed operators, for example: Source-/Sink-/Join-/Map-OperatorShell. Each OperatorShell consumes an Operator which is user defined and adheres to relevant interfaces. For example the MapOperator which requires a Map method to be implemented. These Operator classes are ment to be implemented by the consumer of the library and can be statefull through class properties.
 
 The Endpoint implementations include the primary streaming and partitioning logic. It depends on a serializer to perform the actual serialization. Endpoints expect to be connected to one-another by the infrastructure they run on.
 
