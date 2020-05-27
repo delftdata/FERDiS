@@ -27,6 +27,7 @@ namespace BlackSP.CRA.Endpoints
                 //CRA invokes current method on a background thread 
                 //so just invoke Egress on this thread
                 Console.WriteLine($"Output channel connecting to {otherVertex}${otherEndpoint}${otherShardId} starting");
+                _bspOutputEndpoint.RegisterRemoteShard(otherShardId);
                 await _bspOutputEndpoint.Egress(stream, otherShardId, token);
             }
             catch (Exception e)

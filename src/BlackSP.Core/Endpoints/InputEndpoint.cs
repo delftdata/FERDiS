@@ -65,15 +65,25 @@ namespace BlackSP.Core.Endpoints
         private async Task ReadMessagesFromStream(Stream s, CancellationToken t)
         {
             var reader = s.UsePipeReader(0, null, t); //PipeReader.Create(s, new StreamPipeReaderOptions());
+            
+            ReadResult readRes = await reader.ReadAsync(t);
+            var currentBuffer = readRes.Buffer;
             while (!t.IsCancellationRequested) 
             {
-                ReadResult readRes = await reader.ReadAsync(t);
-                if(reader.TryReadMessage(readRes, out var msgbodySequence, out var bufferAfterRead))
+                
+                if(currentBuffer.TryReadMessage(out var msgbodySequence, out var readPosition))
                 {
                     //and queue the message sequence for later processing
                     PrepareMessageForProcessing(msgbodySequence);
+                    currentBuffer = currentBuffer.Slice(readPosition);
                 }
-                reader.AdvanceTo(bufferAfterRead.Start);
+                else
+                {
+                    reader.AdvanceTo(readPosition);
+                    readRes = await reader.ReadAsync(t);
+                    currentBuffer = readRes.Buffer;
+                }
+                
             }
         }
 

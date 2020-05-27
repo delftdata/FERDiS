@@ -44,12 +44,15 @@ namespace BlackSP.CRA.Kubernetes
             Console.WriteLine($"=============================== Launching on Kubernetes ===============================");
             Console.WriteLine($"> kubectl apply -f {lastWrittenYamlFile}");
             Console.WriteLine($"> kubectl delete -f {lastWrittenYamlFile}");
+            Console.WriteLine($"> kubectl logs -l instance=crainst01 -f"); //watching a particular instance/shard
+            Console.WriteLine($"> kubectl logs -l operator=source01 -f"); //watching logs of all shards of an operator
             Console.WriteLine($"=======================================================================================");
-            Console.WriteLine($"DOCKER");
-            //run with environment
-            Console.Write($"docker run --env AZURE_STORAGE_CONN_STRING=\"{Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING")}\"");
+            Console.WriteLine($"");
+            Console.WriteLine($"================================= Launching on Docker =================================");
+            Console.Write($"> docker run --env AZURE_STORAGE_CONN_STRING=\"{Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING")}\"");
             Console.Write($" mdzwart/cra-net2.1:latest"); //container spec
-            Console.Write($" crainst01 1500"); //commandline args
+            Console.WriteLine($" crainst01 1500"); //commandline args
+            Console.WriteLine($"=======================================================================================");
             Console.WriteLine($"");
         }
 

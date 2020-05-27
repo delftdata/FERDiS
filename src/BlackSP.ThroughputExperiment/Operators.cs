@@ -12,8 +12,8 @@ namespace BlackSP.ThroughputExperiment
 
     static class Constants
     {
-        public static int TotalEventsToSent = 100 * 10000;
-        public static int EventsBeforeProgressLog = 10 * 10000;
+        public static int TotalEventsToSent = 2 * 1000 * 1000;
+        public static int EventsBeforeProgressLog = 100 * 1000;
     }
 
     class SampleSourceOperator : ISourceOperator<SampleEvent>
@@ -28,10 +28,10 @@ namespace BlackSP.ThroughputExperiment
             
             for(int i = 0; i < 10000; i++)
             {
-                if (counter > 0 && counter % Constants.EventsBeforeProgressLog == 0)
-                {
-                    Console.WriteLine($">> Source emitted {Constants.EventsBeforeProgressLog} events");
-                }
+                //if (counter > 0 && counter % Constants.EventsBeforeProgressLog == 0)
+                //{
+                //    Console.WriteLine($">> Source emitted {Constants.EventsBeforeProgressLog} events");
+                //}
 
                 if (counter > Constants.TotalEventsToSent) //emit at most this many events
                 {
@@ -64,6 +64,9 @@ namespace BlackSP.ThroughputExperiment
             if (isfirst)
             {
                 isfirst = false;
+                StartTime = DateTime.Now;
+                EventCount = 0;
+                TotalLatencyMs = 0;
             }
             totalEventCount++;
             EventCount++;
@@ -71,7 +74,6 @@ namespace BlackSP.ThroughputExperiment
             TotalLatencyMs += latency.TotalMilliseconds;
             if (EventCount % Constants.EventsBeforeProgressLog == 0)
             {
-
                 //throughput
                 //- avg (counter / total time)
                 var runningTimeSeconds = (DateTime.Now - StartTime).TotalSeconds;
@@ -81,8 +83,8 @@ namespace BlackSP.ThroughputExperiment
                 
                 //- avg (total latency / counter)
                 var avgLatencyMs = TotalLatencyMs / EventCount;
-                //- min
-                //- max
+                //- min?
+                //- max?
                 Console.WriteLine($">> Sink stats - time: {runningTimeSeconds:0.00}s - events: {totalEventCount} - throughput: {avgThroughputPerSec:0.00} e/s - latency: {avgLatencyMs:0}ms");
                 StartTime = DateTime.Now;
                 EventCount = 0;
@@ -102,11 +104,11 @@ namespace BlackSP.ThroughputExperiment
         {
             counter++;
 
-            if(counter%Constants.EventsBeforeProgressLog == 0)
-            {
-                Console.WriteLine($">> Mapper is at {counter}");
+            //if(counter%Constants.EventsBeforeProgressLog == 0)
+            //{
+            //    Console.WriteLine($">> Mapper is at {counter}");
 
-            }
+            //}
             yield return new SampleEvent(@event.Key, @event.EventTime, @event.Value);
         }
     }

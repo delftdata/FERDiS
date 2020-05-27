@@ -28,7 +28,7 @@ namespace BlackSP.Core.Endpoints
         private readonly BlockingCollection<Tuple<IEvent, OutputMode>> _outputQueue;
         private readonly IDictionary<int, BlockingCollection<MemoryStream>> _shardedMessageQueues; //default BlockingCollection implementation is a ConcurrentQueue
         private readonly Task _messageSerializationThread;
-        private int? _shardCount;
+        private int _shardCount;
 
         public OutputEndpoint(IOperatorShell targetOperator, ISerializer serializer, RecyclableMemoryStreamManager memStreamPool)
         {
@@ -219,9 +219,9 @@ namespace BlackSP.Core.Endpoints
                     msgBuffer.Dispose(); //return buffer to recyclemanager
                     break;
                 case OutputMode.Partition:
-                    string key = "";
+                    //string key = "";
                     
-                    int x = _shardCount ?? throw new ArgumentNullException("shard count not set, see: 'SetRemoteShardCount(int)'");
+                    //int x = _shardCount ?? throw new ArgumentNullException("shard count not set, see: 'SetRemoteShardCount(int)'");
                     int target = 0; //TODO: hash partition function
                     var targetShardQueue = _shardedMessageQueues[target];
                     targetShardQueue.Add(msgBuffer);
