@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Pipelines;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -54,6 +55,18 @@ namespace BlackSP.Core.Extensions
             readPosition = readSequence.End;
             //slice what was read off the buffer
             return readSequence.Length > 0;
+        }
+
+        /// <summary>
+        /// Copy bytes in the ReadOnlySequence to a stream
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        public static Stream ToStream(this ReadOnlySequence<byte> buffer)
+        {
+            Span<byte> msgCopy = stackalloc byte[(int)buffer.Length];
+            buffer.CopyTo(msgCopy);
+            return new MemoryStream(msgCopy.ToArray());
         }
     }
 }

@@ -21,20 +21,11 @@ namespace BlackSP.Core.Endpoints
     {
         private IOperatorShell _operator;
         private ISerializer _serializer;
-        private ArrayPool<byte> _msgBufferPool;
 
-        private BlockingCollection<Stream> _unprocessedMessages;
-        private readonly Task _messageDeserializationThread;
-
-        public InputEndpoint(IOperatorShell targetOperator, ISerializer serializer, ArrayPool<byte> byteArrayPool)
+        public InputEndpoint(IOperatorShell targetOperator, ISerializer serializer)
         {
             _operator = targetOperator ?? throw new ArgumentNullException(nameof(targetOperator));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-            _msgBufferPool = byteArrayPool ?? throw new ArgumentNullException(nameof(byteArrayPool));
-
-            _unprocessedMessages = new BlockingCollection<Stream>();
-
-            _messageDeserializationThread = Task.Run(() => DeserializeMessages(_operator.CancellationToken));
         }
 
         /// <summary>
@@ -47,11 +38,14 @@ namespace BlackSP.Core.Endpoints
         {
             //cancels when launching thread requests cancel or when operator requests cancel
             using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(t, _operator.CancellationToken))
+            using (var sharedMsgQueue = new BlockingCollection<Stream>())
             {
                 var token = linkedTokenSource.Token;
-                var streamReadingThread = Task.Run(() => ReadMessagesFromStream(s, token));
-
-                var exitedThread = await Task.WhenAny(streamReadingThread, _messageDeserializationThread).ConfigureAwait(true);
+                var exitedThread = await Task.WhenAny(
+                        ReadMessagesFromStream(s, sharedMsgQueue, token), 
+                        DeserializeMessages(sharedMsgQueue, token)
+                    ).ConfigureAwait(true);
+                
                 await exitedThread.ConfigureAwait(true); //await the exited thread so any thrown exception will be rethrown
             }
         }
@@ -62,19 +56,17 @@ namespace BlackSP.Core.Endpoints
         /// <param name="s"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        private async Task ReadMessagesFromStream(Stream s, CancellationToken t)
+        private async Task ReadMessagesFromStream(Stream s, BlockingCollection<Stream> deserializationQueue, CancellationToken t)
         {
-            var reader = s.UsePipeReader(0, null, t); //PipeReader.Create(s, new StreamPipeReaderOptions());
+            var reader = s.UsePipeReader(0, null, t);
             
             ReadResult readRes = await reader.ReadAsync(t);
             var currentBuffer = readRes.Buffer;
             while (!t.IsCancellationRequested) 
             {
-                
                 if(currentBuffer.TryReadMessage(out var msgbodySequence, out var readPosition))
                 {
-                    //and queue the message sequence for later processing
-                    PrepareMessageForProcessing(msgbodySequence);
+                    deserializationQueue.Add(msgbodySequence.ToStream());
                     currentBuffer = currentBuffer.Slice(readPosition);
                 }
                 else
@@ -83,22 +75,18 @@ namespace BlackSP.Core.Endpoints
                     readRes = await reader.ReadAsync(t);
                     currentBuffer = readRes.Buffer;
                 }
-                
             }
         }
 
-        private void PrepareMessageForProcessing(ReadOnlySequence<byte> msgBody)
+        /// <summary>
+        /// Enters blocking loop that consumes from blocking collection and deserializes the data in the streams
+        /// </summary>
+        /// <param name="deserializationQueue"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        private async Task DeserializeMessages(BlockingCollection<Stream> deserializationQueue, CancellationToken t)
         {
-            Span<byte> msgCopy = stackalloc byte[(int)msgBody.Length];
-            msgBody.CopyTo(msgCopy);
-            _unprocessedMessages.Add(new MemoryStream(msgCopy.ToArray()));
-
-        }
-
-        private async Task DeserializeMessages(CancellationToken t)
-        {
-            //TODO: batch parallelize
-            foreach (var msgStream in _unprocessedMessages.GetConsumingEnumerable(t))
+            foreach (var msgStream in deserializationQueue.GetConsumingEnumerable(t))
             {
                 try
                 {
@@ -113,8 +101,7 @@ namespace BlackSP.Core.Endpoints
                 } 
                 catch(Exception e)
                 {
-                    var x = 3;
-                    //throw;
+                    throw;
                 }
                   
             }
@@ -129,8 +116,6 @@ namespace BlackSP.Core.Endpoints
             {
                 if (disposing)
                 {
-                    _messageDeserializationThread.Dispose();
-                    _unprocessedMessages.Dispose();
                 }
 
                 disposedValue = true;
