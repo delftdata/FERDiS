@@ -20,16 +20,11 @@ namespace BlackSP.Core.OperatorShells
         
         public WindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)
         {
-            _pluggedInOperator = pluggedInOperator;            
+            _pluggedInOperator = pluggedInOperator;
+            _currentWindow = new FixedEventWindow<TIn>(DateTime.MinValue, _pluggedInOperator.WindowSize);
         }
 
-        public override Task Start(DateTime at)
-        {
-            _currentWindow = new FixedEventWindow<TIn>(at, _pluggedInOperator.WindowSize);
-            return base.Start(at);
-        }
-
-        protected sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
+        public sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
             var typedEvent = @event as TIn ?? throw new ArgumentException($"Argument {nameof(@event)} was of type {@event.GetType()}, expected: {typeof(TIn)}");

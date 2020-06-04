@@ -19,7 +19,7 @@ namespace BlackSP.InMemory.Core
         public Task Start(string instanceName)
         {
             Console.WriteLine($"{instanceName} - Starting operator shell {_operator.GetType()}");
-            return _operator.Start(DateTime.Now);
+            throw new Exception("ERROR: GOTTA SWAP OPERATORSHELL FOR MESSAGEPROCESSOR");//return _operator.Start(DateTime.Now);
         }
     }
 }

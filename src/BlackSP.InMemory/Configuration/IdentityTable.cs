@@ -7,20 +7,20 @@ namespace BlackSP.InMemory.Configuration
 {
     public class IdentityTable
     {
-        private readonly IDictionary<string, IHostParameter> _instanceParameters;
+        private readonly IDictionary<string, IHostConfiguration> _instanceParameters;
         
         public IdentityTable()
         {
-            _instanceParameters = new Dictionary<string, IHostParameter>();
+            _instanceParameters = new Dictionary<string, IHostConfiguration>();
         }
 
-        public void Add(string instanceName, IHostParameter parameter)
+        public void Add(string instanceName, IHostConfiguration parameter)
         {
             _instanceParameters.Add(instanceName, parameter);
             
         }
 
-        public IHostParameter GetHostParameter(string instanceName)
+        public IHostConfiguration GetHostConfiguration(string instanceName)
         {
             return _instanceParameters[instanceName];
         }

@@ -18,6 +18,6 @@ namespace BlackSP.Kernel.Endpoints
         /// <param name="s"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        Task Ingress(Stream s, CancellationToken t);
+        Task Ingress(Stream s, string remoteEndpointName, int remoteShardId, CancellationToken t);
     }
 }

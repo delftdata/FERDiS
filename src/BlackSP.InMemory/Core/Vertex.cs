@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace BlackSP.InMemory.Core
 {
     /// <summary>
-    /// Represents a single machine in the in memory distributed system
+    /// Represents a single machine in the simulated distributed system
     /// </summary>
     public class Vertex
     {
@@ -32,22 +32,22 @@ namespace BlackSP.InMemory.Core
         {
             _ = instanceName ?? throw new ArgumentNullException(nameof(instanceName));
 
-            IHostParameter hostParameter = _identityTable.GetHostParameter(instanceName);
+            IHostConfiguration hostParameter = _identityTable.GetHostConfiguration(instanceName);
             var dependencyScope = _parentScope.BeginLifetimeScope(b => b.RegisterBlackSPComponents(hostParameter));
             try
             {
                 var threads = new List<Task>();
                 var operatorHost = dependencyScope.Resolve<OperatorShellHost>();
-                foreach (var endpointName in hostParameter.InputEndpointNames)
+                foreach (var endpointConfig in hostParameter.VertexConfiguration.InputEndpoints)
                 {
                     var endpoint = dependencyScope.Resolve<InputEndpointHost>();
-                    threads.Add(endpoint.Start(instanceName, endpointName, _vertexTokenSource.Token));
+                    threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, _vertexTokenSource.Token));
                 }
 
-                foreach (var endpointName in hostParameter.OutputEndpointNames)
+                foreach (var endpointConfig in hostParameter.VertexConfiguration.OutputEndpoints)
                 {
                     var endpoint = dependencyScope.Resolve<OutputEndpointHost>();
-                    threads.Add(endpoint.Start(instanceName, endpointName, _vertexTokenSource.Token));
+                    threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, _vertexTokenSource.Token));
                 }
                 
                 threads.Add(Task.Run(() => operatorHost.Start(instanceName)));

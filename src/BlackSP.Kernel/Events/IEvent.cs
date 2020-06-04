@@ -9,5 +9,7 @@ namespace BlackSP.Kernel.Events
         string Key { get; }
 
         DateTime EventTime { get; }
+
+        int GetPartitionKey();
     }
 }

@@ -35,9 +35,7 @@ namespace BlackSP.InMemory.Core
                 Stream s = outgoingStreams[shardId];
                 Connection c = outgoingConnections[shardId];
                 Console.WriteLine($"{instanceName} - Starting output endpoint {endpointName}, shard {shardId}");
-                _outputEndpoint.RegisterRemoteShard(c.ToShardId);
-                _outputEndpoint.SetRemoteShardCount(c.ToShardCount);
-                threads.Add(Task.Run(() => _outputEndpoint.Egress(s, c.ToShardId, token)));
+                threads.Add(Task.Run(() => _outputEndpoint.Egress(s, c.ToEndpointName, c.ToShardId, token)));
             }
 
             await await Task.WhenAny(threads);

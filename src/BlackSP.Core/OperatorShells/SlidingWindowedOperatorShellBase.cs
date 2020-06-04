@@ -20,7 +20,7 @@ namespace BlackSP.Core.OperatorShells
             _currentWindows = new Dictionary<Type, SlidingEventWindow<IEvent>>();
         }
 
-        protected sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
+        public sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
 

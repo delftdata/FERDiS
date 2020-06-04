@@ -35,7 +35,7 @@ namespace BlackSP.InMemory.Core
                 Stream s = incomingStreams[shardId];
                 Connection c = incomingConnections[shardId];
                 Console.WriteLine($"{instanceName} - Starting input endpoint {endpointName}, shard {shardId}");
-                threads.Add(Task.Run(() => _inputEndpoint.Ingress(s, token)));
+                threads.Add(Task.Run(() => _inputEndpoint.Ingress(s, c.FromEndpointName, c.FromShardId, token)));
             }
 
             await await Task.WhenAny(threads);

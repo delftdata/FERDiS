@@ -62,11 +62,11 @@ namespace BlackSP.Core.Extensions
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        public static Stream ToStream(this ReadOnlySequence<byte> buffer)
+        public static byte[] ToArray(this ReadOnlySequence<byte> buffer)
         {
             Span<byte> msgCopy = stackalloc byte[(int)buffer.Length];
             buffer.CopyTo(msgCopy);
-            return new MemoryStream(msgCopy.ToArray());
+            return msgCopy.ToArray();
         }
     }
 }

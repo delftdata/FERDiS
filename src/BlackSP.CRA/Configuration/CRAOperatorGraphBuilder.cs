@@ -5,6 +5,7 @@ using BlackSP.CRA.Vertices;
 using BlackSP.Infrastructure.Configuration;
 using BlackSP.Infrastructure.Configuration.Operators;
 using BlackSP.Infrastructure.IoC;
+using BlackSP.Kernel;
 using BlackSP.Serialization.Extensions;
 using BlackSP.Serialization.Serializers;
 using CRA.ClientLibrary;
@@ -55,23 +56,16 @@ namespace BlackSP.CRA.Configuration
 
         private async Task RegisterCRAVertexAsync(IOperatorConfigurator target, string vertexDefinition)
         {
-            var vertexParameter = new HostParameter(
-                target.OperatorType,
-                target.OperatorConfigurationType,
-                target.InputEndpointNames.ToArray(),
-                typeof(InputEndpoint),
-                target.OutputEndpointNames.ToArray(),
-                typeof(OutputEndpoint),
-                typeof(ProtobufSerializer)
-            );
-
+            
+            IVertexConfiguration vertexConf = null; //TODO: construct & insert vertex configuration
+            var hostParameter = new HostConfiguration(target.OperatorType, target.OperatorConfigurationType, vertexConf);
             await _craClient.InstantiateVertexAsync(
                 target.InstanceNames,
                 target.OperatorName,
                 vertexDefinition,
-                vertexParameter.BinarySerialize(),
+                hostParameter.BinarySerialize(),
                 1
-            );
+            ).ConfigureAwait(true);
         }
     }
 }

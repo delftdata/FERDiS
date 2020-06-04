@@ -17,7 +17,7 @@ namespace BlackSP.Core.OperatorShells
             _pluggedInOperator = pluggedInOperator;
         }
 
-        protected override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
+        public override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
             var typedEvent = @event as TIn ?? throw new ArgumentException($"Argument \"{nameof(@event)}\" was of type {@event.GetType()}, expected: {typeof(TIn)}");

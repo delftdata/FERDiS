@@ -24,5 +24,10 @@ namespace BlackSP.ThroughputExperiment.Events
             EventTime = eventTime ?? throw new ArgumentNullException(nameof(eventTime));
             Value2 = value2 ?? throw new ArgumentNullException(nameof(value2));
         }
+
+        public int GetPartitionKey()
+        {
+            return Key.GetHashCode();
+        }
     }
 }

@@ -1,8 +1,12 @@
 ﻿using Autofac;
+using BlackSP.Core;
+using BlackSP.Core.Endpoints;
 using BlackSP.Infrastructure.IoC;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Operators;
 using BlackSP.Kernel.Serialization;
+using BlackSP.Serialization.Serializers;
 using Microsoft.IO;
 using System;
 using System.Buffers;
@@ -15,23 +19,34 @@ namespace BlackSP.Infrastructure.Extensions
     public static class AutofacExtensions
     {
 
-        public static ContainerBuilder RegisterBlackSPComponents(this ContainerBuilder builder, IHostParameter hostParameter)
+        public static ContainerBuilder UseMessageProcessing(this ContainerBuilder builder)
         {
-            _ = hostParameter ?? throw new ArgumentNullException(nameof(hostParameter));
-
-            builder.RegisterType(hostParameter.OperatorShellType)
-                   .As(typeof(IOperatorShell), hostParameter.OperatorShellType)
-                   .InstancePerLifetimeScope();
-
-            builder.RegisterConcreteClassAsDefined(hostParameter.OperatorType, true);
-            builder.RegisterConcreteClassAsType<IInputEndpoint>(hostParameter.InputEndpointType);
-            builder.RegisterConcreteClassAsType<IOutputEndpoint>(hostParameter.OutputEndpointType);
-            builder.RegisterConcreteClassAsType<ISerializer>(hostParameter.SerializerType);
-
             //TODO: register logger?
+            builder.RegisterType<MessageProcessor>().As<IMessageProcessor>().SingleInstance();
+            builder.RegisterType<MessageDeliverer>().As<IMessageDeliverer>().SingleInstance();
+            builder.RegisterType<MessageDispatcher>().As<IMessageDispatcher>().SingleInstance();
+            builder.RegisterType<MessageReceiver>().As<IMessageReceiver>().SingleInstance();
+            builder.RegisterType<MessageSerializer>().As<IMessageSerializer>();
+            builder.RegisterType<MessagePartitioner>().As<IMessagePartitioner>();
 
             builder.RegisterInstance(ArrayPool<byte>.Create()); //register one arraypool for all components to share
             builder.RegisterInstance(new RecyclableMemoryStreamManager()); //register one memorystreampool for all components to share
+
+            builder.RegisterType<InputEndpoint>().As<IInputEndpoint>();
+            builder.RegisterType<OutputEndpoint>().As<IOutputEndpoint>();
+            builder.RegisterType<ProtobufSerializer>().As<ISerializer>();
+            return builder;
+        }
+
+        public static ContainerBuilder UseOperatorMiddleware(this ContainerBuilder builder, IHostConfiguration hostConfig)
+        {
+            _ = hostConfig ?? throw new ArgumentNullException(nameof(hostConfig));
+
+            builder.RegisterType(hostConfig.OperatorShellType)
+                   .As(typeof(IOperatorShell), hostConfig.OperatorShellType)
+                   .InstancePerLifetimeScope();
+
+            builder.RegisterConcreteClassAsType<IOperator>(hostConfig.OperatorType, true);
             return builder;
         }
 

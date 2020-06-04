@@ -9,8 +9,10 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Core.Extensions;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using BlackSP.Kernel.Serialization;
 using Nerdbank.Streams;
@@ -19,13 +21,15 @@ namespace BlackSP.Core.Endpoints
 {
     public class InputEndpoint : IInputEndpoint, IDisposable
     {
-        private IOperatorShell _operator;
-        private ISerializer _serializer;
+        private readonly IMessageSerializer _serializer;
+        private readonly IMessageReceiver _receiver;
+        private readonly IEndpointConfiguration _endpointConfig;
 
-        public InputEndpoint(IOperatorShell targetOperator, ISerializer serializer)
+        public InputEndpoint(IMessageSerializer serializer,
+                             IMessageReceiver receiver)
         {
-            _operator = targetOperator ?? throw new ArgumentNullException(nameof(targetOperator));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+            _receiver = receiver ?? throw new ArgumentNullException(nameof(receiver));
         }
 
         /// <summary>
@@ -34,76 +38,31 @@ namespace BlackSP.Core.Endpoints
         /// </summary>
         /// <param name="s"></param>
         /// <param name="t"></param>
-        public async Task Ingress(Stream s, CancellationToken t)
+        public async Task Ingress(Stream s, string remoteEndpointName, int remoteShardId, CancellationToken t)
         {
-            //cancels when launching thread requests cancel or when operator requests cancel
-            using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(t, _operator.CancellationToken))
-            using (var sharedMsgQueue = new BlockingCollection<Stream>())
+            //TODO: consider if required
+            //using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(t, _messageProcessor.GetCancellationToken()))
+            using (var sharedMsgQueue = new BlockingCollection<byte[]>())
             {
-                var token = linkedTokenSource.Token;
+                var token = t;//TODO: ?? linkedTokenSource.Token;
                 var exitedThread = await Task.WhenAny(
-                        ReadMessagesFromStream(s, sharedMsgQueue, token), 
-                        DeserializeMessages(sharedMsgQueue, token)
+                        s.ReadMessagesTo(sharedMsgQueue, token),
+                        DeserializeToReceiver(sharedMsgQueue, remoteShardId, token)
                     ).ConfigureAwait(true);
-                
                 await exitedThread.ConfigureAwait(true); //await the exited thread so any thrown exception will be rethrown
             }
         }
 
-        /// <summary>
-        /// Starts reading from provided stream and storing byte[]s of the messages in this local queue.
-        /// </summary>
-        /// <param name="s"></param>
-        /// <param name="t"></param>
-        /// <returns></returns>
-        private async Task ReadMessagesFromStream(Stream s, BlockingCollection<Stream> deserializationQueue, CancellationToken t)
+        private async Task DeserializeToReceiver(BlockingCollection<byte[]> inputqueue, int shardId, CancellationToken t)
         {
-            var reader = s.UsePipeReader(0, null, t);
-            
-            ReadResult readRes = await reader.ReadAsync(t);
-            var currentBuffer = readRes.Buffer;
-            while (!t.IsCancellationRequested) 
+            foreach(var bytes in inputqueue.GetConsumingEnumerable(t))
             {
-                if(currentBuffer.TryReadMessage(out var msgbodySequence, out var readPosition))
+                IMessage message = await _serializer.DeserializeMessage(bytes, t).ConfigureAwait(false);
+                if(message == null)
                 {
-                    deserializationQueue.Add(msgbodySequence.ToStream());
-                    currentBuffer = currentBuffer.Slice(readPosition);
+                    throw new Exception("unexpected null message from deserializer");//TODO: custom exception?
                 }
-                else
-                {
-                    reader.AdvanceTo(readPosition);
-                    readRes = await reader.ReadAsync(t);
-                    currentBuffer = readRes.Buffer;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Enters blocking loop that consumes from blocking collection and deserializes the data in the streams
-        /// </summary>
-        /// <param name="deserializationQueue"></param>
-        /// <param name="t"></param>
-        /// <returns></returns>
-        private async Task DeserializeMessages(BlockingCollection<Stream> deserializationQueue, CancellationToken t)
-        {
-            foreach (var msgStream in deserializationQueue.GetConsumingEnumerable(t))
-            {
-                try
-                {
-                    var nextEvent = await _serializer.Deserialize<IEvent>(msgStream, t).ConfigureAwait(false);
-                    if (nextEvent == null)
-                    {
-                        //TODO: log/throw?
-                        Console.WriteLine("This absolutely shouldnt happen");
-                        continue;
-                    }
-                    _operator.Enqueue(nextEvent);
-                } 
-                catch(Exception e)
-                {
-                    throw;
-                }
-                  
+                _receiver.Receive(message, _endpointConfig, shardId);
             }
         }
 

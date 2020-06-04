@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Core;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Infrastructure.IoC;
 using BlackSP.Kernel.Operators;
@@ -14,7 +15,7 @@ namespace BlackSP.CRA.Vertices
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
         private IOperatorShell _bspOperator;
-        private IHostParameter _options;
+        private IHostConfiguration _options;
         
         public OperatorVertex()
         {
@@ -27,18 +28,16 @@ namespace BlackSP.CRA.Vertices
         public override Task InitializeAsync(int shardId, ShardingInfo shardingInfo, object vertexParameter)
         {
             Console.WriteLine("Starting CRA Vertex initialization");
-
-            //AppDomain.CurrentDomain.LoadAllAvailableAssemblies(Assembly.GetEntryAssembly()); //ensure dependency types are loaded (otherwise they remain invisible)
-
-            _options = (vertexParameter as byte[])?.BinaryDeserialize() as IHostParameter ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IHostParameter)}"); ;
+            _options = (vertexParameter as byte[])?.BinaryDeserialize() as IHostConfiguration ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IHostConfiguration)}"); ;
             Console.WriteLine("Installing dependency container");
+            
             InitializeIoCContainer();
             
-            _bspOperator = ResolveOperatorShell();
-            SetupInputEndpoints();
-            SetupOutputEndpoints();
-                   
-            _bspOperator.Start(DateTime.Now);
+            _bspOperator = CreateOperatorShell();
+            CreateEndpoints();
+
+            //TODO: swap out for messageprocessor
+            //_bspOperator.Start(DateTime.Now);
             
             Console.WriteLine("Vertex initialization completed");
             return Task.CompletedTask;
@@ -46,8 +45,9 @@ namespace BlackSP.CRA.Vertices
 
         private void InitializeIoCContainer()
         {
-
-            _dependencyContainer = new ContainerBuilder().RegisterBlackSPComponents(_options)
+            _dependencyContainer = new ContainerBuilder()
+                .UseMessageProcessing()
+                .RegisterBlackSPComponents(_options)
                 .RegisterAllConcreteClassesOfType<IAsyncShardedVertexInputEndpoint>()
                 .RegisterAllConcreteClassesOfType<IAsyncShardedVertexOutputEndpoint>()
                 .Build();
@@ -56,26 +56,22 @@ namespace BlackSP.CRA.Vertices
             _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();
         }
 
-        private IOperatorShell ResolveOperatorShell()
+        private IOperatorShell CreateOperatorShell()
         {
             Type operatorType = _options.OperatorShellType;
             return _vertexLifetimeScope.Resolve(operatorType) as IOperatorShell
                 ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be casted to {typeof(IOperatorShell)}");
         }
 
-        private void SetupInputEndpoints()
+        private void CreateEndpoints()
         {
-            foreach (string endpointName in _options.InputEndpointNames)
+            foreach (var endpointConfig in _options.VertexConfiguration.InputEndpoints)
             {
-                AddAsyncInputEndpoint(endpointName, _vertexLifetimeScope.Resolve<IAsyncShardedVertexInputEndpoint>());
+                AddAsyncInputEndpoint(endpointConfig.LocalEndpointName, _vertexLifetimeScope.Resolve<IAsyncShardedVertexInputEndpoint>());
             }
-        }
-
-        private void SetupOutputEndpoints()
-        {
-            foreach (string endpointName in _options.OutputEndpointNames)
+            foreach (var endpointConfig in _options.VertexConfiguration.OutputEndpoints)
             {
-                AddAsyncOutputEndpoint(endpointName, _vertexLifetimeScope.Resolve<IAsyncShardedVertexOutputEndpoint>());
+                AddAsyncOutputEndpoint(endpointConfig.LocalEndpointName, _vertexLifetimeScope.Resolve<IAsyncShardedVertexOutputEndpoint>());
             }
         }
 

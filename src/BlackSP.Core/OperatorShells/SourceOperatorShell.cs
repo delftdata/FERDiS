@@ -18,10 +18,11 @@ namespace BlackSP.Core.OperatorShells
             _pluggedInOperator = pluggedInOperator;
         }
 
-        public override Task Start(DateTime at)
+        //TODO: consider how to spontaneously emit events
+
+        /*public override Task Start(DateTime at)
         {
-            //TODO: swap test for real producing
-            var t =  base.Start(at);
+            //var t =  base.Start(at);
             var t2 = Task.Run(async () =>
             {
                 Console.WriteLine("Starting in 10 seconds");
@@ -35,14 +36,14 @@ namespace BlackSP.Core.OperatorShells
                 CancellationToken.ThrowIfCancellationRequested();
             });
             return Task.WhenAny(t,t2);
-        }
+        }*/
 
         /// <summary>
         /// This method will never be invoked, a source operator will never have an input endpoint.
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        protected override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
+        public override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
         {
             throw new NotImplementedException(); 
         }

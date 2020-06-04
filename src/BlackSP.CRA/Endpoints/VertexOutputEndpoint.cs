@@ -24,11 +24,10 @@ namespace BlackSP.CRA.Endpoints
         {
             try
             {
-                //CRA invokes current method on a background thread 
-                //so just invoke Egress on this thread
+                //CRA invokes current method on a background thread so just invoke Egress on this thread
                 Console.WriteLine($"Output channel connecting to {otherVertex}${otherEndpoint}${otherShardId} starting");
-                _bspOutputEndpoint.RegisterRemoteShard(otherShardId);
-                await _bspOutputEndpoint.Egress(stream, otherShardId, token);
+                //_bspOutputEndpoint.RegisterRemoteShard(otherShardId);
+                await _bspOutputEndpoint.Egress(stream, otherEndpoint, otherShardId, token).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -44,18 +43,7 @@ namespace BlackSP.CRA.Endpoints
         }
 
         public void UpdateShardingInfo(string otherVertex, ShardingInfo shardingInfo)
-        {
-            Console.WriteLine($"Updating Sharding info in {this.GetType().Name}");
-            foreach (var shardId in shardingInfo.AddedShards)
-            {
-                _bspOutputEndpoint.RegisterRemoteShard(shardId);
-            }
-            foreach(var shardId in shardingInfo.RemovedShards)
-            {
-                _bspOutputEndpoint.UnregisterRemoteShard(shardId);
-            }
-            _bspOutputEndpoint.SetRemoteShardCount(shardingInfo.AllShards.Length);
-        }
+        {} //not supported in BlackSP
 
         public Task ToStreamAsync(Stream stream, string otherVertex, string otherEndpoint, CancellationToken token)
         {

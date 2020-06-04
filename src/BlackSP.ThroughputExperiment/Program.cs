@@ -34,10 +34,10 @@ namespace BlackSP.ThroughputExperiment
         static async Task Main(string[] args)
         {
             //CRA runtime usage..
-            await BlackSP.CRA.Launcher.LaunchWithAsync<ThroughputExperimentGraphConfiguration, AzureDataProvider>(args);
+            //await BlackSP.CRA.Launcher.LaunchWithAsync<ThroughputExperimentGraphConfiguration, AzureDataProvider>(args);
             
             //In Memory runtime usage..
-            //await BlackSP.InMemory.Launcher.LaunchWithAsync<ThroughputExperimentGraphConfiguration>(args);
+            await BlackSP.InMemory.Launcher.LaunchWithAsync<ThroughputExperimentGraphConfiguration>(args);
         }
     }
 }

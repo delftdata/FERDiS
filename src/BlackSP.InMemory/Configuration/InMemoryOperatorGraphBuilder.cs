@@ -4,6 +4,7 @@ using BlackSP.Infrastructure.Configuration;
 using BlackSP.Infrastructure.IoC;
 using BlackSP.InMemory.Core;
 using BlackSP.InMemory.Extensions;
+using BlackSP.Kernel;
 using BlackSP.Serialization.Serializers;
 using System;
 using System.Collections.Generic;
@@ -39,21 +40,13 @@ namespace BlackSP.InMemory.Configuration
             foreach (var configurator in Configurators)
             {
                 foreach (var instanceName in configurator.InstanceNames) {
-                    var vertexParameter = new HostParameter(
-                        configurator.OperatorType,
-                        configurator.OperatorConfigurationType,
-                        configurator.InputEndpointNames.ToArray(),
-                        typeof(InputEndpoint),
-                        configurator.OutputEndpointNames.ToArray(),
-                        typeof(OutputEndpoint),
-                        typeof(ProtobufSerializer)
-                    );
-                    _identityTable.Add(instanceName, vertexParameter);
+                    IVertexConfiguration vertexConf = null; //TODO: construct & insert vertex configuration
+                    var hostParameter = new HostConfiguration(configurator.OperatorType, configurator.OperatorConfigurationType, vertexConf);
+                    _identityTable.Add(instanceName, hostParameter);
                 }
             }
             var builder = new ContainerBuilder();
-
-            //builder.RegisterConcreteClassAsType<IOperatorShellHost>(typeof(OperatorShellHost), true);
+            //Note: invidivual Vertex instances register BlackSP types in their respective scopes
             builder.RegisterType<Vertex>();
             builder.RegisterType<VertexGraph>();
             builder.RegisterType<OperatorShellHost>();
