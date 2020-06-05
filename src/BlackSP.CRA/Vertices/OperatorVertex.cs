@@ -2,10 +2,12 @@
 using Autofac.Core;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Infrastructure.IoC;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Operators;
 using BlackSP.Serialization.Extensions;
 using CRA.ClientLibrary;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Vertices
@@ -14,11 +16,13 @@ namespace BlackSP.CRA.Vertices
     {
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
-        private IOperatorShell _bspOperator;
+        private IMessageProcessor _processor;
         private IHostConfiguration _options;
-        
+        private CancellationTokenSource _ctSource;
+
         public OperatorVertex()
         {
+            _ctSource = new CancellationTokenSource();
         }
         
         ~OperatorVertex() {
@@ -32,12 +36,8 @@ namespace BlackSP.CRA.Vertices
             Console.WriteLine("Installing dependency container");
             
             InitializeIoCContainer();
-            
-            _bspOperator = CreateOperatorShell();
+            _vertexLifetimeScope.StartMessageProcessorSubsystems(_ctSource.Token);
             CreateEndpoints();
-
-            //TODO: swap out for messageprocessor
-            //_bspOperator.Start(DateTime.Now);
             
             Console.WriteLine("Vertex initialization completed");
             return Task.CompletedTask;
@@ -47,20 +47,13 @@ namespace BlackSP.CRA.Vertices
         {
             _dependencyContainer = new ContainerBuilder()
                 .UseMessageProcessing()
-                .RegisterBlackSPComponents(_options)
+                .UseOperatorMiddleware(_options)
                 .RegisterAllConcreteClassesOfType<IAsyncShardedVertexInputEndpoint>()
                 .RegisterAllConcreteClassesOfType<IAsyncShardedVertexOutputEndpoint>()
                 .Build();
 
             Console.WriteLine("IoC setup completed");
             _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();
-        }
-
-        private IOperatorShell CreateOperatorShell()
-        {
-            Type operatorType = _options.OperatorShellType;
-            return _vertexLifetimeScope.Resolve(operatorType) as IOperatorShell
-                ?? throw new ArgumentException($"Resolved object with type {operatorType} could not be casted to {typeof(IOperatorShell)}");
         }
 
         private void CreateEndpoints()
@@ -86,6 +79,7 @@ namespace BlackSP.CRA.Vertices
         {
             if(disposing)
             {
+                _ctSource.Cancel();
                 _dependencyContainer.Dispose();
             }
             base.Dispose(disposing);

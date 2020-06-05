@@ -12,5 +12,12 @@ namespace BlackSP.Kernel.Models
         IDictionary<string, object> Metadata { get; }
 
         bool IsControl { get; }
+
+        /// <summary>
+        /// Returns a copy of the message with a new payload
+        /// </summary>
+        /// <param name="newPayload"></param>
+        /// <returns></returns>
+        IMessage Copy(IEvent newPayload);
     }
 }

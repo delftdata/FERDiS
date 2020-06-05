@@ -33,7 +33,7 @@ namespace BlackSP.InMemory.Core
             _ = instanceName ?? throw new ArgumentNullException(nameof(instanceName));
 
             IHostConfiguration hostParameter = _identityTable.GetHostConfiguration(instanceName);
-            var dependencyScope = _parentScope.BeginLifetimeScope(b => b.RegisterBlackSPComponents(hostParameter));
+            var dependencyScope = _parentScope.BeginLifetimeScope(b => b.UseOperatorMiddleware(hostParameter));
             try
             {
                 var threads = new List<Task>();

@@ -35,7 +35,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Infrastructure.Unit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Infrastructure", "BlackSP.Infrastructure\BlackSP.Infrastructure.csproj", "{FC485934-2DC4-4065-A6BA-B3666BDAB70B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackSP.InMemory", "BlackSP.InMemory\BlackSP.InMemory.csproj", "{F2EA9D36-28EF-4890-896D-1F76062B92E9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.InMemory", "BlackSP.InMemory\BlackSP.InMemory.csproj", "{F2EA9D36-28EF-4890-896D-1F76062B92E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackSP.Middlewares", "BlackSP.Middlewares\BlackSP.Middlewares.csproj", "{90E23BD4-5ED6-4703-BE66-42254040526F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +85,10 @@ Global
 		{F2EA9D36-28EF-4890-896D-1F76062B92E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F2EA9D36-28EF-4890-896D-1F76062B92E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F2EA9D36-28EF-4890-896D-1F76062B92E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90E23BD4-5ED6-4703-BE66-42254040526F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90E23BD4-5ED6-4703-BE66-42254040526F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90E23BD4-5ED6-4703-BE66-42254040526F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90E23BD4-5ED6-4703-BE66-42254040526F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

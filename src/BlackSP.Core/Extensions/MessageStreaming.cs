@@ -53,7 +53,7 @@ namespace BlackSP.Core.Extensions
         /// <param name="remoteShardId"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        public static async Task<byte[]> WriteMessagesFrom(this Stream outputStream, BlockingCollection<byte[]> inputQueue, CancellationToken t)
+        public static async Task WriteMessagesFrom(this Stream outputStream, BlockingCollection<byte[]> inputQueue, CancellationToken t)
         {
             _ = inputQueue ?? throw new ArgumentNullException(nameof(inputQueue));
 
@@ -62,42 +62,34 @@ namespace BlackSP.Core.Extensions
             var currentWriteBuffer = writer.GetMemory();
             foreach (var nextMsgBuffer in inputQueue.GetConsumingEnumerable(t))
             {
-                try
-                {
-                    int nextMsgLength = Convert.ToInt32(nextMsgBuffer.Length);
-                    Memory<byte> nextMsgLengthBytes = BitConverter.GetBytes(nextMsgLength).AsMemory();
-                    Memory<byte> nextMsgBodyBytes = nextMsgBuffer.AsMemory().Slice(0, nextMsgLength);
+                int nextMsgLength = Convert.ToInt32(nextMsgBuffer.Length);
+                Memory<byte> nextMsgLengthBytes = BitConverter.GetBytes(nextMsgLength).AsMemory();
+                Memory<byte> nextMsgBodyBytes = nextMsgBuffer.AsMemory().Slice(0, nextMsgLength);
 
-                    //reserve at least enough space for the actual message + 4 bytes for the leading size integer
-                    int bytesToWrite = nextMsgLength + 4;
+                //reserve at least enough space for the actual message + 4 bytes for the leading size integer
+                int bytesToWrite = nextMsgLength + 4;
 
-                    if (writtenBytes + bytesToWrite > currentWriteBuffer.Length)
-                    {   //the writebuffer is about to overflow, flush first
-                        writer.Advance(writtenBytes);
-                        await writer.FlushAsync();
-                        writtenBytes = 0;
+                if (writtenBytes + bytesToWrite > currentWriteBuffer.Length)
+                {   //the writebuffer is about to overflow, flush first
+                    writer.Advance(writtenBytes);
+                    await writer.FlushAsync();
+                    writtenBytes = 0;
 
-                        currentWriteBuffer = writer.GetMemory(bytesToWrite);
-                    }
-
-                    var msgLengthBufferSegment = currentWriteBuffer.Slice(writtenBytes, 4);
-                    nextMsgLengthBytes.CopyTo(msgLengthBufferSegment);
-
-                    var msgBodyBufferSegment = currentWriteBuffer.Slice(writtenBytes + 4, nextMsgLength);
-                    nextMsgBodyBytes.CopyTo(msgBodyBufferSegment);
-
-                    writtenBytes += bytesToWrite;
+                    currentWriteBuffer = writer.GetMemory(bytesToWrite);
                 }
-                catch (Exception)
-                {
-                    return nextMsgBuffer;
-                }
+
+                var msgLengthBufferSegment = currentWriteBuffer.Slice(writtenBytes, 4);
+                nextMsgLengthBytes.CopyTo(msgLengthBufferSegment);
+
+                var msgBodyBufferSegment = currentWriteBuffer.Slice(writtenBytes + 4, nextMsgLength);
+                nextMsgBodyBytes.CopyTo(msgBodyBufferSegment);
+
+                writtenBytes += bytesToWrite;
             }
             //before exiting flush any remaining bytes onto the stream
             await writer.FlushAsync();
             
             t.ThrowIfCancellationRequested();
-            return null;
         }
     }
 }

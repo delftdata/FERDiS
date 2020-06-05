@@ -15,6 +15,7 @@ using BlackSP.Core.Extensions;
 using System.Linq;
 using Nerdbank.Streams;
 using BlackSP.Kernel;
+using BlackSP.Core.Streaming;
 
 namespace BlackSP.Core.Endpoints
 {
@@ -22,6 +23,7 @@ namespace BlackSP.Core.Endpoints
     public class OutputEndpoint : IOutputEndpoint
     {
         private readonly IMessageDispatcher _dispatcher;
+        private readonly IEndpointConfiguration _endpointConfiguration;
 
         public OutputEndpoint(IMessageDispatcher dispatcher)
         {
@@ -42,11 +44,19 @@ namespace BlackSP.Core.Endpoints
             //cancels when launching thread requests cancel or when operator requests cancel
             //TODO: required? 
             //using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(t, _messageProcessor.GetCancellationToken()))
+            //{}
+            var token = t; //TODO: ?? linkedTokenSource.Token;
+            var msgBytesBuffer = _dispatcher.GetDispatchQueue(remoteEndpointName, remoteShardId);
+            var writer = new MessageStreamWriter(outputStream);
+            foreach(var message in msgBytesBuffer)
             {
-                var token = t; //TODO: ?? linkedTokenSource.Token;
-                var msgBytesBuffer = _dispatcher.GetDispatchQueue(remoteEndpointName, remoteShardId);
-                await outputStream.WriteMessagesFrom(msgBytesBuffer, token).ConfigureAwait(false);
+                var endpointTypeDeliveryFlag = _endpointConfiguration.IsControl ? DispatchFlags.Control : DispatchFlags.Data;
+                if (_dispatcher.GetDispatchFlags().HasFlag(endpointTypeDeliveryFlag))
+                {
+                    await writer.WriteMessage(message).ConfigureAwait(false);
+                }
             }
+            await outputStream.WriteMessagesFrom(msgBytesBuffer, token).ConfigureAwait(false);
         }
     }
 }

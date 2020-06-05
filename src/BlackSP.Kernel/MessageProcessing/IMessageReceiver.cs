@@ -8,24 +8,24 @@ using System.Threading;
 
 namespace BlackSP.Kernel
 {
-    public enum ReceiverMode
+    public enum ReceptionFlags
     {
         /// <summary>
-        /// Flag indicating no message types are accepted by the receiver
+        /// Flag indicating no message types are forwarded by the receiver
         /// </summary>
-        None = 0 << 0,
+        None = 0,
         /// <summary>
-        /// Flag indicating control messages are accepted by the receiver
+        /// Flag indicating control messages are forwarded by the receiver
         /// </summary>
         Control = 1 << 0,
         /// <summary>
-        /// Flag indicating data messages are accepted by the receiver
+        /// Flag indicating data messages are forwarded by the receiver
         /// </summary>
         Data = 1 << 1,
         /// <summary>
-        /// Joint flag indicating all message types are accepted by the receiver
+        /// Flag indicating message types that are not forwarded are buffered for later delivery
         /// </summary>
-        All = Control | Data
+        Buffer = 1 << 2
     }
 
     public interface IMessageReceiver
@@ -46,9 +46,15 @@ namespace BlackSP.Kernel
         void Receive(IMessage message, IEndpointConfiguration origin, int shardId);
 
         /// <summary>
-        /// Change the receiver's internal mode, decides which messages types to store internally and which to provide to the output enumerator
+        /// Set the receiver flags
         /// </summary>
         /// <param name="mode"></param>
-        void SetMode(ReceiverMode mode);
+        void SetFlags(ReceptionFlags mode);
+
+        /// <summary>
+        /// Get the receiver flags
+        /// </summary>
+        /// <returns></returns>
+        ReceptionFlags GetFlags();
     }
 }

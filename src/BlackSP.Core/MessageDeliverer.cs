@@ -20,7 +20,7 @@ namespace BlackSP.Core
     {
 
         private readonly IEnumerable<IMessageMiddleware> _middlewares;
-        private readonly BlockingCollection<IMessage> _deliveryResultQueue;
+        private BlockingCollection<IMessage> _deliveryResultQueue;
 
         public MessageDeliverer(IEnumerable<IMessageMiddleware> middlewares)
         {
@@ -36,16 +36,30 @@ namespace BlackSP.Core
         {
             _ = messages ?? throw new ArgumentNullException(nameof(messages));
 
-            foreach(var message in messages)
+            var outputQueue = _deliveryResultQueue;
+            foreach (var message in messages)
             {
                 var middlewareResults = await ApplyDeliveryMiddlewares(message).ConfigureAwait(false);
-                AddToResultQueue(middlewareResults);
+                foreach(var msg in middlewareResults)
+                {
+                    outputQueue.Add(msg);
+                }
             }
         }
 
         public IEnumerable<IMessage> GetDeliveryResultEnumerator(CancellationToken t)
         {
             return _deliveryResultQueue.GetConsumingEnumerable(t);
+        }
+
+        public void FlushDeliveryQueue()
+        {
+            _deliveryResultQueue.CompleteAdding();
+        }
+
+        public void ReinitializeDeliveryQueue()
+        {
+            _deliveryResultQueue = new BlockingCollection<IMessage>();
         }
 
         private async Task<IEnumerable<IMessage>> ApplyDeliveryMiddlewares(IMessage message)

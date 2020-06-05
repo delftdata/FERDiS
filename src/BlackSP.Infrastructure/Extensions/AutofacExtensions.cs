@@ -1,11 +1,14 @@
 ﻿using Autofac;
 using BlackSP.Core;
 using BlackSP.Core.Endpoints;
+using BlackSP.Core.Extensions;
 using BlackSP.Infrastructure.IoC;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Operators;
 using BlackSP.Kernel.Serialization;
+using BlackSP.Middlewares;
 using BlackSP.Serialization.Serializers;
 using Microsoft.IO;
 using System;
@@ -13,6 +16,8 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -38,15 +43,26 @@ namespace BlackSP.Infrastructure.Extensions
             return builder;
         }
 
+        public static IEnumerable<Task> StartMessageProcessorSubsystems(this ILifetimeScope scope, CancellationToken t)
+        {
+            _ = scope ?? throw new ArgumentNullException(nameof(scope));
+
+            var receiver = scope.Resolve<IMessageReceiver>();
+            var deliverer = scope.Resolve<IMessageDeliverer>();
+            var dispatcher = scope.Resolve<IMessageDispatcher>();
+
+            yield return Task.Run(() => receiver.ConnectAndStart(deliverer, t));
+            yield return Task.Run(() => deliverer.ConnectAndStart(dispatcher, t));
+        }
+
         public static ContainerBuilder UseOperatorMiddleware(this ContainerBuilder builder, IHostConfiguration hostConfig)
         {
             _ = hostConfig ?? throw new ArgumentNullException(nameof(hostConfig));
 
-            builder.RegisterType(hostConfig.OperatorShellType)
-                   .As(typeof(IOperatorShell), hostConfig.OperatorShellType)
-                   .InstancePerLifetimeScope();
+            builder.RegisterType(hostConfig.OperatorShellType).As<IOperatorShell>();
+            builder.RegisterType(hostConfig.OperatorType).As<IOperator>();
+            builder.RegisterType<OperatorMiddleware>().As<IMessageMiddleware>();
 
-            builder.RegisterConcreteClassAsType<IOperator>(hostConfig.OperatorType, true);
             return builder;
         }
 

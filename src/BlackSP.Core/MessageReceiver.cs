@@ -13,15 +13,15 @@ namespace BlackSP.Core
     public class MessageReceiver : IMessageReceiver
     {
         private readonly BlockingCollection<IMessage> _inputQueue;
-        private BlockingCollection<IMessage> _blockedDataInputQueue;
-        private ReceiverMode _mode;
+        private BlockingCollection<IMessage> _inputBuffer;
+        private ReceptionFlags _receptionFlags;
         private readonly object lockObj;
 
         public MessageReceiver()
         {
             _inputQueue = new BlockingCollection<IMessage>();
-            _blockedDataInputQueue = new BlockingCollection<IMessage>();
-            _mode = ReceiverMode.Control;
+            _inputBuffer = new BlockingCollection<IMessage>();
+            _receptionFlags = ReceptionFlags.Control & ReceptionFlags.Buffer;
             lockObj = new object();
         }
 
@@ -36,34 +36,36 @@ namespace BlackSP.Core
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
 
             // block message if not receiving data and is data message
-            if (!_mode.HasFlag(ReceiverMode.Data) && !origin.IsControl)
+            var typeFlag = origin.IsControl ? ReceptionFlags.Control : ReceptionFlags.Data;
+            var shouldBuffer = _receptionFlags.HasFlag(ReceptionFlags.Buffer);
+            if (!_receptionFlags.HasFlag(typeFlag) && shouldBuffer)
             {
-                AddToBlockedDataQueue(message);
+                AddToInputBuffer(message);
                 return;
             } 
             
             // flush blocked data input if receiving data messages and there is blocked data input
-            if (_mode.HasFlag(ReceiverMode.Data) && _blockedDataInputQueue.Any())
+            if (!shouldBuffer && _inputBuffer.Any())
             {
                 FlushBlockedDataQueue();
             }
             _inputQueue.Add(message);
         }
 
-        public void SetMode(ReceiverMode mode)
+        public void SetFlags(ReceptionFlags mode)
         {
-            _mode = mode;
+            _receptionFlags = mode;
         }
 
         /// <summary>
         /// Utility method for adding data to the blocked data queue in a thread safe manner
         /// </summary>
         /// <param name="message"></param>
-        private void AddToBlockedDataQueue(IMessage message)
+        private void AddToInputBuffer(IMessage message)
         {
             lock (lockObj)
             {
-                _blockedDataInputQueue.Add(message);
+                _inputBuffer.Add(message);
             }
         }
 
@@ -74,13 +76,12 @@ namespace BlackSP.Core
         {
             lock (lockObj)
             {
-                _blockedDataInputQueue.CompleteAdding();
-                var blockedInputs = _blockedDataInputQueue.Take(_blockedDataInputQueue.Count);
-                foreach (var blockedInput in blockedInputs)
+                _inputBuffer.CompleteAdding();
+                foreach (var blockedInput in _inputBuffer.GetConsumingEnumerable())
                 {
                     _inputQueue.Add(blockedInput);
                 }
-                _blockedDataInputQueue = new BlockingCollection<IMessage>();
+                _inputBuffer = new BlockingCollection<IMessage>();
             }
         }
     }

@@ -1,8 +1,10 @@
-﻿using BlackSP.Kernel;
+﻿using BlackSP.Core.Extensions;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +18,10 @@ namespace BlackSP.Core
         private readonly IMessagePartitioner _partitioner;
 
         private readonly IDictionary<string, BlockingCollection<byte[]>> _outputQueues;
-        
+        private readonly IDictionary<string, ICollection<byte[]>> _outputBuffers;
+
+        private DispatchFlags _dispatchFlags;
+
         public MessageDispatcher(IVertexConfiguration vertexConfiguration,
                                  IMessageSerializer serializer,
                                  IMessagePartitioner partitioner)
@@ -26,7 +31,26 @@ namespace BlackSP.Core
             _partitioner = partitioner ?? throw new ArgumentNullException(nameof(serializer));
 
             _outputQueues = new Dictionary<string, BlockingCollection<byte[]>>();
+            _outputBuffers = new Dictionary<string, ICollection<byte[]>>();
+            _dispatchFlags = DispatchFlags.Control & DispatchFlags.Buffer;
+
             InitializeQueues();
+        }
+
+        public DispatchFlags GetFlags()
+        {
+            return _dispatchFlags;
+        }
+
+        public void SetFlags(DispatchFlags flags)
+        {
+            _dispatchFlags = flags;
+        }
+        
+        public BlockingCollection<byte[]> GetDispatchQueue(string endpointName, int shardId)
+        {
+            string endpointKey = _partitioner.GetEndpointKey(endpointName, shardId);
+            return _outputQueues.Get(endpointKey);
         }
 
         public async Task Dispatch(IEnumerable<IMessage> messages, CancellationToken t)
@@ -37,26 +61,51 @@ namespace BlackSP.Core
                 byte[] bytes = await _serializer.SerializeMessage(message, t).ConfigureAwait(false);
                 foreach(var targetEndpointKey in _partitioner.Partition(message))
                 {
-                    GetDispatchQueue(targetEndpointKey).Add(bytes);
+                    Dispatch(targetEndpointKey, bytes, message.IsControl);
                 }
             }
         }
 
-        public BlockingCollection<byte[]> GetDispatchQueue(string endpointName, int shardId)
+        private void Dispatch(string targetEndpointKey, byte[] bytes, bool isControl)
         {
-            string endpointKey = _partitioner.GetEndpointKey(endpointName, shardId);
-            return GetDispatchQueue(endpointKey);
+            var shouldDispatchMessage = _dispatchFlags.HasFlag(isControl ? DispatchFlags.Control : DispatchFlags.Data);
+            var shouldBuffer = _dispatchFlags.HasFlag(DispatchFlags.Buffer);
+
+            var outputQueue = _outputQueues.Get(targetEndpointKey);
+            var outputBuffer = _outputBuffers.Get(targetEndpointKey);
+            if (shouldDispatchMessage)
+            {
+                lock(outputBuffer)
+                {
+                    FlushBuffer(outputBuffer, outputQueue);
+                }
+                outputQueue.Add(bytes);
+            } 
+            else if(shouldBuffer)
+            {
+                lock (outputBuffer)
+                {
+                    _outputBuffers.Get(targetEndpointKey).Add(bytes);
+                }
+            }
         }
 
-        private BlockingCollection<byte[]> GetDispatchQueue(string endpointKey)
+        /// <summary>
+        /// Utility method that flushes an output buffer
+        /// </summary>
+        /// <param name="outputBuffer"></param>
+        /// <param name="outputQueue"></param>
+        /// <param name="targetEndpointKey"></param>
+        private void FlushBuffer(ICollection<byte[]> outputBuffer, BlockingCollection<byte[]> outputQueue)
         {
-            BlockingCollection<byte[]> result;
-            if (_outputQueues.TryGetValue(endpointKey, out result))
+            if (outputBuffer.Any())
             {
-                return result;
+                foreach (var msg in outputBuffer)
+                {
+                    outputQueue.Add(msg);
+                }
+                outputBuffer.Clear();
             }
-            throw new ArgumentOutOfRangeException($"No control or data shard-queue found for endpoint: {endpointKey}");
-
         }
 
         private void InitializeQueues()
@@ -67,7 +116,9 @@ namespace BlackSP.Core
                 var shardCount = endpointConfig.RemoteShardCount;
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
-                    _outputQueues.Add(_partitioner.GetEndpointKey(endpointName, shardCount), new BlockingCollection<byte[]>());
+                    var endpointKey = _partitioner.GetEndpointKey(endpointName, shardCount);
+                    _outputQueues.Add(endpointKey, new BlockingCollection<byte[]>());
+                    _outputBuffers.Add(endpointKey, new List<byte[]>());
                 }
             }
         }
