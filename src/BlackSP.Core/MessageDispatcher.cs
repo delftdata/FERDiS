@@ -11,11 +11,11 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core
 {
-    public class MessageDispatcher : IMessageDispatcher
+    public class MessageDispatcher : IDispatcher
     {
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IMessageSerializer _serializer;
-        private readonly IMessagePartitioner _partitioner;
+        private readonly IPartitioner _partitioner;
 
         private readonly IDictionary<string, BlockingCollection<byte[]>> _outputQueues;
         private readonly IDictionary<string, ICollection<byte[]>> _outputBuffers;
@@ -24,7 +24,7 @@ namespace BlackSP.Core
 
         public MessageDispatcher(IVertexConfiguration vertexConfiguration,
                                  IMessageSerializer serializer,
-                                 IMessagePartitioner partitioner)
+                                 IPartitioner partitioner)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -53,20 +53,18 @@ namespace BlackSP.Core
             return _outputQueues.Get(endpointKey);
         }
 
-        public async Task Dispatch(IEnumerable<IMessage> messages, CancellationToken t)
+        public async Task Dispatch(IMessage message, CancellationToken t)
         {
-            _ = messages ?? throw new ArgumentNullException(nameof(messages));
-            foreach(var message in messages)
+            _ = message ?? throw new ArgumentNullException(nameof(message));
+
+            byte[] bytes = await _serializer.SerializeMessage(message, t).ConfigureAwait(false);
+            foreach(var targetEndpointKey in _partitioner.Partition(message))
             {
-                byte[] bytes = await _serializer.SerializeMessage(message, t).ConfigureAwait(false);
-                foreach(var targetEndpointKey in _partitioner.Partition(message))
-                {
-                    Dispatch(targetEndpointKey, bytes, message.IsControl);
-                }
+                QueueForDispatch(targetEndpointKey, bytes, message.IsControl);
             }
         }
 
-        private void Dispatch(string targetEndpointKey, byte[] bytes, bool isControl)
+        private void QueueForDispatch(string targetEndpointKey, byte[] bytes, bool isControl)
         {
             var shouldDispatchMessage = _dispatchFlags.HasFlag(isControl ? DispatchFlags.Control : DispatchFlags.Data);
             var shouldBuffer = _dispatchFlags.HasFlag(DispatchFlags.Buffer);

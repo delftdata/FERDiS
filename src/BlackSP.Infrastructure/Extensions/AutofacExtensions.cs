@@ -2,6 +2,7 @@
 using BlackSP.Core;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Extensions;
+using BlackSP.Core.ProcessManagers;
 using BlackSP.Infrastructure.IoC;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
@@ -23,16 +24,28 @@ namespace BlackSP.Infrastructure.Extensions
 {
     public static class AutofacExtensions
     {
+        public static ContainerBuilder UseWorker(this ContainerBuilder builder)
+        {
+            builder.RegisterType<WorkerProcessController>().As<IProcessManager>().SingleInstance();
+            return builder;
+        }
+
+        public static ContainerBuilder UseCoordinator(this ContainerBuilder builder)
+        {
+            builder.RegisterType<ControlProcessController>().As<IProcessManager>().SingleInstance();
+            return builder;
+        }
 
         public static ContainerBuilder UseMessageProcessing(this ContainerBuilder builder)
         {
             //TODO: register logger?
-            builder.RegisterType<MessageProcessor>().As<IMessageProcessor>().SingleInstance();
+
             builder.RegisterType<MessageDeliverer>().As<IMessageDeliverer>().SingleInstance();
-            builder.RegisterType<MessageDispatcher>().As<IMessageDispatcher>().SingleInstance();
-            builder.RegisterType<MessageReceiver>().As<IMessageReceiver>().SingleInstance();
+            builder.RegisterType<MessageDispatcher>().As<IDispatcher>().SingleInstance();
+            builder.RegisterType<MessageReceiver>().As<IReceiver>().SingleInstance();
+            
             builder.RegisterType<MessageSerializer>().As<IMessageSerializer>();
-            builder.RegisterType<MessagePartitioner>().As<IMessagePartitioner>();
+            builder.RegisterType<MessagePartitioner>().As<IPartitioner>();
 
             builder.RegisterInstance(ArrayPool<byte>.Create()); //register one arraypool for all components to share
             builder.RegisterInstance(new RecyclableMemoryStreamManager()); //register one memorystreampool for all components to share
@@ -45,14 +58,15 @@ namespace BlackSP.Infrastructure.Extensions
 
         public static IEnumerable<Task> StartMessageProcessorSubsystems(this ILifetimeScope scope, CancellationToken t)
         {
-            _ = scope ?? throw new ArgumentNullException(nameof(scope));
+            //_ = scope ?? throw new ArgumentNullException(nameof(scope));
 
-            var receiver = scope.Resolve<IMessageReceiver>();
-            var deliverer = scope.Resolve<IMessageDeliverer>();
-            var dispatcher = scope.Resolve<IMessageDispatcher>();
+            //var receiver = scope.Resolve<IReceiver>();
+            //var deliverer = scope.Resolve<IDeliverer>();
+            //var dispatcher = scope.Resolve<IDispatcher>();
 
-            yield return Task.Run(() => receiver.ConnectAndStart(deliverer, t));
-            yield return Task.Run(() => deliverer.ConnectAndStart(dispatcher, t));
+            //yield return Task.Run(() => receiver.ConnectAndStart(deliverer, t));
+            //yield return Task.Run(() => deliverer.ConnectAndStart(dispatcher, t));
+            return null; //TODO: probably remove
         }
 
         public static ContainerBuilder UseOperatorMiddleware(this ContainerBuilder builder, IHostConfiguration hostConfig)
@@ -61,7 +75,7 @@ namespace BlackSP.Infrastructure.Extensions
 
             builder.RegisterType(hostConfig.OperatorShellType).As<IOperatorShell>();
             builder.RegisterType(hostConfig.OperatorType).As<IOperator>();
-            builder.RegisterType<OperatorMiddleware>().As<IMessageMiddleware>();
+            builder.RegisterType<OperatorMiddleware>().As<IMiddleware>();
 
             return builder;
         }

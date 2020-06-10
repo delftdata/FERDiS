@@ -19,58 +19,36 @@ namespace BlackSP.Core
     public class MessageDeliverer : IMessageDeliverer
     {
 
-        private readonly IEnumerable<IMessageMiddleware> _middlewares;
-        private BlockingCollection<IMessage> _deliveryResultQueue;
+        private readonly IEnumerable<IMiddleware> _middlewares;
 
-        public MessageDeliverer(IEnumerable<IMessageMiddleware> middlewares)
+        public MessageDeliverer(IEnumerable<IMiddleware> middlewares)
         {
             _middlewares = middlewares ?? throw new ArgumentNullException(nameof(middlewares));
             if(!_middlewares.Any())
             {
                 throw new ArgumentException($"{nameof(middlewares)} must have at least one element");
             }
-            _deliveryResultQueue = new BlockingCollection<IMessage>();
         }
 
-        public async Task Deliver(IEnumerable<IMessage> messages, CancellationToken t)
-        {
-            _ = messages ?? throw new ArgumentNullException(nameof(messages));
-
-            var outputQueue = _deliveryResultQueue;
-            foreach (var message in messages)
-            {
-                var middlewareResults = await ApplyDeliveryMiddlewares(message).ConfigureAwait(false);
-                foreach(var msg in middlewareResults)
-                {
-                    outputQueue.Add(msg);
-                }
-            }
-        }
-
-        public IEnumerable<IMessage> GetDeliveryResultEnumerator(CancellationToken t)
-        {
-            return _deliveryResultQueue.GetConsumingEnumerable(t);
-        }
-
-        public void FlushDeliveryQueue()
-        {
-            _deliveryResultQueue.CompleteAdding();
-        }
-
-        public void ReinitializeDeliveryQueue()
-        {
-            _deliveryResultQueue = new BlockingCollection<IMessage>();
+        public async Task<IEnumerable<IMessage>> Deliver(IMessage message)
+        {          
+            return await ApplyDeliveryMiddlewares(message).ConfigureAwait(false);           
         }
 
         private async Task<IEnumerable<IMessage>> ApplyDeliveryMiddlewares(IMessage message)
         {
-            IEnumerable<IMessage> results = _middlewares.First().Handle(message);
-            foreach(var middleware in _middlewares.Skip(1))
+            IEnumerable<IMessage> results = await _middlewares.First().Handle(message).ConfigureAwait(false);
+            foreach (var middleware in _middlewares.Skip(1))
             {
-                results = results.SelectMany(msg => 
-                    middleware.Handle(msg) ?? throw new Exception($"Middleware of type {middleware.GetType()} returned null, expected IEnumerable")
-                );
-                if(!results.Any())
+                var progatedMessages = new List<IMessage>();
+                foreach(var msg in results)
+                {
+                    var nextMessages = await middleware.Handle(msg).ConfigureAwait(true) ?? throw new Exception($"Middleware of type {middleware.GetType()} returned null, expected IEnumerable");
+                    progatedMessages.AddRange(nextMessages);
+                }
+                results = progatedMessages;
+
+                if (!progatedMessages.Any())
                 {
                     break; // no need to continue iterating the middlewares if the message sunk into a middleware
                 }
@@ -84,14 +62,6 @@ namespace BlackSP.Core
             //e.g. heartbeat / metric collector
             //e.g. cic clock updates
             return results;//.AsEnumerable();
-        }
-
-        private void AddToResultQueue(IEnumerable<IMessage> messages)
-        {
-            foreach (var message in messages)
-            {
-                _deliveryResultQueue.Add(message);
-            }
         }
     }
 }

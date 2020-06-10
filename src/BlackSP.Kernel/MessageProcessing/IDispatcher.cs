@@ -30,13 +30,13 @@ namespace BlackSP.Kernel
     /// Core element responsible for dispatching messages to their respective output channels<br/>
     /// Responsible for serialization and partitioning
     /// </summary>
-    public interface IMessageDispatcher
+    public interface IDispatcher
     {
         /// <summary>
         /// Dispatches provided messages
         /// </summary>
         /// <param name="message"></param>
-        Task Dispatch(IEnumerable<IMessage> messages, CancellationToken t);
+        Task Dispatch(IMessage message, CancellationToken t);
 
         /// <summary>
         /// Returns an (endpoint + shard) unique queue of ready-to-egress bytes

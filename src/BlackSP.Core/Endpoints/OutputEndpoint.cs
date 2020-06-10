@@ -22,10 +22,10 @@ namespace BlackSP.Core.Endpoints
 
     public class OutputEndpoint : IOutputEndpoint
     {
-        private readonly IMessageDispatcher _dispatcher;
+        private readonly IDispatcher _dispatcher;
         private readonly IEndpointConfiguration _endpointConfiguration;
 
-        public OutputEndpoint(IMessageDispatcher dispatcher)
+        public OutputEndpoint(IDispatcher dispatcher)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         }
@@ -41,22 +41,16 @@ namespace BlackSP.Core.Endpoints
         /// <param name="t"></param>
         public async Task Egress(Stream outputStream, string remoteEndpointName, int remoteShardId, CancellationToken t)
         {
-            //cancels when launching thread requests cancel or when operator requests cancel
-            //TODO: required? 
-            //using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(t, _messageProcessor.GetCancellationToken()))
-            //{}
-            var token = t; //TODO: ?? linkedTokenSource.Token;
             var msgBytesBuffer = _dispatcher.GetDispatchQueue(remoteEndpointName, remoteShardId);
             var writer = new MessageStreamWriter(outputStream);
-            foreach(var message in msgBytesBuffer)
+            foreach(var message in msgBytesBuffer.GetConsumingEnumerable(t))
             {
                 var endpointTypeDeliveryFlag = _endpointConfiguration.IsControl ? DispatchFlags.Control : DispatchFlags.Data;
-                if (_dispatcher.GetDispatchFlags().HasFlag(endpointTypeDeliveryFlag))
+                if (_dispatcher.GetFlags().HasFlag(endpointTypeDeliveryFlag))
                 {
                     await writer.WriteMessage(message).ConfigureAwait(false);
                 }
             }
-            await outputStream.WriteMessagesFrom(msgBytesBuffer, token).ConfigureAwait(false);
         }
     }
 }

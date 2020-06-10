@@ -2,13 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BlackSP.Kernel.MessageProcessing
 {
-    public interface IMessageMiddleware
+    public interface IMiddleware
     {
 
-        IEnumerable<IMessage> Handle(IMessage message);
+        Task<IEnumerable<IMessage>> Handle(IMessage message);
 
     }
 }

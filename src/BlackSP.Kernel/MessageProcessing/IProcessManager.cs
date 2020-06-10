@@ -10,7 +10,7 @@ namespace BlackSP.Kernel
     /// <summary>
     /// A core processing element responsible for operating on messages
     /// </summary>
-    public interface IMessageProcessor
+    public interface IProcessManager
     {
         //void SwitchMode(ProcessorState newState);
     }

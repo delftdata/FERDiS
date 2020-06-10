@@ -1,5 +1,6 @@
 ﻿using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Concurrent;
@@ -7,28 +8,59 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BlackSP.Core
 {
-    public class MessageReceiver : IMessageReceiver
+    public sealed class MessageReceiver : IReceiver, IMessageSource<DataMessage>, IMessageSource<ControlMessage>
     {
-        private readonly BlockingCollection<IMessage> _inputQueue;
+        private BlockingCollection<DataMessage> _dataQueue;
+        private BlockingCollection<ControlMessage> _controlQueue;
         private BlockingCollection<IMessage> _inputBuffer;
         private ReceptionFlags _receptionFlags;
         private readonly object lockObj;
 
         public MessageReceiver()
         {
-            _inputQueue = new BlockingCollection<IMessage>();
+            _dataQueue = new BlockingCollection<DataMessage>();
+            _controlQueue = new BlockingCollection<ControlMessage>();
+
             _inputBuffer = new BlockingCollection<IMessage>();
-            _receptionFlags = ReceptionFlags.Control & ReceptionFlags.Buffer;
+            _receptionFlags = ReceptionFlags.Control & ReceptionFlags.Buffer; //TODO: even set flags on constuct?
             lockObj = new object();
         }
 
-        public IEnumerable<IMessage> GetReceivedMessageEnumerator(CancellationToken t)
+        #region Data message source
+        
+        DataMessage IMessageSource<DataMessage>.Take(CancellationToken t)
         {
-            return _inputQueue.GetConsumingEnumerable(t);
+            return _dataQueue.Take(t);
         }
+
+        Task IMessageSource<DataMessage>.Flush()
+        {
+            _dataQueue.CompleteAdding();
+            _dataQueue.Dispose();
+            _dataQueue = new BlockingCollection<DataMessage>();
+            return Task.CompletedTask;
+        }
+        #endregion
+
+        #region Control message source
+
+        ControlMessage IMessageSource<ControlMessage>.Take(CancellationToken t)
+        {
+            return _controlQueue.Take(t);
+        }
+
+        Task IMessageSource<ControlMessage>.Flush()
+        {
+            _controlQueue.CompleteAdding();
+            _controlQueue.Dispose();
+            _controlQueue = new BlockingCollection<ControlMessage>();
+            return Task.CompletedTask;
+        }
+        #endregion
 
         public void Receive(IMessage message, IEndpointConfiguration origin, int shardId)
         {
@@ -43,18 +75,37 @@ namespace BlackSP.Core
                 AddToInputBuffer(message);
                 return;
             } 
-            
-            // flush blocked data input if receiving data messages and there is blocked data input
-            if (!shouldBuffer && _inputBuffer.Any())
+            if (!shouldBuffer && _inputBuffer.Any()) // flush blocked data input if receiving messages and there is any queued input
             {
-                FlushBlockedDataQueue();
+                FlushInputBuffer();
             }
-            _inputQueue.Add(message);
+            SafeAddToInputQueue(message);
         }
 
         public void SetFlags(ReceptionFlags mode)
         {
             _receptionFlags = mode;
+        }
+
+        public ReceptionFlags GetFlags()
+        {
+            return _receptionFlags;
+        }
+
+        /// <summary>
+        /// Utility method that checks received message types to ensure early failure if an unexpected type is received
+        /// </summary>
+        /// <param name="message"></param>
+        private void SafeAddToInputQueue(IMessage message)
+        {
+            if (message.IsControl)
+            {
+                _controlQueue.Add(message as ControlMessage ?? throw new Exception($"Unexpected control message type: {message.GetType()}"));
+            }
+            else
+            {
+                _dataQueue.Add(message as DataMessage ?? throw new Exception($"Unexpected data message type: {message.GetType()}"));
+            }
         }
 
         /// <summary>
@@ -72,14 +123,14 @@ namespace BlackSP.Core
         /// <summary>
         /// Utility method to flush the blocked data queue into the inputQueue in a thread safe manner
         /// </summary>
-        private void FlushBlockedDataQueue()
+        private void FlushInputBuffer()
         {
             lock (lockObj)
             {
                 _inputBuffer.CompleteAdding();
                 foreach (var blockedInput in _inputBuffer.GetConsumingEnumerable())
                 {
-                    _inputQueue.Add(blockedInput);
+                    SafeAddToInputQueue(blockedInput);
                 }
                 _inputBuffer = new BlockingCollection<IMessage>();
             }

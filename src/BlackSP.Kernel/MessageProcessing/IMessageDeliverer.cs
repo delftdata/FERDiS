@@ -7,17 +7,19 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Kernel
 {
+    public interface IMessageDeliverer<T> where T : IMessage
+    {
+        Task<IEnumerable<T>> Deliver(IMessage message);
+
+    }
+
     public interface IMessageDeliverer
     {
-        //Task<ICollection<IMessage>> Deliver(IMessage message, CancellationToken t);
+        Task<IEnumerable<IMessage>> Deliver(IMessage message);
+    }
 
-        Task Deliver(IEnumerable<IMessage> messages, CancellationToken t);
-
-        /// <summary>
-        /// Returns enumerator containing messages resulting from previous deliveries
-        /// </summary>
-        /// <param name="t"></param>
-        /// <returns></returns>
-        IEnumerable<IMessage> GetDeliveryResultEnumerator(CancellationToken t);
+    public interface IControlDeliverer
+    {
+        Task<IEnumerable<IMessage>> Deliver(IMessage message);
     }
 }

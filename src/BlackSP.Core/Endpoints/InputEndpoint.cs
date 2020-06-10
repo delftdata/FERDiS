@@ -22,11 +22,11 @@ namespace BlackSP.Core.Endpoints
     public class InputEndpoint : IInputEndpoint, IDisposable
     {
         private readonly IMessageSerializer _serializer;
-        private readonly IMessageReceiver _receiver;
-        private readonly IEndpointConfiguration _endpointConfig;
+        private readonly IReceiver _receiver;
+        private readonly IEndpointConfiguration _endpointConfig; //TODO: set value
 
         public InputEndpoint(IMessageSerializer serializer,
-                             IMessageReceiver receiver)
+                             IReceiver receiver)
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _receiver = receiver ?? throw new ArgumentNullException(nameof(receiver));
@@ -40,14 +40,12 @@ namespace BlackSP.Core.Endpoints
         /// <param name="t"></param>
         public async Task Ingress(Stream s, string remoteEndpointName, int remoteShardId, CancellationToken t)
         {
-            //TODO: consider if required
-            //using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(t, _messageProcessor.GetCancellationToken()))
-            using (var sharedMsgQueue = new BlockingCollection<byte[]>())
+            using (var sharedMsgQueue = new BlockingCollection<byte[]>(64)) //TODO: determine capacity
             {
-                var token = t;//TODO: ?? linkedTokenSource.Token;
+                //TODO: check if needs background thread
                 var exitedThread = await Task.WhenAny(
-                        s.ReadMessagesTo(sharedMsgQueue, token),
-                        DeserializeToReceiver(sharedMsgQueue, remoteShardId, token)
+                        s.ReadMessagesTo(sharedMsgQueue, t),
+                        DeserializeToReceiver(sharedMsgQueue, remoteShardId, t)
                     ).ConfigureAwait(true);
                 await exitedThread.ConfigureAwait(true); //await the exited thread so any thrown exception will be rethrown
             }

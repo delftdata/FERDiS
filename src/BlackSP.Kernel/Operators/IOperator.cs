@@ -1,7 +1,9 @@
 ﻿using BlackSP.Kernel.Events;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Kernel.Operators
@@ -13,9 +15,7 @@ namespace BlackSP.Kernel.Operators
     public interface ISourceOperator<TEvent> : IOperator
         where TEvent : class, IEvent
     {
-        string KafkaTopicName { get; }
-
-        IEnumerable<TEvent> GetTestEvents();
+        TEvent ProduceNext(CancellationToken t);
     }
 
     public interface ISinkOperator<TEvent> : IOperator

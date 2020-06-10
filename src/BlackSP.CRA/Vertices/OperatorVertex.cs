@@ -16,7 +16,7 @@ namespace BlackSP.CRA.Vertices
     {
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
-        private IMessageProcessor _processor;
+        private IProcessManager _processor;
         private IHostConfiguration _options;
         private CancellationTokenSource _ctSource;
 

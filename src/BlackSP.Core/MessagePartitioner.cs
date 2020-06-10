@@ -8,7 +8,7 @@ using System.Text;
 
 namespace BlackSP.Core
 {
-    public class MessagePartitioner : IMessagePartitioner
+    public class MessagePartitioner : IPartitioner
     {
         private readonly IVertexConfiguration _vertexConfiguration;
 

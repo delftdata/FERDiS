@@ -5,7 +5,7 @@ using System.Text;
 
 namespace BlackSP.Kernel
 {
-    public interface IMessagePartitioner
+    public interface IPartitioner
     {
         IEnumerable<string> Partition(IMessage message);
 

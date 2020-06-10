@@ -28,15 +28,8 @@ namespace BlackSP.Kernel
         Buffer = 1 << 2
     }
 
-    public interface IMessageReceiver
+    public interface IReceiver
     {
-        /// <summary>
-        /// Returns a blocking enumerable containing messages that are eligible to be delivered (control & data messages)
-        /// </summary>
-        /// <param name="t"></param>
-        /// <returns></returns>
-        IEnumerable<IMessage> GetReceivedMessageEnumerator(CancellationToken t);
-
         /// <summary>
         /// Drop a new message in the receiver
         /// </summary>

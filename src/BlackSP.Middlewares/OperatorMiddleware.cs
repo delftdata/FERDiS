@@ -5,10 +5,11 @@ using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BlackSP.Middlewares
 {
-    public class OperatorMiddleware : IMessageMiddleware
+    public class OperatorMiddleware : IMiddleware
     {
 
         private readonly IOperatorShell _operatorShell;
@@ -18,13 +19,15 @@ namespace BlackSP.Middlewares
             _operatorShell = operatorShell ?? throw new ArgumentNullException(nameof(operatorShell));
         }
 
-        public IEnumerable<IMessage> Handle(IMessage message)
+        public Task<IEnumerable<IMessage>> Handle(IMessage message)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
             
-            return message.IsControl 
+            var result = message.IsControl 
                 ? Enumerable.Empty<IMessage>() 
                 : _operatorShell.OperateOnEvent(message.Payload).Select(ev => message.Copy(ev));
+
+            return Task.FromResult(result);
         }
     }
 }

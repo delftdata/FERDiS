@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.ThroughputExperiment
@@ -22,25 +23,14 @@ namespace BlackSP.ThroughputExperiment
 
         private int counter = 0;
 
-        public IEnumerable<SampleEvent> GetTestEvents()
+        public SampleEvent ProduceNext(CancellationToken t)
         {
-            var events = new List<SampleEvent>();
-            
-            for(int i = 0; i < 10000; i++)
+            if (counter > Constants.TotalEventsToSent)
             {
-                //if (counter > 0 && counter % Constants.EventsBeforeProgressLog == 0)
-                //{
-                //    Console.WriteLine($">> Source emitted {Constants.EventsBeforeProgressLog} events");
-                //}
-
-                if (counter > Constants.TotalEventsToSent) //emit at most this many events
-                {
-                    return events.AsEnumerable();
-                }
-                events.Add(new SampleEvent($"Key_{counter}", DateTime.Now, $"Key_{counter}"));
-                counter++;
+                return null;
             }
-            return events.AsEnumerable();
+            counter++;
+            return new SampleEvent($"Key_{counter}", DateTime.Now, $"Key_{counter}");
         }
     }
 
