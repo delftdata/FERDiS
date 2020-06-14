@@ -7,7 +7,7 @@ using System.Text;
 namespace BlackSP.Serialization.Extensions
 {
     /// <summary>
-    /// Extensions for simple object binary formatting
+    /// Extensions for simple object binary formatting (not recommended for use in high throughput scenarios)
     /// </summary>
     public static class ObjectSerializationExtensions
     {

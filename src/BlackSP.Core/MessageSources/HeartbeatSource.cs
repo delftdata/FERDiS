@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.MessageProcessing;
+﻿using BlackSP.Core.Models;
+using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Sources
+namespace BlackSP.Core.MessageSources
 {
     public class HeartbeatSource : IMessageSource<ControlMessage>
     {
@@ -21,15 +22,16 @@ namespace BlackSP.Core.Sources
 
         public Task Flush()
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask; //nothing to flush here
         }
 
         public ControlMessage Take(CancellationToken t)
         {
+            //TODO: rewrite to timer that fills blockingcollection?
             var spanSinceLastBeat = DateTime.Now - _lastHeartBeat;
             if (spanSinceLastBeat.TotalSeconds >= _hbFrequencySeconds)
             {
-                return new ControlMessage(null);
+                return new ControlMessage();
             }
             return null;
         }

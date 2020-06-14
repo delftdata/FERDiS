@@ -1,5 +1,7 @@
 ﻿using Autofac;
 using Autofac.Core;
+using BlackSP.Core.Controllers;
+using BlackSP.CRA.Endpoints;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Infrastructure.IoC;
 using BlackSP.Kernel;
@@ -16,9 +18,13 @@ namespace BlackSP.CRA.Vertices
     {
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
-        private IProcessManager _processor;
+        private ControlProcessController _processor;
         private IHostConfiguration _options;
-        private CancellationTokenSource _ctSource;
+        
+        
+        private CancellationTokenSource _ctSource; //TODO: consider deleting
+
+        private Task _bspThread;
 
         public OperatorVertex()
         {
@@ -36,7 +42,9 @@ namespace BlackSP.CRA.Vertices
             Console.WriteLine("Installing dependency container");
             
             InitializeIoCContainer();
-            _vertexLifetimeScope.StartMessageProcessorSubsystems(_ctSource.Token);
+
+            _processor = _vertexLifetimeScope.Resolve<ControlProcessController>();
+            _bspThread = _processor.StartProcess();
             CreateEndpoints();
             
             Console.WriteLine("Vertex initialization completed");
@@ -45,12 +53,14 @@ namespace BlackSP.CRA.Vertices
 
         private void InitializeIoCContainer()
         {
-            _dependencyContainer = new ContainerBuilder()
-                .UseMessageProcessing()
-                .UseOperatorMiddleware(_options)
-                .RegisterAllConcreteClassesOfType<IAsyncShardedVertexInputEndpoint>()
-                .RegisterAllConcreteClassesOfType<IAsyncShardedVertexOutputEndpoint>()
-                .Build();
+            var container = new ContainerBuilder(); 
+            //TODO: BSP SETUP
+            //.UseMessageProcessing()
+            //.UseOperatorMiddleware(_options)
+            container.RegisterType<VertexInputEndpoint>().As<IAsyncShardedVertexInputEndpoint>();
+            container.RegisterType<VertexOutputEndpoint>().As<IAsyncShardedVertexOutputEndpoint>();
+            
+            _dependencyContainer = container.Build();
 
             Console.WriteLine("IoC setup completed");
             _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();

@@ -12,6 +12,8 @@ namespace BlackSP.Infrastructure.Configuration
 
         public string InstanceName { get; set; }
 
+        public VertexType VertexType { get; set; }
+
         public ICollection<IEndpointConfiguration> InputEndpoints { get; set; }
 
         public ICollection<IEndpointConfiguration> OutputEndpoints { get; set; }

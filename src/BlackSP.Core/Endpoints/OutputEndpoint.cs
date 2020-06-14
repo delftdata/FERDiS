@@ -1,5 +1,4 @@
-﻿using BlackSP.Kernel.Events;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,16 +15,17 @@ using System.Linq;
 using Nerdbank.Streams;
 using BlackSP.Kernel;
 using BlackSP.Core.Streaming;
+using BlackSP.Kernel.Models;
 
 namespace BlackSP.Core.Endpoints
 {
 
     public class OutputEndpoint : IOutputEndpoint
     {
-        private readonly IDispatcher _dispatcher;
+        private readonly IDispatcher<IMessage> _dispatcher;
         private readonly IEndpointConfiguration _endpointConfiguration;
 
-        public OutputEndpoint(IDispatcher dispatcher)
+        public OutputEndpoint(IDispatcher<IMessage> dispatcher)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         }

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Kernel.Endpoints;
-using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 
 namespace BlackSP.Core.OperatorShells

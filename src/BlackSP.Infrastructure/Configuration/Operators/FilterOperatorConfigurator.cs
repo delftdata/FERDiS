@@ -1,5 +1,5 @@
 ﻿using BlackSP.Core.OperatorShells;
-using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
 

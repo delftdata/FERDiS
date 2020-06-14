@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Extensions;
+using BlackSP.Core.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
@@ -10,31 +11,34 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.ProcessManagers
+namespace BlackSP.Core.Controllers
 {
-    public class ControlProcessController : IProcessManager
+    public class ControlProcessController
     {
-        private readonly IEnumerable<IMessageSource<ControlMessage>> _controlSources; //implementations are receiver & heartbeat generator
-        
-        private readonly IControlDeliverer _deliverer;
-        private readonly IDispatcher _dispatcher;
+        private readonly IEnumerable<IMessageSource<ControlMessage>> _controlSources;
+        private readonly IMessageDeliverer<ControlMessage> _deliverer;
+        private readonly IDispatcher<IMessage> _dispatcher;
+        private readonly SemaphoreSlim _delivererSemaphore;
+
 
         private CancellationTokenSource _ctSource;
         private Task _activeProcess;
 
         public ControlProcessController(
             IEnumerable<IMessageSource<ControlMessage>> controlSources,
-            IControlDeliverer messageDeliverer,
-            IDispatcher dispatcher)
+            IMessageDeliverer<ControlMessage> messageDeliverer,
+            IDispatcher<IMessage> dispatcher)
         {
             _controlSources = controlSources ?? throw new ArgumentNullException(nameof(controlSources));
             if(!_controlSources.Any())
             {
-                throw new ArgumentException("At least one IControlSource expected", nameof(controlSources));
+                throw new ArgumentException("At least one IMessageSource expected", nameof(controlSources));
             }
 
             _deliverer = messageDeliverer ?? throw new ArgumentNullException(nameof(messageDeliverer));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+            _delivererSemaphore = new SemaphoreSlim(0, 1);
+
             _ctSource = new CancellationTokenSource();
         }
 
@@ -63,10 +67,16 @@ namespace BlackSP.Core.ProcessManagers
             }
         }
 
-        public void StopProcess()
+        public async Task StopProcess()
         {
             //TODO: move to dispose and tear down system
             _ctSource.Cancel();
+
+            try
+            {
+                await _activeProcess.ConfigureAwait(false);
+            } catch { } //silence any exception
+            
             _ctSource = new CancellationTokenSource();
             
         }
@@ -78,9 +88,11 @@ namespace BlackSP.Core.ProcessManagers
                 while (!t.IsCancellationRequested)
                 {
                     var message = controlSource.Take(t) ?? throw new Exception($"Received null from {controlSource.GetType()}.Take");
-
-                    var results = await _deliverer.Deliver(message).ConfigureAwait(false);
-                    foreach (var msg in results)
+                    
+                    await _delivererSemaphore.WaitAsync(t).ConfigureAwait(true);
+                    IEnumerable<IMessage> responses = await _deliverer.Deliver(message).ConfigureAwait(false);
+                    _delivererSemaphore.Release();
+                    foreach (var msg in responses)
                     {
                         dispatchQueue.Add(msg);
                     }

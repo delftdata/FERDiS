@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel;
+﻿using BlackSP.Core.Models;
+using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using System;
@@ -16,12 +17,12 @@ namespace BlackSP.Core
     /// <summary>
     /// 
     /// </summary>
-    public class MessageDeliverer : IMessageDeliverer
+    public class GenericMiddlewareDeliverer<T> : IMessageDeliverer<T> where T : IMessage
     {
 
-        private readonly IEnumerable<IMiddleware> _middlewares;
+        private readonly IEnumerable<IMiddleware<T>> _middlewares;
 
-        public MessageDeliverer(IEnumerable<IMiddleware> middlewares)
+        public GenericMiddlewareDeliverer(IEnumerable<IMiddleware<T>> middlewares)
         {
             _middlewares = middlewares ?? throw new ArgumentNullException(nameof(middlewares));
             if(!_middlewares.Any())
@@ -30,17 +31,17 @@ namespace BlackSP.Core
             }
         }
 
-        public async Task<IEnumerable<IMessage>> Deliver(IMessage message)
+        public async Task<IEnumerable<T>> Deliver(T message)
         {          
             return await ApplyDeliveryMiddlewares(message).ConfigureAwait(false);           
         }
 
-        private async Task<IEnumerable<IMessage>> ApplyDeliveryMiddlewares(IMessage message)
+        private async Task<IEnumerable<T>> ApplyDeliveryMiddlewares(T message)
         {
-            IEnumerable<IMessage> results = await _middlewares.First().Handle(message).ConfigureAwait(false);
+            IEnumerable<T> results = await _middlewares.First().Handle(message).ConfigureAwait(false);
             foreach (var middleware in _middlewares.Skip(1))
             {
-                var progatedMessages = new List<IMessage>();
+                var progatedMessages = new List<T>();
                 foreach(var msg in results)
                 {
                     var nextMessages = await middleware.Handle(msg).ConfigureAwait(true) ?? throw new Exception($"Middleware of type {middleware.GetType()} returned null, expected IEnumerable");
@@ -50,9 +51,10 @@ namespace BlackSP.Core
 
                 if (!progatedMessages.Any())
                 {
-                    break; // no need to continue iterating the middlewares if the message sunk into a middleware
+                    break; // no need to continue iterating the middlewares if current middleware 'absorbed' the message
                 }
             }
+
             //TODO: Layers
             //e.g. barrier blocking
             //e.g. cic clock updates & CP

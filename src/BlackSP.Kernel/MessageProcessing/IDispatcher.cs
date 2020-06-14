@@ -13,15 +13,15 @@ namespace BlackSP.Kernel
     {
         None = 0,
         /// <summary>
-        /// Flag indicating wether data messages are expected to be delivered
+        /// Flag indicating wether data messages are expected to be dispatched
         /// </summary>
         Data = 1 << 0,
         /// <summary>
-        /// Flag indicating wether control messages are expected to be delivered
+        /// Flag indicating wether control messages are expected to be dispatched
         /// </summary>
         Control = 1 << 1,
         /// <summary>
-        /// Flag indicating wether non-delivered message types are expected to be buffered for later delivery
+        /// Flag indicating wether non-dispatched message types are expected to be buffered for later dispatching
         /// </summary>
         Buffer = 1 << 2,
     }
@@ -30,13 +30,13 @@ namespace BlackSP.Kernel
     /// Core element responsible for dispatching messages to their respective output channels<br/>
     /// Responsible for serialization and partitioning
     /// </summary>
-    public interface IDispatcher
+    public interface IDispatcher<T> where T : IMessage
     {
         /// <summary>
         /// Dispatches provided messages
         /// </summary>
         /// <param name="message"></param>
-        Task Dispatch(IMessage message, CancellationToken t);
+        Task Dispatch(T message, CancellationToken t);
 
         /// <summary>
         /// Returns an (endpoint + shard) unique queue of ready-to-egress bytes

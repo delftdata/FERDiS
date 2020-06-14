@@ -9,9 +9,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core
+namespace BlackSP.Core.Dispatchers
 {
-    public class MessageDispatcher : IDispatcher
+    public class MessageDispatcher : IDispatcher<IMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IMessageSerializer _serializer;
@@ -58,6 +58,8 @@ namespace BlackSP.Core
             _ = message ?? throw new ArgumentNullException(nameof(message));
 
             byte[] bytes = await _serializer.SerializeMessage(message, t).ConfigureAwait(false);
+
+
             foreach(var targetEndpointKey in _partitioner.Partition(message))
             {
                 QueueForDispatch(targetEndpointKey, bytes, message.IsControl);

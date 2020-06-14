@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Kernel.MessageProcessing
 {
-    public interface IMiddleware
+    public interface IMiddleware<T> where T : IMessage
     {
 
-        Task<IEnumerable<IMessage>> Handle(IMessage message);
+        Task<IEnumerable<T>> Handle(T message);
 
     }
 }

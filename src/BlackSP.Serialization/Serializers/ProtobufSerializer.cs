@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
 using BlackSP.Serialization.Serializers;
 using BlackSP.Serialization.Utilities;
@@ -47,6 +47,14 @@ namespace BlackSP.Serialization.Serializers
             {
                 baseEventType.AddSubType(inheritanceFieldNum++, subType);
             }
+
+            var baseMessageType = typeModel.Add(typeof(IMessage), true);
+            var msgSubTypes = TypeLoader.GetClassesExtending(typeof(IMessage), false);
+            foreach (var subType in msgSubTypes)
+            {
+                baseMessageType.AddSubType(inheritanceFieldNum++, subType);
+            }
+
             return typeModel.Compile();
         }
     }

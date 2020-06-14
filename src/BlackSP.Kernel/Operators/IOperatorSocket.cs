@@ -1,5 +1,5 @@
 ﻿using BlackSP.Kernel.Endpoints;
-using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

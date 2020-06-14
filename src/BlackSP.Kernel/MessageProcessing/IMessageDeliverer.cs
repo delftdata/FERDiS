@@ -9,17 +9,7 @@ namespace BlackSP.Kernel
 {
     public interface IMessageDeliverer<T> where T : IMessage
     {
-        Task<IEnumerable<T>> Deliver(IMessage message);
+        Task<IEnumerable<T>> Deliver(T message);
 
-    }
-
-    public interface IMessageDeliverer
-    {
-        Task<IEnumerable<IMessage>> Deliver(IMessage message);
-    }
-
-    public interface IControlDeliverer
-    {
-        Task<IEnumerable<IMessage>> Deliver(IMessage message);
     }
 }

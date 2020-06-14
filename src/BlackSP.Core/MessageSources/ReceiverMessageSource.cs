@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel;
+﻿using BlackSP.Core.Models;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
@@ -10,9 +11,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core
+namespace BlackSP.Core.MessageSources
 {
-    public sealed class MessageReceiver : IReceiver, IMessageSource<DataMessage>, IMessageSource<ControlMessage>
+    /// <summary>
+    /// Receives input from any source. Exposes received messages through the IMessageSource interface.<br/>
+    /// Sorts and orders input based on message types to be consumed one-by-one.
+    /// </summary>
+    public sealed class ReceiverMessageSource : IReceiver, IMessageSource<DataMessage>, IMessageSource<ControlMessage>
     {
         private BlockingCollection<DataMessage> _dataQueue;
         private BlockingCollection<ControlMessage> _controlQueue;
@@ -20,7 +25,7 @@ namespace BlackSP.Core
         private ReceptionFlags _receptionFlags;
         private readonly object lockObj;
 
-        public MessageReceiver()
+        public ReceiverMessageSource()
         {
             _dataQueue = new BlockingCollection<DataMessage>();
             _controlQueue = new BlockingCollection<ControlMessage>();

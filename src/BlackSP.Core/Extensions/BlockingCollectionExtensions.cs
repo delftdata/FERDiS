@@ -7,11 +7,6 @@ namespace BlackSP.Core.Extensions
 {
     public static class BlockingCollectionExtensions
     {
-        public static void FlushTo<T>(this BlockingCollection<T> origin, BlockingCollection<T> target)
-        {
-
-        }
-
         public static T Get<T>(this IDictionary<string, T> collectionMap, string endpointKey)
         {
             _ = collectionMap ?? throw new ArgumentNullException(nameof(collectionMap));

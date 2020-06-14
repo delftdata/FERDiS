@@ -1,6 +1,6 @@
 ﻿using BlackSP.Core.Endpoints;
 using BlackSP.Kernel.Endpoints;
-using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using BlackSP.Kernel.Serialization;
 using CRA.ClientLibrary;

@@ -1,4 +1,4 @@
-﻿using BlackSP.Kernel.Events;
+﻿using BlackSP.Kernel.Models;
 using ProtoBuf;
 using System;
 

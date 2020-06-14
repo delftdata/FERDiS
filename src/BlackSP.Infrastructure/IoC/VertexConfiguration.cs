@@ -1,42 +1,38 @@
-﻿using BlackSP.Kernel.Endpoints;
+﻿using BlackSP.Kernel;
+using BlackSP.Kernel.Endpoints;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Kernel
+namespace BlackSP.Infrastructure.IoC
 {
-    public interface IVertexConfiguration
+    [Serializable]
+
+    public class VertexConfiguration : IVertexConfiguration
     {
         /// <summary>
         /// Name of the operator this vertex is part of (only globally unique with 1 shard)
         /// </summary>
-        string OperatorName { get; }
+        public string OperatorName { get; set; }
 
         /// <summary>
         /// Name of this vertex (globally unique)
         /// </summary>
-        string InstanceName { get; }
+        public string InstanceName { get; set; }
 
         /// <summary>
         /// The type of the current vertex
         /// </summary>
-        VertexType VertexType { get; }
+        public VertexType VertexType { get; set; }
 
         /// <summary>
         /// Configuration of input endpoints
         /// </summary>
-        ICollection<IEndpointConfiguration> InputEndpoints { get; }
+        public ICollection<IEndpointConfiguration> InputEndpoints { get; set; }
 
         /// <summary>
         /// Configuration of output endpoints.
         /// </summary>
-        ICollection<IEndpointConfiguration> OutputEndpoints { get; }
-    }
-
-    public enum VertexType
-    {
-        Source,
-        Operator,
-        Coordinator
+        public ICollection<IEndpointConfiguration> OutputEndpoints { get; set; }
     }
 }

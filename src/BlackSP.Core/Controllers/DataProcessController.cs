@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Extensions;
+using BlackSP.Core.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
@@ -9,21 +10,22 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.ProcessManagers
+namespace BlackSP.Core.Controllers
 {
-    public class WorkerProcessController : IProcessManager
+
+    public class DataProcessController
     {
         private readonly IMessageSource<DataMessage> _dataSource; //implementation is receiver or source operator
-        private readonly IMessageDeliverer _deliverer;
-        private readonly IDispatcher _dispatcher;
+        private readonly IMessageDeliverer<DataMessage> _deliverer;
+        private readonly IDispatcher<DataMessage> _dispatcher;
 
         private CancellationTokenSource _ctSource;
         private Task _activeProcess;
 
-        public WorkerProcessController(
+        public DataProcessController(
             IMessageSource<DataMessage> dataSource,
-            IMessageDeliverer dataDeliverer,
-            IDispatcher dispatcher)
+            IMessageDeliverer<DataMessage> dataDeliverer,
+            IDispatcher<DataMessage> dispatcher)
         {
             _dataSource = dataSource ?? throw new ArgumentNullException(nameof(dataSource));
             _deliverer = dataDeliverer ?? throw new ArgumentNullException(nameof(dataDeliverer));
@@ -38,7 +40,7 @@ namespace BlackSP.Core.ProcessManagers
         public async Task StartProcess()
         {
             var t = _ctSource.Token;
-            var dispatchQueue = new BlockingCollection<IMessage>(64);//TODO: determine proper capacity
+            var dispatchQueue = new BlockingCollection<DataMessage>(64);//TODO: determine proper capacity
             try
             {
                 var deliveryThread = Task.Run(async () => await ProcessData(dispatchQueue, t).ConfigureAwait(false));
@@ -73,7 +75,7 @@ namespace BlackSP.Core.ProcessManagers
             _ctSource = new CancellationTokenSource();
         }
 
-        private async Task ProcessData(BlockingCollection<IMessage> dispatchQueue, CancellationToken t) {
+        private async Task ProcessData(BlockingCollection<DataMessage> dispatchQueue, CancellationToken t) {
             try
             {
                 while (!t.IsCancellationRequested)
@@ -93,7 +95,7 @@ namespace BlackSP.Core.ProcessManagers
             }
         }
 
-        private async Task DispatchData(BlockingCollection<IMessage> dispatchQueue, CancellationToken t)
+        private async Task DispatchData(BlockingCollection<DataMessage> dispatchQueue, CancellationToken t)
         {
             try
             {
@@ -106,4 +108,5 @@ namespace BlackSP.Core.ProcessManagers
         }
 
     }
+
 }

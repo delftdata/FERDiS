@@ -1,7 +1,7 @@
-﻿using BlackSP.Kernel;
-using BlackSP.Kernel.Events;
-using BlackSP.Kernel.MessageProcessing;
+﻿using BlackSP.Core.Models;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Models;
+using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Concurrent;
@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Sources
+namespace BlackSP.Core.MessageSources
 {
     public class SourceOperatorDataSource : IMessageSource<DataMessage>
     {
