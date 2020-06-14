@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using BlackSP.Core.Controllers;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Infrastructure.IoC;
 using BlackSP.InMemory.Configuration;
@@ -33,11 +34,27 @@ namespace BlackSP.InMemory.Core
             _ = instanceName ?? throw new ArgumentNullException(nameof(instanceName));
 
             IHostConfiguration hostParameter = _identityTable.GetHostConfiguration(instanceName);
-            var dependencyScope = _parentScope.BeginLifetimeScope(b => b.AddOperatorMiddleware(hostParameter));
+            
+            var dependencyScope = _parentScope.BeginLifetimeScope(b => {
+                b.UseVertexConfiguration(hostParameter);
+                //TODO: swap out for dynamic layer configuration method (also in other infra's)
+                if(hostParameter.VertexConfiguration.VertexType == Kernel.VertexType.Operator)
+                {
+                    b.AddOperatorMiddleware(hostParameter);
+                }
+            });
+
+            ControlProcessController controller = null;
             try
             {
                 var threads = new List<Task>();
-                var operatorHost = dependencyScope.Resolve<OperatorShellHost>();
+                controller = dependencyScope.Resolve<ControlProcessController>();
+
+                //TODO: refactor input and output hosts
+                //      - add connectiontable to constructor of Vertex
+                //      - construct hosts here (new ...host)
+                //      -- Use endpoint factory + pass connectionTable 
+
                 foreach (var endpointConfig in hostParameter.VertexConfiguration.InputEndpoints)
                 {
                     var endpoint = dependencyScope.Resolve<InputEndpointHost>();
@@ -50,7 +67,7 @@ namespace BlackSP.InMemory.Core
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, _vertexTokenSource.Token));
                 }
                 
-                threads.Add(Task.Run(() => operatorHost.Start(instanceName)));
+                threads.Add(Task.Run(() => controller.StartProcess()));
 
                 await await Task.WhenAny(threads); //double await as whenany returns the task that completed
                                                    //TODO: consider waiting for everything to end? stop vertex? use cancellation?
@@ -59,6 +76,10 @@ namespace BlackSP.InMemory.Core
             {
                 Console.WriteLine($"{instanceName} - Exception in Vertex:\n{e}");
                 _vertexTokenSource.Cancel();
+                if (controller != null)
+                {
+                    await controller.StopProcess();
+                }
                 throw;
             } 
             finally

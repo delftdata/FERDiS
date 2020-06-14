@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,15 +18,23 @@ namespace BlackSP.Core.Endpoints
 {
     public class InputEndpoint : IInputEndpoint, IDisposable
     {
+
+        public delegate InputEndpoint Factory(string endpointName);
+
         private readonly IMessageSerializer _serializer;
         private readonly IReceiver _receiver;
         private readonly IEndpointConfiguration _endpointConfig; //TODO: set value
 
-        public InputEndpoint(IMessageSerializer serializer,
-                             IReceiver receiver)
+        public InputEndpoint(string endpointName,
+                             IMessageSerializer serializer,
+                             IReceiver receiver,
+                             IVertexConfiguration vertexConfig)
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _receiver = receiver ?? throw new ArgumentNullException(nameof(receiver));
+            _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
+
+            _endpointConfig = vertexConfig.OutputEndpoints.FirstOrDefault(x => x.LocalEndpointName == endpointName);
         }
 
         /// <summary>
@@ -36,6 +45,11 @@ namespace BlackSP.Core.Endpoints
         /// <param name="t"></param>
         public async Task Ingress(Stream s, string remoteEndpointName, int remoteShardId, CancellationToken t)
         {
+            if(_endpointConfig.RemoteEndpointName != remoteEndpointName)
+            {
+                throw new Exception($"Invalid IEndpointConfig, expected remote endpointname: {_endpointConfig.RemoteEndpointName} but was: {remoteEndpointName}");
+            }
+
             using (var sharedMsgQueue = new BlockingCollection<byte[]>(64)) //TODO: determine capacity
             {
                 //TODO: check if needs background thread

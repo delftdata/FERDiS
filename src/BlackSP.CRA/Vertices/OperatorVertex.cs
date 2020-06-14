@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using Autofac.Core;
 using BlackSP.Core.Controllers;
+using BlackSP.Core.Endpoints;
 using BlackSP.CRA.Endpoints;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Infrastructure.IoC;
@@ -18,7 +19,7 @@ namespace BlackSP.CRA.Vertices
     {
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
-        private ControlProcessController _processor;
+        private ControlProcessController _controller;
         private IHostConfiguration _options;
         
         
@@ -43,8 +44,8 @@ namespace BlackSP.CRA.Vertices
             
             InitializeIoCContainer();
 
-            _processor = _vertexLifetimeScope.Resolve<ControlProcessController>();
-            _bspThread = _processor.StartProcess();
+            _controller = _vertexLifetimeScope.Resolve<ControlProcessController>();
+            _bspThread = _controller.StartProcess();
             CreateEndpoints();
             
             Console.WriteLine("Vertex initialization completed");
@@ -68,12 +69,15 @@ namespace BlackSP.CRA.Vertices
 
         private void CreateEndpoints()
         {
+            var inputEndpointFactory = _vertexLifetimeScope.Resolve<InputEndpoint.Factory>();
             foreach (var endpointConfig in _options.VertexConfiguration.InputEndpoints)
             {
-                AddAsyncInputEndpoint(endpointConfig.LocalEndpointName, _vertexLifetimeScope.Resolve<IAsyncShardedVertexInputEndpoint>());
+                var inputEndpoint = inputEndpointFactory.Invoke(endpointConfig.LocalEndpointName);
+                AddAsyncInputEndpoint(endpointConfig.LocalEndpointName, new VertexInputEndpoint(inputEndpoint));
             }
             foreach (var endpointConfig in _options.VertexConfiguration.OutputEndpoints)
             {
+                //TODO: output endpoint factory
                 AddAsyncOutputEndpoint(endpointConfig.LocalEndpointName, _vertexLifetimeScope.Resolve<IAsyncShardedVertexOutputEndpoint>());
             }
         }
@@ -90,7 +94,10 @@ namespace BlackSP.CRA.Vertices
             if(disposing)
             {
                 _ctSource.Cancel();
+                _controller.StopProcess().Wait();
+                _bspThread.Wait();
                 _dependencyContainer.Dispose();
+                _bspThread.Dispose();
             }
             base.Dispose(disposing);
         }

@@ -15,8 +15,11 @@ namespace BlackSP.Core.Models
         public int PartitionKey => 0; //TODO: consider how to handle partitioning from coordinator?
 
         //[ProtoMember(1)]
-        //public IDictionary<string, object> Metadata { get; private set; } //TODO: protobuf will not like object..
+        //public IDictionary<string, object> Metadata { get; private set; } 
+        //TODO: protobuf will not like object..
 
+        [ProtoMember(1)]
+        public ControlMessageType Type { get; private set; }
 
         public ControlMessage()
         {
@@ -28,7 +31,15 @@ namespace BlackSP.Core.Models
             return new ControlMessage()
             {
                 //Metadata = new Dictionary<string, object>(Metadata),
+                Type = Type
             };
         }
+    }
+
+    public enum ControlMessageType
+    {
+        Heartbeat,
+        StartDataProcess,
+        CheckpointRestore
     }
 }

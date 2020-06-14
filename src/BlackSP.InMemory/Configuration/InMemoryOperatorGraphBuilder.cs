@@ -49,7 +49,7 @@ namespace BlackSP.InMemory.Configuration
             //Note: invidivual Vertex instances register BlackSP types in their respective scopes
             builder.RegisterType<Vertex>();
             builder.RegisterType<VertexGraph>();
-            builder.RegisterType<OperatorShellHost>();
+            //builder.RegisterType<OperatorShellHost>();
             builder.RegisterType<InputEndpointHost>();
             builder.RegisterType<OutputEndpointHost>();
             builder.RegisterInstance(_connectionTable);//.AsImplementedInterfaces();
