@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.OperatorShells;
+using BlackSP.Infrastructure.Modules;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
@@ -9,9 +10,7 @@ namespace BlackSP.Infrastructure.Configuration.Operators
         where TOperator : IFilterOperator<TEvent>
         where TEvent : class, IEvent
     {
-
-        public override Type OperatorType => typeof(FilterOperatorShell<TEvent>);
-        public override Type OperatorConfigurationType => typeof(TOperator);
+        public override Type ModuleType => typeof(ReactiveOperatorModule<FilterOperatorShell<TEvent>, TOperator>);
 
         public FilterOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }

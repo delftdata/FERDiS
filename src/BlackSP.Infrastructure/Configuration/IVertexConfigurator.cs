@@ -1,22 +1,27 @@
 ﻿using BlackSP.Infrastructure.Models;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 
-namespace BlackSP.Infrastructure.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration
 {
-    public interface IOperatorConfigurator
+    public interface IVertexConfigurator
     {
-        string[] InstanceNames { get; }
-        string OperatorName { get; }
-        Type OperatorType { get; }
-        Type OperatorConfigurationType { get; }
-        ICollection<string> InputEndpointNames { get; }
-        ICollection<string> OutputEndpointNames { get; }
+        string VertexName { get; }
+        ICollection<string> InstanceNames { get; }
         ICollection<Edge> OutgoingEdges { get; }
         ICollection<Edge> IncomingEdges { get; }
 
+        VertexType VertexType { get; }
+        Type ModuleType { get; }
+        
+        /// <summary>
+        /// Transforms configurator to set of IVertexConfiguration
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<IVertexConfiguration> ToConfigurations();
 
         /// <summary>
         /// Returns a new unique identifier for an output endpoint, gets persisted in OutputEndpointNames property
@@ -29,6 +34,10 @@ namespace BlackSP.Infrastructure.Configuration.Operators
         /// </summary>
         /// <returns></returns>
         string GetAvailableInputEndpoint();
+    }
+
+    public interface IOperatorConfigurator : IVertexConfigurator
+    {   
     }
 
     /// <summary>

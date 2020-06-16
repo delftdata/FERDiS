@@ -1,4 +1,5 @@
-﻿using BlackSP.Infrastructure.Configuration.Operators;
+﻿using BlackSP.Infrastructure.Configuration;
+using BlackSP.Infrastructure.Configuration.Operators;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -90,7 +91,7 @@ metadata:
     namespace: default
     name: {instanceName}
     labels:
-        operator: {configurator.OperatorName}
+        operator: {configurator.VertexName}
         instance: {instanceName}
 spec:
     replicas: 1
@@ -101,7 +102,7 @@ spec:
         metadata:
             name: {instanceName}
             labels:
-                operator: {configurator.OperatorName}
+                operator: {configurator.VertexName}
                 instance: {instanceName}
         spec:
             containers:

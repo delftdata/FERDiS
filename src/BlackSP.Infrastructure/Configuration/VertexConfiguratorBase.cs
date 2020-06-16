@@ -1,45 +1,43 @@
-﻿using BlackSP.Kernel.Models;
-using BlackSP.Kernel;
-using BlackSP.Kernel.Endpoints;
+﻿using BlackSP.Infrastructure.Models;
+using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BlackSP.Infrastructure.Models;
+using System.Text;
 
-namespace BlackSP.Infrastructure.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration
 {
-    public abstract class OperatorConfiguratorBase : IOperatorConfigurator
+    public abstract class VertexConfiguratorBase : IVertexConfigurator
     {
         /// <summary>
         /// The name of the machine instance where the operator will be executing
         /// </summary>
-        public string[] InstanceNames { get; }
+        public ICollection<string> InstanceNames { get; }
 
         /// <summary>
         /// Equivalent of CRA's 'VertexName'
         /// </summary>
-        public string OperatorName { get; }
+        public string VertexName { get; }
 
-        /// <summary>
-        /// Reference to the Type of the requested BlackSP Operator
-        /// </summary>
-        public abstract Type OperatorType { get; }
+        public abstract VertexType VertexType { get; }
+        public abstract Type ModuleType { get; }
 
-        public abstract Type OperatorConfigurationType { get; }
-
-        public ICollection<string> InputEndpointNames { get; private set; }
-        public ICollection<string> OutputEndpointNames { get; private set; }
         public virtual ICollection<Edge> OutgoingEdges { get; private set; }
         public virtual ICollection<Edge> IncomingEdges { get; private set; }
 
-        public OperatorConfiguratorBase(string[] instanceNames, string operatorName)
+        private ICollection<string> InputEndpointNames { get; set; }
+        private ICollection<string> OutputEndpointNames { get; set; }
+
+
+        public VertexConfiguratorBase(string[] instanceNames, string vertexName)
         {
             InstanceNames = instanceNames;
-            OperatorName = operatorName;
-            InputEndpointNames = new List<string>();
-            OutputEndpointNames = new List<string>();
+            VertexName = vertexName;
             OutgoingEdges = new List<Edge>();
             IncomingEdges = new List<Edge>();
+
+            InputEndpointNames = new List<string>();
+            OutputEndpointNames = new List<string>();
         }
 
         public string GetAvailableInputEndpoint()
@@ -60,21 +58,19 @@ namespace BlackSP.Infrastructure.Configuration.Operators
         /// Transforms configurator to a set of IVertexConfigurations to be passed to blacksp vertices
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<IVertexConfiguration> ToConfigurations()
+        public virtual IEnumerable<IVertexConfiguration> ToConfigurations()
         {
-            foreach(var instanceName in InstanceNames)
+            foreach (var instanceName in InstanceNames)
             {
                 yield return new VertexConfiguration()
                 {
-                    OperatorName = OperatorName,
                     InstanceName = instanceName,
-                    VertexType = VertexType.Coordinator, //TODO: determine
+                    VertexName = VertexName,
+                    VertexType = VertexType,
                     InputEndpoints = IncomingEdges.Select(Edge.AsEndpointConfiguration).ToList(),
                     OutputEndpoints = OutgoingEdges.Select(Edge.AsEndpointConfiguration).ToList(),
                 };
             }
-
-            
         }
     }
 }

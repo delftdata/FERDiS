@@ -22,7 +22,23 @@ namespace BlackSP.Infrastructure.Configuration
             usedOperatorNameCount = new Dictionary<string, int>();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public abstract Task<TGraph> BuildGraph();
+
+        /// <summary>
+        /// Builds the graph as configured by user with a coordinator connected to all 
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TGraph> Build()
+        {
+            //insert coordinator?
+            
+
+            return await BuildGraph().ConfigureAwait(false);
+        }
 
         //Note the explicit interface implementations below, this is to avoid duplicating generic type constraints from the interface
         //this makes the methods only available when casting object instance to the interface, and they cannot be marked public (even though they are)

@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using BlackSP.Core.Controllers;
+using BlackSP.Infrastructure.Controllers;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Kernel.Models;
 using BlackSP.InMemory.Configuration;
@@ -37,12 +37,7 @@ namespace BlackSP.InMemory.Core
             IHostConfiguration hostParameter = _identityTable.GetHostConfiguration(instanceName);
             
             var dependencyScope = _parentScope.BeginLifetimeScope(b => {
-                b.UseVertexConfiguration(hostParameter);
-                //TODO: swap out for dynamic layer configuration method (also in other infra's)
-                if(hostParameter.VertexConfiguration.VertexType == Kernel.VertexType.Operator)
-                {
-                    b.AddOperatorMiddleware(hostParameter);
-                }
+                b.RegisterModule(Activator.CreateInstance(hostParameter.StartupModule) as Module);
             });
 
             ControlProcessController controller = null;

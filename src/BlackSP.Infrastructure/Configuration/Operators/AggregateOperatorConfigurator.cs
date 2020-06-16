@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.OperatorShells;
+using BlackSP.Infrastructure.Modules;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
@@ -10,9 +11,7 @@ namespace BlackSP.Infrastructure.Configuration.Operators
         where TIn : class, IEvent
         where TOut : class, IEvent
     {
-
-        public override Type OperatorType => typeof(AggregateOperatorShell<TIn, TOut>);
-        public override Type OperatorConfigurationType => typeof(TOperator);
+        public override Type ModuleType => typeof(ReactiveOperatorModule<AggregateOperatorShell<TIn, TOut>, TOperator>);
 
         public AggregateOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }

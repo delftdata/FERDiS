@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.OperatorShells;
+using BlackSP.Infrastructure.Modules;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
@@ -12,9 +13,7 @@ namespace BlackSP.Infrastructure.Configuration.Operators
         where TIn2 : class, IEvent
         where TOut : class, IEvent
     {
-
-        public override Type OperatorType => typeof(JoinOperatorShell<TIn1, TIn2, TOut>);
-        public override Type OperatorConfigurationType => typeof(TOperator);
+        public override Type ModuleType => typeof(ReactiveOperatorModule<JoinOperatorShell<TIn1, TIn2, TOut>, TOperator>);
 
         public JoinOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }

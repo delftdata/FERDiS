@@ -13,12 +13,10 @@ namespace BlackSP.Infrastructure.Extensions
 {
     public static class AutofacDataMiddlewareExtensions
     {
-        public static ContainerBuilder AddOperatorMiddleware(this ContainerBuilder builder, IHostConfiguration hostConfig)
+        public static ContainerBuilder AddOperatorMiddleware<TShell, TOperator>(this ContainerBuilder builder)
         {
-            _ = hostConfig ?? throw new ArgumentNullException(nameof(hostConfig));
-
-            builder.RegisterType(hostConfig.OperatorShellType).As<IOperatorShell>();
-            builder.RegisterType(hostConfig.OperatorType).As<IOperator>();
+            builder.RegisterType<TShell>().As<IOperatorShell>();
+            builder.RegisterType<TOperator>().As<IOperator>();
             builder.RegisterType<OperatorMiddleware>().As<IMiddleware<DataMessage>>();
 
             return builder;

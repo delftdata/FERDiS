@@ -3,14 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Kernel
+namespace BlackSP.Kernel.Models
 {
     public interface IVertexConfiguration
     {
         /// <summary>
-        /// Name of the operator this vertex is part of (only globally unique with 1 shard)
+        /// Name of the vertex this instance is part of. (is globally unique iff 1 shard)
         /// </summary>
-        string OperatorName { get; }
+        string VertexName { get; }
 
         /// <summary>
         /// Name of this vertex (globally unique)

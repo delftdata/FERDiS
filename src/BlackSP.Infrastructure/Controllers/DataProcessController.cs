@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Controllers
+namespace BlackSP.Infrastructure.Controllers
 {
 
     public class DataProcessController

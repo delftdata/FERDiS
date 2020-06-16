@@ -2,7 +2,7 @@
 using BlackSP.Infrastructure.Models;
 using System;
 
-namespace BlackSP.Infrastructure.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration
 {
     public abstract class ProducingOperatorConfiguratorBase<T> : OperatorConfiguratorBase, IProducingOperatorConfigurator<T>
     {

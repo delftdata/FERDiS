@@ -1,4 +1,5 @@
 ﻿using BlackSP.Infrastructure.Configuration;
+using BlackSP.Infrastructure.Models;
 using BlackSP.InMemory.Configuration;
 using BlackSP.InMemory.Core;
 using System;
@@ -17,24 +18,24 @@ namespace BlackSP.InMemory.Extensions
         public static IEnumerable<Connection> ToConnections(this Edge edge)
         {
             int fromShardId = 0;
-            foreach(var fromInstanceName in edge.FromOperator.InstanceNames)
+            foreach(var fromInstanceName in edge.FromVertex.InstanceNames)
             {
                 int toShardId = 0;
-                foreach(var toInstanceName in edge.ToOperator.InstanceNames)
+                foreach(var toInstanceName in edge.ToVertex.InstanceNames)
                 {
                     yield return new Connection
                     {
                         FromEndpointName = edge.FromEndpoint,
-                        FromOperatorName = edge.FromOperator.OperatorName,
+                        FromVertexName = edge.FromVertex.VertexName,
                         FromInstanceName = fromInstanceName,
                         FromShardId = fromShardId,
-                        FromShardCount = edge.FromOperator.InstanceNames.Length,
+                        FromShardCount = edge.FromVertex.InstanceNames.Count,
 
                         ToEndpointName = edge.ToEndpoint,
-                        ToOperatorName = edge.ToOperator.OperatorName,
+                        ToVertexName = edge.ToVertex.VertexName,
                         ToInstanceName = toInstanceName,
                         ToShardId = toShardId,
-                        ToShardCount = edge.ToOperator.InstanceNames.Length
+                        ToShardCount = edge.ToVertex.InstanceNames.Count
                     };
                     toShardId++;
                 }

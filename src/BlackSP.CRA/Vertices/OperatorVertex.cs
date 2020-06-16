@@ -1,6 +1,6 @@
 ﻿using Autofac;
 using Autofac.Core;
-using BlackSP.Core.Controllers;
+using BlackSP.Infrastructure.Controllers;
 using BlackSP.Core.Endpoints;
 using BlackSP.CRA.Endpoints;
 using BlackSP.Infrastructure.Extensions;

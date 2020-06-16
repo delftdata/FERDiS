@@ -51,22 +51,25 @@ namespace BlackSP.CRA.Configuration
 
             foreach (var edge in Configurators.SelectMany(c => c.OutgoingEdges))
             {
-                await _craClient.ConnectAsync(edge.FromOperator.OperatorName, edge.FromEndpoint, edge.ToOperator.OperatorName, edge.ToEndpoint);
+                await _craClient.ConnectAsync(edge.FromVertex.VertexName, edge.FromEndpoint, edge.ToVertex.VertexName, edge.ToEndpoint);
             }
         } 
 
         private async Task RegisterCRAVertexAsync(IOperatorConfigurator target, string vertexDefinition)
         {
-            
-            IVertexConfiguration vertexConf = null; //TODO: construct & insert vertex configuration
-            var hostParameter = new HostConfiguration(target.OperatorType, target.OperatorConfigurationType, vertexConf);
-            await _craClient.InstantiateVertexAsync(
-                target.InstanceNames,
-                target.OperatorName,
-                vertexDefinition,
-                hostParameter.BinarySerialize(),
-                1
-            ).ConfigureAwait(true);
+            var i = 0;
+            foreach (var config in target.ToConfigurations())
+            {
+                var hostParameter = new HostConfiguration(target.ModuleType, config);
+                await _craClient.InstantiateVertexAsync(
+                    config.InstanceName,
+                    target.VertexName,
+                    vertexDefinition,
+                    hostParameter.BinarySerialize(),
+                    i
+                ).ConfigureAwait(true);
+                i++;
+            }            
         }
     }
 }

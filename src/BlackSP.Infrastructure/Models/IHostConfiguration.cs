@@ -1,5 +1,6 @@
 ﻿using BlackSP.Core.OperatorShells;
 using BlackSP.Kernel;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
@@ -12,16 +13,11 @@ namespace BlackSP.Infrastructure.Models
     /// </summary>
     public interface IHostConfiguration
     {
-        /// <summary>
-        /// Holds a type reference to the operator the target vertex should instantiate
-        /// </summary>
-        Type OperatorShellType { get; }
 
         /// <summary>
-        /// The operator configuration required to instantiate
-        /// the type provided in OperatorType
+        /// The type of the autofac module that needs to be registered during vertex configuration
         /// </summary>
-        Type OperatorType { get; }
+        Type StartupModule { get; }
 
         IVertexConfiguration VertexConfiguration { get; }
     }

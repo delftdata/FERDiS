@@ -41,23 +41,10 @@ namespace BlackSP.InMemory.Configuration
 
             foreach (var configurator in Configurators)
             {
-                foreach (var instanceName in configurator.InstanceNames) {
-
-                    IEndpointConfiguration x = new EndpointConfiguration()
-                    {
-                        LocalEndpointName = "",
-                        IsControl = true,
-                        RemoteEndpointName = "??",
-                        RemoteShardCount = 1
-                    };
-                    IVertexConfiguration vertexConf = new VertexConfiguration()
-                    {
-                        
-                        //configurator.OutgoingEdges.Select(e => e);
-                    }; //TODO: construct & insert vertex configuration
-
-                    var hostParameter = new HostConfiguration(configurator.OperatorType, configurator.OperatorConfigurationType, vertexConf);
-                    _identityTable.Add(instanceName, hostParameter);
+                foreach (var vertexConf in configurator.ToConfigurations()) 
+                {
+                    var hostParameter = new HostConfiguration(configurator.ModuleType, vertexConf);
+                    _identityTable.Add(vertexConf.InstanceName, hostParameter);
                 }
             }
             var builder = new ContainerBuilder();

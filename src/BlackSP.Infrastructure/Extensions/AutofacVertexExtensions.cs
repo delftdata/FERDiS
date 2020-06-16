@@ -2,7 +2,7 @@
 using BlackSP.Core;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Models;
-using BlackSP.Core.Controllers;
+using BlackSP.Infrastructure.Controllers;
 using BlackSP.Core.MessageSources;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel;
@@ -22,31 +22,6 @@ namespace BlackSP.Infrastructure.Extensions
     public static class AutofacVertexExtensions
     {
 
-        /// <summary>
-        /// Configures base types required to support provided hostconfiguration<br/>
-        /// This method checks vertex type and provided type arguments in hostconfiguration to register relevant types in provided containerbuilder<br/>
-        /// <b>Note: does not configure data processing middlewares! I.e. the resulting container only has dependencies to facilitate middleware processing but not actual middlewares!</b>
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="hostConfig"></param>
-        /// <returns></returns>
-        public static ContainerBuilder UseVertexConfiguration(this ContainerBuilder builder, IHostConfiguration hostConfig)
-        {
-            _ = hostConfig ?? throw new ArgumentNullException(nameof(hostConfig));
-
-            var vertexConfig = hostConfig.VertexConfiguration ?? throw new NullReferenceException($"Property {nameof(hostConfig)}.{nameof(hostConfig.VertexConfiguration)} returned null, cannot proceed with configuration");
-            builder.RegisterInstance(vertexConfig).As<IVertexConfiguration>().SingleInstance();
-            switch (vertexConfig.VertexType)
-            {
-                case VertexType.Source: builder.UseSourceWorkerConfiguration(hostConfig); break;
-                case VertexType.Operator: builder.UseWorkerConfiguration(); break;
-                case VertexType.Coordinator: builder.UseCoordinatorConfiguration(hostConfig); break;
-                default: throw new Exception("Undefined VertexType supplied to UseVertexConfiguration");
-            }
-
-            return builder;
-        }
-
         #region Vertex type configurations
         
         /// <summary>
@@ -55,9 +30,8 @@ namespace BlackSP.Infrastructure.Extensions
         /// <param name="builder"></param>
         /// <param name="hostConfig"></param>
         /// <returns></returns>
-        public static ContainerBuilder UseSourceWorkerConfiguration(this ContainerBuilder builder, IHostConfiguration hostConfig)
+        public static ContainerBuilder UseSourceWorkerConfiguration<TShell, TOperator>(this ContainerBuilder builder)
         {
-            _ = hostConfig ?? throw new ArgumentNullException(nameof(hostConfig));
             
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();
@@ -67,8 +41,8 @@ namespace BlackSP.Infrastructure.Extensions
             
             //data source (local source operator)
             builder.RegisterType<SourceOperatorDataSource>().As<IMessageSource<DataMessage>>();
-            builder.RegisterType(hostConfig.OperatorShellType).As<IOperatorShell>();
-            builder.RegisterType(hostConfig.OperatorType).As<IOperator, ISourceOperator<IEvent>>();
+            builder.RegisterType<TShell>().As<IOperatorShell>();
+            builder.RegisterType<TOperator>().As<IOperator, ISourceOperator<IEvent>>();
 
             //control processor
             builder.RegisterType<ControlProcessController>().SingleInstance();
@@ -121,9 +95,8 @@ namespace BlackSP.Infrastructure.Extensions
         /// <param name="builder"></param>
         /// <param name="hostConfig"></param>
         /// <returns></returns>
-        public static ContainerBuilder UseCoordinatorConfiguration(this ContainerBuilder builder, IHostConfiguration hostConfig)
+        public static ContainerBuilder UseCoordinatorConfiguration(this ContainerBuilder builder)
         {
-            _ = hostConfig ?? throw new ArgumentNullException(nameof(hostConfig));
 
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();
