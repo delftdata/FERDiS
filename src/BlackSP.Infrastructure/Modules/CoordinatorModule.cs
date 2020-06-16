@@ -9,11 +9,11 @@ namespace BlackSP.Infrastructure.Modules
 {
     public class CoordinatorModule : Module
     {
-        IHostConfiguration Configuration { get; set; }
+        //IHostConfiguration Configuration { get; set; }
 
         protected override void Load(ContainerBuilder builder)
         {
-            _ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
+            //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
 
             builder.UseCoordinatorConfiguration();
             //TODO: middlewares ??

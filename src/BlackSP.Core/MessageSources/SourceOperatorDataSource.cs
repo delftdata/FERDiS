@@ -12,11 +12,12 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.MessageSources
 {
-    public class SourceOperatorDataSource : IMessageSource<DataMessage>
+    public class SourceOperatorDataSource<TEvent> : IMessageSource<DataMessage>
+        where TEvent : class, IEvent
     {
-        private readonly ISourceOperator<IEvent> _source;
+        private readonly ISourceOperator<TEvent> _source;
         
-        public SourceOperatorDataSource(ISourceOperator<IEvent> source)
+        public SourceOperatorDataSource(ISourceOperator<TEvent> source)
         {
             _source = source ?? throw new ArgumentNullException(nameof(source));
         }

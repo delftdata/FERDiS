@@ -1,4 +1,4 @@
-﻿using BlackSP.Infrastructure.Configuration.Operators;
+﻿using BlackSP.Infrastructure.Configuration.Vertices;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;

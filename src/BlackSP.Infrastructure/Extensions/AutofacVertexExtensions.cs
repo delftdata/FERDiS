@@ -23,42 +23,6 @@ namespace BlackSP.Infrastructure.Extensions
     {
 
         #region Vertex type configurations
-        
-        /// <summary>
-        /// Configure types to have the process behave like a source operator worker instance.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="hostConfig"></param>
-        /// <returns></returns>
-        public static ContainerBuilder UseSourceWorkerConfiguration<TShell, TOperator>(this ContainerBuilder builder)
-        {
-            
-            builder.UseProtobufSerializer();
-            builder.UseStreamingEndpoints();
-
-            //collector only as control source
-            builder.UseMessageReceiver(false);
-            
-            //data source (local source operator)
-            builder.RegisterType<SourceOperatorDataSource>().As<IMessageSource<DataMessage>>();
-            builder.RegisterType<TShell>().As<IOperatorShell>();
-            builder.RegisterType<TOperator>().As<IOperator, ISourceOperator<IEvent>>();
-
-            //control processor
-            builder.RegisterType<ControlProcessController>().SingleInstance();
-            builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();
-            builder.AddControlMiddlewaresForWorker();
-
-            //data processor
-            builder.RegisterType<DataProcessController>().SingleInstance();
-            builder.RegisterType<GenericMiddlewareDeliverer<DataMessage>>().As<IMessageDeliverer<DataMessage>>().SingleInstance();
-            //Note: user is expected to register data middlewares himself
-
-            //control + data dispatcher
-            builder.UseWorkerDispatcher();
-
-            return builder;
-        }
 
         /// <summary>
         /// Configure types to have the process behave like an operator worker instance.
@@ -143,7 +107,7 @@ namespace BlackSP.Infrastructure.Extensions
         /// <returns></returns>
         public static ContainerBuilder UseWorkerDispatcher(this ContainerBuilder builder)
         {
-            builder.RegisterType<MessageDispatcher>().As<IDispatcher<IMessage>>().SingleInstance();
+            builder.RegisterType<MessageDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>, IDispatcher<DataMessage>>().SingleInstance();
             builder.RegisterType<MessageSerializer>().As<IMessageSerializer>();
             builder.RegisterType<MessagePartitioner>().As<IPartitioner>();
 
@@ -157,7 +121,7 @@ namespace BlackSP.Infrastructure.Extensions
         /// <returns></returns>
         public static ContainerBuilder UseCoordinatorDispatcher(this ContainerBuilder builder)
         {
-            builder.RegisterType<CoordinatorDispatcher>().As<IDispatcher<IMessage>>().SingleInstance();
+            builder.RegisterType<CoordinatorDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>>().SingleInstance();
             builder.RegisterType<MessageSerializer>().As<IMessageSerializer>();
             return builder;
         }
@@ -169,8 +133,8 @@ namespace BlackSP.Infrastructure.Extensions
         /// <returns></returns>
         public static ContainerBuilder UseStreamingEndpoints(this ContainerBuilder builder)
         {
-            builder.RegisterType<OutputEndpoint>().As<IOutputEndpoint>();
-            builder.RegisterType<InputEndpoint>().As<IInputEndpoint>();
+            builder.RegisterType<OutputEndpoint>().AsImplementedInterfaces().AsSelf();
+            builder.RegisterType<InputEndpoint>().AsImplementedInterfaces().AsSelf();
             return builder;
         }
 

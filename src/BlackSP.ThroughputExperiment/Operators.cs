@@ -13,8 +13,8 @@ namespace BlackSP.ThroughputExperiment
 
     static class Constants
     {
-        public static int TotalEventsToSent = 2 * 1000 * 1000;
-        public static int EventsBeforeProgressLog = 100 * 1000;
+        public static int TotalEventsToSent = 1 * 10 * 1000000;
+        public static int EventsBeforeProgressLog = 1 * 100000;
     }
 
     class SampleSourceOperator : ISourceOperator<SampleEvent>
@@ -25,9 +25,11 @@ namespace BlackSP.ThroughputExperiment
 
         public SampleEvent ProduceNext(CancellationToken t)
         {
-            if (counter > Constants.TotalEventsToSent)
+            if (counter == Constants.TotalEventsToSent)
             {
-                return null;
+                Console.WriteLine($"Produced {Constants.TotalEventsToSent} events");
+                //return null;
+                counter = 0;
             }
             counter++;
             return new SampleEvent($"Key_{counter}", DateTime.Now, $"Key_{counter}");

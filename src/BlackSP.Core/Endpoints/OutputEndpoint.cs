@@ -22,12 +22,18 @@ namespace BlackSP.Core.Endpoints
 
     public class OutputEndpoint : IOutputEndpoint
     {
+        public delegate OutputEndpoint Factory(string endpointName);
+
         private readonly IDispatcher<IMessage> _dispatcher;
         private readonly IEndpointConfiguration _endpointConfiguration;
 
-        public OutputEndpoint(IDispatcher<IMessage> dispatcher)
+        public OutputEndpoint(string endpointName, IDispatcher<IMessage> dispatcher, IVertexConfiguration vertexConfiguration)
         {
+            _ = endpointName ?? throw new ArgumentNullException(nameof(endpointName));
+            _ = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
+
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+            _endpointConfiguration = vertexConfiguration.OutputEndpoints.First(x => x.LocalEndpointName == endpointName);
         }
 
         /// <summary>
@@ -41,7 +47,7 @@ namespace BlackSP.Core.Endpoints
         /// <param name="t"></param>
         public async Task Egress(Stream outputStream, string remoteEndpointName, int remoteShardId, CancellationToken t)
         {
-            var msgBytesBuffer = _dispatcher.GetDispatchQueue(remoteEndpointName, remoteShardId);
+            var msgBytesBuffer = _dispatcher.GetDispatchQueue(_endpointConfiguration, remoteShardId);
             var writer = new MessageStreamWriter(outputStream);
             foreach(var message in msgBytesBuffer.GetConsumingEnumerable(t))
             {

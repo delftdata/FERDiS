@@ -4,7 +4,7 @@ using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
 
-namespace BlackSP.Infrastructure.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Vertices
 {
     public class AggregateOperatorConfigurator<TOperator, TIn, TOut> : ProducingOperatorConfiguratorBase<TOut>, IAggregateOperatorConfigurator<TOperator, TIn, TOut>
         where TOperator : IAggregateOperator<TIn, TOut>

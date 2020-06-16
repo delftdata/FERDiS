@@ -9,11 +9,11 @@ namespace BlackSP.Infrastructure.Modules
 {
     public class ReactiveOperatorModule<TShell, TOperator> : Module
     {
-        IHostConfiguration Configuration { get; set; }
+        //IHostConfiguration Configuration { get; set; }
 
         protected override void Load(ContainerBuilder builder)
         {
-            _ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
+            //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
 
             builder.UseWorkerConfiguration();
             //TODO: middlewares

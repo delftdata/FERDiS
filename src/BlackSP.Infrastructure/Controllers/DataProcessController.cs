@@ -99,6 +99,7 @@ namespace BlackSP.Infrastructure.Controllers
         {
             try
             {
+                _dispatcher.SetFlags(_dispatcher.GetFlags() | DispatchFlags.Data);
                 foreach (var message in dispatchQueue.GetConsumingEnumerable(t))
                 {
                     await _dispatcher.Dispatch(message, t).ConfigureAwait(false);

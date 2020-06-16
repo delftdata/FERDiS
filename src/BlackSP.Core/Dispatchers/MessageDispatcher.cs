@@ -1,5 +1,7 @@
 ﻿using BlackSP.Core.Extensions;
+using BlackSP.Core.Models;
 using BlackSP.Kernel;
+using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Concurrent;
@@ -11,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Dispatchers
 {
-    public class MessageDispatcher : IDispatcher<IMessage>
+    public class MessageDispatcher : IDispatcher<IMessage>, IDispatcher<DataMessage>, IDispatcher<ControlMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IMessageSerializer _serializer;
@@ -47,9 +49,10 @@ namespace BlackSP.Core.Dispatchers
             _dispatchFlags = flags;
         }
         
-        public BlockingCollection<byte[]> GetDispatchQueue(string endpointName, int shardId)
+        public BlockingCollection<byte[]> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId)
         {
-            string endpointKey = _partitioner.GetEndpointKey(endpointName, shardId);
+            _ = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+            string endpointKey =  endpoint.GetConnectionKey(shardId);
             return _outputQueues.Get(endpointKey);
         }
 
@@ -60,22 +63,32 @@ namespace BlackSP.Core.Dispatchers
             byte[] bytes = await _serializer.SerializeMessage(message, t).ConfigureAwait(false);
 
 
-            foreach(var targetEndpointKey in _partitioner.Partition(message))
+            foreach(var targetConnectionKey in _partitioner.Partition(message))
             {
-                QueueForDispatch(targetEndpointKey, bytes, message.IsControl);
+                QueueForDispatch(targetConnectionKey, bytes, message.IsControl);
             }
         }
 
-        private void QueueForDispatch(string targetEndpointKey, byte[] bytes, bool isControl)
+        public async Task Dispatch(DataMessage message, CancellationToken t)
+        {
+            await Dispatch((IMessage)message, t).ConfigureAwait(false);
+        }
+
+        public async Task Dispatch(ControlMessage message, CancellationToken t)
+        {
+            await Dispatch((IMessage)message, t).ConfigureAwait(false);
+        }
+
+        private void QueueForDispatch(string targetConnectionKey, byte[] bytes, bool isControl)
         {
             var shouldDispatchMessage = _dispatchFlags.HasFlag(isControl ? DispatchFlags.Control : DispatchFlags.Data);
             var shouldBuffer = _dispatchFlags.HasFlag(DispatchFlags.Buffer);
 
-            var outputQueue = _outputQueues.Get(targetEndpointKey);
-            var outputBuffer = _outputBuffers.Get(targetEndpointKey);
+            var outputQueue = _outputQueues.Get(targetConnectionKey);
+            var outputBuffer = _outputBuffers.Get(targetConnectionKey);
             if (shouldDispatchMessage)
             {
-                lock(outputBuffer)
+                lock(outputBuffer) //TODO: consider removing lock statements
                 {
                     FlushBuffer(outputBuffer, outputQueue);
                 }
@@ -85,7 +98,7 @@ namespace BlackSP.Core.Dispatchers
             {
                 lock (outputBuffer)
                 {
-                    _outputBuffers.Get(targetEndpointKey).Add(bytes);
+                    outputBuffer.Add(bytes);
                 }
             }
         }
@@ -112,13 +125,12 @@ namespace BlackSP.Core.Dispatchers
         {
             foreach (var endpointConfig in _vertexConfiguration.OutputEndpoints)
             {
-                var endpointName = endpointConfig.RemoteEndpointName;
                 var shardCount = endpointConfig.RemoteShardCount;
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
-                    var endpointKey = _partitioner.GetEndpointKey(endpointName, shardCount);
-                    _outputQueues.Add(endpointKey, new BlockingCollection<byte[]>());
-                    _outputBuffers.Add(endpointKey, new List<byte[]>());
+                    var connectionKey = endpointConfig.GetConnectionKey(shardId);
+                    _outputQueues.Add(connectionKey, new BlockingCollection<byte[]>(64));
+                    _outputBuffers.Add(connectionKey, new List<byte[]>());
                 }
             }
         }

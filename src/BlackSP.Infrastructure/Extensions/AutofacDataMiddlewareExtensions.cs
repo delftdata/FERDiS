@@ -16,7 +16,7 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder AddOperatorMiddleware<TShell, TOperator>(this ContainerBuilder builder)
         {
             builder.RegisterType<TShell>().As<IOperatorShell>();
-            builder.RegisterType<TOperator>().As<IOperator>();
+            builder.RegisterType<TOperator>().AsImplementedInterfaces();
             builder.RegisterType<OperatorMiddleware>().As<IMiddleware<DataMessage>>();
 
             return builder;

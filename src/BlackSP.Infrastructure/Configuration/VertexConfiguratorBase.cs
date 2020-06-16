@@ -1,4 +1,5 @@
 ﻿using BlackSP.Infrastructure.Models;
+using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
@@ -67,10 +68,26 @@ namespace BlackSP.Infrastructure.Configuration
                     InstanceName = instanceName,
                     VertexName = VertexName,
                     VertexType = VertexType,
-                    InputEndpoints = IncomingEdges.Select(Edge.AsEndpointConfiguration).ToList(),
-                    OutputEndpoints = OutgoingEdges.Select(Edge.AsEndpointConfiguration).ToList(),
+                    InputEndpoints = IncomingEdges.Select(e => AsEndpointConfiguration(e, true)).ToList(),
+                    OutputEndpoints = OutgoingEdges.Select(e => AsEndpointConfiguration(e, false)).ToList(),
                 };
             }
+        }
+
+        private static IEndpointConfiguration AsEndpointConfiguration(Edge edge, bool asInput)
+        {
+            _ = edge ?? throw new ArgumentNullException(nameof(edge));
+            bool fromCoordinator = edge.FromVertex.VertexType == Kernel.Models.VertexType.Coordinator;
+            bool toCoordinator = edge.ToVertex.VertexType == Kernel.Models.VertexType.Coordinator;
+
+            return new EndpointConfiguration()
+            {
+                IsControl = fromCoordinator || toCoordinator,
+                LocalEndpointName = asInput ? edge.ToEndpoint : edge.FromEndpoint,
+                RemoteVertexName = asInput ? edge.FromVertex.VertexName : edge.ToVertex.VertexName,
+                RemoteEndpointName = asInput ? edge.FromEndpoint : edge.ToEndpoint,
+                RemoteShardCount = asInput ? edge.FromVertex.InstanceNames.Count : edge.ToVertex.InstanceNames.Count
+            };
         }
     }
 }

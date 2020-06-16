@@ -17,7 +17,7 @@ namespace BlackSP.Infrastructure.Controllers
     {
         private readonly IEnumerable<IMessageSource<ControlMessage>> _controlSources;
         private readonly IMessageDeliverer<ControlMessage> _deliverer;
-        private readonly IDispatcher<IMessage> _dispatcher;
+        private readonly IDispatcher<ControlMessage> _dispatcher;
         private readonly SemaphoreSlim _delivererSemaphore;
 
 
@@ -27,7 +27,7 @@ namespace BlackSP.Infrastructure.Controllers
         public ControlProcessController(
             IEnumerable<IMessageSource<ControlMessage>> controlSources,
             IMessageDeliverer<ControlMessage> messageDeliverer,
-            IDispatcher<IMessage> dispatcher)
+            IDispatcher<ControlMessage> dispatcher)
         {
             _controlSources = controlSources ?? throw new ArgumentNullException(nameof(controlSources));
             if(!_controlSources.Any())
@@ -48,7 +48,7 @@ namespace BlackSP.Infrastructure.Controllers
         public async Task StartProcess()
         {
             var t = _ctSource.Token;
-            var dispatchQueue = new BlockingCollection<IMessage>(64);//TODO: determine proper capacity
+            var dispatchQueue = new BlockingCollection<ControlMessage>(64);//TODO: determine proper capacity
             try
             {
                 var threads = new List<Task>();
@@ -72,16 +72,17 @@ namespace BlackSP.Infrastructure.Controllers
             //TODO: move to dispose and tear down system
             _ctSource.Cancel();
 
+            
             try
             {
-                await _activeProcess.ConfigureAwait(false);
+                await (_activeProcess ?? Task.CompletedTask).ConfigureAwait(false);
             } catch { } //silence any exception
             
             _ctSource = new CancellationTokenSource();
             
         }
 
-        private async Task ProcessControlMessages(IMessageSource<ControlMessage> controlSource, BlockingCollection<IMessage> dispatchQueue, CancellationToken t)
+        private async Task ProcessControlMessages(IMessageSource<ControlMessage> controlSource, BlockingCollection<ControlMessage> dispatchQueue, CancellationToken t)
         {
             try
             {
@@ -90,7 +91,7 @@ namespace BlackSP.Infrastructure.Controllers
                     var message = controlSource.Take(t) ?? throw new Exception($"Received null from {controlSource.GetType()}.Take");
                     
                     await _delivererSemaphore.WaitAsync(t).ConfigureAwait(true);
-                    IEnumerable<IMessage> responses = await _deliverer.Deliver(message).ConfigureAwait(false);
+                    IEnumerable<ControlMessage> responses = await _deliverer.Deliver(message).ConfigureAwait(false);
                     _delivererSemaphore.Release();
                     foreach (var msg in responses)
                     {
@@ -108,16 +109,21 @@ namespace BlackSP.Infrastructure.Controllers
             }
         }
 
-        private async Task DispatchControlMessages(BlockingCollection<IMessage> dispatchQueue, CancellationToken t)
+        private async Task DispatchControlMessages(BlockingCollection<ControlMessage> dispatchQueue, CancellationToken t)
         {
             try
             {
+                _dispatcher.SetFlags(DispatchFlags.Control);
                 foreach (var message in dispatchQueue.GetConsumingEnumerable(t))
                 {
                     await _dispatcher.Dispatch(message, t).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
+            finally
+            {
+                _dispatcher.SetFlags(DispatchFlags.None);
+            }
         }
 
     }

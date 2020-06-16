@@ -26,21 +26,5 @@ namespace BlackSP.Infrastructure.Models
             ToEndpoint = toEndpoint ?? throw new ArgumentNullException(nameof(toEndpoint));
 
         }
-
-
-        public static IEndpointConfiguration AsEndpointConfiguration(Edge edge)
-        {
-            _ = edge ?? throw new ArgumentNullException(nameof(edge));
-            bool fromCoordinator = edge.FromVertex.VertexType == Kernel.Models.VertexType.Coordinator;
-            bool toCoordinator = edge.FromVertex.VertexType == Kernel.Models.VertexType.Coordinator;
-
-            return new EndpointConfiguration()
-            {
-                IsControl = fromCoordinator || toCoordinator,
-                LocalEndpointName = edge.FromEndpoint,
-                RemoteEndpointName = edge.ToEndpoint,
-                RemoteShardCount = edge.ToVertex.InstanceNames.Count
-            };
-        }
     }
 }

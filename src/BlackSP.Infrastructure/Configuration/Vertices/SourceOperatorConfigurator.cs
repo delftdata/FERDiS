@@ -6,17 +6,17 @@ using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 
-namespace BlackSP.Infrastructure.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Vertices
 {
     public class SourceOperatorConfigurator<TOperator, TOut> : ProducingOperatorConfiguratorBase<TOut>, ISourceOperatorConfigurator<TOperator, TOut>
         where TOperator : ISourceOperator<TOut>, new()
         where TOut : class, IEvent
     {
 
-        public override Type ModuleType => typeof(SourceOperatorModule<SourceOperatorShell<TOut>, TOperator>);
+        public override Type ModuleType => typeof(SourceOperatorModule<SourceOperatorShell<TOut>, TOperator, TOut>);
 
         public override VertexType VertexType => VertexType.Source;
-        public override ICollection<Edge> IncomingEdges => new List<Edge>();
+        //public override ICollection<Edge> IncomingEdges => new List<Edge>();
 
         public SourceOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }

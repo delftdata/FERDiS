@@ -4,7 +4,7 @@ using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
 
-namespace BlackSP.Infrastructure.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Vertices
 {
     public class MapOperatorConfigurator<TOperator, TIn, TOut> : ProducingOperatorConfiguratorBase<TOut>, IMapOperatorConfigurator<TOperator, TIn, TOut>
         where TOperator : IMapOperator<TIn, TOut>

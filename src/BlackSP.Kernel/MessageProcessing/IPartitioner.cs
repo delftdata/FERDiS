@@ -8,7 +8,5 @@ namespace BlackSP.Kernel
     public interface IPartitioner
     {
         IEnumerable<string> Partition(IMessage message);
-
-        string GetEndpointKey(string endpointName, int shardId);
     }
 }

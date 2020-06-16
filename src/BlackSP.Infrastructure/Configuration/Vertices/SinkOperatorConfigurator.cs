@@ -6,7 +6,7 @@ using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 
-namespace BlackSP.Infrastructure.Configuration.Operators
+namespace BlackSP.Infrastructure.Configuration.Vertices
 {
     public class SinkOperatorConfigurator<TOperator, TIn> : OperatorConfiguratorBase, ISinkOperatorConfigurator<TOperator, TIn>
         where TOperator : ISinkOperator<TIn>
@@ -14,7 +14,7 @@ namespace BlackSP.Infrastructure.Configuration.Operators
     {
         public override Type ModuleType => typeof(ReactiveOperatorModule<SinkOperatorShell<TIn>, TOperator>);
 
-        public override ICollection<Edge> OutgoingEdges => new List<Edge>(); //always return empty list, sink has no outgoing edges ever
+        //public override ICollection<Edge> OutgoingEdges => new List<Edge>(); //always return empty list, sink has no outgoing edges ever
 
         public SinkOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         {

@@ -24,13 +24,8 @@ namespace BlackSP.Core
             foreach(var endpoint in targetEndpoints)
             {
                 var targetShard = message.PartitionKey % endpoint.RemoteShardCount;
-                yield return GetEndpointKey(endpoint.RemoteEndpointName, targetShard);
+                yield return endpoint.GetConnectionKey(targetShard);
             }
-        }
-
-        public string GetEndpointKey(string endpointName, int shardId)
-        {
-            return $"{endpointName}{shardId}";
         }
     }
 }

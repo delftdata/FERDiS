@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Infrastructure.Models;
+using BlackSP.Core.Endpoints;
 
 namespace BlackSP.InMemory.Core
 {
@@ -21,12 +22,17 @@ namespace BlackSP.InMemory.Core
     {
         private readonly ILifetimeScope _parentScope;
         private readonly IdentityTable _identityTable;
+        private readonly ConnectionTable _connectionTable;
+
         private readonly CancellationTokenSource _vertexTokenSource;
         
-        public Vertex(ILifetimeScope parentScope, IdentityTable identityTable)
+        public Vertex(ILifetimeScope parentScope,
+                      IdentityTable identityTable, 
+                      ConnectionTable connectionTable)
         {
             _parentScope = parentScope ?? throw new ArgumentNullException(nameof(parentScope));
             _identityTable = identityTable ?? throw new ArgumentNullException(nameof(identityTable));
+            _connectionTable = connectionTable ?? throw new ArgumentNullException(nameof(connectionTable));
             _vertexTokenSource = new CancellationTokenSource();
         }
 
@@ -37,6 +43,7 @@ namespace BlackSP.InMemory.Core
             IHostConfiguration hostParameter = _identityTable.GetHostConfiguration(instanceName);
             
             var dependencyScope = _parentScope.BeginLifetimeScope(b => {
+                b.RegisterInstance(hostParameter.VertexConfiguration).AsImplementedInterfaces();
                 b.RegisterModule(Activator.CreateInstance(hostParameter.StartupModule) as Module);
             });
 
@@ -45,25 +52,32 @@ namespace BlackSP.InMemory.Core
             {
                 var threads = new List<Task>();
                 controller = dependencyScope.Resolve<ControlProcessController>();
-
-                //TODO: refactor input and output hosts
-                //      - add connectiontable to constructor of Vertex
-                //      - construct hosts here (new ...host)
-                //      -- Use endpoint factory + pass connectionTable 
+                var inputFactory = dependencyScope.Resolve<InputEndpoint.Factory>();
+                var outputFactory = dependencyScope.Resolve<OutputEndpoint.Factory>();
 
                 foreach (var endpointConfig in hostParameter.VertexConfiguration.InputEndpoints)
                 {
-                    var endpoint = dependencyScope.Resolve<InputEndpointHost>();
+                    var endpoint = new InputEndpointHost(inputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable);
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, _vertexTokenSource.Token));
                 }
 
                 foreach (var endpointConfig in hostParameter.VertexConfiguration.OutputEndpoints)
                 {
-                    var endpoint = dependencyScope.Resolve<OutputEndpointHost>();
+                    var endpoint = new OutputEndpointHost(outputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable);
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, _vertexTokenSource.Token));
                 }
                 
                 threads.Add(Task.Run(() => controller.StartProcess()));
+
+                if(hostParameter.VertexConfiguration.VertexType != VertexType.Coordinator)
+                {
+                    var controller2 = dependencyScope.Resolve<DataProcessController>();
+                    await Task.Delay(5000);
+                    Console.WriteLine($"Starting data process in {hostParameter.VertexConfiguration.InstanceName} of type {hostParameter.VertexConfiguration.VertexType.ToString()}");
+                    threads.Add(Task.Run(() => controller2.StartProcess()));
+                }
+
+
 
                 await await Task.WhenAny(threads); //double await as whenany returns the task that completed
                                                    //TODO: consider waiting for everything to end? stop vertex? use cancellation?

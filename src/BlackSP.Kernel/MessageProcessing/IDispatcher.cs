@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.Models;
+﻿using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -44,7 +45,7 @@ namespace BlackSP.Kernel
         /// <param name="endpointName"></param>
         /// <param name="shardId"></param>
         /// <returns></returns>
-        BlockingCollection<byte[]> GetDispatchQueue(string endpointName, int shardId);
+        BlockingCollection<byte[]> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId);
 
         /// <summary>
         /// Get the dispatcher flags

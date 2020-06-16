@@ -79,7 +79,7 @@ namespace BlackSP.CRA
             var craClientLibrary = new CRAClientLibrary(userDataProvider);
             var graphConfigurator = new CRAOperatorGraphBuilder(new KubernetesDeploymentUtility(), craClientLibrary);
             userGraphConfiguration.Configure(graphConfigurator); //pass configurator to user defined class
-            await graphConfigurator.BuildGraph();
+            await graphConfigurator.Build();
         }
 
         /// <summary>

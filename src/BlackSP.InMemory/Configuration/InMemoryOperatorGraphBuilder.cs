@@ -27,7 +27,7 @@ namespace BlackSP.InMemory.Configuration
             _identityTable = identityTable ?? throw new ArgumentNullException(nameof(identityTable));
         }
 
-        public override Task<IContainer> BuildGraph()
+        protected override Task<IContainer> BuildGraph()
         {
             //failure & restart functionality?
    
@@ -51,9 +51,7 @@ namespace BlackSP.InMemory.Configuration
             //Note: invidivual Vertex instances register BlackSP types in their respective scopes
             builder.RegisterType<Vertex>();
             builder.RegisterType<VertexGraph>();
-            //builder.RegisterType<OperatorShellHost>();
-            builder.RegisterType<InputEndpointHost>();
-            builder.RegisterType<OutputEndpointHost>();
+
             builder.RegisterInstance(_connectionTable);//.AsImplementedInterfaces();
             builder.RegisterInstance(_identityTable);//.AsImplementedInterfaces();
 

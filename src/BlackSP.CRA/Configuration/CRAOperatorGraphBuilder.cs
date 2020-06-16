@@ -3,7 +3,7 @@ using BlackSP.CRA.Extensions;
 using BlackSP.CRA.Kubernetes;
 using BlackSP.CRA.Vertices;
 using BlackSP.Infrastructure.Configuration;
-using BlackSP.Infrastructure.Configuration.Operators;
+using BlackSP.Infrastructure.Configuration.Vertices;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel;
 using BlackSP.Serialization.Extensions;
@@ -29,7 +29,7 @@ namespace BlackSP.CRA.Configuration
             _craClient = craClient ?? throw new ArgumentNullException(nameof(craClient));
         }
 
-        public override async Task<object> BuildGraph()
+        protected override async Task<object> BuildGraph()
         {
             await RegisterGraphWithCRA();
             _k8sDeploymentUtil.With(Configurators).WriteDeploymentYaml();
@@ -55,7 +55,7 @@ namespace BlackSP.CRA.Configuration
             }
         } 
 
-        private async Task RegisterCRAVertexAsync(IOperatorConfigurator target, string vertexDefinition)
+        private async Task RegisterCRAVertexAsync(IVertexConfigurator target, string vertexDefinition)
         {
             var i = 0;
             foreach (var config in target.ToConfigurations())

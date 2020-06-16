@@ -1,5 +1,5 @@
 ﻿using BlackSP.Infrastructure.Configuration;
-using BlackSP.Infrastructure.Configuration.Operators;
+using BlackSP.Infrastructure.Configuration.Vertices;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,20 +9,20 @@ namespace BlackSP.CRA.Kubernetes
 {
     public class KubernetesDeploymentUtility
     {
-        private ICollection<IOperatorConfigurator> _configurators;
+        private ICollection<IVertexConfigurator> _configurators;
         private string lastWrittenYamlFile;
         private string K8sNamespace => "blacksp";
 
         public KubernetesDeploymentUtility()
         {}
         
-        public KubernetesDeploymentUtility(ICollection<IOperatorConfigurator> configurators)
+        public KubernetesDeploymentUtility(ICollection<IVertexConfigurator> configurators)
         {
             _configurators = configurators ?? throw new ArgumentNullException(nameof(configurators));
             lastWrittenYamlFile = string.Empty;
         }
 
-        public KubernetesDeploymentUtility With(ICollection<IOperatorConfigurator> configurators)
+        public KubernetesDeploymentUtility With(ICollection<IVertexConfigurator> configurators)
         {
             _configurators = configurators;
             return this;
@@ -82,7 +82,7 @@ namespace BlackSP.CRA.Kubernetes
             return deploymentYamlBuilder.ToString();
         }
 
-        private string BuildDeploymentSection(IOperatorConfigurator configurator, string instanceName)
+        private string BuildDeploymentSection(IVertexConfigurator configurator, string instanceName)
         {
             return $@"
 kind: Deployment

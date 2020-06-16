@@ -9,10 +9,21 @@ namespace BlackSP.Infrastructure.Models
     {
         public string LocalEndpointName { get; set; }
 
+        public string RemoteVertexName { get; set; }
+
         public string RemoteEndpointName { get; set; }
 
         public int RemoteShardCount { get; set; }
 
         public bool IsControl { get; set; }
+
+        public string GetConnectionKey(int shardId)
+        {
+            if(shardId < RemoteShardCount && shardId > -1)
+            {
+                return $"{RemoteVertexName}{RemoteEndpointName}{shardId}";
+            }
+            throw new ArgumentException($"invalid value: {shardId}", nameof(shardId));
+        }
     }
 }

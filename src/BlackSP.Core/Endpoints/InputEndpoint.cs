@@ -34,7 +34,7 @@ namespace BlackSP.Core.Endpoints
             _receiver = receiver ?? throw new ArgumentNullException(nameof(receiver));
             _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
 
-            _endpointConfig = vertexConfig.OutputEndpoints.FirstOrDefault(x => x.LocalEndpointName == endpointName);
+            _endpointConfig = vertexConfig.InputEndpoints.FirstOrDefault(x => x.LocalEndpointName == endpointName);
         }
 
         /// <summary>

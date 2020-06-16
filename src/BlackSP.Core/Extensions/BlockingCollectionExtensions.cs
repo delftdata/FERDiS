@@ -7,16 +7,16 @@ namespace BlackSP.Core.Extensions
 {
     public static class BlockingCollectionExtensions
     {
-        public static T Get<T>(this IDictionary<string, T> collectionMap, string endpointKey)
+        public static T Get<T>(this IDictionary<string, T> collectionMap, string key)
         {
             _ = collectionMap ?? throw new ArgumentNullException(nameof(collectionMap));
-            _ = endpointKey ?? throw new ArgumentNullException(nameof(endpointKey));
+            _ = key ?? throw new ArgumentNullException(nameof(key));
 
-            if (collectionMap.TryGetValue(endpointKey, out T result))
+            if (collectionMap.TryGetValue(key, out T result))
             {
                 return result;
             }
-            throw new ArgumentOutOfRangeException(nameof(endpointKey), $"No control or data shard-queue found for endpoint: {endpointKey}");
+            throw new ArgumentOutOfRangeException(nameof(key), $"No value found for key: {key}.");
 
         }
     }

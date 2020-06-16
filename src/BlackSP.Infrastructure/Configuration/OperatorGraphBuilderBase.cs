@@ -1,4 +1,6 @@
-﻿using BlackSP.Infrastructure.Configuration.Operators;
+﻿using BlackSP.Infrastructure.Configuration.Vertices;
+using BlackSP.Infrastructure.Models;
+using BlackSP.Kernel.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,14 +12,14 @@ namespace BlackSP.Infrastructure.Configuration
 
     public abstract class OperatorGraphBuilderBase<TGraph> : IOperatorGraphBuilder
     {
-        public ICollection<IOperatorConfigurator> Configurators { get; }
+        public ICollection<IVertexConfigurator> Configurators { get; }
 
         private Dictionary<string, int> usedOperatorNameCount;
         private int usedInstanceCount;
 
         protected OperatorGraphBuilderBase()
         {
-            Configurators = new List<IOperatorConfigurator>();
+            Configurators = new List<IVertexConfigurator>();
             usedInstanceCount = 0;
             usedOperatorNameCount = new Dictionary<string, int>();
         }
@@ -26,7 +28,7 @@ namespace BlackSP.Infrastructure.Configuration
         /// 
         /// </summary>
         /// <returns></returns>
-        public abstract Task<TGraph> BuildGraph();
+        protected abstract Task<TGraph> BuildGraph();
 
         /// <summary>
         /// Builds the graph as configured by user with a coordinator connected to all 
@@ -34,10 +36,32 @@ namespace BlackSP.Infrastructure.Configuration
         /// <returns></returns>
         public async Task<TGraph> Build()
         {
-            //insert coordinator?
-            
-
+            AddCoordinator();
             return await BuildGraph().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Adds a coordinator vertex to the graph configuration, will create edges from and to every so far created vertex.
+        /// </summary>
+        private void AddCoordinator()
+        {
+            var instanceName = GetNextAvailableInstanceName(); //coordinator is never sharded
+            var vertexName = GetNextAvailableOperatorName("coordinator");
+            var coordinatorConfigurator = new CoordinatorConfigurator(new string[] { instanceName }, vertexName);
+            //connect to all existing configurators
+            foreach (var configurator in Configurators)
+            {
+                var fromCoordinatorEdge = new Edge(coordinatorConfigurator, coordinatorConfigurator.GetAvailableOutputEndpoint(), configurator, configurator.GetAvailableInputEndpoint());
+                var toCoordinatorEdge = new Edge(configurator, configurator.GetAvailableOutputEndpoint(), coordinatorConfigurator, coordinatorConfigurator.GetAvailableInputEndpoint());
+
+                coordinatorConfigurator.OutgoingEdges.Add(fromCoordinatorEdge);
+                coordinatorConfigurator.IncomingEdges.Add(toCoordinatorEdge);
+
+                configurator.IncomingEdges.Add(fromCoordinatorEdge);
+                configurator.OutgoingEdges.Add(toCoordinatorEdge);
+
+            }
+            Configurators.Add(coordinatorConfigurator);
         }
 
         //Note the explicit interface implementations below, this is to avoid duplicating generic type constraints from the interface

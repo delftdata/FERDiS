@@ -1,6 +1,7 @@
 ﻿using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
 using BlackSP.Kernel;
+using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Concurrent;
@@ -16,7 +17,7 @@ namespace BlackSP.Core.Dispatchers
     /// Special dispatcher for coordinator instances. 
     /// Can target specific Workers
     /// </summary>
-    public class CoordinatorDispatcher : IDispatcher<ControlMessage>
+    public class CoordinatorDispatcher : IDispatcher<ControlMessage>, IDispatcher<IMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IMessageSerializer _serializer;
@@ -51,10 +52,15 @@ namespace BlackSP.Core.Dispatchers
             _dispatchFlags = flags;
         }
         
-        public BlockingCollection<byte[]> GetDispatchQueue(string endpointName, int shardId)
+        public BlockingCollection<byte[]> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId)
         {
-            string endpointKey = ""; //TODO: key?
+            string endpointKey = endpoint.GetConnectionKey(shardId);
             return _outputQueues.Get(endpointKey);
+        }
+
+        public async Task Dispatch(IMessage message, CancellationToken t)
+        {
+            throw new NotSupportedException($"Only queue consumption is supported through IMessage interface in {this.GetType()}");
         }
 
         public async Task Dispatch(ControlMessage message, CancellationToken t)
@@ -62,21 +68,20 @@ namespace BlackSP.Core.Dispatchers
             _ = message ?? throw new ArgumentNullException(nameof(message));
 
             byte[] bytes = await _serializer.SerializeMessage(message, t).ConfigureAwait(false);
-            var targets = new List<string>(); //TODO: get real targets
-            foreach(var targetEndpointKey in targets)
+            var targets = _vertexConfiguration.OutputEndpoints.Select(e => e.GetConnectionKey(0));
+            foreach(var targetConnectionKey in targets)
             {
-                QueueForDispatch(targetEndpointKey, bytes);
+                QueueForDispatch(targetConnectionKey, bytes);
             }
         }
 
-        private void QueueForDispatch(string targetEndpointKey, byte[] bytes)
+        private void QueueForDispatch(string targetConnectionKey, byte[] bytes)
         {
             var shouldDispatchMessage = _dispatchFlags.HasFlag(DispatchFlags.Control);
 
-            var outputQueue = _outputQueues.Get(targetEndpointKey);
+            var outputQueue = _outputQueues.Get(targetConnectionKey);
             if (shouldDispatchMessage)
             {
-                
                 outputQueue.Add(bytes);
             } 
         }
@@ -85,12 +90,12 @@ namespace BlackSP.Core.Dispatchers
         {
             foreach (var endpointConfig in _vertexConfiguration.OutputEndpoints)
             {
-                var endpointName = endpointConfig.RemoteEndpointName;
                 var shardCount = endpointConfig.RemoteShardCount;
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
-                    var endpointKey = "";//TODO: key?    /// _partitioner.GetEndpointKey(endpointName, shardCount);
-                    _outputQueues.Add(endpointKey, new BlockingCollection<byte[]>());
+                    var endpointKey = endpointConfig.GetConnectionKey(shardId);
+                    _outputQueues.Add(endpointKey, new BlockingCollection<byte[]>(64)); 
+                    //TODO: determine proper capacity
                 }
             }
         }

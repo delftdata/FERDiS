@@ -31,7 +31,7 @@ namespace BlackSP.Core.MessageSources
             _controlQueue = new BlockingCollection<ControlMessage>();
 
             _inputBuffer = new BlockingCollection<IMessage>();
-            _receptionFlags = ReceptionFlags.Control & ReceptionFlags.Buffer; //TODO: even set flags on constuct?
+            _receptionFlags = ReceptionFlags.Control | ReceptionFlags.Data; //TODO: even set flags on constuct?
             lockObj = new object();
         }
 
@@ -85,6 +85,14 @@ namespace BlackSP.Core.MessageSources
                 FlushInputBuffer();
             }
             SafeAddToInputQueue(message);
+        }
+
+        public void Flush()
+        {
+            //invoke after consumer is killed
+            //assumption that producers keep running
+            //may need to build in restart functionality in endpoints
+            SetFlags(ReceptionFlags.Control);
         }
 
         public void SetFlags(ReceptionFlags mode)

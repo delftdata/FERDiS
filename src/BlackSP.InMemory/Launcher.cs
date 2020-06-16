@@ -24,7 +24,7 @@ namespace BlackSP.InMemory
                 var userGraphConfiguration = Activator.CreateInstance<TConfiguration>();
                 var graphConfigurator = new InMemoryOperatorGraphBuilder(new ConnectionTable(), new IdentityTable());
                 userGraphConfiguration.Configure(graphConfigurator); //pass configurator to user defined class
-                var container = await graphConfigurator.BuildGraph();
+                var container = await graphConfigurator.Build();
                 using (var lifetimeScope = container.BeginLifetimeScope())
                 {
                     var graph = lifetimeScope.Resolve<VertexGraph>();
