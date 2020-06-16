@@ -1,7 +1,7 @@
 ﻿using Autofac;
 using BlackSP.Core.Controllers;
 using BlackSP.Infrastructure.Extensions;
-using BlackSP.Infrastructure.IoC;
+using BlackSP.Kernel.Models;
 using BlackSP.InMemory.Configuration;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Operators;
@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BlackSP.Infrastructure.Models;
 
 namespace BlackSP.InMemory.Core
 {

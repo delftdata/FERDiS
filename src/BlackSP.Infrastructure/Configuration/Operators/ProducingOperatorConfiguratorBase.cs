@@ -1,4 +1,7 @@
 ﻿
+using BlackSP.Infrastructure.Models;
+using System;
+
 namespace BlackSP.Infrastructure.Configuration.Operators
 {
     public abstract class ProducingOperatorConfiguratorBase<T> : OperatorConfiguratorBase, IProducingOperatorConfigurator<T>
@@ -10,17 +13,26 @@ namespace BlackSP.Infrastructure.Configuration.Operators
 
         public void Append(IConsumingOperatorConfigurator<T> otherOperator)
         {
-            OutgoingEdges.Add(new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint()));
+            _ = otherOperator ?? throw new ArgumentNullException(nameof(otherOperator));
+            var edge = new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint());
+            OutgoingEdges.Add(edge);
+            otherOperator.IncomingEdges.Add(edge);
         }
 
         public void Append<T2>(IConsumingOperatorConfigurator<T, T2> otherOperator)
         {
-            OutgoingEdges.Add(new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint()));
+            _ = otherOperator ?? throw new ArgumentNullException(nameof(otherOperator));
+            var edge = new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint());
+            OutgoingEdges.Add(edge);
+            otherOperator.IncomingEdges.Add(edge);
         }
 
         public void Append<T2>(IConsumingOperatorConfigurator<T2, T> otherOperator)
         {
-            OutgoingEdges.Add(new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint()));
+            _ = otherOperator ?? throw new ArgumentNullException(nameof(otherOperator));
+            var edge = new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint());
+            OutgoingEdges.Add(edge);
+            otherOperator.IncomingEdges.Add(edge);
         }
     }
 }

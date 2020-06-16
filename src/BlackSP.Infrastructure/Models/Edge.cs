@@ -1,9 +1,11 @@
 ﻿using BlackSP.Infrastructure.Configuration.Operators;
+using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Endpoints;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Infrastructure.Configuration
+namespace BlackSP.Infrastructure.Models
 {
     /// <summary>
     /// Model class that holds data regarding an edge in an operator graph
@@ -24,6 +26,19 @@ namespace BlackSP.Infrastructure.Configuration
             ToOperator = toOperator ?? throw new ArgumentNullException(nameof(toOperator));
             ToEndpoint = toEndpoint ?? throw new ArgumentNullException(nameof(toEndpoint));
 
+        }
+
+
+        public static IEndpointConfiguration AsEndpointConfiguration(Edge edge)
+        {
+            _ = edge ?? throw new ArgumentNullException(nameof(edge));
+            return new EndpointConfiguration()
+            {
+                IsControl = true, //TODO: determine
+                LocalEndpointName = edge.FromEndpoint,
+                RemoteEndpointName = edge.ToEndpoint,
+                RemoteShardCount = edge.ToOperator.InstanceNames.Length
+            };
         }
     }
 }

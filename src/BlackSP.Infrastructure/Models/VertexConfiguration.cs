@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Infrastructure.IoC
+namespace BlackSP.Infrastructure.Models
 {
     [Serializable]
 

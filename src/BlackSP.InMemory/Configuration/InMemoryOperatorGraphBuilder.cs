@@ -1,16 +1,18 @@
 ﻿using Autofac;
 using BlackSP.Core.Endpoints;
 using BlackSP.Infrastructure.Configuration;
-using BlackSP.Infrastructure.IoC;
+using BlackSP.Kernel.Models;
 using BlackSP.InMemory.Core;
 using BlackSP.InMemory.Extensions;
 using BlackSP.Kernel;
+using BlackSP.Kernel.Endpoints;
 using BlackSP.Serialization.Serializers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BlackSP.Infrastructure.Models;
 
 namespace BlackSP.InMemory.Configuration
 {
@@ -40,7 +42,20 @@ namespace BlackSP.InMemory.Configuration
             foreach (var configurator in Configurators)
             {
                 foreach (var instanceName in configurator.InstanceNames) {
-                    IVertexConfiguration vertexConf = null; //TODO: construct & insert vertex configuration
+
+                    IEndpointConfiguration x = new EndpointConfiguration()
+                    {
+                        LocalEndpointName = "",
+                        IsControl = true,
+                        RemoteEndpointName = "??",
+                        RemoteShardCount = 1
+                    };
+                    IVertexConfiguration vertexConf = new VertexConfiguration()
+                    {
+                        
+                        //configurator.OutgoingEdges.Select(e => e);
+                    }; //TODO: construct & insert vertex configuration
+
                     var hostParameter = new HostConfiguration(configurator.OperatorType, configurator.OperatorConfigurationType, vertexConf);
                     _identityTable.Add(instanceName, hostParameter);
                 }

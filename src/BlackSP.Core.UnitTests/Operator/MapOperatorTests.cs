@@ -3,7 +3,7 @@ using BlackSP.Core.OperatorShells;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Endpoints;
-using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using Moq;
 using NUnit.Framework;
@@ -45,7 +45,7 @@ namespace BlackSP.Core.UnitTests.Operator
                 _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
             }
 
-            _operatorThread = _mapOperator.Start(DateTime.Now);
+            //_operatorThread = _mapOperator.Start(DateTime.Now);
 
         }
 
@@ -54,16 +54,16 @@ namespace BlackSP.Core.UnitTests.Operator
         {
             var mockedOutputQueue = new Queue<IEvent>();
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            _mapOperator.RegisterOutputEndpoint(outputEndpoint.Object);
+            //_mapOperator.RegisterOutputEndpoint(outputEndpoint.Object);
             
             //put one event in the operator input queue
-            _mapOperator.Enqueue(_testEvents[0]);
+            var output = _mapOperator.OperateOnEvent(_testEvents[0]);
             
             await Task.Delay(1); //give background thread some time to perform the operation
             
-            Assert.IsTrue(mockedOutputQueue.Any());
+            Assert.IsTrue(output.Any());
             
-            var transformedEvent = mockedOutputQueue.Dequeue() as TestEvent2;
+            var transformedEvent = output.First() as TestEvent2;
             Assert.IsNotNull(transformedEvent);
 
             Assert.IsTrue(transformedEvent.Key.StartsWith("Transformed"));
@@ -75,11 +75,11 @@ namespace BlackSP.Core.UnitTests.Operator
         {
             var mockedOutputQueue = new Queue<IEvent>();
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            _mapOperator.RegisterOutputEndpoint(outputEndpoint.Object);
+            //_mapOperator.RegisterOutputEndpoint(outputEndpoint.Object);
 
             foreach(var e in _testEvents)
             {
-                _mapOperator.Enqueue(e);
+                _mapOperator.OperateOnEvent(e);
             }
 
             await Task.Delay(1); //give background thread some time to perform the operation
@@ -98,8 +98,8 @@ namespace BlackSP.Core.UnitTests.Operator
         [TearDown]
         public void TearDown()
         {
-            Assert.ThrowsAsync<OperationCanceledException>(_mapOperator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
+            //Assert.ThrowsAsync<OperationCanceledException>(_mapOperator.Stop);
+            //Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
 
             _mapOperator.Dispose();
         }

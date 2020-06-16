@@ -19,7 +19,7 @@ namespace BlackSP.Core.Models
         //TODO: protobuf will not like object..
 
         [ProtoMember(1)]
-        public ControlMessageType Type { get; private set; }
+        public ControlMessageType Type { get; set; }
 
         public ControlMessage()
         {

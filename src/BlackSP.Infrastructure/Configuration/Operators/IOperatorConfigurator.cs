@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.Models;
+﻿using BlackSP.Infrastructure.Models;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,8 @@ namespace BlackSP.Infrastructure.Configuration.Operators
         ICollection<string> InputEndpointNames { get; }
         ICollection<string> OutputEndpointNames { get; }
         ICollection<Edge> OutgoingEdges { get; }
+        ICollection<Edge> IncomingEdges { get; }
+
 
         /// <summary>
         /// Returns a new unique identifier for an output endpoint, gets persisted in OutputEndpointNames property

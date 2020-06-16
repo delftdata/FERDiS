@@ -3,7 +3,7 @@ using BlackSP.Core.OperatorShells;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Endpoints;
-using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using Moq;
 using NUnit.Framework;
@@ -49,7 +49,7 @@ namespace BlackSP.Core.UnitTests.Operator
             {
                 _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
             }
-            _operatorThread = _distinctOperator.Start(DateTime.Now);
+            //_operatorThread = _distinctOperator.Start(DateTime.Now);
 
         }
 
@@ -58,12 +58,12 @@ namespace BlackSP.Core.UnitTests.Operator
         {
             var mockedOutputQueue = new Queue<IEvent>();
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            _distinctOperator.RegisterOutputEndpoint(outputEndpoint.Object);
+            //_distinctOperator.RegisterOutputEndpoint(outputEndpoint.Object);
 
             foreach (var e in _testEvents)
             {
-                _distinctOperator.Enqueue(e);
-                _distinctOperator.Enqueue(e);//Add the events twice, so the seconds can get filtered
+                _distinctOperator.OperateOnEvent(e);
+                _distinctOperator.OperateOnEvent(e);//Add the events twice, so the seconds can get filtered
             }
 
             await Task.Delay(1); //give background thread some time to perform the operation
@@ -79,7 +79,7 @@ namespace BlackSP.Core.UnitTests.Operator
         [TearDown]
         public void TearDown()
         {
-            Assert.ThrowsAsync<OperationCanceledException>(_distinctOperator.Stop);
+            //Assert.ThrowsAsync<OperationCanceledException>(_distinctOperator.Stop);
             Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
 
             _distinctOperator.Dispose();

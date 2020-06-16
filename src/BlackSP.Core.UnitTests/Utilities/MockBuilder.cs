@@ -1,4 +1,4 @@
-﻿using BlackSP.Kernel.Events;
+﻿using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
 using Moq;
 using System;
@@ -21,9 +21,9 @@ namespace BlackSP.Core.UnitTests.Utilities
         public static Mock<IOperatorShell> MockOperator(CancellationTokenSource operatorCtSource, BlockingCollection<IEvent> inputQueue)
         {
             var operatorMoq = new Mock<IOperatorShell>();
-            operatorMoq.Setup(o => o.CancellationToken).Returns(() => operatorCtSource.Token);
-            operatorMoq.Setup(o => o.Enqueue(It.IsAny<IEvent>()))
-                .Callback((IEvent e) => inputQueue.Add(e));
+            //operatorMoq.Setup(o => o.CancellationToken).Returns(() => operatorCtSource.Token);
+            //operatorMoq.Setup(o => o.Enqueue(It.IsAny<IEvent>()))
+            //    .Callback((IEvent e) => inputQueue.Add(e));
             return operatorMoq;
         }
 
@@ -49,16 +49,16 @@ namespace BlackSP.Core.UnitTests.Utilities
         public static Mock<IOutputEndpoint> MockOutputEndpoint(Queue<IEvent> targetQueue)
         {
             var outputEndpoint = new Mock<IOutputEndpoint>();
-            outputEndpoint.Setup(x => x.Enqueue(It.IsAny<IEvent>(), It.IsAny<OutputMode>()))
-                .Callback((IEvent e, OutputMode m) => targetQueue.Enqueue(e));
-            outputEndpoint.Setup(x => x.Enqueue(It.IsAny<IEnumerable<IEvent>>(), It.IsAny<OutputMode>()))
-                .Callback((IEnumerable<IEvent> es, OutputMode m) =>
-                {
-                    foreach (var e in es)
-                    {
-                        targetQueue.Enqueue(e);
-                    }
-                });
+            //outputEndpoint.Setup(x => x.Enqueue(It.IsAny<IEvent>(), It.IsAny<OutputMode>()))
+            //    .Callback((IEvent e, OutputMode m) => targetQueue.Enqueue(e));
+            //outputEndpoint.Setup(x => x.Enqueue(It.IsAny<IEnumerable<IEvent>>(), It.IsAny<OutputMode>()))
+            //    .Callback((IEnumerable<IEvent> es, OutputMode m) =>
+            //    {
+            //        foreach (var e in es)
+            //        {
+            //            targetQueue.Enqueue(e);
+            //        }
+            //    });
             return outputEndpoint;
         }
     }

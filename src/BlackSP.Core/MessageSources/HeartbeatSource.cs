@@ -31,6 +31,7 @@ namespace BlackSP.Core.MessageSources
             var spanSinceLastBeat = DateTime.Now - _lastHeartBeat;
             if (spanSinceLastBeat.TotalSeconds >= _hbFrequencySeconds)
             {
+                _lastHeartBeat = DateTime.Now;
                 return new ControlMessage();
             }
             return null;

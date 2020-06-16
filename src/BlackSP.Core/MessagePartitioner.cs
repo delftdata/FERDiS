@@ -20,7 +20,6 @@ namespace BlackSP.Core
         public IEnumerable<string> Partition(IMessage message)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
-            //_ = message.Payload ?? throw new ArgumentNullException($"{nameof(message)} cannot have null {nameof(message.Payload)}");
             var targetEndpoints = _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl == message.IsControl);
             foreach(var endpoint in targetEndpoints)
             {

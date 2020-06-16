@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 namespace BlackSP.Infrastructure.Configuration
 {
     public abstract class OperatorGraphBuilderBase : OperatorGraphBuilderBase<object>
-    {
-    }
+    { }
 
     public abstract class OperatorGraphBuilderBase<TGraph> : IOperatorGraphBuilder
     {

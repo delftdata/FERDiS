@@ -1,6 +1,6 @@
 ﻿using Autofac;
 using BlackSP.Core.Models;
-using BlackSP.Infrastructure.IoC;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Operators;
 using BlackSP.Middlewares;

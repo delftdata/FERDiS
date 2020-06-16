@@ -1,7 +1,7 @@
 ﻿using BlackSP.Core.OperatorShells;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
-using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using NUnit.Framework;
 using System;
@@ -46,7 +46,7 @@ namespace BlackSP.Core.UnitTests.Operator
             _startTime = DateTime.Now;
             _windowSize = TimeSpan.FromSeconds(10);
             _operator = new JoinOperatorShell<TestEvent, TestEvent2, TestEvent2>(new JoinOperatorConfigurationForTest { WindowSize = _windowSize });
-            _operatorThread = _operator.Start(_startTime);
+            //_operatorThread = _operator.Start(_startTime);
         }
         
         [Test]
@@ -54,7 +54,7 @@ namespace BlackSP.Core.UnitTests.Operator
         {
             var mockedOutputQueue = new Queue<IEvent>();
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            _operator.RegisterOutputEndpoint(outputEndpoint.Object);
+            //_operator.RegisterOutputEndpoint(outputEndpoint.Object);
 
             IList<TestEvent> events = new List<TestEvent>();
             IList<TestEvent2> events2 = new List<TestEvent2>();
@@ -65,7 +65,7 @@ namespace BlackSP.Core.UnitTests.Operator
 
             foreach(var @event in events.AsEnumerable<IEvent>().Concat(events2))
             {
-                _operator.Enqueue(@event);
+                _operator.OperateOnEvent(@event);
             }
 
             await Task.Delay(10);
@@ -83,7 +83,7 @@ namespace BlackSP.Core.UnitTests.Operator
         {
             var mockedOutputQueue = new Queue<IEvent>();
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            _operator.RegisterOutputEndpoint(outputEndpoint.Object);
+            //_operator.RegisterOutputEndpoint(outputEndpoint.Object);
 
             IList<IEvent> events = new List<IEvent>();
 
@@ -95,7 +95,7 @@ namespace BlackSP.Core.UnitTests.Operator
             //matches are on value so (K1_A, K2_A) and (K2_C, K1_A)
             foreach (var @event in events)
             {
-                _operator.Enqueue(@event);
+                _operator.OperateOnEvent(@event);
             }
             
             await Task.Delay(25);
@@ -120,7 +120,7 @@ namespace BlackSP.Core.UnitTests.Operator
         {
             var mockedOutputQueue = new Queue<IEvent>();
             var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            _operator.RegisterOutputEndpoint(outputEndpoint.Object);
+            //_operator.RegisterOutputEndpoint(outputEndpoint.Object);
 
             IList<IEvent> events = new List<IEvent>();
 
@@ -130,7 +130,7 @@ namespace BlackSP.Core.UnitTests.Operator
             //second two events cause first event to go out of window so shouldnt return as a match
             foreach (var @event in events)
             {
-                _operator.Enqueue(@event);
+                _operator.OperateOnEvent(@event);
             }
 
             await Task.Delay(25);
@@ -147,7 +147,7 @@ namespace BlackSP.Core.UnitTests.Operator
         [TearDown]
         public void TearDown()
         {
-            Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
+            //Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
             Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
 
             _operator.Dispose();

@@ -4,7 +4,7 @@ using BlackSP.Core.Controllers;
 using BlackSP.Core.Endpoints;
 using BlackSP.CRA.Endpoints;
 using BlackSP.Infrastructure.Extensions;
-using BlackSP.Infrastructure.IoC;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Operators;
 using BlackSP.Serialization.Extensions;
@@ -12,6 +12,7 @@ using CRA.ClientLibrary;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using BlackSP.Infrastructure.Models;
 
 namespace BlackSP.CRA.Vertices
 {
