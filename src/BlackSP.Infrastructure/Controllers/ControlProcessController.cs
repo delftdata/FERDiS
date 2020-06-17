@@ -37,7 +37,7 @@ namespace BlackSP.Infrastructure.Controllers
 
             _deliverer = messageDeliverer ?? throw new ArgumentNullException(nameof(messageDeliverer));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
-            _delivererSemaphore = new SemaphoreSlim(0, 1);
+            _delivererSemaphore = new SemaphoreSlim(1, 1);
 
             _ctSource = new CancellationTokenSource();
         }
@@ -89,19 +89,20 @@ namespace BlackSP.Infrastructure.Controllers
                 while (!t.IsCancellationRequested)
                 {
                     var message = controlSource.Take(t) ?? throw new Exception($"Received null from {controlSource.GetType()}.Take");
-                    
                     await _delivererSemaphore.WaitAsync(t).ConfigureAwait(true);
                     IEnumerable<ControlMessage> responses = await _deliverer.Deliver(message).ConfigureAwait(false);
-                    _delivererSemaphore.Release();
                     foreach (var msg in responses)
                     {
                         dispatchQueue.Add(msg);
                     }
+                    _delivererSemaphore.Release();
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
+            catch
             {
-                //silence cancellation request exceptions
+                _ctSource.Cancel();
+                throw;
             }
             finally
             {
@@ -120,6 +121,11 @@ namespace BlackSP.Infrastructure.Controllers
                 }
             }
             catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
+            catch
+            {
+                _ctSource.Cancel();
+                throw;
+            }
             finally
             {
                 _dispatcher.SetFlags(DispatchFlags.None);

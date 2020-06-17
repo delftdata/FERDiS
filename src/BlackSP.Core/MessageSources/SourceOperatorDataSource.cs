@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BlackSP.Core.Models.Payloads;
 
 namespace BlackSP.Core.MessageSources
 {
@@ -31,7 +32,10 @@ namespace BlackSP.Core.MessageSources
         public DataMessage Take(CancellationToken t)
         {
             IEvent next = _source.ProduceNext(t);
-            return new DataMessage(next);
+            var payload = new EventPayload { Event = next };
+            var res = new DataMessage();
+            res.AddPayload(payload);
+            return res;
         }
     }
 }

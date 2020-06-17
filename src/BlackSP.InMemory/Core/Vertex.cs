@@ -69,7 +69,7 @@ namespace BlackSP.InMemory.Core
                 
                 threads.Add(Task.Run(() => controller.StartProcess()));
 
-                if(hostParameter.VertexConfiguration.VertexType != VertexType.Coordinator)
+                if(false && hostParameter.VertexConfiguration.VertexType != VertexType.Coordinator)
                 {
                     var controller2 = dependencyScope.Resolve<DataProcessController>();
                     await Task.Delay(5000);

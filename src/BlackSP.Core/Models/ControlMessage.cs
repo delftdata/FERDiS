@@ -7,39 +7,26 @@ using System.Text;
 namespace BlackSP.Core.Models
 {
     [ProtoContract]
-    public class ControlMessage : IMessage
+    public sealed class ControlMessage : MessageBase
     {
-        public bool IsControl => true;
-
-        //[ProtoMember(1)]
-        public int PartitionKey => 0; //TODO: consider how to handle partitioning from coordinator?
-
-        //[ProtoMember(1)]
-        //public IDictionary<string, object> Metadata { get; private set; } 
-        //TODO: protobuf will not like object..
+        public override bool IsControl => true;
 
         [ProtoMember(1)]
-        public ControlMessageType Type { get; set; }
+        public override int PartitionKey { get; }
+
+        [ProtoMember(2)]
+        public override IDictionary<string, MessagePayloadBase> MetaData { get; }
 
         public ControlMessage()
         {
-            //Metadata = new Dictionary<string, object>();
+            PartitionKey = 0; //TODO: ??
+            MetaData = new Dictionary<string, MessagePayloadBase>();
         }
 
-        public ControlMessage Copy()
+        public ControlMessage(IDictionary<string, MessagePayloadBase> metaData)
         {
-            return new ControlMessage()
-            {
-                //Metadata = new Dictionary<string, object>(Metadata),
-                Type = Type
-            };
+            PartitionKey = 0; //TODO: ??
+            MetaData = new Dictionary<string, MessagePayloadBase>(metaData);
         }
-    }
-
-    public enum ControlMessageType
-    {
-        Heartbeat,
-        StartDataProcess,
-        CheckpointRestore
     }
 }

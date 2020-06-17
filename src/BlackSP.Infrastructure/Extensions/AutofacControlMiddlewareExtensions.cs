@@ -3,7 +3,7 @@ using BlackSP.Core.Models;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Operators;
-using BlackSP.Middlewares;
+using BlackSP.Core.Middlewares;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,12 +15,16 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder AddControlMiddlewaresForWorker(this ContainerBuilder builder)
         {
             //TODO: register worker control middlewares in order
+            builder.RegisterType<ControlMessageResponseMiddleware>().As<IMiddleware<ControlMessage>>();
+
             return builder;
         }
 
         public static ContainerBuilder AddControlMiddlewaresForCoordinator(this ContainerBuilder builder)
         {
             //TODO: register coordinator control middlewares in order
+            builder.RegisterType<PassthroughMiddleware<ControlMessage>>().AsImplementedInterfaces();
+
             return builder;
         }
     }

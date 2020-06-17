@@ -27,7 +27,7 @@ namespace BlackSP.Core
             _middlewares = middlewares ?? throw new ArgumentNullException(nameof(middlewares));
             if(!_middlewares.Any())
             {
-                //throw new ArgumentException($"{nameof(middlewares)} must have at least one element");
+                throw new ArgumentException($"{nameof(middlewares)} must have at least one element");
             }
         }
 

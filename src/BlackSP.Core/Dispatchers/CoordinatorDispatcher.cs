@@ -60,6 +60,15 @@ namespace BlackSP.Core.Dispatchers
 
         public async Task Dispatch(IMessage message, CancellationToken t)
         {
+            //assumptions that should hold:
+            // all output endpoints are of type control
+            // all output endpoints target one or more shards
+
+
+            // heartbeat --> broadcast to all workers
+            // cp restore --> specific vertex-shard
+            //
+            _vertexConfiguration.OutputEndpoints.Select(e => e.RemoteVertexName);
             throw new NotSupportedException($"Only queue consumption is supported through IMessage interface in {this.GetType()}");
         }
 

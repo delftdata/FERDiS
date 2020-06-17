@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Models;
+using BlackSP.Core.Models.Payloads;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using System;
@@ -18,6 +19,7 @@ namespace BlackSP.Core.MessageSources
         {
             _lastHeartBeat = DateTime.MinValue;
             _hbFrequencySeconds = 3;
+
         }
 
         public Task Flush()
@@ -27,14 +29,17 @@ namespace BlackSP.Core.MessageSources
 
         public ControlMessage Take(CancellationToken t)
         {
+            Console.WriteLine("BEEEEP");
+
             //TODO: rewrite to timer that fills blockingcollection?
-            var spanSinceLastBeat = DateTime.Now - _lastHeartBeat;
-            if (spanSinceLastBeat.TotalSeconds >= _hbFrequencySeconds)
+            while ((DateTime.Now - _lastHeartBeat).TotalSeconds < _hbFrequencySeconds)
             {
-                _lastHeartBeat = DateTime.Now;
-                return new ControlMessage();
+                Thread.Sleep(100);
             }
-            return null;
+            _lastHeartBeat = DateTime.Now;
+            var msg = new ControlMessage();
+            msg.AddPayload(new WorkerRequestPayload { RequestType = RequestType.Status });
+            return msg; ;
         }
     }
 }

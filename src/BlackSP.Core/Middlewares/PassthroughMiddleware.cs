@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Middlewares
+namespace BlackSP.Core.Middlewares
 {
-    public class PassthroughMiddleware : IMiddleware<DataMessage>
+    public class PassthroughMiddleware<TMessage> : IMiddleware<TMessage> where TMessage : IMessage
     {
 
 
@@ -18,9 +18,9 @@ namespace BlackSP.Middlewares
         {
         }
 
-        public Task<IEnumerable<DataMessage>> Handle(DataMessage message)
+        public Task<IEnumerable<TMessage>> Handle(TMessage message)
         {
-            return Task.FromResult(new List<DataMessage>() { message }.AsEnumerable());
+            return Task.FromResult(new List<TMessage>() { message }.AsEnumerable());
         }
     }
 }

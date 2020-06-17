@@ -55,6 +55,13 @@ namespace BlackSP.Serialization.Serializers
                 baseMessageType.AddSubType(inheritanceFieldNum++, subType);
             }
 
+            var basePayloadType = typeModel.Add(typeof(MessagePayloadBase), true);
+            var payloadSubTypes = TypeLoader.GetClassesExtending(typeof(MessagePayloadBase), false);
+            foreach (var subType in payloadSubTypes)
+            {
+                basePayloadType.AddSubType(inheritanceFieldNum++, subType);
+            }
+
             return typeModel.Compile();
         }
     }

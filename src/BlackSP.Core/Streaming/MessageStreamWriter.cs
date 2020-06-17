@@ -15,12 +15,15 @@ namespace BlackSP.Core.Streaming
         private int writtenBytes;
         private PipeWriter writer;
         private Memory<byte> buffer;
-
+        private DateTime lastFlush;
+        private TimeSpan maxFlushInterval;
         public MessageStreamWriter(Stream outputStream)
         {
             writtenBytes = 0;
             writer = outputStream.UsePipeWriter();
             buffer = writer.GetMemory();
+            lastFlush = DateTime.Now;
+            maxFlushInterval = TimeSpan.FromSeconds(1);
         }
 
         public async Task<int> WriteMessage(byte[] message)
@@ -46,8 +49,9 @@ namespace BlackSP.Core.Streaming
 
         private async Task EnsureBufferCapacity(int bytesToWrite)
         {
-            if (writtenBytes + bytesToWrite <= buffer.Length)
+            if (writtenBytes + bytesToWrite <= buffer.Length && (DateTime.Now - lastFlush) < maxFlushInterval)
             {   //buffer capacity is sufficient
+                //last flush happened less than 'interval' ago
                 return;
             }
 
@@ -55,7 +59,7 @@ namespace BlackSP.Core.Streaming
             writer.Advance(writtenBytes);
             await writer.FlushAsync();
             writtenBytes = 0;
-
+            lastFlush = DateTime.Now;
             buffer = writer.GetMemory(bytesToWrite);
         }
 

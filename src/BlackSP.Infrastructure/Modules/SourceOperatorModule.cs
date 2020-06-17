@@ -9,15 +9,15 @@ using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
-using BlackSP.Middlewares;
+using BlackSP.Core.Middlewares;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace BlackSP.Infrastructure.Modules
 {
-    public class SourceOperatorModule<TShell, TOperator, TEvent> : Module where TEvent : class, IEvent
-
+    public class SourceOperatorModule<TShell, TOperator, TEvent> : Module 
+        where TEvent : class, IEvent
     {
         //IHostConfiguration Configuration { get; set; }
 
@@ -28,7 +28,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();
 
-            //collector only as control source
+            //receiver only as control source
             builder.UseMessageReceiver(false);
 
             //data source (local source operator)
@@ -46,13 +46,13 @@ namespace BlackSP.Infrastructure.Modules
             builder.RegisterType<GenericMiddlewareDeliverer<DataMessage>>().As<IMessageDeliverer<DataMessage>>().SingleInstance();
 
             //Note: consumer is expected to register data middlewares himself
-            builder.RegisterType<PassthroughMiddleware>().AsImplementedInterfaces();
+            builder.RegisterType<PassthroughMiddleware<DataMessage>>().AsImplementedInterfaces();
             //TODO: insert real middlewares
 
 
             //control + data dispatcher
-            builder.UseWorkerDispatcher();            //TODO: middlewares?
-
+            builder.UseWorkerDispatcher();            
+            //TODO: middlewares?
 
             base.Load(builder);
         }

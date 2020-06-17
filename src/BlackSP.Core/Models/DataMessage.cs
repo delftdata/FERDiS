@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.Models;
+﻿using BlackSP.Core.Models.Payloads;
+using BlackSP.Kernel.Models;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
@@ -6,37 +7,32 @@ using System.Text;
 
 namespace BlackSP.Core.Models
 {
-
     [ProtoContract]
-    public class DataMessage : IMessage
+    public sealed class DataMessage : MessageBase
     {
-        [ProtoMember(1)]
-        public IEvent Payload { get; set; }
+        public override bool IsControl => false;
 
-        //public IDictionary<string, object> Metadata { get; private set; }
-
-        public bool IsControl => false;
-
-        public int PartitionKey => Payload.GetPartitionKey();
-
-        public DataMessage() 
-        {
-            //Metadata = new Dictionary<string, object>();
-        }
-
-        public DataMessage(IEvent payload)
-        {
-            Payload = payload; //payload is allowed to be null
-            //Metadata = new Dictionary<string, object>();
-        }
-
-        public DataMessage Copy(IEvent newPayload)
-        {
-            return new DataMessage()
+        public override int PartitionKey { get
             {
-                Payload = newPayload,
-                //Metadata = new Dictionary<string, object>(Metadata),
-            };
+                if(this.TryGetPayload<EventPayload>(out var payload))
+                {
+                    return payload.Event.GetPartitionKey();
+                }
+                throw new InvalidOperationException("Missing event payload, cannot get partition key");
+            }
+        }
+
+        [ProtoMember(1)]
+        public override IDictionary<string, MessagePayloadBase> MetaData { get; }
+
+        public DataMessage()
+        {
+            MetaData = new Dictionary<string, MessagePayloadBase>();
+        }
+
+        public DataMessage(IDictionary<string, MessagePayloadBase> metaData)
+        {
+            MetaData = new Dictionary<string, MessagePayloadBase>(metaData);
         }
     }
 }

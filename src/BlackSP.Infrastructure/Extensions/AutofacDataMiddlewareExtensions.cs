@@ -3,7 +3,7 @@ using BlackSP.Core.Models;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Operators;
-using BlackSP.Middlewares;
+using BlackSP.Core.Middlewares;
 using System;
 using System.Collections.Generic;
 using System.Text;
