@@ -27,10 +27,10 @@ namespace BlackSP.Core.MessageSources
 
         public ReceiverMessageSource()
         {
-            _dataQueue = new BlockingCollection<DataMessage>();
-            _controlQueue = new BlockingCollection<ControlMessage>();
+            _dataQueue = new BlockingCollection<DataMessage>(64);
+            _controlQueue = new BlockingCollection<ControlMessage>(64);
 
-            _inputBuffer = new BlockingCollection<IMessage>();
+            _inputBuffer = new BlockingCollection<IMessage>(64);
             _receptionFlags = ReceptionFlags.Control | ReceptionFlags.Data; //TODO: even set flags on constuct?
             lockObj = new object();
         }
@@ -46,7 +46,7 @@ namespace BlackSP.Core.MessageSources
         {
             _dataQueue.CompleteAdding();
             _dataQueue.Dispose();
-            _dataQueue = new BlockingCollection<DataMessage>();
+            _dataQueue = new BlockingCollection<DataMessage>(64);
             return Task.CompletedTask;
         }
         #endregion
@@ -62,7 +62,7 @@ namespace BlackSP.Core.MessageSources
         {
             _controlQueue.CompleteAdding();
             _controlQueue.Dispose();
-            _controlQueue = new BlockingCollection<ControlMessage>();
+            _controlQueue = new BlockingCollection<ControlMessage>(64);
             return Task.CompletedTask;
         }
         #endregion
@@ -145,7 +145,7 @@ namespace BlackSP.Core.MessageSources
                 {
                     SafeAddToInputQueue(blockedInput);
                 }
-                _inputBuffer = new BlockingCollection<IMessage>();
+                _inputBuffer = new BlockingCollection<IMessage>(64);
             }
         }
     }

@@ -116,7 +116,7 @@ namespace BlackSP.ThroughputExperiment
 
     class SampleAggregateOperator : IAggregateOperator<SampleEvent, SampleEvent2>
     {
-        public TimeSpan WindowSize => TimeSpan.FromSeconds(1);
+        public TimeSpan WindowSize => TimeSpan.FromSeconds(2);
         public int Counter { get; set; }
 
         public SampleAggregateOperator()
@@ -130,7 +130,7 @@ namespace BlackSP.ThroughputExperiment
             {
                 throw new Exception("Dude?");
             }
-            yield return new SampleEvent2($"AggregateResult_{Counter++}", DateTime.Now, $"{window.Count()} Events");
+            yield return new SampleEvent2($"AggregateResult_{Counter++}", window.Max(x => x.EventTime), $"{window.Count()} Events");
         }
     }
 }

@@ -56,6 +56,8 @@ namespace BlackSP.Core.Streaming
             }
 
             //the writebuffer is about to overflow, flush first
+            //(and/or) the last flush happened too long ago so we flush now
+            //few and small messages from control layer may take very long to fill the write buffer, thats why there is an early flush mechanism
             writer.Advance(writtenBytes);
             await writer.FlushAsync();
             writtenBytes = 0;

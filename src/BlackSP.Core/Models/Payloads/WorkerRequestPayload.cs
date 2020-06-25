@@ -10,10 +10,12 @@ namespace BlackSP.Core.Models.Payloads
     public class WorkerRequestPayload : MessagePayloadBase
     {
         public static new string MetaDataKey => "control:workerrequest";
-        public RequestType RequestType { get; set; } 
+        
+        [ProtoMember(1)]
+        public WorkerRequestType RequestType { get; set; } 
     }
 
-    public enum RequestType
+    public enum WorkerRequestType
     {
         /// <summary>
         /// Requests a status report

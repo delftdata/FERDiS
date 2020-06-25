@@ -29,6 +29,6 @@ namespace BlackSP.Kernel.Models
 
     public abstract class MessagePayloadBase
     {
-        public static string MetaDataKey => throw new NotSupportedException();
+        public static string MetaDataKey => throw new NotImplementedException();
     }
 }

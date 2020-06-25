@@ -22,33 +22,15 @@ namespace BlackSP.Core.Middlewares
         public Task<IEnumerable<ControlMessage>> Handle(ControlMessage message)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
-            if(!message.TryGetPayload<WorkerRequestPayload>(out var payload))
+            if(!message.TryGetPayload<WorkerRequestPayload>(out var payload) || payload.RequestType != WorkerRequestType.Status)
             {
                 //forward message
                 return Task.FromResult(new List<ControlMessage>() { message }.AsEnumerable());
-
             }
 
-            //consume message + forward results
-            switch (payload.RequestType)
-            {
-                case RequestType.Status:
-                    {
-                        Console.WriteLine("STATUS REQUEST RECEIVED");
-                        break;
-                    }
-                case RequestType.StartProcessing:
-                {
-                    break;
-                }
-                case RequestType.StopProcessing:
-                {
-                    break;
-                }
-                default: break;
-            }
+            Console.WriteLine("STATUS REQUEST RECEIVED");
 
-
+            //message consumed, no results to advance
             return Task.FromResult(new List<ControlMessage>() { }.AsEnumerable());
         }
     }

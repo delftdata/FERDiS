@@ -29,7 +29,6 @@ namespace BlackSP.Core.MessageSources
 
         public ControlMessage Take(CancellationToken t)
         {
-            Console.WriteLine("BEEEEP");
 
             //TODO: rewrite to timer that fills blockingcollection?
             while ((DateTime.Now - _lastHeartBeat).TotalSeconds < _hbFrequencySeconds)
@@ -38,8 +37,9 @@ namespace BlackSP.Core.MessageSources
             }
             _lastHeartBeat = DateTime.Now;
             var msg = new ControlMessage();
-            msg.AddPayload(new WorkerRequestPayload { RequestType = RequestType.Status });
-            return msg; ;
+            msg.AddPayload(new WorkerRequestPayload { RequestType = WorkerRequestType.StartProcessing });
+            Console.WriteLine("Generated heartbeat");
+            return msg;
         }
     }
 }

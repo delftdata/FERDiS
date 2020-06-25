@@ -21,13 +21,10 @@ namespace BlackSP.Core.Models
             {
                 throw new ArgumentException($"Payload type \"{typeof(TPayload)}\" does not implement static string MetaDataKey property", nameof(payload));
             }
-            if (MetaData.TryGetValue(metadataKey, out MessagePayloadBase payloadBase))
-            {
-                payload = payloadBase as TPayload;
-                return true;
-            }
-            payload = null;
-            return false;
+
+            MetaData.TryGetValue(metadataKey, out MessagePayloadBase payloadBase);
+            payload = payloadBase as TPayload;
+            return payload != null;
         }
 
         public void AddPayload<TPayload>(TPayload payload) where TPayload : MessagePayloadBase
@@ -37,9 +34,8 @@ namespace BlackSP.Core.Models
             var metaDataKey = typeof(TPayload).GetProperty(nameof(MessagePayloadBase.MetaDataKey))?.GetValue(null) as string ?? null;
             if (string.IsNullOrEmpty(metaDataKey))
             {
-                throw new ArgumentException("Payload type does not implement static string MetaDataKey property", nameof(TPayload));
+                throw new ArgumentException($"Payload type \"{typeof(TPayload)}\" does not implement static string MetaDataKey property", nameof(payload));
             }
-
             if (MetaData.ContainsKey(metaDataKey))
             {
                 MetaData.Remove(metaDataKey);

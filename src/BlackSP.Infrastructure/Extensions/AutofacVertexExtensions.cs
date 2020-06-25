@@ -25,35 +25,6 @@ namespace BlackSP.Infrastructure.Extensions
         #region Vertex type configurations
 
         /// <summary>
-        /// Configure types to have the process behave like an operator worker instance.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="hostConfig"></param>
-        /// <returns></returns>
-        public static ContainerBuilder UseWorkerConfiguration(this ContainerBuilder builder)
-        {
-            builder.UseProtobufSerializer();
-            builder.UseStreamingEndpoints();
-            
-            //control + data collector & expose as source
-            builder.UseMessageReceiver();
-
-            //control processor
-            builder.RegisterType<ControlProcessController>().SingleInstance();
-            builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();
-            builder.AddControlMiddlewaresForWorker();
-
-            //data processor
-            builder.RegisterType<DataProcessController>().SingleInstance();
-            builder.RegisterType<GenericMiddlewareDeliverer<DataMessage>>().As<IMessageDeliverer<DataMessage>>().SingleInstance();
-            //Note: user is expected to register data middlewares himself
-
-            //control + data dispatcher
-            builder.UseWorkerDispatcher();
-            return builder;
-        }
-
-        /// <summary>
         /// Configure types to have the process behave like a worker-coordinator instance. (instance that coordinates workers)
         /// </summary>
         /// <param name="builder"></param>

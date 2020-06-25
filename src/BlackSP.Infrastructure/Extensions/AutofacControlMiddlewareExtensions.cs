@@ -7,6 +7,7 @@ using BlackSP.Core.Middlewares;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using BlackSP.Core.Controllers;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -16,6 +17,9 @@ namespace BlackSP.Infrastructure.Extensions
         {
             //TODO: register worker control middlewares in order
             builder.RegisterType<ControlMessageResponseMiddleware>().As<IMiddleware<ControlMessage>>();
+
+            builder.RegisterType<SingleSourceProcessController<DataMessage>>().AsSelf();
+            builder.RegisterType<DataProcessControllerMiddleware>().As<IMiddleware<ControlMessage>>();
 
             return builder;
         }
