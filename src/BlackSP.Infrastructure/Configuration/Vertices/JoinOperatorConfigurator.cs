@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.OperatorShells;
+﻿using BlackSP.OperatorShells;
 using BlackSP.Infrastructure.Modules;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;

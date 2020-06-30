@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.OperatorShells
+namespace BlackSP.OperatorShells
 {
     public abstract class WindowedOperatorShellBase<TIn, TOut> : OperatorShellBase
         where TIn : class, IEvent

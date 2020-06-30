@@ -22,7 +22,7 @@ namespace BlackSP.ThroughputExperiment
                     ///*
                     source.Append(filter);
                     filter.Append(mapper);
-                    mapper.Append(aggregate);
+                    //mapper.Append(aggregate);
                     mapper.Append(sink);
                     //*/
                 } else

@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.OperatorShells;
+﻿using BlackSP.OperatorShells;
 using BlackSP.Kernel.Operators;
 using BlackSP.ThroughputExperiment.Events;
 using System;

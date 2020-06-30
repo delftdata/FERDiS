@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Core.OperatorShells
+namespace BlackSP.OperatorShells
 {
 
     public abstract class SlidingWindowedOperatorShellBase : OperatorShellBase

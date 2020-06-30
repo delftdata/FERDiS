@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.OperatorShells
+namespace BlackSP.OperatorShells
 {
     public class SinkOperatorShell<TEvent> : OperatorShellBase 
         where TEvent : class, IEvent

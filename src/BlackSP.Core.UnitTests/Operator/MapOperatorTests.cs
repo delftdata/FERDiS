@@ -1,5 +1,5 @@
-﻿using BlackSP.Core.OperatorShells;
-using BlackSP.Core.OperatorShells;
+﻿using BlackSP.OperatorShells;
+using BlackSP.OperatorShells;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Endpoints;

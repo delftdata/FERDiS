@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.OperatorShells
+namespace BlackSP.OperatorShells
 {
     public class AggregateOperatorShell<TIn, TOut> : WindowedOperatorShellBase<TIn, TOut>
         where TIn : class, IEvent

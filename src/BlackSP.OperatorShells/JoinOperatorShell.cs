@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BlackSP.Core.OperatorShells
+namespace BlackSP.OperatorShells
 {
     public class JoinOperatorShell<TInA, TInB, TOut> : SlidingWindowedOperatorShellBase
         where TInA : class, IEvent

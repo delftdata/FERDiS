@@ -8,7 +8,7 @@ using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 
-namespace BlackSP.Core.OperatorShells
+namespace BlackSP.OperatorShells
 {
     //- each operator pair will have their own endpoints connected --> not shared among operators
     //- operator can just enqueue outgoing events in all output queues

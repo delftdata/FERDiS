@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.OperatorShells
+namespace BlackSP.OperatorShells
 {
     public class MapOperatorShell<TIn, TOut> : OperatorShellBase
         where TIn : class, IEvent
