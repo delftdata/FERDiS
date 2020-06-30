@@ -2,7 +2,7 @@
 using BlackSP.Core.Controllers;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Models;
-using BlackSP.Infrastructure.Models;
+using BlackSP.Infrastructure;
 using BlackSP.InMemory.Configuration;
 using System;
 using System.Collections.Generic;

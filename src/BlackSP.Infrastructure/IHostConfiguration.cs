@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Infrastructure.Models
+namespace BlackSP.Infrastructure
 {
     /// <summary>
     /// Model holding relevant types and configurations for a host instance for BlackSP

@@ -3,7 +3,7 @@ using BlackSP.Core.Controllers;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Models;
 using BlackSP.CRA.Endpoints;
-using BlackSP.Infrastructure.Models;
+using BlackSP.Infrastructure;
 using BlackSP.Serialization.Extensions;
 using CRA.ClientLibrary;
 using System;

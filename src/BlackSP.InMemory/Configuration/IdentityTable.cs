@@ -1,4 +1,4 @@
-﻿using BlackSP.Infrastructure.Models;
+﻿using BlackSP.Infrastructure;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
