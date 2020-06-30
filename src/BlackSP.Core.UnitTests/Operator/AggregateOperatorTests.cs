@@ -53,7 +53,7 @@ namespace BlackSP.Core.UnitTests.Operator
         }
 
         [Test]
-        public async Task AggregateOperator_EmitsAResultFromWindow()
+        public void AggregateOperator_EmitsAResultFromWindow()
         {
             var results = _testEvents.SelectMany(e => _operator.OperateOnEvent(e)).ToArray();
             //insert extra event that is in the next window, thus closing the current window
@@ -70,59 +70,6 @@ namespace BlackSP.Core.UnitTests.Operator
             Assert.NotNull(windowResult);
             Assert.AreEqual(_testEvents.Count(), windowResult.Value);
         }
-        /*
-        [Test]
-        public async Task AggregateOperator_EmitsMultipleResults()
-        {
-            var mockedOutputQueue = new Queue<IEvent>();
-            var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            _operator.RegisterOutputEndpoint(outputEndpoint.Object);
 
-            var testStartTimes = new DateTime[] { DateTime.Now, DateTime.Now + _windowSize, DateTime.Now + (3 * _windowSize) };
-            foreach (var startTime in testStartTimes)
-            {
-                var testEvents = new List<TestEvent>();
-                for (int i = 0; i < 10; i++)
-                {
-                    testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i, EventTime = startTime });
-                }
-
-                foreach (var e in testEvents)
-                {
-                    _operator.Enqueue(e); //enqueue events in window
-                }
-            }
-
-            var windowCloser = new TestEvent
-            {
-                Key = "K_closer",
-                EventTime = testStartTimes.Last().Add(_windowSize),
-                Value = 10
-            };
-            _operator.Enqueue(windowCloser); //enqueue events in window
-            
-            await Task.Delay(100);
-
-            lock (mockedOutputQueue)
-            {
-                for (int i = 1; i <= 3; i++)
-                {   //expect three window results (one empty in the middle does not get emitted)
-                    Assert.IsTrue(mockedOutputQueue.Any());
-                    var windowResult = mockedOutputQueue.Dequeue() as TestEvent2;
-                    Assert.NotNull(windowResult);
-                    var expectedEvents = _testEvents.Count();
-                    Assert.AreEqual(expectedEvents, windowResult.Value);
-                }
-            }
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
-
-            _operator.Dispose();
-        }*/
     }
 }

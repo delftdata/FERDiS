@@ -44,23 +44,13 @@ namespace BlackSP.Core.UnitTests.Operator
             {
                 _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
             }
-
-            //_operatorThread = _mapOperator.Start(DateTime.Now);
-
         }
 
         [Test]
-        public async Task MapOperator_TransformsAnEvent()
+        public void MapOperator_TransformsAnEvent()
         {
-            var mockedOutputQueue = new Queue<IEvent>();
-            var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            //_mapOperator.RegisterOutputEndpoint(outputEndpoint.Object);
-            
-            //put one event in the operator input queue
-            var output = _mapOperator.OperateOnEvent(_testEvents[0]);
-            
-            await Task.Delay(1); //give background thread some time to perform the operation
-            
+            //operate on one event
+            var output = _mapOperator.OperateOnEvent(_testEvents[0]);           
             Assert.IsTrue(output.Any());
             
             var transformedEvent = output.First() as TestEvent2;
@@ -71,23 +61,21 @@ namespace BlackSP.Core.UnitTests.Operator
         }
 
         [Test]
-        public async Task MapOperator_TransformsMultipleEvents()
+        public void MapOperator_TransformsMultipleEvents()
         {
-            var mockedOutputQueue = new Queue<IEvent>();
-            var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            //_mapOperator.RegisterOutputEndpoint(outputEndpoint.Object);
+            var output = new List<IEvent>();
 
             foreach(var e in _testEvents)
             {
-                _mapOperator.OperateOnEvent(e);
+                output.AddRange(_mapOperator.OperateOnEvent(e));
             }
 
-            await Task.Delay(1); //give background thread some time to perform the operation
-
             foreach(var e in _testEvents)
             {
-                Assert.IsTrue(mockedOutputQueue.Any());
-                var transformedEvent = mockedOutputQueue.Dequeue() as TestEvent2;
+                Assert.IsTrue(output.Any());
+                var transformedEvent = output.First() as TestEvent2;
+                output.RemoveAt(0);//dequeue
+
                 Assert.IsNotNull(transformedEvent);
                 Assert.IsTrue(transformedEvent.Key.StartsWith("Transformed"));
                 Assert.AreEqual(e.Value, transformedEvent.Value);//byte transformed to int
@@ -98,9 +86,6 @@ namespace BlackSP.Core.UnitTests.Operator
         [TearDown]
         public void TearDown()
         {
-            //Assert.ThrowsAsync<OperationCanceledException>(_mapOperator.Stop);
-            //Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
-
             _mapOperator.Dispose();
         }
 

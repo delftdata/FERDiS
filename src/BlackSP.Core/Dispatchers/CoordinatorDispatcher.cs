@@ -54,23 +54,12 @@ namespace BlackSP.Core.Dispatchers
         
         public BlockingCollection<byte[]> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId)
         {
+            _ = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
             string endpointKey = endpoint.GetConnectionKey(shardId);
             return _outputQueues.Get(endpointKey);
         }
 
-        public async Task Dispatch(IMessage message, CancellationToken t)
-        {
-            //assumptions that should hold:
-            // all output endpoints are of type control
-            // all output endpoints target one or more shards
-
-
-            // heartbeat --> broadcast to all workers
-            // cp restore --> specific vertex-shard
-            //
-            _vertexConfiguration.OutputEndpoints.Select(e => e.RemoteVertexName);
-            throw new NotSupportedException($"Only queue consumption is supported through IMessage interface in {this.GetType()}");
-        }
+        
 
         public async Task Dispatch(ControlMessage message, CancellationToken t)
         {
@@ -83,7 +72,12 @@ namespace BlackSP.Core.Dispatchers
                 QueueForDispatch(targetConnectionKey, bytes);
             }
         }
-
+        
+        public Task Dispatch(IMessage message, CancellationToken t)
+        {
+            throw new NotSupportedException($"Only GetDispatchQueue is supported through IDispatcher<IMessage> interface in {this.GetType()}");
+        }
+        
         private void QueueForDispatch(string targetConnectionKey, byte[] bytes)
         {
             var shouldDispatchMessage = _dispatchFlags.HasFlag(DispatchFlags.Control);

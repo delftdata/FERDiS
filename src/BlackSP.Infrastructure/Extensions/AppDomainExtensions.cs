@@ -9,16 +9,16 @@ namespace BlackSP.Infrastructure.Extensions
 {
     public static class AppDomainExtensions
     {
-
         public static void LoadAllAvailableAssemblies(this AppDomain appDomain, Assembly targetExecutingAssembly)
         {
             _ = appDomain ?? throw new ArgumentNullException(nameof(appDomain));
+            _ = targetExecutingAssembly ?? throw new ArgumentNullException(nameof(targetExecutingAssembly));
 
             var loadedAssemblies = appDomain.GetAssemblies().ToList();
             var loadedPaths = loadedAssemblies.Where(a => !a.IsDynamic).Select(a => a.Location).ToArray();
 
             string assemblyDir = Path.GetDirectoryName(targetExecutingAssembly.Location);
-            Console.WriteLine($"I think assembly dir is: {assemblyDir}, from executing assembly: {targetExecutingAssembly.FullName}");
+            Console.WriteLine($"Searching for assemblies in directory: {assemblyDir}, with executing assembly: {targetExecutingAssembly.FullName}");
             var referencedPaths = Directory.GetFiles(assemblyDir, "*.dll");
             var toLoad = referencedPaths.Where(r => !loadedPaths.Contains(r, StringComparer.InvariantCultureIgnoreCase)).ToList();
             
@@ -28,9 +28,10 @@ namespace BlackSP.Infrastructure.Extensions
                 {
                     loadedAssemblies.Add(AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(path)));
                 } 
-                catch(Exception e)
+                catch(Exception)
                 {
                     Console.WriteLine("Failed to load assembly at location: " + path);
+                    throw;
                 }
             }
         }

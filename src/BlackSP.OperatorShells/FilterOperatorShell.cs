@@ -26,6 +26,7 @@ namespace BlackSP.OperatorShells
             {
                 yield return output;
             }
+            yield break;
         }
 
     }

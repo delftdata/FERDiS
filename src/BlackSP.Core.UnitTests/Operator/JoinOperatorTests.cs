@@ -38,7 +38,6 @@ namespace BlackSP.Core.UnitTests.Operator
         private JoinOperatorShell<TestEvent, TestEvent2, TestEvent2> _operator;
         private TimeSpan _windowSize;
         private DateTime _startTime;
-        private Task _operatorThread;
 
         [SetUp]
         public void SetUp()
@@ -46,15 +45,12 @@ namespace BlackSP.Core.UnitTests.Operator
             _startTime = DateTime.Now;
             _windowSize = TimeSpan.FromSeconds(10);
             _operator = new JoinOperatorShell<TestEvent, TestEvent2, TestEvent2>(new JoinOperatorConfigurationForTest { WindowSize = _windowSize });
-            //_operatorThread = _operator.Start(_startTime);
         }
         
         [Test]
         public async Task FilterOperator_JoinsTwoMatchingEventsInWindow()
         {
-            var mockedOutputQueue = new Queue<IEvent>();
-            var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            //_operator.RegisterOutputEndpoint(outputEndpoint.Object);
+            var output = new List<IEvent>();
 
             IList<TestEvent> events = new List<TestEvent>();
             IList<TestEvent2> events2 = new List<TestEvent2>();
@@ -65,26 +61,22 @@ namespace BlackSP.Core.UnitTests.Operator
 
             foreach(var @event in events.AsEnumerable<IEvent>().Concat(events2))
             {
-                _operator.OperateOnEvent(@event);
+                output.AddRange(_operator.OperateOnEvent(@event));
             }
 
-            await Task.Delay(10);
-
-            Assert.IsNotEmpty(mockedOutputQueue);
-            var outputEvent = mockedOutputQueue.Dequeue() as TestEvent2;
+            Assert.IsNotEmpty(output);
+            var outputEvent = output.First() as TestEvent2;
+            output.RemoveAt(0);
             Assert.IsNotNull(outputEvent);
             Assert.AreEqual(2, outputEvent.Value);
             Assert.AreEqual("KA+KB", outputEvent.Key);
-            Assert.IsEmpty(mockedOutputQueue);
+            Assert.IsEmpty(output);
         }
 
         [Test]
         public async Task FilterOperator_JoinsAllMatchingEventsInWindow()
         {
-            var mockedOutputQueue = new Queue<IEvent>();
-            var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            //_operator.RegisterOutputEndpoint(outputEndpoint.Object);
-
+            var output = new List<IEvent>();
             IList<IEvent> events = new List<IEvent>();
 
             events.Add(new TestEvent { Key = "K1_A", EventTime = _startTime.AddSeconds(1), Value = 1 });
@@ -95,33 +87,30 @@ namespace BlackSP.Core.UnitTests.Operator
             //matches are on value so (K1_A, K2_A) and (K2_C, K1_A)
             foreach (var @event in events)
             {
-                _operator.OperateOnEvent(@event);
+                output.AddRange(_operator.OperateOnEvent(@event));
             }
             
-            await Task.Delay(25);
-
-            Assert.IsNotEmpty(mockedOutputQueue);
-            var outputEvent = mockedOutputQueue.Dequeue() as TestEvent2;
+            Assert.IsNotEmpty(output);
+            var outputEvent = output.First() as TestEvent2;
+            output.RemoveAt(0);
             Assert.IsNotNull(outputEvent);
             Assert.AreEqual(2, outputEvent.Value);
             Assert.AreEqual("K1_A+K2_A", outputEvent.Key);
             
-            Assert.IsNotEmpty(mockedOutputQueue);
-            outputEvent = mockedOutputQueue.Dequeue() as TestEvent2;
+            Assert.IsNotEmpty(output);
+            outputEvent = output.First() as TestEvent2;
+            output.RemoveAt(0);
             Assert.IsNotNull(outputEvent);
             Assert.AreEqual(2, outputEvent.Value);
             Assert.AreEqual("K1_A+K2_C", outputEvent.Key);
-            Assert.IsEmpty(mockedOutputQueue);
+            Assert.IsEmpty(output);
 
         }
 
         [Test]
         public async Task FilterOperator_ShouldNotJoinWithEventsOutOfWindow()
         {
-            var mockedOutputQueue = new Queue<IEvent>();
-            var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            //_operator.RegisterOutputEndpoint(outputEndpoint.Object);
-
+            var output = new List<IEvent>();
             IList<IEvent> events = new List<IEvent>();
 
             events.Add(new TestEvent { Key = "K1_A", EventTime = _startTime.AddSeconds(1), Value = 2 });
@@ -130,26 +119,22 @@ namespace BlackSP.Core.UnitTests.Operator
             //second two events cause first event to go out of window so shouldnt return as a match
             foreach (var @event in events)
             {
-                _operator.OperateOnEvent(@event);
+                output.AddRange(_operator.OperateOnEvent(@event));
             }
 
-            await Task.Delay(25);
-
-            Assert.IsNotEmpty(mockedOutputQueue);
-            var outputEvent = mockedOutputQueue.Dequeue() as TestEvent2;
+            Assert.IsNotEmpty(output);
+            var outputEvent = output.First() as TestEvent2;
+            output.RemoveAt(0);
             Assert.IsNotNull(outputEvent);
             Assert.AreEqual(4, outputEvent.Value);
             Assert.AreEqual("K1_B+K2_A", outputEvent.Key);
             
-            Assert.IsEmpty(mockedOutputQueue);
+            Assert.IsEmpty(output);
         }
 
         [TearDown]
         public void TearDown()
         {
-            //Assert.ThrowsAsync<OperationCanceledException>(_operator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
-
             _operator.Dispose();
         }
     }

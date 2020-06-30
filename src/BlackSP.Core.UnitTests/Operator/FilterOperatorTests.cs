@@ -37,7 +37,6 @@ namespace BlackSP.Core.UnitTests.Operator
     public class FilterOperatorTests
     {
         private FilterOperatorShell<TestEvent> _distinctOperator;
-        private Task _operatorThread;
         private IList<IEvent> _testEvents;
 
         [SetUp]
@@ -49,39 +48,30 @@ namespace BlackSP.Core.UnitTests.Operator
             {
                 _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
             }
-            //_operatorThread = _distinctOperator.Start(DateTime.Now);
-
         }
 
         [Test]
         public async Task FilterOperator_DistinctUsesLocalStateToFilterDuplicates()
         {
-            var mockedOutputQueue = new Queue<IEvent>();
-            var outputEndpoint = MockBuilder.MockOutputEndpoint(mockedOutputQueue);
-            //_distinctOperator.RegisterOutputEndpoint(outputEndpoint.Object);
-
+            var results = new List<IEvent>();
             foreach (var e in _testEvents)
             {
-                _distinctOperator.OperateOnEvent(e);
-                _distinctOperator.OperateOnEvent(e);//Add the events twice, so the seconds can get filtered
+                results.AddRange(_distinctOperator.OperateOnEvent(e));
+                results.AddRange(_distinctOperator.OperateOnEvent(e));//Add the events twice, so the seconds can get filtered
             }
-
-            await Task.Delay(1); //give background thread some time to perform the operation
-            
-            Assert.IsTrue(mockedOutputQueue.Any());
+            Assert.AreEqual(results.Count(), _testEvents.Count());
             foreach (var e in _testEvents)
             {
-                Assert.AreEqual(e, mockedOutputQueue.Dequeue());
+                Assert.AreEqual(e, results.First());
+                results.RemoveAt(0);
             }
-            Assert.IsFalse(mockedOutputQueue.Any()); //crucial statement for this test, the queue should be empty at this point to reflect the filtered out events
+            Assert.AreEqual(results.Count(), 0);
+
         }
 
         [TearDown]
         public void TearDown()
         {
-            //Assert.ThrowsAsync<OperationCanceledException>(_distinctOperator.Stop);
-            Assert.ThrowsAsync<OperationCanceledException>(async () => await _operatorThread);
-
             _distinctOperator.Dispose();
         }
     }
