@@ -1,15 +1,12 @@
-﻿using BlackSP.Core.Extensions;
-using Nerdbank.Streams;
+﻿using Nerdbank.Streams;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Extensions
+namespace BlackSP.Streams.Extensions
 {
     public static class MessageStreaming
     {

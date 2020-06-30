@@ -13,6 +13,7 @@ using BlackSP.Core.Extensions;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
+using BlackSP.Streams.Extensions;
 
 namespace BlackSP.Core.Endpoints
 {

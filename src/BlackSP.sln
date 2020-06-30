@@ -41,6 +41,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.OperatorShells", "B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackSP.OperatorShells.UnitTests", "BlackSP.OperatorShells.UnitTests\BlackSP.OperatorShells.UnitTests.csproj", "{750AA519-64FE-41FC-B034-E50D8AB269BA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackSP.Streams", "BlackSP.Streams\BlackSP.Streams.csproj", "{72F541F5-F76B-4679-8BDF-04278A2B587A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -95,6 +97,10 @@ Global
 		{750AA519-64FE-41FC-B034-E50D8AB269BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{750AA519-64FE-41FC-B034-E50D8AB269BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{750AA519-64FE-41FC-B034-E50D8AB269BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72F541F5-F76B-4679-8BDF-04278A2B587A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72F541F5-F76B-4679-8BDF-04278A2B587A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72F541F5-F76B-4679-8BDF-04278A2B587A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72F541F5-F76B-4679-8BDF-04278A2B587A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

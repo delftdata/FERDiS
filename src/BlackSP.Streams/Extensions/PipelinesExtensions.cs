@@ -6,7 +6,7 @@ using System.IO.Pipelines;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace BlackSP.Core.Extensions
+namespace BlackSP.Streams.Extensions
 {
     public static class PipelinesExtensions
     {

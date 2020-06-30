@@ -8,16 +8,16 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Streaming
+namespace BlackSP.Streams
 {
-    public class MessageStreamWriter
+    public class PipeStreamWriter
     {
         private int writtenBytes;
         private PipeWriter writer;
         private Memory<byte> buffer;
         private DateTime lastFlush;
         private TimeSpan maxFlushInterval;
-        public MessageStreamWriter(Stream outputStream)
+        public PipeStreamWriter(Stream outputStream)
         {
             writtenBytes = 0;
             writer = outputStream.UsePipeWriter();

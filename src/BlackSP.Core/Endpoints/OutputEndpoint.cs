@@ -14,8 +14,8 @@ using BlackSP.Core.Extensions;
 using System.Linq;
 using Nerdbank.Streams;
 using BlackSP.Kernel;
-using BlackSP.Core.Streaming;
 using BlackSP.Kernel.Models;
+using BlackSP.Streams;
 
 namespace BlackSP.Core.Endpoints
 {
@@ -48,7 +48,7 @@ namespace BlackSP.Core.Endpoints
         public async Task Egress(Stream outputStream, string remoteEndpointName, int remoteShardId, CancellationToken t)
         {
             var msgBytesBuffer = _dispatcher.GetDispatchQueue(_endpointConfiguration, remoteShardId);
-            var writer = new MessageStreamWriter(outputStream);
+            var writer = new PipeStreamWriter(outputStream);
             foreach(var message in msgBytesBuffer.GetConsumingEnumerable(t))
             {
                 var endpointTypeDeliveryFlag = _endpointConfiguration.IsControl ? DispatchFlags.Control : DispatchFlags.Data;
