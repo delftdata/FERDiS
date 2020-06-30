@@ -3,6 +3,7 @@ using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.CRA.UnitTests
@@ -11,9 +12,9 @@ namespace BlackSP.CRA.UnitTests
     {
         public string KafkaTopicName => "";
 
-        public IEnumerable<EventA> GetTestEvents()
+        public EventA ProduceNext(CancellationToken t)
         {
-            throw new NotImplementedException();
+            return new EventA();
         }
     }
 

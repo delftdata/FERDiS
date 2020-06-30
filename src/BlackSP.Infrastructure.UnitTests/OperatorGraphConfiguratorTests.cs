@@ -1,4 +1,4 @@
-using BlackSP.Core.OperatorShells;
+using BlackSP.OperatorShells;
 using BlackSP.CRA.UnitTests.Events;
 using BlackSP.Infrastructure.Configuration;
 using Moq;
@@ -6,12 +6,14 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BlackSP.Infrastructure.Modules;
+using System.Linq;
 
 namespace BlackSP.CRA.UnitTests
 {
     class TestOperatorGraphBuilder : OperatorGraphBuilderBase
     {
-        public override Task<object> BuildGraph()
+        protected override Task<object> BuildGraph()
         {
             return Task.FromResult<object>(null);
         }
@@ -54,8 +56,7 @@ namespace BlackSP.CRA.UnitTests
             aggregate.Append(sink);
             //sink does not have append method, awesome
 
-            //Dont build the actual graph, that will attempt to invoke CRA methods which we cant mock :/
-            //await configurator.BuildGraph();
+            await configurator.Build(); //ensure complete (will add coordinator)
 
             //Asserts
             var usedNames = new HashSet<string>();
@@ -66,57 +67,56 @@ namespace BlackSP.CRA.UnitTests
                     Assert.IsFalse(usedNames.Contains(instanceName), "Duplicate instancename returned");
                     usedNames.Add(instanceName);
                 }
-                Assert.IsFalse(usedNames.Contains(configurator.OperatorName), "Duplicate operatorname returned");
-                usedNames.Add(configurator.OperatorName);
+                Assert.IsFalse(usedNames.Contains(configurator.VertexName), "Duplicate operatorname returned");
+                usedNames.Add(configurator.VertexName);
             }
+
+            var coordinatorModuleType = configurator.Configurators.Last().ModuleType;
+            Assert.AreEqual(typeof(CoordinatorModule), coordinatorModuleType);
+
         }
 
         [Test]
         public void Source_CorrectConfiguration()
         {
             var source = publicConfigurator.AddSource<SampleSourceOperator, EventA>(1);
-            Assert.AreEqual(typeof(SampleSourceOperator), source.OperatorConfigurationType);
-            Assert.AreEqual(typeof(SourceOperatorShell<EventA>), source.OperatorType);
-        }
 
+            Assert.AreEqual(typeof(SourceOperatorModule<SourceOperatorShell<EventA>, SampleSourceOperator, EventA>), source.ModuleType);
+        }
+        
         [Test]
         public void Filter_CorrectConfiguration()
         {
             var filter = publicConfigurator.AddFilter<SampleFilterOperator, EventA>(1);
-            Assert.AreEqual(typeof(SampleFilterOperator), filter.OperatorConfigurationType);
-            Assert.AreEqual(typeof(FilterOperatorShell<EventA>), filter.OperatorType);
+            Assert.AreEqual(typeof(ReactiveOperatorModule<FilterOperatorShell<EventA>, SampleFilterOperator>), filter.ModuleType);
         }
 
         [Test]
         public void Map_CorrectConfiguration()
         {
             var map = publicConfigurator.AddMap<SampleMapOperator, EventA, EventB>(1);
-            Assert.AreEqual(typeof(SampleMapOperator), map.OperatorConfigurationType);
-            Assert.AreEqual(typeof(MapOperatorShell<EventA, EventB>), map.OperatorType);
+            Assert.AreEqual(typeof(ReactiveOperatorModule<MapOperatorShell<EventA, EventB>, SampleMapOperator>), map.ModuleType);
         }
 
         [Test]
         public void Join_CorrectConfiguration()
         {
             var join = publicConfigurator.AddJoin<SampleJoinOperator, EventA, EventB, EventC>(1);
-            Assert.AreEqual(typeof(SampleJoinOperator), join.OperatorConfigurationType);
-            Assert.AreEqual(typeof(JoinOperatorShell<EventA, EventB, EventC>), join.OperatorType);
+            Assert.AreEqual(typeof(ReactiveOperatorModule<JoinOperatorShell<EventA, EventB, EventC>, SampleJoinOperator>), join.ModuleType);
         }
 
         [Test]
         public void Aggregate_CorrectConfiguration()
         {
             var aggregate = publicConfigurator.AddAggregate<SampleAggregateOperator, EventC, EventD>(1);
-            Assert.AreEqual(typeof(SampleAggregateOperator), aggregate.OperatorConfigurationType);
-            Assert.AreEqual(typeof(AggregateOperatorShell<EventC, EventD>), aggregate.OperatorType);
+            Assert.AreEqual(typeof(ReactiveOperatorModule<AggregateOperatorShell<EventC, EventD>, SampleAggregateOperator>), aggregate.ModuleType);
         }
 
         [Test]
         public void Sink_CorrectConfiguration()
         {
             var sink = publicConfigurator.AddSink<SampleSinkOperator, EventD>(1);
-            Assert.AreEqual(typeof(SampleSinkOperator), sink.OperatorConfigurationType);
-            Assert.AreEqual(typeof(SinkOperatorShell<EventD>), sink.OperatorType);
+            Assert.AreEqual(typeof(ReactiveOperatorModule<SinkOperatorShell<EventD>, SampleSinkOperator>), sink.ModuleType);
         }
     }
 }
