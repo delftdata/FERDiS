@@ -1,18 +1,14 @@
 ﻿using Autofac;
 using BlackSP.Core;
+using BlackSP.Core.Controllers;
 using BlackSP.Core.MessageSources;
+using BlackSP.Core.Middlewares;
 using BlackSP.Core.Models;
-using BlackSP.Infrastructure.Controllers;
 using BlackSP.Infrastructure.Extensions;
-using BlackSP.Infrastructure.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
-using BlackSP.Core.Middlewares;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -37,12 +33,11 @@ namespace BlackSP.Infrastructure.Modules
             builder.RegisterType<SourceOperatorDataSource<TEvent>>().As<IMessageSource<DataMessage>>();
 
             //control processor
-            builder.RegisterType<ControlProcessController>().SingleInstance();
+            builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
             builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();
             builder.AddControlMiddlewaresForWorker();
 
             //data processor
-            builder.RegisterType<DataProcessController>().SingleInstance();
             builder.RegisterType<GenericMiddlewareDeliverer<DataMessage>>().As<IMessageDeliverer<DataMessage>>().SingleInstance();
 
             //Note: consumer is expected to register data middlewares himself

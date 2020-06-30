@@ -11,23 +11,24 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Infrastructure.Controllers
+namespace BlackSP.Core.Controllers
 {
-    public class ControlProcessController
+    public class MultiSourceProcessController<TMessage>
+        where TMessage : MessageBase
     {
-        private readonly IEnumerable<IMessageSource<ControlMessage>> _controlSources;
-        private readonly IMessageDeliverer<ControlMessage> _deliverer;
-        private readonly IDispatcher<ControlMessage> _dispatcher;
+        private readonly IEnumerable<IMessageSource<TMessage>> _controlSources;
+        private readonly IMessageDeliverer<TMessage> _deliverer;
+        private readonly IDispatcher<TMessage> _dispatcher;
         private readonly SemaphoreSlim _delivererSemaphore;
 
 
         private CancellationTokenSource _ctSource;
         private Task _activeProcess;
 
-        public ControlProcessController(
-            IEnumerable<IMessageSource<ControlMessage>> controlSources,
-            IMessageDeliverer<ControlMessage> messageDeliverer,
-            IDispatcher<ControlMessage> dispatcher)
+        public MultiSourceProcessController(
+            IEnumerable<IMessageSource<TMessage>> controlSources,
+            IMessageDeliverer<TMessage> messageDeliverer,
+            IDispatcher<TMessage> dispatcher)
         {
             _controlSources = controlSources ?? throw new ArgumentNullException(nameof(controlSources));
             if(!_controlSources.Any())
@@ -48,15 +49,15 @@ namespace BlackSP.Infrastructure.Controllers
         public async Task StartProcess()
         {
             var t = _ctSource.Token;
-            var dispatchQueue = new BlockingCollection<ControlMessage>(64);//TODO: determine proper capacity
+            var dispatchQueue = new BlockingCollection<TMessage>(64);//TODO: determine proper capacity
             try
             {
                 var threads = new List<Task>();
                 foreach(var controlSource in _controlSources)
                 {
-                    threads.Add(Task.Run(async () => await ProcessControlMessages(controlSource, dispatchQueue, t).ConfigureAwait(false)));
+                    threads.Add(Task.Run(async () => await DeliverFromSource(controlSource, dispatchQueue, t).ConfigureAwait(false)));
                 }
-                threads.Add(Task.Run(async () => await DispatchControlMessages(dispatchQueue, t).ConfigureAwait(false)));
+                threads.Add(Task.Run(async () => await DispatchResults(dispatchQueue, t).ConfigureAwait(false)));
 
                 _activeProcess = Task.WhenAll(threads);
                 await _activeProcess.ConfigureAwait(false);
@@ -82,7 +83,7 @@ namespace BlackSP.Infrastructure.Controllers
             
         }
 
-        private async Task ProcessControlMessages(IMessageSource<ControlMessage> controlSource, BlockingCollection<ControlMessage> dispatchQueue, CancellationToken t)
+        private async Task DeliverFromSource(IMessageSource<TMessage> controlSource, BlockingCollection<TMessage> dispatchQueue, CancellationToken t)
         {
             try
             {
@@ -90,7 +91,7 @@ namespace BlackSP.Infrastructure.Controllers
                 {
                     var message = controlSource.Take(t) ?? throw new Exception($"Received null from {controlSource.GetType()}.Take");
                     await _delivererSemaphore.WaitAsync(t).ConfigureAwait(true);
-                    IEnumerable<ControlMessage> responses = await _deliverer.Deliver(message).ConfigureAwait(false);
+                    IEnumerable<TMessage> responses = await _deliverer.Deliver(message).ConfigureAwait(false);
                     foreach (var msg in responses)
                     {
                         dispatchQueue.Add(msg);
@@ -110,7 +111,7 @@ namespace BlackSP.Infrastructure.Controllers
             }
         }
 
-        private async Task DispatchControlMessages(BlockingCollection<ControlMessage> dispatchQueue, CancellationToken t)
+        private async Task DispatchResults(BlockingCollection<TMessage> dispatchQueue, CancellationToken t)
         {
             try
             {

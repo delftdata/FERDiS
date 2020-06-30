@@ -1,21 +1,18 @@
 ﻿using Autofac;
 using BlackSP.Core;
+using BlackSP.Core.Controllers;
+using BlackSP.Core.Dispatchers;
 using BlackSP.Core.Endpoints;
-using BlackSP.Core.Models;
-using BlackSP.Infrastructure.Controllers;
 using BlackSP.Core.MessageSources;
-using BlackSP.Kernel.Models;
+using BlackSP.Core.Models;
 using BlackSP.Kernel;
-using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.MessageProcessing;
-using BlackSP.Kernel.Operators;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
 using BlackSP.Serialization.Serializers;
 using Microsoft.IO;
 using System;
 using System.Collections.Generic;
-using BlackSP.Core.Dispatchers;
-using BlackSP.Infrastructure.Models;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -41,7 +38,7 @@ namespace BlackSP.Infrastructure.Extensions
             builder.UseMessageReceiver(false);
 
             //processor (control only)
-            builder.RegisterType<ControlProcessController>().SingleInstance();
+            builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
             builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();
             builder.AddControlMiddlewaresForCoordinator();
 

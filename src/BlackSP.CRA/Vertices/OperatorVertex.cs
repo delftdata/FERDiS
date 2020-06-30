@@ -1,18 +1,14 @@
 ﻿using Autofac;
-using Autofac.Core;
-using BlackSP.Infrastructure.Controllers;
+using BlackSP.Core.Controllers;
 using BlackSP.Core.Endpoints;
+using BlackSP.Core.Models;
 using BlackSP.CRA.Endpoints;
-using BlackSP.Infrastructure.Extensions;
-using BlackSP.Kernel.Models;
-using BlackSP.Kernel;
-using BlackSP.Kernel.Operators;
+using BlackSP.Infrastructure.Models;
 using BlackSP.Serialization.Extensions;
 using CRA.ClientLibrary;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using BlackSP.Infrastructure.Models;
 
 namespace BlackSP.CRA.Vertices
 {
@@ -20,7 +16,7 @@ namespace BlackSP.CRA.Vertices
     {
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
-        private ControlProcessController _controller;
+        private MultiSourceProcessController<ControlMessage> _controller;
         private IHostConfiguration _options;
         
         
@@ -45,7 +41,7 @@ namespace BlackSP.CRA.Vertices
             
             InitializeIoCContainer();
 
-            _controller = _vertexLifetimeScope.Resolve<ControlProcessController>();
+            _controller = _vertexLifetimeScope.Resolve<MultiSourceProcessController<ControlMessage>>();
             _bspThread = _controller.StartProcess();
             CreateEndpoints();
             

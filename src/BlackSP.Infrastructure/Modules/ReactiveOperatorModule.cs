@@ -1,15 +1,9 @@
 ﻿using Autofac;
 using BlackSP.Core;
-using BlackSP.Core.Middlewares;
+using BlackSP.Core.Controllers;
 using BlackSP.Core.Models;
-using BlackSP.Infrastructure.Controllers;
 using BlackSP.Infrastructure.Extensions;
-using BlackSP.Infrastructure.Models;
 using BlackSP.Kernel;
-using BlackSP.Kernel.MessageProcessing;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -28,7 +22,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.UseMessageReceiver();
 
             //control processor
-            builder.RegisterType<ControlProcessController>().SingleInstance();
+            builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
             builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();
             builder.AddControlMiddlewaresForWorker();
 
