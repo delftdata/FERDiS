@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.UnitTests.Operator
+namespace BlackSP.OperatorShells.UnitTests.Operator
 {
     public class OperatorShellBaseMisconfigurationTests
     {

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using BlackSP.Kernel.Events;
+using BlackSP.Kernel.Models;
 using ProtoBuf;
+
 namespace BlackSP.Serialization.UnitTests.Utilities
 {
     [ProtoContract]
@@ -27,6 +28,11 @@ namespace BlackSP.Serialization.UnitTests.Utilities
             Key = key;
             EventTime = eventTime ?? throw new ArgumentNullException(nameof(eventTime));
             Value = value;
+        }
+
+        public int GetPartitionKey()
+        {
+            return Key.GetHashCode();
         }
     }
 }

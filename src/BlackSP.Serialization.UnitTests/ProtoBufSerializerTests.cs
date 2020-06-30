@@ -1,4 +1,4 @@
-﻿using BlackSP.Kernel.Events;
+﻿using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
 using BlackSP.Serialization.Serializers;
 using BlackSP.Serialization.UnitTests.Utilities;
@@ -6,7 +6,6 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -67,11 +66,17 @@ namespace BlackSP.Serialization.UnitTests.Serialization
             if (castedRes != null) //its type 1 
             {
                 Assert.AreEqual(((ProtoBufTestEvent)result).Value, castedRes.Value);
-            }
+            } 
+            
 
             if (castedRes2 != null) //its type 2
             {
                 Assert.AreEqual(((ProtoBufTestEvent2)result).Value, castedRes2.Value);
+            }
+            
+            if(castedRes == null && castedRes2 == null)
+            {
+                Assert.Fail();
             }
         }
     }

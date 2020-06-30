@@ -1,6 +1,5 @@
 ﻿using BlackSP.OperatorShells;
 using BlackSP.Core.UnitTests.Events;
-using BlackSP.Core.UnitTests.Utilities;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
@@ -12,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.UnitTests.Operator
+namespace BlackSP.OperatorShells.UnitTests.Operator
 {
     class EventCounterAggregateConfiguration : IAggregateOperator<TestEvent, TestEvent2>
     {

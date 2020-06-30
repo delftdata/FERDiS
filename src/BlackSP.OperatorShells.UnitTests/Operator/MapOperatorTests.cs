@@ -1,19 +1,12 @@
-﻿using BlackSP.OperatorShells;
-using BlackSP.OperatorShells;
-using BlackSP.Core.UnitTests.Events;
-using BlackSP.Core.UnitTests.Utilities;
-using BlackSP.Kernel.Endpoints;
+﻿using BlackSP.Core.UnitTests.Events;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
-using Moq;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.UnitTests.Operator
+namespace BlackSP.OperatorShells.UnitTests.Operator
 {
     class MapOperatorConfigurationForTest : IMapOperator<TestEvent, TestEvent2>
     {

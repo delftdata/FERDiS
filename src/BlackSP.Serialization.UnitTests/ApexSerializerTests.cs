@@ -1,4 +1,4 @@
-﻿using BlackSP.Kernel.Events;
+﻿using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
 using BlackSP.Serialization.Serializers;
 using NUnit.Framework;
@@ -77,6 +77,11 @@ namespace BlackSP.Serialization.UnitTests.Serialization
             public object GetValue()
             {
                 return _values;
+            }
+
+            public int GetPartitionKey()
+            {
+                return Key.GetHashCode();
             }
         }
     }

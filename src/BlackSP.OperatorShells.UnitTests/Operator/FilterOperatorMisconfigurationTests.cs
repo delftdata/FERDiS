@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.UnitTests.Operator
+namespace BlackSP.OperatorShells.UnitTests.Operator
 {
     public class FilterOperatorMisconfigurationTests
     {

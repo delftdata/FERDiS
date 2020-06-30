@@ -1,17 +1,13 @@
-﻿using BlackSP.OperatorShells;
-using BlackSP.Core.UnitTests.Events;
-using BlackSP.Core.UnitTests.Utilities;
+﻿using BlackSP.Core.UnitTests.Events;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
-using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.UnitTests.Operator
+namespace BlackSP.OperatorShells.UnitTests.Operator
 {
     class BaseOperator : IOperator
     {}
@@ -45,13 +41,7 @@ namespace BlackSP.Core.UnitTests.Operator
         }
 
         [Test]
-        public void OperateOnEvent_ThrowsOnNull()
-        {
-            Assert.Throws<ArgumentNullException>(() => _operator.OperateOnEvent(null));
-        }
-
-        [Test]
-        public async Task Operator_PassesAnEventThrough()
+        public void Operator_PassesAnEventThrough()
         {
             var results = _operator.OperateOnEvent(_testEvents[0]);
 
@@ -60,7 +50,7 @@ namespace BlackSP.Core.UnitTests.Operator
         }
 
         [Test]
-        public async Task Operator_PassesEventsThroughInOrder()
+        public void Operator_PassesEventsThroughInOrder()
         {
             foreach (var e in _testEvents)
             {

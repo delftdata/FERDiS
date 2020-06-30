@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BlackSP.Core\BlackSP.Core.csproj" />
-    <ProjectReference Include="..\BlackSP.OperatorShells\BlackSP.OperatorShells.csproj" />
   </ItemGroup>
 
 </Project>

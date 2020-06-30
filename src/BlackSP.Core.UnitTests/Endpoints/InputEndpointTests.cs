@@ -100,6 +100,9 @@ namespace BlackSP.Core.UnitTests.Endpoints
         [Test]
         public async Task HasInput_Should_ReturnFalse_WhenNoInput()
         {
+            Assert.Fail();
+            
+            
             using (Stream inputStream = new MemoryStream())
             {
                 //start processing from stream
