@@ -15,15 +15,13 @@ namespace BlackSP.Streams
         private int writtenBytes;
         private PipeWriter writer;
         private Memory<byte> buffer;
-        private DateTime lastFlush;
-        private TimeSpan maxFlushInterval;
-        public PipeStreamWriter(Stream outputStream)
+        private bool alwaysFlush;
+        public PipeStreamWriter(Stream outputStream, bool flushAfterEveryMessage)
         {
             writtenBytes = 0;
             writer = outputStream.UsePipeWriter();
             buffer = writer.GetMemory();
-            lastFlush = DateTime.Now;
-            maxFlushInterval = TimeSpan.FromSeconds(1);
+            alwaysFlush = flushAfterEveryMessage;
         }
 
         public async Task<int> WriteMessage(byte[] message)
@@ -44,12 +42,18 @@ namespace BlackSP.Streams
             var msgBodyBufferSegment = buffer.Slice(writtenBytes + 4, nextMsgLength);
             nextMsgBodyBytes.CopyTo(msgBodyBufferSegment);
 
-            return writtenBytes += bytesToWrite;
+            writtenBytes += bytesToWrite;
+            if (alwaysFlush)
+            {
+                await FlushAndRefreshBuffer();
+            }
+
+            return writtenBytes;
         }
 
         private async Task EnsureBufferCapacity(int bytesToWrite)
         {
-            if (writtenBytes + bytesToWrite <= buffer.Length && (DateTime.Now - lastFlush) < maxFlushInterval)
+            if (writtenBytes + bytesToWrite <= buffer.Length)
             {   //buffer capacity is sufficient
                 //last flush happened less than 'interval' ago
                 return;
@@ -58,10 +62,14 @@ namespace BlackSP.Streams
             //the writebuffer is about to overflow, flush first
             //(and/or) the last flush happened too long ago so we flush now
             //few and small messages from control layer may take very long to fill the write buffer, thats why there is an early flush mechanism
+            await FlushAndRefreshBuffer(bytesToWrite);
+        }
+
+        private async Task FlushAndRefreshBuffer(int bytesToWrite = 4096)
+        {
             writer.Advance(writtenBytes);
             await writer.FlushAsync();
             writtenBytes = 0;
-            lastFlush = DateTime.Now;
             buffer = writer.GetMemory(bytesToWrite);
         }
 

@@ -33,8 +33,7 @@ namespace BlackSP.Core.Middlewares
             //received message with worker status payload
 
             string origin = payload.OriginInstanceName; //origin
-            Console.WriteLine($"{origin} reported state");
-            _workerStateMonitor.UpdateStateFromReport(origin, payload);
+            _workerStateMonitor.UpdateStateFromHeartBeat(origin, payload);
 
             //this middleware always consumes the message if it has the workerstatus payload
             return Task.FromResult(new List<ControlMessage>() { }.AsEnumerable());

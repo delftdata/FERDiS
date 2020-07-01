@@ -50,7 +50,7 @@ namespace BlackSP.Core.Endpoints
         public async Task Egress(Stream outputStream, string remoteEndpointName, int remoteShardId, CancellationToken t)
         {
             var msgBytesBuffer = _dispatcher.GetDispatchQueue(_endpointConfiguration, remoteShardId);
-            var writer = new PipeStreamWriter(outputStream);
+            var writer = new PipeStreamWriter(outputStream, _endpointConfiguration.IsControl);
             
             try
             {
@@ -64,6 +64,10 @@ namespace BlackSP.Core.Endpoints
                         await writer.WriteMessage(message).ConfigureAwait(false);
                     }
                 }
+            } 
+            catch(Exception e)
+            {
+
             }
             finally
             {

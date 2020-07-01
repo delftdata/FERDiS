@@ -29,6 +29,11 @@ namespace BlackSP.Core.Monitors
         private readonly ConnectionMonitor _connectionMonitor;
         private readonly Dictionary<string, WorkerState> _workerStates;
 
+        public delegate void AffectedWorkersEventHandler(IEnumerable<string> affectedInstanceNames);
+        public event AffectedWorkersEventHandler OnWorkersStart;
+        public event AffectedWorkersEventHandler OnWorkersRestore;
+        public event AffectedWorkersEventHandler OnWorkersHalt;
+
         public WorkerStateMonitor(IVertexGraphConfiguration graphConfiguration, IVertexConfiguration vertexConfiguration, ConnectionMonitor connectionMonitor)
         {
             //assumption: current vertexconfiguration is that of coordinator --> only has control channels to all vertices in system
@@ -44,7 +49,14 @@ namespace BlackSP.Core.Monitors
 
         private void ConnectionMonitor_OnConnectionChange(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
         {
+            
             var (changedConnection, isConnected) = e.ChangedConnection;
+            if(changedConnection.IsUpstream)
+            {
+                return; //we will get two reports, one from upstream, one from downstream, we selectively ignore upstream to not handle duplicates.
+            }
+            
+            
             var changedInstanceName = changedConnection.Endpoint.RemoteInstanceNames.ElementAt(changedConnection.ShardId);
             
             var currentState = _workerStates.Get(changedInstanceName);
@@ -57,12 +69,6 @@ namespace BlackSP.Core.Monitors
                     if(!isConnected)
                     {
                         currentState = WorkerState.Faulted;
-                        //TODO: HALT downstream?
-                        //-- something like this but recursive to get all downstream instance names
-                        _graphConfiguration.InstanceConnections.Where(tuple => { 
-                            var (from, to) = tuple; 
-                            return from == changedInstanceName; 
-                        });
                     }
                     break;
                 
@@ -75,39 +81,19 @@ namespace BlackSP.Core.Monitors
                     //can *only* transition out of this state through heatbeat messages (wait for vertex to be fully connected)
                     break;
             }
+            Console.WriteLine($"WorkerStateMonitor - {changedInstanceName} now has status {currentState}");
+
             //update worker state
             _workerStates.Remove(changedInstanceName);
             _workerStates.Add(changedInstanceName, currentState);
-            
-            
-            //check each worker state?
 
-            
-            //- if worker state == launchable
-            //-- is not connected --> faulted + HALT DOWNSTREAM?
-            //-- is connected --> continue and check if all connected && launchable || launched (upstream of failure can be launched)
-            //--- if all connected, launch all launchable
-
-            //- if worker state == launched
-            //-- is not connected --> faulted + HALT DOWNSTREAM?
-            //-- is connected --> wait
-
-            //- if worker state == faulted
-            //-- is not connected --> wait
-            //-- is connected --> halted + INITIATE ROLLBACK?
-
-            //- if worker state == halted
-            //-- is not connected --> faulted + HALT DOWNSTREAM?
-            //-- is connected --> wait
-
-            //- if worker state == restoring
-            //-- is not connected --> faulted + HALT DOWNSTREAM?
-            //-- is connected --> wait
+            EmitEventsIfGraphStateRequires();
         }
 
-        public void UpdateStateFromReport(string originInstanceName, WorkerStatusPayload statusPayload)
+        public void UpdateStateFromHeartBeat(string originInstanceName, WorkerStatusPayload statusPayload)
         {
             _ = statusPayload ?? throw new ArgumentNullException(nameof(statusPayload));
+            Console.WriteLine($"WorkerStateMonitor - heartbeat from {originInstanceName}. UpstreamConnected: {statusPayload.UpstreamFullyConnected}, DownstreamConnected: {statusPayload.DownstreamFullyConnected}, IsWorking: {statusPayload.DataProcessActive}.");
 
             var currentState = _workerStates.Get(originInstanceName);
             if(currentState == WorkerState.Offline)
@@ -118,10 +104,9 @@ namespace BlackSP.Core.Monitors
             //update worker state
             _workerStates.Remove(originInstanceName);
             _workerStates.Add(originInstanceName, currentState);
-            
-            
-            //TODO: IF ALL LAUNCHABLE --> START DATA PROCESS (MOVE TO LAUNCHED STATUS)
-            //OR IF MIX OF LAUNCHED AND LAUNCHABLE --> START LAUNCHABLES
+
+
+            EmitEventsIfGraphStateRequires();
         }
 
         /// <summary>
@@ -142,26 +127,77 @@ namespace BlackSP.Core.Monitors
             {
                 currentState = WorkerState.Halted;
             }
-
-            //TODO: IF ALL HALTED --> INSTRUCT RESTORE
-
             _workerStates.Remove(originInstanceName);
             _workerStates.Add(originInstanceName, currentState);
+
+            EmitEventsIfGraphStateRequires();
         }
 
         /// <summary>
         /// Notifies the state monitor that a worker has sent a restore response<br/>
-        /// Used to determine if/when the entire worker graph is ready to start working again.
+        /// Used to determine if/when workers are ready to resume working.
         /// </summary>
         /// <param name="originInstanceName"></param>
         public void UpdateStateFromRestoreResponse(string originInstanceName)
         {
-            //TODO: IF STATE NOT RESTORING --> ERROR
+            //TODO: IF STATE NOT RESTORING --> ERROR?
             //TODO: IF STATE RESTORING && RESPONSE SAYS "IM DONE" --> LAUNCHABLE
+            //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-            //TODO: IF ALL LAUNCHABLE --> START DATA PROCESS (MOVE TO LAUNCHED STATUS) (ALSO REQUIRED IN OTHER METHODS!!)
+            EmitEventsIfGraphStateRequires();
         }
 
+        /// <summary>
+        /// Performs checks based on all the worker states in the graph.<br/>
+        /// - Start data processing when ready<br/>
+        /// - Halt data processing in face of a failure<br/>
+        /// - Restore checkpoint when failure recovered<br/>
+        /// </summary>
+        private void EmitEventsIfGraphStateRequires()
+        {
+            //TODO IF ANY FAULTED --> HALT DOWNSTREAM
+            if (_workerStates.Values.Any(s => s == WorkerState.Faulted))
+            {
+                //instruct halt to downstream operators
+                foreach(var faultedWorker in _workerStates.Where(p => p.Value == WorkerState.Faulted))
+                {
+                    //TODO: HALT DOWNSTREAM OF FAULTED!
+                    //-- something like this but recursive to get all downstream instance names
+                    _graphConfiguration.InstanceConnections.Where(tuple => {
+                        var (from, to) = tuple;
+                        return from == faultedWorker.Key;
+                    });
+                    //TODO: UPDATE STATES OF WORKERS THAT ARE NOW HALTED
+                    //TODO: EMIT EVENTS FOR WORKERS THAT JUST GOT HALTED (IF ALREADY HALTED DO NOT EMIT)
+                }
+            }
+
+            //if any worker is currently restoring a checkpoint we must wait for it to notify the coordinator of restore completion
+            if(_workerStates.Any(s => s.Value == WorkerState.Restoring))
+            {
+                return; //wait
+            }
+
+            //if all workers are either started or ready to start then we can start the launchables
+            if(_workerStates.Values.All(s => s == WorkerState.Launchable || s == WorkerState.Launched))
+            {
+                //emit workersstart event with affected worker instanceNames.
+                var launchableWorkers = _workerStates.Where(p => p.Value == WorkerState.Launchable).ToArray();
+                OnWorkersStart.Invoke(launchableWorkers.Select(p => p.Key).ToArray());
+                foreach(var worker in launchableWorkers)
+                {
+                    _workerStates.Remove(worker.Key);
+                    _workerStates.Add(worker.Key, WorkerState.Launched);
+                }
+            }
+
+            //TODO: IF ALL HALTED OR IF MIX OF LAUNCHED AND HALTED
+            //      --> INSTRUCT RESTORE
+            if (!_workerStates.Values.Any(s => s == WorkerState.Faulted) && _workerStates.Values.All(s => s == WorkerState.Launched || s == WorkerState.Halted))
+            {
+
+            }
+        }
 
         private void InitializeInternalWorkerStates()
         {

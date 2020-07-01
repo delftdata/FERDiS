@@ -46,7 +46,7 @@ namespace BlackSP.Infrastructure.Configuration
             var allInstances = new List<string>();
             var allConnections = new List<Tuple<string, string>>();
 
-            foreach (var configurator in Configurators)
+            foreach (var configurator in Configurators.Where(c => !c.VertexName.Contains("coordinator")))
             {
                 //get instance names
                 //only use outgoing connections to build tuples

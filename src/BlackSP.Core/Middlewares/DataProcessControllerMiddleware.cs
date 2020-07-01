@@ -3,6 +3,7 @@ using BlackSP.Core.Models;
 using BlackSP.Core.Models.Payloads;
 using BlackSP.Core.Monitors;
 using BlackSP.Kernel.MessageProcessing;
+using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,13 +14,14 @@ namespace BlackSP.Core.Middlewares
 {
     public class DataProcessControllerMiddleware : IMiddleware<ControlMessage>
     {
-
+        private readonly IVertexConfiguration _vertexConfiguration;
         private readonly SingleSourceProcessController<DataMessage> _controller;
         private readonly DataProcessMonitor _processMonitor;
         private Task _activeThread;
 
-        public DataProcessControllerMiddleware(SingleSourceProcessController<DataMessage> processCtrl, DataProcessMonitor dataProcessMonitor)
+        public DataProcessControllerMiddleware(IVertexConfiguration vertexConfiguration, SingleSourceProcessController<DataMessage> processCtrl, DataProcessMonitor dataProcessMonitor)
         {
+            _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _controller = processCtrl ?? throw new ArgumentNullException(nameof(processCtrl));
             _processMonitor = dataProcessMonitor ?? throw new ArgumentNullException(nameof(dataProcessMonitor));
         }
@@ -32,7 +34,7 @@ namespace BlackSP.Core.Middlewares
                 return new List<ControlMessage>() { message }.AsEnumerable();
             }
 
-            if(payload.RequestType == WorkerRequestType.StartProcessing)
+            if(payload.RequestType == WorkerRequestType.StartProcessing && payload.TargetInstanceNames.Contains(_vertexConfiguration.InstanceName))
             {
                 if(_activeThread == null)
                 {

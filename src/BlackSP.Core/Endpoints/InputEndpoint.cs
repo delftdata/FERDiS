@@ -65,6 +65,11 @@ namespace BlackSP.Core.Endpoints
                     ).ConfigureAwait(true);
                 await exitedThread.ConfigureAwait(true); //await the exited thread so any thrown exception will be rethrown
             }
+            catch(Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
             finally
             {
                 _connectionMonitor.MarkDisconnected(_endpointConfig, remoteShardId);
