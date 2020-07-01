@@ -1,6 +1,7 @@
 ﻿using BlackSP.Kernel.Endpoints;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace BlackSP.Infrastructure.Models
@@ -13,13 +14,14 @@ namespace BlackSP.Infrastructure.Models
 
         public string RemoteEndpointName { get; set; }
 
-        public int RemoteShardCount { get; set; }
-
         public bool IsControl { get; set; }
+
+        public IEnumerable<string> RemoteInstanceNames { get; set; }
 
         public string GetConnectionKey(int shardId)
         {
-            if(shardId < RemoteShardCount && shardId > -1)
+            //TODO: consider using remote instanceName as key?
+            if(shardId < RemoteInstanceNames.Count() && shardId > -1)
             {
                 return $"{RemoteVertexName}{RemoteEndpointName}{shardId}";
             }

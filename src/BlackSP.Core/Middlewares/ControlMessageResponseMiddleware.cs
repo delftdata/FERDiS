@@ -1,6 +1,7 @@
 ﻿using BlackSP.Core;
 using BlackSP.Core.Models;
 using BlackSP.Core.Models.Payloads;
+using BlackSP.Core.Monitors;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
@@ -13,10 +14,25 @@ namespace BlackSP.Core.Middlewares
 {
     public class ControlMessageResponseMiddleware : IMiddleware<ControlMessage>
     {
+        private readonly IVertexConfiguration _vertexConfig;
+        private readonly ConnectionMonitor _connectionMonitor;
+        private readonly DataProcessMonitor _processMonitor;
+        private bool UpstreamFullyConnected;
+        private bool DownstreamFullyConnected;
 
-
-        public ControlMessageResponseMiddleware()
+        public ControlMessageResponseMiddleware(IVertexConfiguration vertexConfig, ConnectionMonitor connectionMonitor, DataProcessMonitor processMonitor)
         {
+            _vertexConfig = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
+            _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
+            _processMonitor = processMonitor ?? throw new ArgumentNullException(nameof(processMonitor));
+
+            _connectionMonitor.OnConnectionChange += ConnectionMonitor_OnConnectionChange;
+        }
+
+        private void ConnectionMonitor_OnConnectionChange(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
+        {
+            UpstreamFullyConnected = e.UpstreamFullyConnected;
+            DownstreamFullyConnected = e.DownstreamFullyConnected;
         }
 
         public Task<IEnumerable<ControlMessage>> Handle(ControlMessage message)
@@ -27,11 +43,17 @@ namespace BlackSP.Core.Middlewares
                 //forward message
                 return Task.FromResult(new List<ControlMessage>() { message }.AsEnumerable());
             }
-
-            Console.WriteLine("STATUS REQUEST RECEIVED");
-
-            //message consumed, no results to advance
-            return Task.FromResult(new List<ControlMessage>() { }.AsEnumerable());
+            //received message with status request payload
+            var response = new ControlMessage();
+            response.AddPayload(new WorkerStatusPayload()
+            {
+                OriginInstanceName = _vertexConfig.InstanceName,
+                UpstreamFullyConnected = UpstreamFullyConnected,
+                DownstreamFullyConnected = DownstreamFullyConnected,
+                DataProcessActive = _processMonitor.IsActive
+            });
+            //forward response
+            return Task.FromResult(new List<ControlMessage>() { response }.AsEnumerable());
         }
     }
 }

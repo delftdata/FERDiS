@@ -1,6 +1,7 @@
 ﻿using BlackSP.Infrastructure.Configuration.Vertices;
 using BlackSP.Infrastructure.Models;
 using BlackSP.Kernel.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,6 +41,32 @@ namespace BlackSP.Infrastructure.Configuration
             return await BuildGraph().ConfigureAwait(false);
         }
 
+        public IVertexGraphConfiguration GetVertexGraphConfiguration()
+        {
+            var allInstances = new List<string>();
+            var allConnections = new List<Tuple<string, string>>();
+
+            foreach (var configurator in Configurators)
+            {
+                //get instance names
+                //only use outgoing connections to build tuples
+
+                var instanceNames = configurator.InstanceNames;
+                var targetInstanceNames = configurator.OutgoingEdges.Select(e => e.ToVertex).Where(v => !v.VertexName.Contains("coordinator")).SelectMany(v => v.InstanceNames);
+
+                foreach(var instanceName in instanceNames)
+                {
+                    foreach(var targetInst in targetInstanceNames)
+                    {
+                        allConnections.Add(Tuple.Create(instanceName, targetInst));
+                    }
+                }
+                allInstances.AddRange(instanceNames);
+            }
+
+            return new VertexGraphConfiguration(allInstances, allConnections);
+        }
+
         /// <summary>
         /// Adds a coordinator vertex to the graph configuration, will create edges from and to every so far created vertex.
         /// </summary>
@@ -48,7 +75,7 @@ namespace BlackSP.Infrastructure.Configuration
             var instanceName = GetNextAvailableInstanceName(); //coordinator is never sharded
             var vertexName = GetNextAvailableOperatorName("coordinator");
             var coordinatorConfigurator = new CoordinatorConfigurator(new string[] { instanceName }, vertexName);
-            //connect to all existing configurators
+            //connect to all existing configurators (all workers)
             foreach (var configurator in Configurators)
             {
                 var fromCoordinatorEdge = new Edge(coordinatorConfigurator, coordinatorConfigurator.GetAvailableOutputEndpoint(), configurator, configurator.GetAvailableInputEndpoint());

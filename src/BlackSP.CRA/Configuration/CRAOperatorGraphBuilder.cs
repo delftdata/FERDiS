@@ -60,7 +60,7 @@ namespace BlackSP.CRA.Configuration
             var i = 0;
             foreach (var config in target.ToConfigurations())
             {
-                var hostParameter = new HostConfiguration(target.ModuleType, config);
+                var hostParameter = new HostConfiguration(target.ModuleType, GetVertexGraphConfiguration(), config);
                 await _craClient.InstantiateVertexAsync(
                     config.InstanceName,
                     target.VertexName,

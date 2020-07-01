@@ -11,24 +11,19 @@ namespace BlackSP.Infrastructure.Models
     [Serializable]
     public class HostConfiguration : IHostConfiguration
     {
-        /*public Type OperatorShellType => Type.GetType(_operatorShellTypeString);
-        private string _operatorShellTypeString;
-
-        public Type OperatorType => Type.GetType(_operatorTypeString);
-        private string _operatorTypeString;
-        */
 
         public Type StartupModule => Type.GetType(_startupModuleString);
         private string _startupModuleString;
+        
         public IVertexConfiguration VertexConfiguration { get; set; }
 
+        public IVertexGraphConfiguration GraphConfiguration { get; set; }
 
-        public HostConfiguration(Type startupModuleType, IVertexConfiguration vertexConfig)
+        public HostConfiguration(Type startupModuleType, IVertexGraphConfiguration graphConfig, IVertexConfiguration vertexConfig)
         {
-            //_operatorShellTypeString = operatorShellType?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(operatorShellType));
-            //_operatorTypeString = operatorType?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(operatorType));
+            
             _startupModuleString = startupModuleType?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(startupModuleType));
-
+            GraphConfiguration = graphConfig;
             VertexConfiguration = vertexConfig;
         }
     }

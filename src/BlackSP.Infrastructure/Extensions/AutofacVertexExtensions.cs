@@ -1,10 +1,12 @@
 ﻿using Autofac;
+using Autofac.Core;
 using BlackSP.Core;
 using BlackSP.Core.Controllers;
 using BlackSP.Core.Dispatchers;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.MessageSources;
 using BlackSP.Core.Models;
+using BlackSP.Core.Monitors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
@@ -19,37 +21,6 @@ namespace BlackSP.Infrastructure.Extensions
     public static class AutofacVertexExtensions
     {
 
-        #region Vertex type configurations
-
-        /// <summary>
-        /// Configure types to have the process behave like a worker-coordinator instance. (instance that coordinates workers)
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="hostConfig"></param>
-        /// <returns></returns>
-        public static ContainerBuilder UseCoordinatorConfiguration(this ContainerBuilder builder)
-        {
-
-            builder.UseProtobufSerializer();
-            builder.UseStreamingEndpoints();
-
-            //sources (control only)
-            builder.RegisterType<HeartbeatSource>().As<IMessageSource<ControlMessage>>();
-            builder.UseMessageReceiver(false);
-
-            //processor (control only)
-            builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
-            builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();
-            builder.AddControlMiddlewaresForCoordinator();
-
-            //dispatcher (control only)
-            builder.UseCoordinatorDispatcher();
-
-            return builder;
-        }
-        #endregion
-
-        #region Subsystems for vertices
 
         /// <summary>
         /// Configure types to use network receiver as one or more message sources.
@@ -113,14 +84,26 @@ namespace BlackSP.Infrastructure.Extensions
         /// <returns></returns>
         public static ContainerBuilder UseProtobufSerializer(this ContainerBuilder builder)
         {
-            //TODO: WIP
-            //TODO: VERTEX CONFIGURATION
-            // AND  ENDPOINT CONFIGURATION
             builder.RegisterType<ProtobufSerializer>().As<ISerializer>();
             builder.RegisterInstance(new RecyclableMemoryStreamManager()); //register one memorystreampool for all components to share
             return builder;
         }
 
-#endregion
+
+        public static ContainerBuilder UseWorkerMonitors(this ContainerBuilder builder)
+        {
+            builder.RegisterType<ConnectionMonitor>().AsSelf().SingleInstance();
+            builder.RegisterType<DataProcessMonitor>().AsSelf().SingleInstance();
+
+            return builder;
+        }
+
+        public static ContainerBuilder UseCoordinatorMonitors(this ContainerBuilder builder)
+        {
+            builder.RegisterType<ConnectionMonitor>().AsSelf().SingleInstance();
+            builder.RegisterType<WorkerStateMonitor>().AsSelf().SingleInstance();
+
+            return builder;
+        }
     }
 }

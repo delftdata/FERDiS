@@ -1,6 +1,7 @@
 ﻿using BlackSP.Core.Controllers;
 using BlackSP.Core.Models;
 using BlackSP.Core.Models.Payloads;
+using BlackSP.Core.Monitors;
 using BlackSP.Kernel.MessageProcessing;
 using System;
 using System.Collections.Generic;
@@ -14,12 +15,13 @@ namespace BlackSP.Core.Middlewares
     {
 
         private readonly SingleSourceProcessController<DataMessage> _controller;
-
+        private readonly DataProcessMonitor _processMonitor;
         private Task _activeThread;
 
-        public DataProcessControllerMiddleware(SingleSourceProcessController<DataMessage> processCtrl)
+        public DataProcessControllerMiddleware(SingleSourceProcessController<DataMessage> processCtrl, DataProcessMonitor dataProcessMonitor)
         {
             _controller = processCtrl ?? throw new ArgumentNullException(nameof(processCtrl));
+            _processMonitor = dataProcessMonitor ?? throw new ArgumentNullException(nameof(dataProcessMonitor));
         }
 
         public async Task<IEnumerable<ControlMessage>> Handle(ControlMessage message)
@@ -35,8 +37,9 @@ namespace BlackSP.Core.Middlewares
                 if(_activeThread == null)
                 {
                     _activeThread = _controller.StartProcess();
-                    Console.WriteLine("Data process started");
-                } else
+                    _processMonitor.MarkActive(true);
+                } 
+                else
                 {
                     Console.WriteLine("Data process already started");
                 }
@@ -44,11 +47,16 @@ namespace BlackSP.Core.Middlewares
             }
             else if (payload.RequestType == WorkerRequestType.StopProcessing)
             {
-                await _controller.StopProcess().ConfigureAwait(false);
                 if(_activeThread != null)
                 {
+                    await _controller.StopProcess().ConfigureAwait(false);
                     await _activeThread.ConfigureAwait(false);
                     _activeThread = null;
+                    _processMonitor.MarkActive(false);
+                } 
+                else
+                {
+                    Console.WriteLine("Attempted to stop data process which was not started");
                 }
             }
 

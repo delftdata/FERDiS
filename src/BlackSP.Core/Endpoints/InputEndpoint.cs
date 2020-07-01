@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Core.Extensions;
+using BlackSP.Core.Monitors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
@@ -24,23 +25,27 @@ namespace BlackSP.Core.Endpoints
 
         private readonly IMessageSerializer _serializer;
         private readonly IReceiver _receiver;
-        private readonly IEndpointConfiguration _endpointConfig; //TODO: set value
+        private readonly IEndpointConfiguration _endpointConfig;
+        private readonly ConnectionMonitor _connectionMonitor;
 
         public InputEndpoint(string endpointName,
                              IMessageSerializer serializer,
                              IReceiver receiver,
-                             IVertexConfiguration vertexConfig)
+                             IVertexConfiguration vertexConfig,
+                             ConnectionMonitor connectionMonitor)
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _receiver = receiver ?? throw new ArgumentNullException(nameof(receiver));
-            _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
 
+            _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
             _endpointConfig = vertexConfig.InputEndpoints.FirstOrDefault(x => x.LocalEndpointName == endpointName);
+
+            _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
         }
 
         /// <summary>
         /// Starts reading from the inputstream and storing results in local inputqueue.
-        /// This method will block execution, ensure it is running on a background thread.
+        /// This method will block, ensure it is running on a background thread.
         /// </summary>
         /// <param name="s"></param>
         /// <param name="t"></param>
@@ -50,15 +55,20 @@ namespace BlackSP.Core.Endpoints
             {
                 throw new Exception($"Invalid IEndpointConfig, expected remote endpointname: {_endpointConfig.RemoteEndpointName} but was: {remoteEndpointName}");
             }
-
-            using (var sharedMsgQueue = new BlockingCollection<byte[]>(64)) //TODO: determine capacity
+            BlockingCollection<byte[]> sharedMsgQueue = new BlockingCollection<byte[]>(64);
+            try
             {
-                //TODO: check if needs background thread
+                _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
                 var exitedThread = await Task.WhenAny(
                         s.ReadMessagesTo(sharedMsgQueue, t),
                         DeserializeToReceiver(sharedMsgQueue, remoteShardId, t)
                     ).ConfigureAwait(true);
                 await exitedThread.ConfigureAwait(true); //await the exited thread so any thrown exception will be rethrown
+            }
+            finally
+            {
+                _connectionMonitor.MarkDisconnected(_endpointConfig, remoteShardId);
+                sharedMsgQueue.Dispose();
             }
         }
 

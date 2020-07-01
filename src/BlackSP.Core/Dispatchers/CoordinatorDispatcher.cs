@@ -93,7 +93,7 @@ namespace BlackSP.Core.Dispatchers
         {
             foreach (var endpointConfig in _vertexConfiguration.OutputEndpoints)
             {
-                var shardCount = endpointConfig.RemoteShardCount;
+                var shardCount = endpointConfig.RemoteInstanceNames.Count();
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
                     var endpointKey = endpointConfig.GetConnectionKey(shardId);

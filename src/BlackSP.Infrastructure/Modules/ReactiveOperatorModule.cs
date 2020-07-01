@@ -21,6 +21,8 @@ namespace BlackSP.Infrastructure.Modules
             //control + data collector & expose as source(s)
             builder.UseMessageReceiver();
 
+            builder.UseWorkerMonitors();
+
             //control processor
             builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
             builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();

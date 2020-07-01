@@ -77,8 +77,8 @@ namespace BlackSP.Infrastructure.Configuration
         private static IEndpointConfiguration AsEndpointConfiguration(Edge edge, bool asInput)
         {
             _ = edge ?? throw new ArgumentNullException(nameof(edge));
-            bool fromCoordinator = edge.FromVertex.VertexType == Kernel.Models.VertexType.Coordinator;
-            bool toCoordinator = edge.ToVertex.VertexType == Kernel.Models.VertexType.Coordinator;
+            bool fromCoordinator = edge.FromVertex.VertexType == VertexType.Coordinator;
+            bool toCoordinator = edge.ToVertex.VertexType == VertexType.Coordinator;
 
             return new EndpointConfiguration()
             {
@@ -86,7 +86,7 @@ namespace BlackSP.Infrastructure.Configuration
                 LocalEndpointName = asInput ? edge.ToEndpoint : edge.FromEndpoint,
                 RemoteVertexName = asInput ? edge.FromVertex.VertexName : edge.ToVertex.VertexName,
                 RemoteEndpointName = asInput ? edge.FromEndpoint : edge.ToEndpoint,
-                RemoteShardCount = asInput ? edge.FromVertex.InstanceNames.Count : edge.ToVertex.InstanceNames.Count
+                RemoteInstanceNames = asInput ? edge.FromVertex.InstanceNames : edge.ToVertex.InstanceNames
             };
         }
     }

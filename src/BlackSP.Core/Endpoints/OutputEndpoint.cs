@@ -16,6 +16,7 @@ using Nerdbank.Streams;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Models;
 using BlackSP.Streams;
+using BlackSP.Core.Monitors;
 
 namespace BlackSP.Core.Endpoints
 {
@@ -26,21 +27,22 @@ namespace BlackSP.Core.Endpoints
 
         private readonly IDispatcher<IMessage> _dispatcher;
         private readonly IEndpointConfiguration _endpointConfiguration;
+        private readonly ConnectionMonitor _connectionMonitor;
 
-        public OutputEndpoint(string endpointName, IDispatcher<IMessage> dispatcher, IVertexConfiguration vertexConfiguration)
+        public OutputEndpoint(string endpointName, IDispatcher<IMessage> dispatcher, IVertexConfiguration vertexConfiguration, ConnectionMonitor connectionMonitor)
         {
             _ = endpointName ?? throw new ArgumentNullException(nameof(endpointName));
             _ = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
 
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _endpointConfiguration = vertexConfiguration.OutputEndpoints.First(x => x.LocalEndpointName == endpointName);
+
+            _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
         }
 
         /// <summary>
-        /// Starts a blocking loop that will check the 
-        /// registered remote shard's output queue for
-        /// new events and write them to the provided
-        /// outputstream.
+        /// Starts a blocking loop that will check the registered remote shard's output queue for
+        /// new events and write them to the provided outputstream.
         /// </summary>
         /// <param name="outputStream"></param>
         /// <param name="remoteShardId"></param>
@@ -49,14 +51,25 @@ namespace BlackSP.Core.Endpoints
         {
             var msgBytesBuffer = _dispatcher.GetDispatchQueue(_endpointConfiguration, remoteShardId);
             var writer = new PipeStreamWriter(outputStream);
-            foreach(var message in msgBytesBuffer.GetConsumingEnumerable(t))
+            
+            try
             {
-                var endpointTypeDeliveryFlag = _endpointConfiguration.IsControl ? DispatchFlags.Control : DispatchFlags.Data;
-                if (_dispatcher.GetFlags().HasFlag(endpointTypeDeliveryFlag))
+                _connectionMonitor.MarkConnected(_endpointConfiguration, remoteShardId);
+                foreach (var message in msgBytesBuffer.GetConsumingEnumerable(t))
                 {
-                    await writer.WriteMessage(message).ConfigureAwait(false);
+                    //endpoint drops messages if dispatcher flags indicate there should not be dispatched
+                    var endpointTypeDeliveryFlag = _endpointConfiguration.IsControl ? DispatchFlags.Control : DispatchFlags.Data;
+                    if (_dispatcher.GetFlags().HasFlag(endpointTypeDeliveryFlag))
+                    {
+                        await writer.WriteMessage(message).ConfigureAwait(false);
+                    }
                 }
             }
+            finally
+            {
+                _connectionMonitor.MarkDisconnected(_endpointConfiguration, remoteShardId);
+            }
+            
         }
     }
 }

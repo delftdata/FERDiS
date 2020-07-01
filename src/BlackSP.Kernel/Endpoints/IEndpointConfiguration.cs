@@ -22,9 +22,9 @@ namespace BlackSP.Kernel.Endpoints
         string RemoteEndpointName { get; }
 
         /// <summary>
-        /// The amount of shards on the remote vertex
+        /// The instance names of each shard of the remote vertex (index == shardId)
         /// </summary>
-        int RemoteShardCount { get; }
+        IEnumerable<string> RemoteInstanceNames { get; }
 
         /// <summary>
         /// Indicator of endpoint being a control message endpoint<br/>

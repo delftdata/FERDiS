@@ -19,6 +19,10 @@ namespace BlackSP.Infrastructure
         /// </summary>
         Type StartupModule { get; }
 
+        IVertexGraphConfiguration GraphConfiguration { get; }
+
         IVertexConfiguration VertexConfiguration { get; }
+
+
     }
 }

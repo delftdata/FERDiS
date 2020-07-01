@@ -12,7 +12,7 @@ namespace BlackSP.Kernel.Models
 
         /// <summary>
         /// Try to get a strongly typed MessagePayloadBase implementation<br/>
-        /// Should return null if no such payload type is present in the message
+        /// Should return false/null if no such payload type is present in the message
         /// </summary>
         /// <typeparam name="TPayload"></typeparam>
         /// <param name="payload"></param>

@@ -27,7 +27,7 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder AddControlMiddlewaresForCoordinator(this ContainerBuilder builder)
         {
             //TODO: register coordinator control middlewares in order
-            builder.RegisterType<PassthroughMiddleware<ControlMessage>>().AsImplementedInterfaces();
+            builder.RegisterType<ControlMessageResponseReceptionMiddleware>().AsImplementedInterfaces();
 
             return builder;
         }

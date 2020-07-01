@@ -40,6 +40,7 @@ namespace BlackSP.InMemory.Core
             
             var dependencyScope = _parentScope.BeginLifetimeScope(b => {
                 b.RegisterInstance(hostParameter.VertexConfiguration).AsImplementedInterfaces();
+                b.RegisterInstance(hostParameter.GraphConfiguration).AsImplementedInterfaces();
                 b.RegisterModule(Activator.CreateInstance(hostParameter.StartupModule) as Module);
             });
 

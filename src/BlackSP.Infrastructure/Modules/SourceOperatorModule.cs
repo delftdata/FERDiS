@@ -26,7 +26,9 @@ namespace BlackSP.Infrastructure.Modules
 
             //receiver only as control source
             builder.UseMessageReceiver(false);
-
+            
+            builder.UseWorkerMonitors();
+            
             //data source (local source operator)
             builder.RegisterType<TOperator>().AsImplementedInterfaces();
             builder.RegisterType<TShell>().As<IOperatorShell>();

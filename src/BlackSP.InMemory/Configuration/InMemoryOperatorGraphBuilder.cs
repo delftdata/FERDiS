@@ -28,9 +28,7 @@ namespace BlackSP.InMemory.Configuration
         }
 
         protected override Task<IContainer> BuildGraph()
-        {
-            //failure & restart functionality?
-   
+        {   
             foreach (var edge in Configurators.SelectMany(c => c.OutgoingEdges))
             {
                 foreach (var connection in edge.ToConnections())
@@ -39,21 +37,23 @@ namespace BlackSP.InMemory.Configuration
                 }
             }
 
+            var graphConfig = GetVertexGraphConfiguration();
+            
             foreach (var configurator in Configurators)
             {
                 foreach (var vertexConf in configurator.ToConfigurations()) 
                 {
-                    var hostParameter = new HostConfiguration(configurator.ModuleType, vertexConf);
+                    var hostParameter = new HostConfiguration(configurator.ModuleType, graphConfig, vertexConf);
                     _identityTable.Add(vertexConf.InstanceName, hostParameter);
                 }
             }
+
             var builder = new ContainerBuilder();
             //Note: invidivual Vertex instances register BlackSP types in their respective scopes
             builder.RegisterType<Vertex>();
             builder.RegisterType<VertexGraph>();
-
-            builder.RegisterInstance(_connectionTable);//.AsImplementedInterfaces();
-            builder.RegisterInstance(_identityTable);//.AsImplementedInterfaces();
+            builder.RegisterInstance(_connectionTable);
+            builder.RegisterInstance(_identityTable);
 
             return Task.FromResult(builder.Build());
         }
