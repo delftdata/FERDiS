@@ -94,8 +94,6 @@ namespace BlackSP.Core.Monitors
         {
             _ = statusPayload ?? throw new ArgumentNullException(nameof(statusPayload));
             
-            //Console.WriteLine($"WorkerStateMonitor - heartbeat from {originInstanceName}. UpstreamConnected: {statusPayload.UpstreamFullyConnected}, DownstreamConnected: {statusPayload.DownstreamFullyConnected}, IsWorking: {statusPayload.DataProcessActive}.");
-
             var currentState = _workerStates.Get(originInstanceName);
             if(currentState == WorkerState.Offline)
             {
@@ -176,26 +174,34 @@ namespace BlackSP.Core.Monitors
                 Console.WriteLine("AWAITING RESTORE COMPLETION..");
                 return; //wait
             }
-
+            
+            // there are no faulted workers..
+            // all workers are either launched or halted 
+            // therefore: workers have restarted and are awaiting instructions
+            if (!_workerStates.Values.Any(s => s == WorkerState.Faulted) && _workerStates.Values.All(s => s == WorkerState.Launched || s == WorkerState.Halted))
+            {
+                //TODO: run tests and check who is responsible for figuring out the actual recovery line?
+                var workersToRestore = _workerStates.Where(t => t.Value == WorkerState.Halted).Select(t => t.Key).ToArray();
+                foreach(var instance in workersToRestore)
+                {
+                    _workerStates[instance] = WorkerState.Restoring;
+                }
+                OnWorkersRestore.Invoke(workersToRestore);
+            }
+            
             //if all workers are either started or ready to start then we can start the launchables
             if(_workerStates.Values.All(s => s == WorkerState.Launchable || s == WorkerState.Launched))
             {
                 //emit workersstart event with affected worker instanceNames.
                 var launchableWorkers = _workerStates.Where(p => p.Value == WorkerState.Launchable).ToArray();
-                OnWorkersStart.Invoke(launchableWorkers.Select(p => p.Key).ToArray());
                 foreach(var worker in launchableWorkers)
                 {
-                    _workerStates.Remove(worker.Key);
-                    _workerStates.Add(worker.Key, WorkerState.Launched);
+                    _workerStates[worker.Key] = WorkerState.Launched;
                 }
+                OnWorkersStart.Invoke(launchableWorkers.Select(p => p.Key).ToArray());
             }
 
-            //TODO: IF ALL HALTED OR IF MIX OF LAUNCHED AND HALTED
-            //      --> INSTRUCT RESTORE
-            if (!_workerStates.Values.Any(s => s == WorkerState.Faulted) && _workerStates.Values.All(s => s == WorkerState.Launched || s == WorkerState.Halted))
-            {
-                Console.WriteLine("READY TO RESTORE YO");
-            }
+            
         }
 
         //TODO: consider creating abstract base class with two implementations of method below
