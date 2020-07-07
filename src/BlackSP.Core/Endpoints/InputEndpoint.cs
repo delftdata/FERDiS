@@ -60,14 +60,13 @@ namespace BlackSP.Core.Endpoints
             {
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
                 var exitedThread = await Task.WhenAny(
-                        s.ReadMessagesTo(sharedMsgQueue, t),
-                        DeserializeToReceiver(sharedMsgQueue, remoteShardId, t)
-                    ).ConfigureAwait(true);
-                await exitedThread.ConfigureAwait(true); //await the exited thread so any thrown exception will be rethrown
+                        Task.Run(() => s.ReadMessagesTo(sharedMsgQueue, t)),
+                        Task.Run(() => DeserializeToReceiver(sharedMsgQueue, remoteShardId, t))
+                    ).ConfigureAwait(false);
+                await exitedThread.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
             }
             catch(Exception e)
             {
-                Console.WriteLine(e);
                 throw;
             }
             finally

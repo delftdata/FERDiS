@@ -12,11 +12,12 @@ namespace BlackSP.Core.Monitors
 
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ICollection<ActiveConnection> _activeConnections;
-
+        private readonly object _lockObj;
         public ConnectionMonitor(IVertexConfiguration vertexConfiguration)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _activeConnections = new List<ActiveConnection>();
+            _lockObj = new object();
         }
 
         public delegate void ConnectionChangeEventHandler(ConnectionMonitor sender, ConnectionMonitorEventArgs e);
@@ -30,7 +31,7 @@ namespace BlackSP.Core.Monitors
 
             var activeInstanceName = endpoint.RemoteInstanceNames.ElementAt(shardId);
 
-            lock (_vertexConfiguration)
+            lock (_lockObj)
             {
                 if(_activeConnections.Contains(activeConnection))
                 {
@@ -48,7 +49,7 @@ namespace BlackSP.Core.Monitors
             _ = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
             var activeConnection = BuildActiveConnection(endpoint, shardId);
 
-            lock (_vertexConfiguration)
+            lock (_lockObj)
             {
                 if (!_activeConnections.Contains(activeConnection))
                 {
@@ -79,6 +80,20 @@ namespace BlackSP.Core.Monitors
         public IEndpointConfiguration Endpoint { get; set; }
         public int ShardId { get; set; }
         public bool IsUpstream { get; set; }
+
+        public bool Equals(ActiveConnection other)
+        {
+            return other != null && Endpoint.LocalEndpointName == other.Endpoint.LocalEndpointName && ShardId == other.ShardId;
+        }
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as ActiveConnection);
+        }
+
+        public override int GetHashCode()
+        {
+            return $"{Endpoint.LocalEndpointName}${ShardId}".GetHashCode();
+        }
     }
     
     public class ConnectionMonitorEventArgs

@@ -21,7 +21,6 @@ namespace BlackSP.Streams.Extensions
         public static async Task ReadMessagesTo(this Stream s, BlockingCollection<byte[]> outputQueue, CancellationToken t)
         {
             _ = outputQueue ?? throw new ArgumentNullException(nameof(outputQueue));
-
             var reader = s.UsePipeReader(0, null, t);
             ReadResult readRes = await reader.ReadAsync(t);
             var currentBuffer = readRes.Buffer;

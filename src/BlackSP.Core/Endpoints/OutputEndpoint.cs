@@ -67,7 +67,7 @@ namespace BlackSP.Core.Endpoints
             } 
             catch(Exception e)
             {
-
+                throw;
             }
             finally
             {

@@ -44,7 +44,7 @@ namespace BlackSP.Core.Controllers
         }
 
         /// <summary>
-        /// Start core processes for control message processing
+        /// Start core processes for multi-source message processing
         /// </summary>
         public async Task StartProcess()
         {
@@ -72,8 +72,6 @@ namespace BlackSP.Core.Controllers
         {
             //TODO: move to dispose and tear down system
             _ctSource.Cancel();
-
-            
             try
             {
                 await (_activeProcess ?? Task.CompletedTask).ConfigureAwait(false);

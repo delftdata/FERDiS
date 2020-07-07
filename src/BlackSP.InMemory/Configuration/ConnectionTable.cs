@@ -52,7 +52,7 @@ namespace BlackSP.InMemory.Configuration
                 _outgoingConnectionDict.Add(fromKey, outConnections);
             }
 
-            var shareableStream = new HalfDuplexStream();//new ProducerConsumerStream();// Stream.Synchronized(new ProducerConsumerStream());
+            var shareableStream = new SimplexStream();//new ProducerConsumerStream();// Stream.Synchronized(new ProducerConsumerStream());
 
             inStreams[connection.FromShardId] = shareableStream;
             inConnections[connection.FromShardId] = connection;

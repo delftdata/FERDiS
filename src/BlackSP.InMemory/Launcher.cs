@@ -3,6 +3,7 @@ using BlackSP.Infrastructure.Configuration;
 using BlackSP.InMemory.Configuration;
 using BlackSP.InMemory.Core;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace BlackSP.InMemory
@@ -28,13 +29,29 @@ namespace BlackSP.InMemory
                 using (var lifetimeScope = container.BeginLifetimeScope())
                 {
                     var graph = lifetimeScope.Resolve<VertexGraph>();
-                    await await Task.WhenAny(graph.StartOperating());
+
+                    var vertexThreads = graph.StartAllVertices();
+                    var vertexKillThread = Task.Run(() => VertexFaultTrigger(graph));
+
+                    //TODO: console read instance name to kill?
+                    await await Task.WhenAny(vertexThreads.Append(vertexKillThread));
                     Console.WriteLine("Graph operation stopped without exception");
                 }
-            } catch(Exception e)
+            } 
+            catch(Exception e)
             {
-                Console.WriteLine(e.ToString());
+                Console.WriteLine($"Graph operation stopped with exception:\n{e}");
             }
+        }
+
+        private static async Task VertexFaultTrigger(VertexGraph graph)
+        {
+            while(true)
+            {
+                var instanceName = Console.ReadLine();
+                graph.StopVertex(instanceName);
+            }
+            
         }
     }
 }

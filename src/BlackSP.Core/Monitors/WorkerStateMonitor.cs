@@ -81,19 +81,20 @@ namespace BlackSP.Core.Monitors
                     //can *only* transition out of this state through heatbeat messages (wait for vertex to be fully connected)
                     break;
             }
-            Console.WriteLine($"WorkerStateMonitor - {changedInstanceName} now has status {currentState}");
 
-            //update worker state
-            _workerStates.Remove(changedInstanceName);
-            _workerStates.Add(changedInstanceName, currentState);
-
-            EmitEventsIfGraphStateRequires();
+            if (currentState != _workerStates.Get(changedInstanceName))
+            {
+                Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {changedInstanceName} now has status {currentState}");
+                _workerStates[changedInstanceName] = currentState;
+                EmitEventsIfGraphStateRequires();
+            }
         }
 
         public void UpdateStateFromHeartBeat(string originInstanceName, WorkerStatusPayload statusPayload)
         {
             _ = statusPayload ?? throw new ArgumentNullException(nameof(statusPayload));
-            Console.WriteLine($"WorkerStateMonitor - heartbeat from {originInstanceName}. UpstreamConnected: {statusPayload.UpstreamFullyConnected}, DownstreamConnected: {statusPayload.DownstreamFullyConnected}, IsWorking: {statusPayload.DataProcessActive}.");
+            
+            //Console.WriteLine($"WorkerStateMonitor - heartbeat from {originInstanceName}. UpstreamConnected: {statusPayload.UpstreamFullyConnected}, DownstreamConnected: {statusPayload.DownstreamFullyConnected}, IsWorking: {statusPayload.DataProcessActive}.");
 
             var currentState = _workerStates.Get(originInstanceName);
             if(currentState == WorkerState.Offline)
@@ -101,12 +102,14 @@ namespace BlackSP.Core.Monitors
                 var islaunchable = statusPayload.UpstreamFullyConnected && statusPayload.DownstreamFullyConnected;
                 currentState = islaunchable ? WorkerState.Launchable : currentState;
             }
-            //update worker state
-            _workerStates.Remove(originInstanceName);
-            _workerStates.Add(originInstanceName, currentState);
-
-
-            EmitEventsIfGraphStateRequires();
+            
+            if(currentState != _workerStates.Get(originInstanceName))
+            {
+                Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {originInstanceName} now has status {currentState}");
+                _workerStates[originInstanceName] = currentState;
+                EmitEventsIfGraphStateRequires();
+            }
+            
         }
 
         /// <summary>
@@ -127,10 +130,13 @@ namespace BlackSP.Core.Monitors
             {
                 currentState = WorkerState.Halted;
             }
-            _workerStates.Remove(originInstanceName);
-            _workerStates.Add(originInstanceName, currentState);
 
-            EmitEventsIfGraphStateRequires();
+            if (currentState != _workerStates.Get(originInstanceName))
+            {
+                Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {originInstanceName} now has status {currentState}");
+                _workerStates[originInstanceName] = currentState;
+                EmitEventsIfGraphStateRequires();
+            }
         }
 
         /// <summary>

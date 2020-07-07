@@ -106,7 +106,7 @@ namespace BlackSP.Core.MessageSources
             }
             catch(OperationCanceledException)
             {
-                Console.WriteLine("No internal state changes, requesting heartbeat from workers");
+                //Console.WriteLine("No internal state changes, requesting heartbeat from workers");
                 var msg = new ControlMessage(); //no new status-change message.. fall back to heartbeat request
                 msg.AddPayload(new WorkerRequestPayload { RequestType = WorkerRequestType.Status });
                 lastHeartBeat = DateTime.Now;

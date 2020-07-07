@@ -40,7 +40,8 @@ namespace BlackSP.Core.Middlewares
                 {
                     _activeThread = _controller.StartProcess();
                     _processMonitor.MarkActive(true);
-                } 
+                    Console.WriteLine($"{_vertexConfiguration.InstanceName} - started data process");
+                }
                 else
                 {
                     Console.WriteLine("Data process already started");
@@ -55,7 +56,8 @@ namespace BlackSP.Core.Middlewares
                     await _activeThread.ConfigureAwait(false);
                     _activeThread = null;
                     _processMonitor.MarkActive(false);
-                } 
+                    Console.WriteLine($"{_vertexConfiguration.InstanceName} - stopped data process");
+                }
                 else
                 {
                     Console.WriteLine("Attempted to stop data process which was not started");

@@ -19,8 +19,6 @@ namespace BlackSP.InMemory.Core
         private readonly ILifetimeScope _parentScope;
         private readonly IdentityTable _identityTable;
         private readonly ConnectionTable _connectionTable;
-
-        private readonly CancellationTokenSource _vertexTokenSource;
         
         public Vertex(ILifetimeScope parentScope,
                       IdentityTable identityTable, 
@@ -29,15 +27,13 @@ namespace BlackSP.InMemory.Core
             _parentScope = parentScope ?? throw new ArgumentNullException(nameof(parentScope));
             _identityTable = identityTable ?? throw new ArgumentNullException(nameof(identityTable));
             _connectionTable = connectionTable ?? throw new ArgumentNullException(nameof(connectionTable));
-            _vertexTokenSource = new CancellationTokenSource();
         }
 
-        public async Task StartAs(string instanceName)
+        public async Task StartAs(string instanceName, CancellationToken t)
         {
             _ = instanceName ?? throw new ArgumentNullException(nameof(instanceName));
 
             IHostConfiguration hostParameter = _identityTable.GetHostConfiguration(instanceName);
-            
             var dependencyScope = _parentScope.BeginLifetimeScope(b => {
                 b.RegisterInstance(hostParameter.VertexConfiguration).AsImplementedInterfaces();
                 b.RegisterInstance(hostParameter.GraphConfiguration).AsImplementedInterfaces();
@@ -45,9 +41,9 @@ namespace BlackSP.InMemory.Core
             });
 
             MultiSourceProcessController<ControlMessage> controller = null;
+            var threads = new List<Task>();
             try
             {
-                var threads = new List<Task>();
                 controller = dependencyScope.Resolve<MultiSourceProcessController<ControlMessage>>();
                 var inputFactory = dependencyScope.Resolve<InputEndpoint.Factory>();
                 var outputFactory = dependencyScope.Resolve<OutputEndpoint.Factory>();
@@ -55,27 +51,25 @@ namespace BlackSP.InMemory.Core
                 foreach (var endpointConfig in hostParameter.VertexConfiguration.InputEndpoints)
                 {
                     var endpoint = new InputEndpointHost(inputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable);
-                    threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, _vertexTokenSource.Token));
+                    threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
 
                 foreach (var endpointConfig in hostParameter.VertexConfiguration.OutputEndpoints)
                 {
                     var endpoint = new OutputEndpointHost(outputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable);
-                    threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, _vertexTokenSource.Token));
+                    threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
                 
                 threads.Add(Task.Run(() => controller.StartProcess()));
+
                 await await Task.WhenAny(threads); //double await as whenany returns the task that completed
-                                                   //TODO: consider waiting for everything to end? stop vertex? use cancellation?
+                                                   //TODO: consider waiting for everything to end? stop vertex?
+                t.ThrowIfCancellationRequested();
             } 
             catch(Exception e)
             {
-                Console.WriteLine($"{instanceName} - Exception in Vertex:\n{e}");
-                _vertexTokenSource.Cancel();
-                if (controller != null)
-                {
-                    await controller.StopProcess();
-                }
+                await controller?.StopProcess();
+                await Task.WhenAll(threads);
                 throw;
             } 
             finally

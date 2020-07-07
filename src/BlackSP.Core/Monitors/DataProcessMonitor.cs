@@ -16,7 +16,6 @@ namespace BlackSP.Core.Monitors
         public void MarkActive(bool isActive)
         {
             IsActive = isActive;
-            Console.WriteLine("DataProcessMonitor activity set to: " + isActive);
         }
     }
 }
