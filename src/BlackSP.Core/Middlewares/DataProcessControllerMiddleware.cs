@@ -34,17 +34,22 @@ namespace BlackSP.Core.Middlewares
                 return new List<ControlMessage>() { message }.AsEnumerable();
             }
 
-            if(payload.RequestType == WorkerRequestType.StartProcessing && payload.TargetInstanceNames.Contains(_vertexConfiguration.InstanceName))
+            if(!payload.TargetInstanceNames.Contains(_vertexConfiguration.InstanceName))
+            {
+                return Enumerable.Empty<ControlMessage>();
+            }
+
+            if (payload.RequestType == WorkerRequestType.StartProcessing)
             {
                 if(_activeThread == null)
                 {
                     _activeThread = _controller.StartProcess();
                     _processMonitor.MarkActive(true);
-                    Console.WriteLine($"{_vertexConfiguration.InstanceName} - started data process");
+                    Console.WriteLine($"{_vertexConfiguration.InstanceName} - Started data process");
                 }
                 else
                 {
-                    Console.WriteLine("Data process already started");
+                    Console.WriteLine($"{_vertexConfiguration.InstanceName} - Data process already started");
                 }
 
             }
@@ -56,11 +61,11 @@ namespace BlackSP.Core.Middlewares
                     await _activeThread.ConfigureAwait(false);
                     _activeThread = null;
                     _processMonitor.MarkActive(false);
-                    Console.WriteLine($"{_vertexConfiguration.InstanceName} - stopped data process");
+                    Console.WriteLine($"{_vertexConfiguration.InstanceName} - Stopped data process");
                 }
                 else
                 {
-                    Console.WriteLine("Attempted to stop data process which was not started");
+                    Console.WriteLine($"{_vertexConfiguration.InstanceName} - Data process already stopped");
                 }
             }
 

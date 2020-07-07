@@ -48,6 +48,17 @@ namespace BlackSP.InMemory.Core
                     Console.WriteLine($"{instanceName} - Vertex exited without exceptions");
                     return;
                 } 
+                catch(OperationCanceledException)
+                {
+                    //exited with purpose
+                    if (maxRestarts-- == 0)
+                    {
+                        Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, not going to restart: exceeded maxRestarts.");
+                        throw;
+                    }
+                    Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, going to restart in {restartTimeout.TotalSeconds} seconds.");
+                    await Task.Delay(restartTimeout);
+                }
                 catch(Exception e)
                 {
                     if(maxRestarts-- == 0)

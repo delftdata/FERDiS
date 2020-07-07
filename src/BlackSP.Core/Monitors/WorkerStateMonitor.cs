@@ -161,26 +161,19 @@ namespace BlackSP.Core.Monitors
         /// </summary>
         private void EmitEventsIfGraphStateRequires()
         {
-            //TODO IF ANY FAULTED --> HALT DOWNSTREAM
-            if (_workerStates.Values.Any(s => s == WorkerState.Faulted))
+            try
             {
-                //instruct halt to downstream operators
-                foreach(var faultedWorker in _workerStates.Where(p => p.Value == WorkerState.Faulted))
-                {
-                    //TODO: HALT DOWNSTREAM OF FAULTED!
-                    //-- something like this but recursive to get all downstream instance names
-                    _graphConfiguration.InstanceConnections.Where(tuple => {
-                        var (from, to) = tuple;
-                        return from == faultedWorker.Key;
-                    });
-                    //TODO: UPDATE STATES OF WORKERS THAT ARE NOW HALTED
-                    //TODO: EMIT EVENTS FOR WORKERS THAT JUST GOT HALTED (IF ALREADY HALTED DO NOT EMIT)
-                }
+                PerformWorkerHaltChecks();
+            }
+            catch (Exception e)
+            {
+                var x = 1;
             }
 
             //if any worker is currently restoring a checkpoint we must wait for it to notify the coordinator of restore completion
-            if(_workerStates.Any(s => s.Value == WorkerState.Restoring))
+            if (_workerStates.Any(s => s.Value == WorkerState.Restoring))
             {
+                Console.WriteLine("AWAITING RESTORE COMPLETION..");
                 return; //wait
             }
 
@@ -201,7 +194,33 @@ namespace BlackSP.Core.Monitors
             //      --> INSTRUCT RESTORE
             if (!_workerStates.Values.Any(s => s == WorkerState.Faulted) && _workerStates.Values.All(s => s == WorkerState.Launched || s == WorkerState.Halted))
             {
+                Console.WriteLine("READY TO RESTORE YO");
+            }
+        }
 
+        //TODO: consider creating abstract base class with two implementations of method below
+        //      1. as is: with downstream halt (uncoordinated approaches)
+        //      2. with full graph halt (coordinator approach)
+        private void PerformWorkerHaltChecks()
+        {
+            var newlyHalted = new List<string>();
+            foreach (var faultedWorker in _workerStates.Where(p => p.Value == WorkerState.Faulted).ToArray())
+            {
+                var severedInstances = _graphConfiguration.GetAllInstancesDownstreamOf(faultedWorker.Key);
+                foreach (var instance in severedInstances)
+                {
+                    if (_workerStates[instance] != WorkerState.Halted) //if not halted, change state to halted.
+                    {
+                        _workerStates[instance] = WorkerState.Halted;
+                        Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {instance} now has status {_workerStates[instance]}");
+                        newlyHalted.Add(instance);
+                    }
+                }
+            }
+
+            if (newlyHalted.Any())
+            {   //signal state change --> halt downstream operators
+                OnWorkersHalt.Invoke(newlyHalted);
             }
         }
 

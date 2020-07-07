@@ -44,7 +44,7 @@ namespace BlackSP.InMemory
             }
         }
 
-        private static async Task VertexFaultTrigger(VertexGraph graph)
+        private static void VertexFaultTrigger(VertexGraph graph)
         {
             while(true)
             {

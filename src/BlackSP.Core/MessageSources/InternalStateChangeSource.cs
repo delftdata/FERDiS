@@ -18,7 +18,6 @@ namespace BlackSP.Core.MessageSources
     /// </summary>
     public class InternalStateChangeSource : IMessageSource<ControlMessage>
     {
-        private readonly ConnectionMonitor _connectionMonitor;
         private readonly WorkerStateMonitor _workerStateMonitor;
 
         /// <summary>
@@ -33,9 +32,8 @@ namespace BlackSP.Core.MessageSources
         private DateTime lastHeartBeat;
         private TimeSpan heartBeatInterval;
 
-        public InternalStateChangeSource(ConnectionMonitor connectionMonitor, WorkerStateMonitor workerStateMonitor)
+        public InternalStateChangeSource(WorkerStateMonitor workerStateMonitor)
         {
-            _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
             _workerStateMonitor = workerStateMonitor ?? throw new ArgumentNullException(nameof(workerStateMonitor));
 
             _messages = new BlockingCollection<ControlMessage>();
@@ -43,12 +41,28 @@ namespace BlackSP.Core.MessageSources
             initializing = true;
             heartBeatInterval = TimeSpan.FromSeconds(5);
             lastHeartBeat = DateTime.Now.Add(-heartBeatInterval);
-            //_connectionMonitor.OnConnectionChange += ConnectionMonitor_OnConnectionChangeEvent;
 
             
             //on subset ready to rollback --> instruct rollback
             //on failure --> instruct halt downstream
             _workerStateMonitor.OnWorkersStart += WorkerStateMonitor_OnWorkersStart;//on subset ready to launch --> instruct launch
+            _workerStateMonitor.OnWorkersHalt += WorkerStateMonitor_OnWorkersHalt;//on subset must halt --> instruct halt
+        }
+
+        private void WorkerStateMonitor_OnWorkersHalt(IEnumerable<string> affectedInstanceNames)
+        {
+            if (!affectedInstanceNames.Any())
+            {
+                return;
+            }
+
+            var msg = new ControlMessage();
+            msg.AddPayload(new WorkerRequestPayload
+            {
+                RequestType = WorkerRequestType.StopProcessing,
+                TargetInstanceNames = affectedInstanceNames
+            });
+            _messages.Add(msg);
         }
 
         private void WorkerStateMonitor_OnWorkersStart(IEnumerable<string> affectedInstanceNames)
@@ -65,25 +79,6 @@ namespace BlackSP.Core.MessageSources
                 TargetInstanceNames = affectedInstanceNames
             });
             _messages.Add(msg);
-        }
-
-        private void ConnectionMonitor_OnConnectionChangeEvent(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
-        {
-            if(e.UpstreamFullyConnected && e.DownstreamFullyConnected)
-            {
-                //all workers are connected
-                Console.WriteLine("Coordinator is fully connected.");
-            } 
-            else if(initializing)
-            {
-                Console.WriteLine("Coordinator not yet fully connected.");
-            } 
-            else
-            {
-                Console.WriteLine("Coordinator detected a worker failure.");
-                //TODO: get who failed?
-                e.ChangedConnection.Item1.Endpoint.RemoteInstanceNames.ElementAt(e.ChangedConnection.Item1.ShardId);
-            }
         }
 
         public Task Flush()
