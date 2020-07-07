@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Middlewares
 {
-    public class ControlMessageResponseMiddleware : IMiddleware<ControlMessage>
+    public class WorkerStatusResponseMiddleware : IMiddleware<ControlMessage>
     {
         private readonly IVertexConfiguration _vertexConfig;
         private readonly ConnectionMonitor _connectionMonitor;
@@ -20,7 +20,7 @@ namespace BlackSP.Core.Middlewares
         private bool UpstreamFullyConnected;
         private bool DownstreamFullyConnected;
 
-        public ControlMessageResponseMiddleware(IVertexConfiguration vertexConfig, ConnectionMonitor connectionMonitor, DataProcessMonitor processMonitor)
+        public WorkerStatusResponseMiddleware(IVertexConfiguration vertexConfig, ConnectionMonitor connectionMonitor, DataProcessMonitor processMonitor)
         {
             _vertexConfig = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
             _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));

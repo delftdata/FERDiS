@@ -12,12 +12,12 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Middlewares
 {
-    public class ControlMessageResponseReceptionMiddleware : IMiddleware<ControlMessage>
+    public class WorkerStatusReceptionMiddleware : IMiddleware<ControlMessage>
     {
 
         private readonly WorkerStateMonitor _workerStateMonitor;
 
-        public ControlMessageResponseReceptionMiddleware(WorkerStateMonitor workerStateMonitor)
+        public WorkerStatusReceptionMiddleware(WorkerStateMonitor workerStateMonitor)
         {
             _workerStateMonitor = workerStateMonitor ?? throw new ArgumentNullException(nameof(workerStateMonitor));
         }
@@ -36,7 +36,7 @@ namespace BlackSP.Core.Middlewares
             _workerStateMonitor.UpdateStateFromHeartBeat(origin, payload);
 
             //this middleware always consumes the message if it has the workerstatus payload
-            return Task.FromResult(new List<ControlMessage>() { }.AsEnumerable());
+            return Task.FromResult(Enumerable.Empty<ControlMessage>());
         }
     }
 }

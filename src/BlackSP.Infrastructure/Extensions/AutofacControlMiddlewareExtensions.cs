@@ -16,7 +16,7 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder AddControlMiddlewaresForWorker(this ContainerBuilder builder)
         {
             //TODO: register worker control middlewares in order
-            builder.RegisterType<ControlMessageResponseMiddleware>().As<IMiddleware<ControlMessage>>();
+            builder.RegisterType<WorkerStatusResponseMiddleware>().As<IMiddleware<ControlMessage>>();
 
             builder.RegisterType<SingleSourceProcessController<DataMessage>>().AsSelf();
             builder.RegisterType<DataProcessControllerMiddleware>().As<IMiddleware<ControlMessage>>();
@@ -27,7 +27,7 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder AddControlMiddlewaresForCoordinator(this ContainerBuilder builder)
         {
             //TODO: register coordinator control middlewares in order
-            builder.RegisterType<ControlMessageResponseReceptionMiddleware>().AsImplementedInterfaces();
+            builder.RegisterType<WorkerStatusReceptionMiddleware>().AsImplementedInterfaces();
 
             return builder;
         }
