@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Middlewares
 {
-    public class CheckpointRestoreMiddleware<TMessage> : IMiddleware<ControlMessage>
+    public class CheckpointRestoreMiddleware : IMiddleware<ControlMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
 

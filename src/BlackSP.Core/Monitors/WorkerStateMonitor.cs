@@ -47,16 +47,18 @@ namespace BlackSP.Core.Monitors
             InitializeInternalWorkerStates();
         }
 
+        /// <summary>
+        /// Interpret connection changes as direct indicators of worker health, this is then used to update internal state<br/>
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ConnectionMonitor_OnConnectionChange(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
         {
-            
             var (changedConnection, isConnected) = e.ChangedConnection;
             if(changedConnection.IsUpstream)
             {
-                return; //we will get two reports, one from upstream, one from downstream, we selectively ignore upstream to not handle duplicates.
+                return; //we will get two reports, one from upstream, one from downstream, selectively ignore upstream to not handle duplicates.
             }
-            
-            
             var changedInstanceName = changedConnection.Endpoint.RemoteInstanceNames.ElementAt(changedConnection.ShardId);
             
             var currentState = _workerStates.Get(changedInstanceName);
@@ -74,7 +76,6 @@ namespace BlackSP.Core.Monitors
                 
                 case WorkerState.Faulted:
                     currentState = isConnected ? WorkerState.Halted : currentState;
-                    //nothing to do
                     break;
 
                 case WorkerState.Offline:
@@ -86,11 +87,11 @@ namespace BlackSP.Core.Monitors
             {
                 Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {changedInstanceName} now has status {currentState}");
                 _workerStates[changedInstanceName] = currentState;
-                EmitEventsIfGraphStateRequires();
+                EmitEvents();
             }
         }
 
-        public void UpdateStateFromHeartBeat(string originInstanceName, WorkerStatusPayload statusPayload)
+        public void NotifyWorkerHeartbeat(string originInstanceName, WorkerStatusPayload statusPayload)
         {
             _ = statusPayload ?? throw new ArgumentNullException(nameof(statusPayload));
             
@@ -105,35 +106,7 @@ namespace BlackSP.Core.Monitors
             {
                 Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {originInstanceName} now has status {currentState}");
                 _workerStates[originInstanceName] = currentState;
-                EmitEventsIfGraphStateRequires();
-            }
-            
-        }
-
-        /// <summary>
-        /// Notifies local connection status change to worker instance<br/>
-        /// This is a direct indication of the remote worker being alive or dead.
-        /// </summary>
-        /// <param name="originInstanceName"></param>
-        /// <param name="isConnected"></param>
-        public void UpdateStateFromConnectionMonitor(string originInstanceName, bool isConnected)
-        {
-            var currentState = _workerStates.Get(originInstanceName);
-            if(currentState == WorkerState.Launched && !isConnected)
-            {
-                currentState = WorkerState.Faulted;
-            }
-
-            if (currentState == WorkerState.Faulted && isConnected)
-            {
-                currentState = WorkerState.Halted;
-            }
-
-            if (currentState != _workerStates.Get(originInstanceName))
-            {
-                Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {originInstanceName} now has status {currentState}");
-                _workerStates[originInstanceName] = currentState;
-                EmitEventsIfGraphStateRequires();
+                EmitEvents();
             }
         }
 
@@ -142,13 +115,15 @@ namespace BlackSP.Core.Monitors
         /// Used to determine if/when workers are ready to resume working.
         /// </summary>
         /// <param name="originInstanceName"></param>
-        public void UpdateStateFromRestoreResponse(string originInstanceName)
+        public void NotifyRestoreCompletion(string originInstanceName)
         {
-            //TODO: IF STATE NOT RESTORING --> ERROR?
-            //TODO: IF STATE RESTORING && RESPONSE SAYS "IM DONE" --> LAUNCHABLE
-            //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-            EmitEventsIfGraphStateRequires();
+            var currentState = _workerStates.Get(originInstanceName);
+            if(currentState != WorkerState.Restoring)
+            {
+                throw new Exception($"Received restore completion of worker {originInstanceName} which was not restoring");
+            }
+            _workerStates[originInstanceName] = WorkerState.Launchable;
+            EmitEvents();
         }
 
         /// <summary>
@@ -157,7 +132,7 @@ namespace BlackSP.Core.Monitors
         /// - Halt data processing in face of a failure<br/>
         /// - Restore checkpoint when failure recovered<br/>
         /// </summary>
-        private void EmitEventsIfGraphStateRequires()
+        private void EmitEvents()
         {
             try
             {
@@ -171,8 +146,7 @@ namespace BlackSP.Core.Monitors
             //if any worker is currently restoring a checkpoint we must wait for it to notify the coordinator of restore completion
             if (_workerStates.Any(s => s.Value == WorkerState.Restoring))
             {
-                Console.WriteLine("AWAITING RESTORE COMPLETION..");
-                return; //wait
+                return; //a restore is in progress, wait for all workers to leave the restoring state
             }
             
             // there are no faulted workers..

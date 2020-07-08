@@ -31,8 +31,8 @@ namespace BlackSP.Core.Monitors
 
             var activeInstanceName = endpoint.RemoteInstanceNames.ElementAt(shardId);
 
-            lock (_lockObj)
-            {
+            //lock (_lockObj)
+            //{
                 if(_activeConnections.Contains(activeConnection))
                 {
                     throw new ArgumentException($"connection {shardId} already marked as connected, signal disconnection first", nameof(endpoint));
@@ -40,7 +40,7 @@ namespace BlackSP.Core.Monitors
                 _activeConnections.Add(activeConnection);
                 //emit state change event
                 OnConnectionChange?.Invoke(this, new ConnectionMonitorEventArgs(_vertexConfiguration, _activeConnections, activeConnection, true));
-            }
+            //}
         }
         
         //mark disconnected
@@ -49,8 +49,8 @@ namespace BlackSP.Core.Monitors
             _ = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
             var activeConnection = BuildActiveConnection(endpoint, shardId);
 
-            lock (_lockObj)
-            {
+            //lock (_lockObj)
+            //{
                 if (!_activeConnections.Contains(activeConnection))
                 {
                     throw new ArgumentException("endpoint not marked as connected, signal connection first", nameof(endpoint));
@@ -58,7 +58,7 @@ namespace BlackSP.Core.Monitors
                 _activeConnections.Remove(activeConnection);
                 //emit state change event
                 OnConnectionChange?.Invoke(this, new ConnectionMonitorEventArgs(_vertexConfiguration, _activeConnections, activeConnection, false));
-            }
+            //}
 
         }
 

@@ -16,7 +16,7 @@ namespace BlackSP.Core.MessageSources
     /// <summary>
     /// Control message source that watches the internal state based on various monitors. Creates new control messages based on state changes.
     /// </summary>
-    public class InternalStateChangeSource : IMessageSource<ControlMessage>
+    public class WorkerStateChangeSource : IMessageSource<ControlMessage>
     {
         private readonly WorkerStateMonitor _workerStateMonitor;
 
@@ -32,7 +32,7 @@ namespace BlackSP.Core.MessageSources
         private DateTime lastHeartBeat;
         private TimeSpan heartBeatInterval;
 
-        public InternalStateChangeSource(WorkerStateMonitor workerStateMonitor)
+        public WorkerStateChangeSource(WorkerStateMonitor workerStateMonitor)
         {
             _workerStateMonitor = workerStateMonitor ?? throw new ArgumentNullException(nameof(workerStateMonitor));
 
@@ -40,13 +40,29 @@ namespace BlackSP.Core.MessageSources
             
             initializing = true;
             heartBeatInterval = TimeSpan.FromSeconds(5);
-            lastHeartBeat = DateTime.Now.Add(-heartBeatInterval);
+            lastHeartBeat = DateTime.Now.Add(-heartBeatInterval);//make sure we start off with a heartbeat
 
-            
-            //on subset ready to rollback --> instruct rollback
-            //on failure --> instruct halt downstream
             _workerStateMonitor.OnWorkersStart += WorkerStateMonitor_OnWorkersStart;//on subset ready to launch --> instruct launch
             _workerStateMonitor.OnWorkersHalt += WorkerStateMonitor_OnWorkersHalt;//on subset must halt --> instruct halt
+            _workerStateMonitor.OnWorkersRestore += WorkerStateMonitor_OnWorkersRestore;//on subset must restore --> instruct restore
+        }
+
+        private void WorkerStateMonitor_OnWorkersRestore(IEnumerable<string> affectedInstanceNames)
+        {
+            if (!affectedInstanceNames.Any())
+            {
+                return;
+            }
+
+            //TODO: recovery line calculation
+            Dictionary<string, Guid> checkpointMap = affectedInstanceNames.ToDictionary(name => name, name => Guid.NewGuid());
+
+            var msg = new ControlMessage();
+            msg.AddPayload(new CheckpointRestoreRequestPayload
+            {
+                InstanceCheckpointMap = checkpointMap
+            });
+            _messages.Add(msg);
         }
 
         private void WorkerStateMonitor_OnWorkersHalt(IEnumerable<string> affectedInstanceNames)

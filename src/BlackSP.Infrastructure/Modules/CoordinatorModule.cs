@@ -2,6 +2,7 @@
 using BlackSP.Core;
 using BlackSP.Core.Controllers;
 using BlackSP.Core.MessageSources;
+using BlackSP.Core.Middlewares;
 using BlackSP.Core.Models;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Infrastructure.Models;
@@ -25,7 +26,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.UseStreamingEndpoints();
 
             //sources (control only)
-            builder.RegisterType<InternalStateChangeSource>().As<IMessageSource<ControlMessage>>();
+            builder.RegisterType<WorkerStateChangeSource>().As<IMessageSource<ControlMessage>>();
             builder.UseMessageReceiver(false);
 
             builder.UseCoordinatorMonitors();
@@ -33,6 +34,8 @@ namespace BlackSP.Infrastructure.Modules
             //processor (control only)
             builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
             builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();
+
+            //middlewares (control only - handles worker responses)
             builder.AddControlMiddlewaresForCoordinator();
 
             //dispatcher (control only)

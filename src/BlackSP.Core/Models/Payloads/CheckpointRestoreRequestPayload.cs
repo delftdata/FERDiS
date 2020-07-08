@@ -7,7 +7,7 @@ using System.Text;
 namespace BlackSP.Core.Models.Payloads
 {
     [ProtoContract]
-    public class CheckpointRestorePayload : MessagePayloadBase
+    public class CheckpointRestoreRequestPayload : MessagePayloadBase
     {
 
         public static new string MetaDataKey => "control:checkpointrestore";

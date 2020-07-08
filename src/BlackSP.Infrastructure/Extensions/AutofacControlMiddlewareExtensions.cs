@@ -17,9 +17,11 @@ namespace BlackSP.Infrastructure.Extensions
         {
             //TODO: register worker control middlewares in order
             builder.RegisterType<WorkerStatusResponseMiddleware>().As<IMiddleware<ControlMessage>>();
+            builder.RegisterType<CheckpointRestoreMiddleware>().As<IMiddleware<ControlMessage>>();
 
-            builder.RegisterType<SingleSourceProcessController<DataMessage>>().AsSelf();
+            //important control middleware: controls the subprocess that processes/generates data messages
             builder.RegisterType<DataProcessControllerMiddleware>().As<IMiddleware<ControlMessage>>();
+            builder.RegisterType<SingleSourceProcessController<DataMessage>>().AsSelf();//dependency of DataProcessControllerMiddleware
 
             return builder;
         }
@@ -28,6 +30,7 @@ namespace BlackSP.Infrastructure.Extensions
         {
             //TODO: register coordinator control middlewares in order
             builder.RegisterType<WorkerStatusReceptionMiddleware>().AsImplementedInterfaces();
+            builder.RegisterType<CheckpointRestoreCompletionMiddleware>().As<IMiddleware<ControlMessage>>();
 
             return builder;
         }
