@@ -88,7 +88,13 @@ namespace BlackSP.Core.Controllers
                 while (!t.IsCancellationRequested)
                 {
                     var message = controlSource.Take(t) ?? throw new Exception($"Received null from {controlSource.GetType()}.Take");
-                    await _delivererSemaphore.WaitAsync(t).ConfigureAwait(true);
+                    try
+                    {
+                        await _delivererSemaphore.WaitAsync(t).ConfigureAwait(false);
+                    } catch(AggregateException e)
+                    {
+                        var x = 1; //wtf
+                    }
                     IEnumerable<TMessage> responses = await _deliverer.Deliver(message).ConfigureAwait(false);
                     foreach (var msg in responses)
                     {

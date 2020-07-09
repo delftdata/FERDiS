@@ -45,6 +45,8 @@ namespace BlackSP.InMemory.Core
             }
             catch (OperationCanceledException)
             {
+                Console.WriteLine($"{instanceName} - Output endpoint {endpointName} was cancelled and is now resetting streams");
+
                 foreach (var stream in outgoingStreams)
                 {
                     stream.Close();

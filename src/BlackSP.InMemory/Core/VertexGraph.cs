@@ -21,20 +21,20 @@ namespace BlackSP.InMemory.Core
             _vertexCancellationSources = new Dictionary<string, CancellationTokenSource>();
         }
 
-        public IEnumerable<Task> StartAllVertices()
+        public IEnumerable<Task> StartAllVertices(int maxRestarts, TimeSpan restartTimeout)
         {
             foreach (var instanceName in _identityTable.GetAllInstanceNames())
             {
-                yield return StartVertexWithAutoRestart(instanceName, 3, TimeSpan.FromSeconds(10));
+                yield return StartVertex(instanceName, maxRestarts, restartTimeout);
             }
         }
 
-        public void StopVertex(string instanceName)
+        public void KillVertex(string instanceName)
         {
             _vertexCancellationSources[instanceName]?.Cancel();
         }
 
-        private async Task StartVertexWithAutoRestart(string instanceName, int maxRestarts, TimeSpan restartTimeout)
+        private async Task StartVertex(string instanceName, int maxRestarts, TimeSpan restartTimeout)
         {
             Vertex v = _lifetimeScope.Resolve<Vertex>();
             while(true)
@@ -53,20 +53,21 @@ namespace BlackSP.InMemory.Core
                     //exited with purpose
                     if (maxRestarts-- == 0)
                     {
-                        Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, not going to restart: exceeded maxRestarts.");
+                        Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, going to restart in {restartTimeout.TotalSeconds} seconds.");
+                    Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout);
                 }
                 catch(Exception e)
                 {
+                    //exited without purpose
                     if(maxRestarts-- == 0)
                     {
-                        Console.WriteLine($"{instanceName} - Vertex exited with exceptions, not going to restart: exceeded maxRestarts.");
+                        Console.WriteLine($"{instanceName} - Vertex exited with exceptions, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    Console.WriteLine($"{instanceName} - Vertex exited with exceptions, going to restart in {restartTimeout.TotalSeconds} seconds.");
+                    Console.WriteLine($"{instanceName} - Vertex exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout);
                 }
             }             

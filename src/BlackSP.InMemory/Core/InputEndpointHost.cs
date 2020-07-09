@@ -44,7 +44,9 @@ namespace BlackSP.InMemory.Core
             }
             catch(OperationCanceledException)
             {
-                foreach(var stream in incomingStreams)
+                Console.WriteLine($"{instanceName} - Input endpoint {endpointName} was cancelled and is now resetting streams");
+
+                foreach (var stream in incomingStreams)
                 {
                     stream.Dispose(); //force close the stream to trigger exception in output endpoint as if it were a dropped network stream
                 }
