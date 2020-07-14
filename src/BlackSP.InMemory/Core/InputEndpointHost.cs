@@ -47,20 +47,16 @@ namespace BlackSP.InMemory.Core
             }
             catch(OperationCanceledException)
             {
-                Console.WriteLine("ERRYBODY SAY BEEP");
-                linkedCTSource.Cancel();
                 try
                 {
+                    linkedCTSource.Cancel();
                     await Task.WhenAll(threads);
                 } catch(OperationCanceledException e) { /*shh*/}
-                Console.WriteLine("ERRYBODY SAY BOOP");
                 
                 
                 Console.WriteLine($"{instanceName} - Input endpoint {endpointName} was cancelled and is now resetting streams");
                 foreach (var stream in incomingStreams)
                 {
-                    (stream as SimplexStream)?.CompleteWriting();
-                    stream.Close();
                     stream.Dispose(); //force close the stream to trigger exception in output endpoint as if it were a dropped network stream
                 }
                 foreach(var connection in incomingConnections)
