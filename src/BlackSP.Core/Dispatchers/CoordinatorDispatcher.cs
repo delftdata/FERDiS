@@ -66,13 +66,13 @@ namespace BlackSP.Core.Dispatchers
             _ = message ?? throw new ArgumentNullException(nameof(message));
 
             byte[] bytes = await _serializer.SerializeMessage(message, t).ConfigureAwait(false);
-            var targets = _vertexConfiguration.OutputEndpoints.Select(e => e.GetConnectionKey(0));
+            var targets = _vertexConfiguration.OutputEndpoints.SelectMany(e => e.GetAllConnectionKeys());
             foreach(var targetConnectionKey in targets)
             {
                 QueueForDispatch(targetConnectionKey, bytes);
             }
         }
-        
+
         public Task Dispatch(IMessage message, CancellationToken t)
         {
             throw new NotSupportedException($"Only GetDispatchQueue is supported through IDispatcher<IMessage> interface in {this.GetType()}");

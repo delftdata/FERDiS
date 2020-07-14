@@ -182,7 +182,7 @@ namespace BlackSP.Core.Monitors
 
         //TODO: consider creating abstract base class with two implementations of method below
         //      1. as is: with downstream halt (uncoordinated approaches)
-        //      2. with full graph halt (coordinator approach)
+        //      2. with full graph halt (coordinated approach)
         private void PerformWorkerHaltChecks()
         {
             var newlyHalted = new List<string>();

@@ -23,7 +23,7 @@ namespace BlackSP.Core
             var targetEndpoints = _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl == message.IsControl);
             foreach(var endpoint in targetEndpoints)
             {
-                var targetShard = message.PartitionKey % endpoint.RemoteInstanceNames.Count();
+                var targetShard = Math.Abs(message.PartitionKey) % endpoint.RemoteInstanceNames.Count();
                 yield return endpoint.GetConnectionKey(targetShard);
             }
         }

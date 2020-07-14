@@ -29,7 +29,7 @@ namespace BlackSP.Core.Monitors
             _ = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
             var activeConnection = BuildActiveConnection(endpoint, shardId);
 
-            var activeInstanceName = endpoint.RemoteInstanceNames.ElementAt(shardId);
+            //var activeInstanceName = endpoint.RemoteInstanceNames.ElementAt(shardId);
 
             lock (_lockObj)
             {

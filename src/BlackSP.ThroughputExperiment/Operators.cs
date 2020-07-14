@@ -32,7 +32,7 @@ namespace BlackSP.ThroughputExperiment
                 counter = 0;
             }
             counter++;
-            return new SampleEvent($"Key_{counter}", DateTime.Now, $"Key_{counter}");
+            return new SampleEvent($"Key_{counter}", DateTime.Now, $"Value_{counter}");
         }
     }
 

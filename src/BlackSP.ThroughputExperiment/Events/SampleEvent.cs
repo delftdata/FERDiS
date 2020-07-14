@@ -1,6 +1,8 @@
 ﻿using BlackSP.Kernel.Models;
 using ProtoBuf;
 using System;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace BlackSP.ThroughputExperiment.Events
 {
@@ -27,7 +29,9 @@ namespace BlackSP.ThroughputExperiment.Events
 
         public int GetPartitionKey()
         {
-            return Key.GetHashCode();
+            MD5 md5Hasher = MD5.Create();
+            var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(Key));
+            return BitConverter.ToInt32(hashed, 0);
         }
     }
 }

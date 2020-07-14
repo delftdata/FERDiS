@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.Models;
+﻿using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +36,16 @@ namespace BlackSP.Core.Extensions
                 }
             }
             return downstreamInstances;
+        }
+
+        public static IEnumerable<string> GetAllConnectionKeys(this IEndpointConfiguration endpointConfig)
+        {
+            _ = endpointConfig ?? throw new ArgumentNullException(nameof(endpointConfig));
+
+            for (int i = 0; i < endpointConfig.RemoteInstanceNames.Count(); i++)
+            {
+                yield return endpointConfig.GetConnectionKey(i);
+            }
         }
     }
 }
