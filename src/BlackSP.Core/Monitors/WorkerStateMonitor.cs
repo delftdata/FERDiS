@@ -85,7 +85,7 @@ namespace BlackSP.Core.Monitors
 
             if (currentState != _workerStates.Get(changedInstanceName))
             {
-                Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {changedInstanceName} now has status {currentState}");
+                Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {changedInstanceName} now has status {currentState} (connection)");
                 _workerStates[changedInstanceName] = currentState;
                 EmitEvents();
             }
@@ -104,7 +104,7 @@ namespace BlackSP.Core.Monitors
             
             if(currentState != _workerStates.Get(originInstanceName))
             {
-                Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {originInstanceName} now has status {currentState}");
+                Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {originInstanceName} now has status {currentState} (hearbeat)");
                 _workerStates[originInstanceName] = currentState;
                 EmitEvents();
             }
@@ -120,7 +120,9 @@ namespace BlackSP.Core.Monitors
             var currentState = _workerStates.Get(originInstanceName);
             if(currentState != WorkerState.Restoring)
             {
-                throw new Exception($"Received restore completion of worker {originInstanceName} which was not restoring");
+                var msg = $"{_vertexConfiguration.InstanceName} - Received restore completion of worker {originInstanceName} which was not restoring";
+                Console.WriteLine(msg);
+                throw new Exception(msg);
             }
             _workerStates[originInstanceName] = WorkerState.Launchable;
             EmitEvents();
@@ -189,17 +191,18 @@ namespace BlackSP.Core.Monitors
                 var severedInstances = _graphConfiguration.GetAllInstancesDownstreamOf(faultedWorker.Key);
                 foreach (var instance in severedInstances)
                 {
-                    if (_workerStates[instance] != WorkerState.Halted) //if not halted, change state to halted.
+                    var currentState = _workerStates.Get(instance);
+                    if (currentState != WorkerState.Halted && currentState != WorkerState.Faulted) //if not halted or faulted, change state to halted.
                     {
                         _workerStates[instance] = WorkerState.Halted;
-                        Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {instance} now has status {_workerStates[instance]}");
+                        Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {instance} now has status {_workerStates[instance]} (downstream)");
                         newlyHalted.Add(instance);
                     }
                 }
             }
 
             if (newlyHalted.Any())
-            {   //signal state change --> halt downstream operators
+            {   //signal state change (important difference: here halted is a state reached through coordinator instruction, not through detection)
                 OnWorkersHalt.Invoke(newlyHalted);
             }
         }

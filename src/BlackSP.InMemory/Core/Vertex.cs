@@ -59,21 +59,21 @@ namespace BlackSP.InMemory.Core
                     var endpoint = new OutputEndpointHost(outputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable);
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
-                
-                threads.Add(Task.Run(() => controller.StartProcess()));
 
+                threads.Add(Task.Run(() => controller.StartProcess(t)));
                 await await Task.WhenAny(threads); //double await as whenany returns the task that completed
-                                                   //TODO: consider waiting for everything to end? stop vertex?
                 t.ThrowIfCancellationRequested();
-            } 
+            }
+            catch(OperationCanceledException e) { throw; } //shhh
             catch(Exception e)
             {
-                await controller?.StopProcess();
-                await Task.WhenAll(threads);
+                Console.WriteLine($"{instanceName} - DIED WITH EXCEPTION:\n{e}");
+                //await Task.WhenAll(threads);
                 throw;
             } 
             finally
             {
+                Console.WriteLine($"{instanceName} - DIED FINALLY");
                 dependencyScope.Dispose();
             }
         }

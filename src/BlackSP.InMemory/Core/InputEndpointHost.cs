@@ -1,5 +1,6 @@
 ﻿using BlackSP.InMemory.Configuration;
 using BlackSP.Kernel.Endpoints;
+using Nerdbank.Streams;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,54 +25,73 @@ namespace BlackSP.InMemory.Core
         /// Launches threads for each incoming connection
         /// </summary>
         /// <returns></returns>
-        public async Task Start(string instanceName, string endpointName, CancellationToken token)
+        public async Task Start(string instanceName, string endpointName, CancellationToken t)
         {
             var incomingStreams = _connectionTable.GetIncomingStreams(instanceName, endpointName);
             var incomingConnections = _connectionTable.GetIncomingConnections(instanceName, endpointName);
 
+            var hostCTSource = new CancellationTokenSource();
+            var linkedCTSource = CancellationTokenSource.CreateLinkedTokenSource(t, hostCTSource.Token);
             var threads = new List<Task>();
             for(var i = 0; i < incomingConnections.Length; i++)
             {
                 int shardId = i;
                 Stream s = incomingStreams[shardId];
                 Connection c = incomingConnections[shardId];
-                threads.Add(Task.Run(() => IngressWithRestart(instanceName, endpointName, shardId, 3, TimeSpan.FromSeconds(10), token)));
+                threads.Add(Task.Run(() => IngressWithRestart(instanceName, endpointName, shardId, 99, TimeSpan.FromSeconds(5), linkedCTSource.Token)));
             }
 
             try
             {
-                await await Task.WhenAny(threads);
+                await await Task.WhenAny(threads); //exited means the thread broke out of the restart loop
             }
             catch(OperationCanceledException)
             {
+                Console.WriteLine("ERRYBODY SAY BEEP");
+                linkedCTSource.Cancel();
+                try
+                {
+                    await Task.WhenAll(threads);
+                } catch(OperationCanceledException e) { /*shh*/}
+                Console.WriteLine("ERRYBODY SAY BOOP");
+                
+                
                 Console.WriteLine($"{instanceName} - Input endpoint {endpointName} was cancelled and is now resetting streams");
-
                 foreach (var stream in incomingStreams)
                 {
+                    (stream as SimplexStream)?.CompleteWriting();
+                    stream.Close();
                     stream.Dispose(); //force close the stream to trigger exception in output endpoint as if it were a dropped network stream
                 }
                 foreach(var connection in incomingConnections)
                 {
                     _connectionTable.RegisterConnection(connection); //re-register connection to create new streams around a failed instance
                 }
+                // ????  await Task.WhenAll(threads); //threads must all stop during cancellation..
+                throw;
+            } 
+            finally
+            {
+                Console.WriteLine($"{instanceName} - exiting input host {endpointName}");
             }
         }
 
-        private async Task IngressWithRestart(string instanceName, string endpointName, int shardId, int maxRestarts, TimeSpan restartTimeout, CancellationToken token)
+        private async Task IngressWithRestart(string instanceName, string endpointName, int shardId, int maxRestarts, TimeSpan restartTimeout, CancellationToken t)
         {
-            while (true)
+            while (!t.IsCancellationRequested)
             {
                 Stream s = null;
                 Connection c = null;
                 try
                 {
+                    t.ThrowIfCancellationRequested();
+
                     s = _connectionTable.GetIncomingStreams(instanceName, endpointName)[shardId];
                     c = _connectionTable.GetIncomingConnections(instanceName, endpointName)[shardId];
                    
-                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName} starting.\t(from {c.FromInstanceName}${c.FromEndpointName}${c.FromShardId})");
-                    await _inputEndpoint.Ingress(s, c.FromEndpointName, c.FromShardId, token);
-                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName} exited without exceptions");
-                    
+                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName} starting.\t(remote {c.FromInstanceName}${c.FromEndpointName}${c.FromShardId})");
+                    await _inputEndpoint.Ingress(s, c.FromEndpointName, c.FromShardId, t);
+                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName} exited without exceptions");                    
                     return;
                 }
                 catch(OperationCanceledException)
@@ -87,9 +107,10 @@ namespace BlackSP.InMemory.Core
                         throw;
                     }
                     Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName} exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
-                    await Task.Delay(restartTimeout);
+                    await Task.Delay(restartTimeout, t);
                 }
             }
+            t.ThrowIfCancellationRequested();
         }
     }
 }

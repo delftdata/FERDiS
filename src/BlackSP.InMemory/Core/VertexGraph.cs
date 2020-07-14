@@ -31,7 +31,11 @@ namespace BlackSP.InMemory.Core
 
         public void KillVertex(string instanceName)
         {
-            _vertexCancellationSources[instanceName]?.Cancel();
+            var source = _vertexCancellationSources[instanceName];
+            if (source != null)
+            {
+                source.Cancel();
+            }
         }
 
         private async Task StartVertex(string instanceName, int maxRestarts, TimeSpan restartTimeout)
@@ -50,7 +54,7 @@ namespace BlackSP.InMemory.Core
                 } 
                 catch(OperationCanceledException)
                 {
-                    //exited with purpose
+                    //exited with intent
                     if (maxRestarts-- == 0)
                     {
                         Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, no restart: exceeded maxRestarts.");
@@ -61,7 +65,7 @@ namespace BlackSP.InMemory.Core
                 }
                 catch(Exception e)
                 {
-                    //exited without purpose
+                    //exited without intent
                     if(maxRestarts-- == 0)
                     {
                         Console.WriteLine($"{instanceName} - Vertex exited with exceptions, no restart: exceeded maxRestarts.");

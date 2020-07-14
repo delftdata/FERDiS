@@ -58,12 +58,10 @@ namespace BlackSP.Core.Endpoints
             BlockingCollection<byte[]> sharedMsgQueue = new BlockingCollection<byte[]>(64);
             try
             {
+                t.ThrowIfCancellationRequested();
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
-                var exitedThread = await Task.WhenAny(
-                        Task.Run(() => s.ReadMessagesTo(sharedMsgQueue, t)),
-                        Task.Run(() => DeserializeToReceiver(sharedMsgQueue, remoteShardId, t))
-                    ).ConfigureAwait(false);
-                await exitedThread.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
+                var deserializerThread = Task.Run(() => DeserializeToReceiver(sharedMsgQueue, remoteShardId, t));
+                await await Task.WhenAny(deserializerThread, s.ReadMessagesTo(sharedMsgQueue, t)).ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
             }
             catch(Exception e)
             {

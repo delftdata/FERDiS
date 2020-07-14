@@ -31,10 +31,10 @@ namespace BlackSP.InMemory
                     var graph = lifetimeScope.Resolve<VertexGraph>();
 
                     var vertexThreads = graph.StartAllVertices(2, TimeSpan.FromSeconds(5));
-                    var vertexKillThread = Task.Run(() => VertexFaultTrigger(graph));
 
+                    var allWorkerThreads = vertexThreads.Append(Task.Run(() => VertexFaultTrigger(graph)));
                     //TODO: console read instance name to kill?
-                    await await Task.WhenAny(vertexThreads.Append(vertexKillThread));
+                    await Task.WhenAll(allWorkerThreads);
                     Console.WriteLine("Graph operation stopped without exception");
                 }
             } 
@@ -48,15 +48,19 @@ namespace BlackSP.InMemory
         {
             while(true)
             {
-                string instanceName = string.Empty;
+                var input = string.Empty;
                 try
                 {
-                    instanceName = Console.ReadLine();
-                    graph.KillVertex(instanceName);
+                    input = Console.ReadLine();
+                    if(string.IsNullOrEmpty(input))
+                    {
+                        break;
+                    } 
+                    graph.KillVertex(input);
                 } 
                 catch(Exception e)
                 {
-                    Console.WriteLine($"--------- - Exception while trying to kill vertex with name: {instanceName}.\n{e}");
+                    Console.WriteLine($"--------- - Exception while trying to kill vertex with name: {input}.\n{e}");
                 }
             }
             

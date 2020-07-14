@@ -10,23 +10,34 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Streams
 {
-    public class PipeStreamWriter
+    public class PipeStreamWriter : IDisposable
     {
         private int writtenBytes;
+        private Stream stream;
         private PipeWriter writer;
         private Memory<byte> buffer;
         private bool alwaysFlush;
+        private bool disposed;
+
         public PipeStreamWriter(Stream outputStream, bool flushAfterEveryMessage)
         {
             writtenBytes = 0;
+            stream = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
             writer = outputStream.UsePipeWriter();
             buffer = writer.GetMemory();
             alwaysFlush = flushAfterEveryMessage;
+            
+            disposed = false;
         }
 
-        public async Task<int> WriteMessage(byte[] message)
+        public async Task<int> WriteMessage(byte[] message, CancellationToken t)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
+            t.ThrowIfCancellationRequested();
+            if(!stream.CanWrite)
+            {
+                throw new IOException($"{this.GetType()} tried to write to unwritable stream");
+            }
 
             int nextMsgLength = Convert.ToInt32(message.Length);
             Memory<byte> nextMsgLengthBytes = BitConverter.GetBytes(nextMsgLength).AsMemory();
@@ -34,7 +45,7 @@ namespace BlackSP.Streams
             //reserve at least enough space for the actual message + 4 bytes for the leading size integer
             int bytesToWrite = nextMsgLength + 4;
 
-            await EnsureBufferCapacity(bytesToWrite).ConfigureAwait(false);
+            await EnsureBufferCapacity(bytesToWrite, t).ConfigureAwait(false);
 
             var msgLengthBufferSegment = buffer.Slice(writtenBytes, 4);
             nextMsgLengthBytes.CopyTo(msgLengthBufferSegment);
@@ -51,7 +62,7 @@ namespace BlackSP.Streams
             return writtenBytes;
         }
 
-        private async Task EnsureBufferCapacity(int bytesToWrite)
+        private async Task EnsureBufferCapacity(int bytesToWrite, CancellationToken t)
         {
             if (writtenBytes + bytesToWrite <= buffer.Length)
             {   //buffer capacity is sufficient
@@ -60,18 +71,41 @@ namespace BlackSP.Streams
             }
 
             //the writebuffer is about to overflow, flush first
-            //(and/or) the last flush happened too long ago so we flush now
-            //few and small messages from control layer may take very long to fill the write buffer, thats why there is an early flush mechanism
-            await FlushAndRefreshBuffer(bytesToWrite);
+            await FlushAndRefreshBuffer(bytesToWrite, t);
         }
 
-        private async Task FlushAndRefreshBuffer(int bytesToWrite = 4096)
+        private async Task FlushAndRefreshBuffer(int bytesToWrite = 4096, CancellationToken t = default)
         {
             writer.Advance(writtenBytes);
-            await writer.FlushAsync();
+            await writer.FlushAsync(t);
             writtenBytes = 0;
             buffer = writer.GetMemory(bytesToWrite);
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    writer.Complete();
+                }
+                disposed = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~PipeStreamWriter()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

@@ -20,9 +20,6 @@ namespace BlackSP.Core.Controllers
         private readonly IMessageDeliverer<TMessage> _deliverer;
         private readonly IDispatcher<TMessage> _dispatcher;
 
-        private CancellationTokenSource _ctSource;
-        private Task _activeProcess;
-
         public SingleSourceProcessController(
             IMessageSource<TMessage> dataSource,
             IMessageDeliverer<TMessage> dataDeliverer,
@@ -32,48 +29,25 @@ namespace BlackSP.Core.Controllers
             _deliverer = dataDeliverer ?? throw new ArgumentNullException(nameof(dataDeliverer));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             
-            _ctSource = new CancellationTokenSource();
         }
 
         /// <summary>
         /// Start core processes for data and control message processing
         /// </summary>
-        public async Task StartProcess()
+        public async Task StartProcess(CancellationToken t)
         {
-            var t = _ctSource.Token;
             var dispatchQueue = new BlockingCollection<TMessage>(64);//TODO: determine proper capacity
             try
             {
-                var deliveryThread = Task.Run(async () => await DeliverFromSource(dispatchQueue, t).ConfigureAwait(false));
-                var dispatchThread = Task.Run(async () => await DispatchResults(dispatchQueue, t).ConfigureAwait(false));
-                _activeProcess = Task.WhenAll(deliveryThread, dispatchThread);
-                await _activeProcess.ConfigureAwait(false);
+                var deliveryThread = Task.Run(() => DeliverFromSource(dispatchQueue, t));
+                var dispatchThread = Task.Run(() => DispatchResults(dispatchQueue, t));
+                await Task.WhenAll(deliveryThread, dispatchThread).ConfigureAwait(false);
+                t.ThrowIfCancellationRequested();
             } 
             finally
             {
                 dispatchQueue.Dispose();
             }
-        }
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Task that potentially throws is already awaited in StartProcess")]
-        public async Task StopProcess()
-        {
-            if(_activeProcess == null) { throw new NotSupportedException("Cannot stop process that was not started"); }
-            if(_ctSource.IsCancellationRequested) { throw new NotSupportedException("Cannot stop process that was already stopped"); }
-            
-            _ctSource.Cancel();
-            try
-            {
-                //wait for active process to terminate
-                await _activeProcess.ConfigureAwait(false); 
-            } 
-            catch { /*silence any exception*/ } 
-            
-            //now data source is no longer consumed it can be safely flushed
-            await _dataSource.Flush().ConfigureAwait(false);
-
-            _activeProcess = null;
-            _ctSource = new CancellationTokenSource();
         }
 
         private async Task DeliverFromSource(BlockingCollection<TMessage> dispatchQueue, CancellationToken t) {

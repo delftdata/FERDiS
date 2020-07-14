@@ -20,7 +20,7 @@ namespace BlackSP.CRA.Vertices
         private IHostConfiguration _options;
         
         
-        private CancellationTokenSource _ctSource; //TODO: consider deleting
+        private CancellationTokenSource _ctSource;
 
         private Task _bspThread;
 
@@ -42,7 +42,7 @@ namespace BlackSP.CRA.Vertices
             InitializeIoCContainer();
 
             _controller = _vertexLifetimeScope.Resolve<MultiSourceProcessController<ControlMessage>>();
-            _bspThread = _controller.StartProcess();
+            _bspThread = _controller.StartProcess(_ctSource.Token);
             CreateEndpoints();
             
             Console.WriteLine("Vertex initialization completed");
@@ -52,9 +52,7 @@ namespace BlackSP.CRA.Vertices
         private void InitializeIoCContainer()
         {
             var container = new ContainerBuilder(); 
-            //TODO: BSP SETUP
-            //.UseMessageProcessing()
-            //.UseOperatorMiddleware(_options)
+            //TODO: BlackSP Setup (with modules)
             container.RegisterType<VertexInputEndpoint>().As<IAsyncShardedVertexInputEndpoint>();
             container.RegisterType<VertexOutputEndpoint>().As<IAsyncShardedVertexOutputEndpoint>();
             
@@ -91,7 +89,6 @@ namespace BlackSP.CRA.Vertices
             if(disposing)
             {
                 _ctSource.Cancel();
-                _controller.StopProcess().Wait();
                 _bspThread.Wait();
                 _dependencyContainer.Dispose();
                 _bspThread.Dispose();

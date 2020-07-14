@@ -54,6 +54,7 @@ namespace BlackSP.Core.Endpoints
             
             try
             {
+                t.ThrowIfCancellationRequested();
                 _connectionMonitor.MarkConnected(_endpointConfiguration, remoteShardId);
                 foreach (var message in msgBytesBuffer.GetConsumingEnumerable(t))
                 {
@@ -61,7 +62,7 @@ namespace BlackSP.Core.Endpoints
                     var endpointTypeDeliveryFlag = _endpointConfiguration.IsControl ? DispatchFlags.Control : DispatchFlags.Data;
                     if (_dispatcher.GetFlags().HasFlag(endpointTypeDeliveryFlag))
                     {
-                        await writer.WriteMessage(message).ConfigureAwait(false);
+                        await writer.WriteMessage(message, t).ConfigureAwait(false);
                     }
                 }
             } 
@@ -71,6 +72,7 @@ namespace BlackSP.Core.Endpoints
             }
             finally
             {
+                writer.Dispose();
                 _connectionMonitor.MarkDisconnected(_endpointConfiguration, remoteShardId);
             }
             
