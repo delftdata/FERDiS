@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Kernel
 {
-    public interface IMessageDeliverer<T> where T : IMessage
+    public interface IPipeline<T> where T : IMessage
     {
         Task<IEnumerable<T>> Deliver(T message);
 

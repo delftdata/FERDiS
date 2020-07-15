@@ -17,7 +17,7 @@ namespace BlackSP.Core.MessageSources
     /// Receives input from any source. Exposes received messages through the IMessageSource interface.<br/>
     /// Sorts and orders input based on message types to be consumed one-by-one.
     /// </summary>
-    public sealed class ReceiverMessageSource : IReceiver, IMessageSource<DataMessage>, IMessageSource<ControlMessage>
+    public sealed class ReceiverMessageSource : IReceiver, ISource<DataMessage>, ISource<ControlMessage>
     {
         private BlockingCollection<DataMessage> _dataQueue;
         private BlockingCollection<ControlMessage> _controlQueue;
@@ -37,12 +37,12 @@ namespace BlackSP.Core.MessageSources
 
         #region Data message source
         
-        DataMessage IMessageSource<DataMessage>.Take(CancellationToken t)
+        DataMessage ISource<DataMessage>.Take(CancellationToken t)
         {
             return _dataQueue.Take(t);
         }
 
-        Task IMessageSource<DataMessage>.Flush()
+        Task ISource<DataMessage>.Flush()
         {
             _dataQueue.CompleteAdding();
             _dataQueue.Dispose();
@@ -53,12 +53,12 @@ namespace BlackSP.Core.MessageSources
 
         #region Control message source
 
-        ControlMessage IMessageSource<ControlMessage>.Take(CancellationToken t)
+        ControlMessage ISource<ControlMessage>.Take(CancellationToken t)
         {
             return _controlQueue.Take(t);
         }
 
-        Task IMessageSource<ControlMessage>.Flush()
+        Task ISource<ControlMessage>.Flush()
         {
             _controlQueue.CompleteAdding();
             _controlQueue.Dispose();

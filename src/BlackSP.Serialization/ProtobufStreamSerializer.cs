@@ -4,19 +4,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
-using BlackSP.Serialization.Serializers;
 using BlackSP.Serialization.Utilities;
 using ProtoBuf;
 using ProtoBuf.Meta;
 
-namespace BlackSP.Serialization.Serializers
+namespace BlackSP.Serialization
 {
-    public class ProtobufSerializer : ISerializer
+    /// <summary>
+    /// Builds a type model based on any and all protobuf annotated classes it can find in the runtime it starts in.
+    /// </summary>
+    public class ProtobufStreamSerializer : IStreamSerializer
     {
         private TypeModel _protobuf;
 
 
-        public ProtobufSerializer()
+        public ProtobufStreamSerializer()
         {
             var inheritanceFieldNum = 64; //set high to not get in the way of individual model definitions
             

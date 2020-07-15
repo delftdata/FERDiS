@@ -11,8 +11,19 @@ using BlackSP.Core.Controllers;
 
 namespace BlackSP.Infrastructure.Extensions
 {
-    public static class AutofacControlMiddlewareExtensions
+    public static class AutofacMiddlewareExtensions
     {
+        
+
+        public static ContainerBuilder AddControlMiddlewaresForCoordinator(this ContainerBuilder builder)
+        {
+            //TODO: register coordinator control middlewares in order
+            builder.RegisterType<WorkerStatusReceptionMiddleware>().AsImplementedInterfaces();
+            builder.RegisterType<CheckpointRestoreCompletionMiddleware>().As<IMiddleware<ControlMessage>>();
+
+            return builder;
+        }
+        
         public static ContainerBuilder AddControlMiddlewaresForWorker(this ContainerBuilder builder)
         {
             //TODO: register worker control middlewares in order
@@ -26,11 +37,11 @@ namespace BlackSP.Infrastructure.Extensions
             return builder;
         }
 
-        public static ContainerBuilder AddControlMiddlewaresForCoordinator(this ContainerBuilder builder)
+        public static ContainerBuilder AddOperatorMiddlewareForWorker<TShell, TOperator>(this ContainerBuilder builder)
         {
-            //TODO: register coordinator control middlewares in order
-            builder.RegisterType<WorkerStatusReceptionMiddleware>().AsImplementedInterfaces();
-            builder.RegisterType<CheckpointRestoreCompletionMiddleware>().As<IMiddleware<ControlMessage>>();
+            builder.RegisterType<TShell>().As<IOperatorShell>();
+            builder.RegisterType<TOperator>().AsImplementedInterfaces();
+            builder.RegisterType<OperatorMiddleware>().As<IMiddleware<DataMessage>>();
 
             return builder;
         }

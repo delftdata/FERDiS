@@ -7,11 +7,12 @@ using BlackSP.Core.Endpoints;
 using BlackSP.Core.MessageSources;
 using BlackSP.Core.Models;
 using BlackSP.Core.Monitors;
+using BlackSP.Core.Partitioners;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
-using BlackSP.Serialization.Serializers;
+using BlackSP.Serialization;
 using Microsoft.IO;
 using System;
 using System.Collections.Generic;
@@ -28,12 +29,12 @@ namespace BlackSP.Infrastructure.Extensions
         /// <param name="builder"></param>
         /// <param name="useAsDataSource"></param>
         /// <returns></returns>
-        public static ContainerBuilder UseMessageReceiver(this ContainerBuilder builder, bool useAsDataSource = true)
+        public static ContainerBuilder UseReceiverMessageSource(this ContainerBuilder builder, bool useAsDataSource = true)
         {
-            var exposedTypes = new List<Type>() { typeof(IReceiver), typeof(IMessageSource<ControlMessage>) };
+            var exposedTypes = new List<Type>() { typeof(IReceiver), typeof(ISource<ControlMessage>) };
             if (useAsDataSource)
             {
-                exposedTypes.Add(typeof(IMessageSource<DataMessage>));
+                exposedTypes.Add(typeof(ISource<DataMessage>));
             }
             builder.RegisterType<ReceiverMessageSource>().As(exposedTypes.ToArray()).SingleInstance();
             return builder;
@@ -47,8 +48,8 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder UseWorkerDispatcher(this ContainerBuilder builder)
         {
             builder.RegisterType<MessageDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>, IDispatcher<DataMessage>>().SingleInstance();
-            builder.RegisterType<MessageSerializer>().As<IMessageSerializer>();
-            builder.RegisterType<MessagePartitioner>().As<IPartitioner>();
+            builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer<IMessage>>();
+            builder.RegisterType<MessageHashPartitioner>().As<IPartitioner<IMessage>>();
 
             return builder;
         }
@@ -61,7 +62,7 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder UseCoordinatorDispatcher(this ContainerBuilder builder)
         {
             builder.RegisterType<CoordinatorDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>>().SingleInstance();
-            builder.RegisterType<MessageSerializer>().As<IMessageSerializer>();
+            builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer<IMessage>>();
             return builder;
         }
 
@@ -84,7 +85,7 @@ namespace BlackSP.Infrastructure.Extensions
         /// <returns></returns>
         public static ContainerBuilder UseProtobufSerializer(this ContainerBuilder builder)
         {
-            builder.RegisterType<ProtobufSerializer>().As<ISerializer>();
+            builder.RegisterType<ProtobufStreamSerializer>().As<IStreamSerializer>();
             builder.RegisterInstance(new RecyclableMemoryStreamManager()); //register one memorystreampool for all components to share
             return builder;
         }

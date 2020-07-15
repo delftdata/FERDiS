@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Kernel.MessageProcessing
 {
-    public interface IMessageSource<T> where T : IMessage
+    public interface ISource<T>
     {
         /// <summary>
         /// Flush the underlying message source
@@ -16,7 +16,7 @@ namespace BlackSP.Kernel.MessageProcessing
         Task Flush();
 
         /// <summary>
-        /// Take the next message from the message source
+        /// Take the next element from the source
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>

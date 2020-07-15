@@ -1,18 +1,11 @@
 ﻿using Autofac;
-using BlackSP.Core.Endpoints;
 using BlackSP.Infrastructure.Configuration;
-using BlackSP.Kernel.Models;
+using BlackSP.Infrastructure.Models;
 using BlackSP.Simulator.Core;
 using BlackSP.Simulator.Extensions;
-using BlackSP.Kernel;
-using BlackSP.Kernel.Endpoints;
-using BlackSP.Serialization.Serializers;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using BlackSP.Infrastructure.Models;
 
 namespace BlackSP.Simulator.Configuration
 {

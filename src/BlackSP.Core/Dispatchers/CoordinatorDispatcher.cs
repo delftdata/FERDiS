@@ -3,6 +3,7 @@ using BlackSP.Core.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -20,14 +21,13 @@ namespace BlackSP.Core.Dispatchers
     public class CoordinatorDispatcher : IDispatcher<ControlMessage>, IDispatcher<IMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
-        private readonly IMessageSerializer _serializer;
+        private readonly IObjectSerializer<IMessage> _serializer;
 
         private readonly IDictionary<string, BlockingCollection<byte[]>> _outputQueues;
 
         private DispatchFlags _dispatchFlags;
 
-        public CoordinatorDispatcher(IVertexConfiguration vertexConfiguration,
-                                 IMessageSerializer serializer)
+        public CoordinatorDispatcher(IVertexConfiguration vertexConfiguration, IObjectSerializer<IMessage> serializer)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -65,7 +65,7 @@ namespace BlackSP.Core.Dispatchers
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
 
-            byte[] bytes = await _serializer.SerializeMessage(message, t).ConfigureAwait(false);
+            byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(false);
             var targets = _vertexConfiguration.OutputEndpoints.SelectMany(e => e.GetAllConnectionKeys());
             foreach(var targetConnectionKey in targets)
             {

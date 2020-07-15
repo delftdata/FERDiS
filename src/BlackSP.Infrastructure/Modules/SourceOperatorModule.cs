@@ -25,22 +25,22 @@ namespace BlackSP.Infrastructure.Modules
             builder.UseStreamingEndpoints();
 
             //receiver only as control source
-            builder.UseMessageReceiver(false);
+            builder.UseReceiverMessageSource(false);
             
             builder.UseWorkerMonitors();
             
             //data source (local source operator)
             builder.RegisterType<TOperator>().AsImplementedInterfaces();
             builder.RegisterType<TShell>().As<IOperatorShell>();
-            builder.RegisterType<SourceOperatorDataSource<TEvent>>().As<IMessageSource<DataMessage>>();
+            builder.RegisterType<SourceOperatorDataSource<TEvent>>().As<ISource<DataMessage>>();
 
             //control processor
             builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
-            builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();
+            builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().SingleInstance();
             builder.AddControlMiddlewaresForWorker();
 
             //data processor
-            builder.RegisterType<GenericMiddlewareDeliverer<DataMessage>>().As<IMessageDeliverer<DataMessage>>().SingleInstance();
+            builder.RegisterType<MiddlewareInvocationPipeline<DataMessage>>().As<IPipeline<DataMessage>>().SingleInstance();
 
             //Note: consumer is expected to register data middlewares himself
             builder.RegisterType<PassthroughMiddleware<DataMessage>>().AsImplementedInterfaces();

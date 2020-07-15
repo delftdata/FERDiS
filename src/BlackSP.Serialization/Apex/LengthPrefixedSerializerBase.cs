@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Serialization.Serializers
+namespace BlackSP.Serialization.Apex
 {
     /// <summary>
     /// Abstraction layer that introduces reading and 
@@ -17,7 +17,8 @@ namespace BlackSP.Serialization.Serializers
     /// network streams
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class LengthPrefixedSerializerBase : ISerializer
+    [Obsolete("No longer serves any purpose in BlackSP")]
+    public abstract class LengthPrefixedSerializerBase : IStreamSerializer
     {
         private readonly ArrayPool<byte> _arrayPool;
 

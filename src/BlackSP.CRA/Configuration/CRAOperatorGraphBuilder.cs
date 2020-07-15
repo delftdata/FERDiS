@@ -1,20 +1,13 @@
-﻿using BlackSP.Core.Endpoints;
-using BlackSP.CRA.Extensions;
+﻿using BlackSP.CRA.Extensions;
 using BlackSP.CRA.Kubernetes;
 using BlackSP.CRA.Vertices;
 using BlackSP.Infrastructure.Configuration;
-using BlackSP.Infrastructure.Configuration.Vertices;
-using BlackSP.Kernel.Models;
-using BlackSP.Kernel;
+using BlackSP.Infrastructure.Models;
 using BlackSP.Serialization.Extensions;
-using BlackSP.Serialization.Serializers;
 using CRA.ClientLibrary;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using BlackSP.Infrastructure.Models;
 
 namespace BlackSP.CRA.Configuration
 {

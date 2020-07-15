@@ -1,21 +1,18 @@
-﻿using BlackSP.Core.Extensions;
-using BlackSP.Core.Models;
+﻿using BlackSP.Core.Models;
 using BlackSP.Core.Models.Payloads;
 using BlackSP.Core.UnitTests.Events;
 using BlackSP.Kernel.Models;
-using BlackSP.Serialization.Serializers;
+using BlackSP.Serialization;
+using Microsoft.IO;
 using NUnit.Framework;
 using ProtoBuf;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.UnitTests.MessageSerialization
 {
-    
+
     [ProtoContract]
     public class VectorClockMessagePayload : MessagePayloadBase
     {
@@ -40,11 +37,11 @@ namespace BlackSP.Core.UnitTests.MessageSerialization
             msg.AddPayload(new EventPayload() { Event = new TestEvent() { Key = "k", Value = 1 } });
             msg.AddPayload(new VectorClockMessagePayload() { SeqNr = 111, Smth = "ok", SeqArr = new int[] { 1, 2, 3 } });
             
-            var msgSerializer = new MessageSerializer(new ProtobufSerializer(), new Microsoft.IO.RecyclableMemoryStreamManager());
+            var msgSerializer = new PooledBufferMessageSerializer(new ProtobufStreamSerializer(), new RecyclableMemoryStreamManager());
             var ctSource = new CancellationTokenSource();
-            var res = await msgSerializer.SerializeMessage(msg, ctSource.Token);
+            var res = await msgSerializer.SerializeAsync(msg, ctSource.Token);
             Assert.IsTrue(res.Any());
-            var msg2 = await msgSerializer.DeserializeMessage(res, ctSource.Token);
+            var msg2 = await msgSerializer.DeserializeAsync(res, ctSource.Token);
             Assert.AreEqual(msg.IsControl, msg2.IsControl);
             Assert.AreEqual(msg.PartitionKey, msg2.PartitionKey);
 
@@ -75,11 +72,11 @@ namespace BlackSP.Core.UnitTests.MessageSerialization
             msg.AddPayload(new EventPayload() { Event = new TestEvent() { Key = "k", Value = 1 } });
             msg.AddPayload(new VectorClockMessagePayload() { SeqNr = 111, Smth = "ok", SeqArr = new int[] { 1, 2, 3 } });
 
-            var msgSerializer = new MessageSerializer(new ProtobufSerializer(), new Microsoft.IO.RecyclableMemoryStreamManager());
+            var msgSerializer = new PooledBufferMessageSerializer(new ProtobufStreamSerializer(), new RecyclableMemoryStreamManager());
             var ctSource = new CancellationTokenSource();
-            var res = await msgSerializer.SerializeMessage(msg, ctSource.Token);
+            var res = await msgSerializer.SerializeAsync(msg, ctSource.Token);
             Assert.IsTrue(res.Any());
-            var msg2 = await msgSerializer.DeserializeMessage(res, ctSource.Token);
+            var msg2 = await msgSerializer.DeserializeAsync(res, ctSource.Token);
             Assert.AreEqual(msg.IsControl, msg2.IsControl);
             Assert.AreEqual(msg.PartitionKey, msg2.PartitionKey);
 

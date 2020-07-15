@@ -16,29 +16,25 @@ namespace BlackSP.Core.MessageSources
     /// <summary>
     /// Control message source that watches the internal state based on various monitors. Creates new control messages based on state changes.
     /// </summary>
-    public class WorkerStateChangeSource : IMessageSource<ControlMessage>
+    public class WorkerStateChangeSource : ISource<ControlMessage>, IDisposable
     {
         private readonly WorkerStateMonitor _workerStateMonitor;
 
         /// <summary>
-        /// 
+        /// local list of messages ready to be taken from this ISource<br/>
+        /// Note how this implementation does not allow checkpointing due to the lack of synchronisation with the primary processing thread(s)
         /// </summary>
         private BlockingCollection<ControlMessage> _messages;
 
-        /// <summary>
-        /// Defaults to true during startup, once all workers connected turns false and stays that way.
-        /// </summary>
-        private bool initializing;
         private DateTime lastHeartBeat;
         private TimeSpan heartBeatInterval;
+        private bool disposedValue;
 
         public WorkerStateChangeSource(WorkerStateMonitor workerStateMonitor)
         {
             _workerStateMonitor = workerStateMonitor ?? throw new ArgumentNullException(nameof(workerStateMonitor));
-
             _messages = new BlockingCollection<ControlMessage>();
             
-            initializing = true;
             heartBeatInterval = TimeSpan.FromSeconds(5);
             lastHeartBeat = DateTime.Now.Add(-heartBeatInterval);//make sure we start off with a heartbeat
 
@@ -130,5 +126,40 @@ namespace BlackSP.Core.MessageSources
             }
             
         }
+
+        #region Dispose support
+        
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                    _messages.CompleteAdding();
+                    _messages.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~WorkerStateChangeSource()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
     }
 }

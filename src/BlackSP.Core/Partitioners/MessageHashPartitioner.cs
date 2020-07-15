@@ -6,13 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Core
+namespace BlackSP.Core.Partitioners
 {
-    public class MessagePartitioner : IPartitioner
+    public class MessageHashPartitioner : IPartitioner<IMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
 
-        public MessagePartitioner(IVertexConfiguration vertexConfiguration)
+        public MessageHashPartitioner(IVertexConfiguration vertexConfiguration)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
         }

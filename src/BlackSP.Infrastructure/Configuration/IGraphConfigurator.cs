@@ -4,7 +4,7 @@ using System.Text;
 
 namespace BlackSP.Infrastructure.Configuration
 {
-    public interface IGraphConfiguration
+    public interface IGraphConfigurator
     {
         void Configure(IOperatorGraphBuilder graph);
     }

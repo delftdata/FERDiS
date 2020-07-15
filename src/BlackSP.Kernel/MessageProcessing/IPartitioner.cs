@@ -5,8 +5,8 @@ using System.Text;
 
 namespace BlackSP.Kernel
 {
-    public interface IPartitioner
+    public interface IPartitioner<T>
     {
-        IEnumerable<string> Partition(IMessage message);
+        IEnumerable<string> Partition(T message);
     }
 }

@@ -27,9 +27,9 @@ namespace BlackSP.Core.UnitTests.Utilities
             return operatorMoq;
         }
 
-        public static Mock<ISerializer> MockSerializer(ICollection<IEvent> testEvents)
+        public static Mock<IStreamSerializer> MockSerializer(ICollection<IEvent> testEvents)
         {
-            var serializerMoq = new Mock<ISerializer>();
+            var serializerMoq = new Mock<IStreamSerializer>();
             serializerMoq
                 .Setup(ser => ser.Serialize(It.IsAny<Stream>(), It.IsAny<IEvent>()))
                 .Callback<Stream, IEvent>((s, e) =>

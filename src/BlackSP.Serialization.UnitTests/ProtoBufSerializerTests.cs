@@ -1,6 +1,5 @@
 ﻿using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
-using BlackSP.Serialization.Serializers;
 using BlackSP.Serialization.UnitTests.Utilities;
 using NUnit.Framework;
 using System;
@@ -13,7 +12,7 @@ namespace BlackSP.Serialization.UnitTests.Serialization
 {
     public class ProtoBufSerializerTests
     {
-        ISerializer _serializer;
+        IStreamSerializer _serializer;
         ICollection<IEvent> _testEvents;
         CancellationTokenSource _ctSource;
 
@@ -25,7 +24,7 @@ namespace BlackSP.Serialization.UnitTests.Serialization
             testComplexType.Add("entry1", 1);
             testComplexType.Add("entry2", 2);
 
-            _serializer = new ProtobufSerializer();
+            _serializer = new ProtobufStreamSerializer();
 
             _testEvents = new List<IEvent> {
                 new ProtoBufTestEvent("test_key_0", DateTime.Now, 420),

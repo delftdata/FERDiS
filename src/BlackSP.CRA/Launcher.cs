@@ -19,7 +19,7 @@ namespace BlackSP.CRA
         /// <summary>
         /// Holds reference solely used during BlackSP startup
         /// </summary>
-        private static IGraphConfiguration userGraphConfiguration;
+        private static IGraphConfigurator userGraphConfiguration;
 
         /// <summary>
         /// Holds reference solely used during BlackSP startup
@@ -39,7 +39,7 @@ namespace BlackSP.CRA
         /// <typeparam name="TDataProvider"></typeparam>
         /// <param name="args"></param>
         public static async Task LaunchWithAsync<TConfiguration, TDataProvider>(string[] args)
-            where TConfiguration : IGraphConfiguration, new()
+            where TConfiguration : IGraphConfigurator, new()
             where TDataProvider : IDataProvider, new()
         {
             EnforceEnvironmentVariables();

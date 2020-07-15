@@ -1,6 +1,6 @@
 ﻿using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
-using BlackSP.Serialization.Serializers;
+using BlackSP.Serialization.Apex;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ namespace BlackSP.Serialization.UnitTests.Serialization
 {
     public class ApexSerializerTests
     {
-        ISerializer _serializer;
+        IStreamSerializer _serializer;
         ICollection<IEvent> _testEvents;
         CancellationTokenSource _ctSource;
 

@@ -26,14 +26,14 @@ namespace BlackSP.Infrastructure.Modules
             builder.UseStreamingEndpoints();
 
             //sources (control only)
-            builder.RegisterType<WorkerStateChangeSource>().As<IMessageSource<ControlMessage>>();
-            builder.UseMessageReceiver(false);
+            builder.RegisterType<WorkerStateChangeSource>().As<ISource<ControlMessage>>();
+            builder.UseReceiverMessageSource(false);
 
             builder.UseCoordinatorMonitors();
 
             //processor (control only)
             builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
-            builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();
+            builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().SingleInstance();
 
             //middlewares (control only - handles worker responses)
             builder.AddControlMiddlewaresForCoordinator();

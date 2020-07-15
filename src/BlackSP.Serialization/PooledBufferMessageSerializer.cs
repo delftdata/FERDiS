@@ -11,22 +11,22 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core
+namespace BlackSP.Serialization
 {
-    public class MessageSerializer : IMessageSerializer
+    public class PooledBufferMessageSerializer : IObjectSerializer<IMessage>
     {
 
-        private readonly ISerializer _serializer;
+        private readonly IStreamSerializer _serializer;
         private readonly RecyclableMemoryStreamManager _msgBufferPool;
 
-        public MessageSerializer(ISerializer serializer,
+        public PooledBufferMessageSerializer(IStreamSerializer serializer,
                                  RecyclableMemoryStreamManager memStreamPool)
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _msgBufferPool = memStreamPool ?? throw new ArgumentNullException(nameof(memStreamPool));
         }
 
-        public async Task<byte[]> SerializeMessage(IMessage message, CancellationToken t)
+        public async Task<byte[]> SerializeAsync(IMessage message, CancellationToken t)
         {
             var msgBuffer = _msgBufferPool.GetStream();
             await _serializer.Serialize(msgBuffer, message).ConfigureAwait(false);
@@ -35,7 +35,7 @@ namespace BlackSP.Core
             return msgBytes;
         }
 
-        public async Task<IMessage> DeserializeMessage(byte[] msgBytes, CancellationToken t)
+        public async Task<IMessage> DeserializeAsync(byte[] msgBytes, CancellationToken t)
         {
             var msgStream = new MemoryStream(msgBytes);
             try

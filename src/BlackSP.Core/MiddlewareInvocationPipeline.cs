@@ -17,12 +17,12 @@ namespace BlackSP.Core
     /// <summary>
     /// 
     /// </summary>
-    public class GenericMiddlewareDeliverer<T> : IMessageDeliverer<T> where T : IMessage
+    public class MiddlewareInvocationPipeline<T> : IPipeline<T> where T : IMessage
     {
 
         private readonly IEnumerable<IMiddleware<T>> _middlewares;
 
-        public GenericMiddlewareDeliverer(IEnumerable<IMiddleware<T>> middlewares)
+        public MiddlewareInvocationPipeline(IEnumerable<IMiddleware<T>> middlewares)
         {
             _middlewares = middlewares ?? throw new ArgumentNullException(nameof(middlewares));
             if(!_middlewares.Any())

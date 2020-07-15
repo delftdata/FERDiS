@@ -17,7 +17,7 @@ namespace BlackSP.Simulator
         /// <typeparam name="TConfiguration"></typeparam>
         /// <param name="args"></param>
         public static async Task LaunchWithAsync<TConfiguration>(string[] args)
-            where TConfiguration : IGraphConfiguration, new()
+            where TConfiguration : IGraphConfigurator, new()
         {
             
             try

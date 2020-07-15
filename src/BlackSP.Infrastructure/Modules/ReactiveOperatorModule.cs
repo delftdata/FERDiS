@@ -19,22 +19,22 @@ namespace BlackSP.Infrastructure.Modules
             builder.UseStreamingEndpoints();
 
             //control + data collector & expose as source(s)
-            builder.UseMessageReceiver();
+            builder.UseReceiverMessageSource();
 
             builder.UseWorkerMonitors();
 
             //control processor
             builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
-            builder.RegisterType<GenericMiddlewareDeliverer<ControlMessage>>().As<IMessageDeliverer<ControlMessage>>().SingleInstance();
+            builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().SingleInstance();
             builder.AddControlMiddlewaresForWorker();
 
             //data processor
-            builder.RegisterType<GenericMiddlewareDeliverer<DataMessage>>().As<IMessageDeliverer<DataMessage>>().SingleInstance();
+            builder.RegisterType<MiddlewareInvocationPipeline<DataMessage>>().As<IPipeline<DataMessage>>().SingleInstance();
 
             //control + data dispatcher
             builder.UseWorkerDispatcher();
             //TODO: middlewares
-            builder.AddOperatorMiddleware<TShell, TOperator>();
+            builder.AddOperatorMiddlewareForWorker<TShell, TOperator>();
 
             base.Load(builder);
         }

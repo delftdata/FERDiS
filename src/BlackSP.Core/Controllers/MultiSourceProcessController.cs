@@ -16,14 +16,14 @@ namespace BlackSP.Core.Controllers
     public class MultiSourceProcessController<TMessage>
         where TMessage : MessageBase
     {
-        private readonly IEnumerable<IMessageSource<TMessage>> _controlSources;
-        private readonly IMessageDeliverer<TMessage> _deliverer;
+        private readonly IEnumerable<ISource<TMessage>> _controlSources;
+        private readonly IPipeline<TMessage> _pipeline;
         private readonly IDispatcher<TMessage> _dispatcher;
         private readonly SemaphoreSlim _delivererSemaphore;
 
         public MultiSourceProcessController(
-            IEnumerable<IMessageSource<TMessage>> controlSources,
-            IMessageDeliverer<TMessage> messageDeliverer,
+            IEnumerable<ISource<TMessage>> controlSources,
+            IPipeline<TMessage> messagePipeline,
             IDispatcher<TMessage> dispatcher)
         {
             _controlSources = controlSources ?? throw new ArgumentNullException(nameof(controlSources));
@@ -32,7 +32,7 @@ namespace BlackSP.Core.Controllers
                 throw new ArgumentException("At least one IMessageSource expected", nameof(controlSources));
             }
 
-            _deliverer = messageDeliverer ?? throw new ArgumentNullException(nameof(messageDeliverer));
+            _pipeline = messagePipeline ?? throw new ArgumentNullException(nameof(messagePipeline));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _delivererSemaphore = new SemaphoreSlim(1, 1);
 
@@ -61,7 +61,7 @@ namespace BlackSP.Core.Controllers
             }
         }
 
-        private async Task DeliverFromSource(IMessageSource<TMessage> controlSource, BlockingCollection<TMessage> dispatchQueue, CancellationToken t)
+        private async Task DeliverFromSource(ISource<TMessage> controlSource, BlockingCollection<TMessage> dispatchQueue, CancellationToken t)
         {
             try
             {
@@ -69,7 +69,7 @@ namespace BlackSP.Core.Controllers
                 {
                     var message = controlSource.Take(t) ?? throw new Exception($"Received null from {controlSource.GetType()}.Take");
                     await _delivererSemaphore.WaitAsync(t).ConfigureAwait(false);
-                    IEnumerable<TMessage> responses = await _deliverer.Deliver(message).ConfigureAwait(false);
+                    IEnumerable<TMessage> responses = await _pipeline.Deliver(message).ConfigureAwait(false);
                     foreach (var msg in responses)
                     {
                         dispatchQueue.Add(msg);

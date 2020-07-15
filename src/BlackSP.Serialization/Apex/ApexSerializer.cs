@@ -1,9 +1,10 @@
 ﻿using Apex.Serialization;
-using BlackSP.Serialization.Serializers;
+using System;
 using System.IO;
 
-namespace BlackSP.Serialization.Serializers
+namespace BlackSP.Serialization.Apex
 {
+    [Obsolete("No longer serves any purpose in BlackSP")]
     public class ApexSerializer : LengthPrefixedSerializerBase
     {
         private readonly IBinary _apexSerializer;

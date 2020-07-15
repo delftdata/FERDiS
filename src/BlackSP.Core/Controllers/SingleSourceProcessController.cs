@@ -16,13 +16,13 @@ namespace BlackSP.Core.Controllers
     public class SingleSourceProcessController<TMessage> 
         where TMessage : MessageBase
     {
-        private readonly IMessageSource<TMessage> _dataSource;
-        private readonly IMessageDeliverer<TMessage> _deliverer;
+        private readonly ISource<TMessage> _dataSource;
+        private readonly IPipeline<TMessage> _deliverer;
         private readonly IDispatcher<TMessage> _dispatcher;
 
         public SingleSourceProcessController(
-            IMessageSource<TMessage> dataSource,
-            IMessageDeliverer<TMessage> dataDeliverer,
+            ISource<TMessage> dataSource,
+            IPipeline<TMessage> dataDeliverer,
             IDispatcher<TMessage> dispatcher)
         {
             _dataSource = dataSource ?? throw new ArgumentNullException(nameof(dataSource));

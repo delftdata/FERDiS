@@ -3,6 +3,7 @@ using BlackSP.Core.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,8 +17,8 @@ namespace BlackSP.Core.Dispatchers
     public class MessageDispatcher : IDispatcher<IMessage>, IDispatcher<DataMessage>, IDispatcher<ControlMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
-        private readonly IMessageSerializer _serializer;
-        private readonly IPartitioner _partitioner;
+        private readonly IObjectSerializer<IMessage> _serializer;
+        private readonly IPartitioner<IMessage> _partitioner;
 
         private readonly IDictionary<string, BlockingCollection<byte[]>> _outputQueues;
         private readonly IDictionary<string, ICollection<byte[]>> _outputBuffers;
@@ -25,8 +26,8 @@ namespace BlackSP.Core.Dispatchers
         private DispatchFlags _dispatchFlags;
 
         public MessageDispatcher(IVertexConfiguration vertexConfiguration,
-                                 IMessageSerializer serializer,
-                                 IPartitioner partitioner)
+                                 IObjectSerializer<IMessage> serializer,
+                                 IPartitioner<IMessage> partitioner)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -60,7 +61,7 @@ namespace BlackSP.Core.Dispatchers
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
 
-            byte[] bytes = await _serializer.SerializeMessage(message, t).ConfigureAwait(false);
+            byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(false);
 
 
             foreach(var targetConnectionKey in _partitioner.Partition(message))

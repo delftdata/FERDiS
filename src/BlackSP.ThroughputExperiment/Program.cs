@@ -7,7 +7,7 @@ namespace BlackSP.ThroughputExperiment
 {
     public class Program
     {
-        class ThroughputExperimentGraphConfiguration : IGraphConfiguration
+        class ThroughputExperimentGraphConfiguration : IGraphConfigurator
         {
             public void Configure(IOperatorGraphBuilder graph)
             {

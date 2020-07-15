@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Kernel.Serialization
 {
-    public interface ISerializer
+    public interface IStreamSerializer
     {
         /// <summary>
         /// Serialize object to stream

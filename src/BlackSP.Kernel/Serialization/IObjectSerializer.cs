@@ -6,22 +6,22 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Kernel
+namespace BlackSP.Kernel.Serialization
 {
-    public interface IMessageSerializer
+    public interface IObjectSerializer<T>
     {
         /// <summary>
         /// </summary>
         /// <param name="message"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        Task<byte[]> SerializeMessage(IMessage message, CancellationToken t);
+        Task<byte[]> SerializeAsync(T message, CancellationToken t);
 
         /// <summary>
         /// </summary>
         /// <param name="msgBytes"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        Task<IMessage> DeserializeMessage(byte[] msgBytes, CancellationToken t);
+        Task<T> DeserializeAsync(byte[] msgBytes, CancellationToken t);
     }
 }

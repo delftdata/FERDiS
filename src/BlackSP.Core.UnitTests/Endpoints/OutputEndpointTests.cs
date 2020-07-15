@@ -22,7 +22,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
     {
         ICollection<IEvent> _testEvents;
         OutputEndpoint _testEndpoint;
-        ISerializer _serializer;
+        IStreamSerializer _serializer;
         CancellationTokenSource _endpointCtSource;
         CancellationTokenSource _operatorCtSource;
         Stream[] _streams;

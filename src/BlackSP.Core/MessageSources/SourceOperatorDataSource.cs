@@ -13,7 +13,7 @@ using BlackSP.Core.Models.Payloads;
 
 namespace BlackSP.Core.MessageSources
 {
-    public class SourceOperatorDataSource<TEvent> : IMessageSource<DataMessage>
+    public class SourceOperatorDataSource<TEvent> : ISource<DataMessage>
         where TEvent : class, IEvent
     {
         private readonly ISourceOperator<TEvent> _source;

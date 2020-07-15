@@ -14,6 +14,7 @@ using BlackSP.Core.Monitors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Serialization;
 using BlackSP.Streams.Extensions;
 
 namespace BlackSP.Core.Endpoints
@@ -23,13 +24,13 @@ namespace BlackSP.Core.Endpoints
 
         public delegate InputEndpoint Factory(string endpointName);
 
-        private readonly IMessageSerializer _serializer;
+        private readonly IObjectSerializer<IMessage> _serializer;
         private readonly IReceiver _receiver;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
 
         public InputEndpoint(string endpointName,
-                             IMessageSerializer serializer,
+                             IObjectSerializer<IMessage> serializer,
                              IReceiver receiver,
                              IVertexConfiguration vertexConfig,
                              ConnectionMonitor connectionMonitor)
@@ -61,7 +62,8 @@ namespace BlackSP.Core.Endpoints
                 t.ThrowIfCancellationRequested();
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
                 var deserializerThread = Task.Run(() => DeserializeToReceiver(sharedMsgQueue, remoteShardId, t));
-                await await Task.WhenAny(deserializerThread, s.ReadMessagesTo(sharedMsgQueue, t)).ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
+                var exitedTask = await Task.WhenAny(deserializerThread, s.ReadMessagesTo(sharedMsgQueue, t)).ConfigureAwait(false);
+                await exitedTask.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
             }
             catch(Exception e)
             {
@@ -78,7 +80,7 @@ namespace BlackSP.Core.Endpoints
         {
             foreach(var bytes in inputqueue.GetConsumingEnumerable(t))
             {
-                IMessage message = await _serializer.DeserializeMessage(bytes, t).ConfigureAwait(false);
+                IMessage message = await _serializer.DeserializeAsync(bytes, t).ConfigureAwait(false);
                 if(message == null)
                 {
                     throw new Exception("unexpected null message from deserializer");//TODO: custom exception?

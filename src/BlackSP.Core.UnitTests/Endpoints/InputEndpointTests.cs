@@ -24,7 +24,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
         IOperatorShell _targetOperator;
         BlockingCollection<IEvent> _targetOperatorInputqueue;
 
-        ISerializer _serializer;
+        IStreamSerializer _serializer;
         IList<IEvent> _testEvents;
         IInputEndpoint _testEndpoint;
         CancellationTokenSource _endpointCtSource;
