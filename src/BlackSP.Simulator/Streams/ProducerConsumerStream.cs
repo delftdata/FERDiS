@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace BlackSP.InMemory.Streams
+namespace BlackSP.Simulator.Streams
 {
     /// <summary>
     /// Provides functionality to read and write in the same stream

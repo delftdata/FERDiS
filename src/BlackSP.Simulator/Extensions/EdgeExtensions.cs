@@ -1,12 +1,12 @@
 ﻿using BlackSP.Infrastructure.Configuration;
 using BlackSP.Infrastructure.Models;
-using BlackSP.InMemory.Configuration;
-using BlackSP.InMemory.Core;
+using BlackSP.Simulator.Configuration;
+using BlackSP.Simulator.Core;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.InMemory.Extensions
+namespace BlackSP.Simulator.Extensions
 {
     public static class EdgeExtensions
     {

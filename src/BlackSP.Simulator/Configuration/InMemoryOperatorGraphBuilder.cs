@@ -2,8 +2,8 @@
 using BlackSP.Core.Endpoints;
 using BlackSP.Infrastructure.Configuration;
 using BlackSP.Kernel.Models;
-using BlackSP.InMemory.Core;
-using BlackSP.InMemory.Extensions;
+using BlackSP.Simulator.Core;
+using BlackSP.Simulator.Extensions;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Serialization.Serializers;
@@ -14,7 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BlackSP.Infrastructure.Models;
 
-namespace BlackSP.InMemory.Configuration
+namespace BlackSP.Simulator.Configuration
 {
     class InMemoryOperatorGraphBuilder : OperatorGraphBuilderBase<IContainer>
     {

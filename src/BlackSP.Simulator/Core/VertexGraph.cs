@@ -1,12 +1,12 @@
 ﻿using Autofac;
-using BlackSP.InMemory.Configuration;
+using BlackSP.Simulator.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.InMemory.Core
+namespace BlackSP.Simulator.Core
 {
     public class VertexGraph
     {

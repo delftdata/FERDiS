@@ -1,4 +1,4 @@
-﻿using BlackSP.InMemory.Configuration;
+﻿using BlackSP.Simulator.Configuration;
 using BlackSP.Kernel.Endpoints;
 using Nerdbank.Streams;
 using System;
@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.InMemory.Core
+namespace BlackSP.Simulator.Core
 {
     public class InputEndpointHost
     {

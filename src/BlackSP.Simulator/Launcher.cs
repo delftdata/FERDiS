@@ -1,18 +1,18 @@
 ﻿using Autofac;
 using BlackSP.Infrastructure.Configuration;
-using BlackSP.InMemory.Configuration;
-using BlackSP.InMemory.Core;
+using BlackSP.Simulator.Configuration;
+using BlackSP.Simulator.Core;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.InMemory
+namespace BlackSP.Simulator
 {
     public static class Launcher
     {
 
         /// <summary>
-        /// Primary entrypoint for BlackSP.InMemory,
+        /// Primary entrypoint for BlackSP.Simulator,
         /// </summary>
         /// <typeparam name="TConfiguration"></typeparam>
         /// <param name="args"></param>

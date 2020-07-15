@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.InMemory.Configuration
+namespace BlackSP.Simulator.Configuration
 {
     public class Connection
     {

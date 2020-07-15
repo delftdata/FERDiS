@@ -16,7 +16,7 @@
   
   <ItemGroup>
     <ProjectReference Include="..\BlackSP.CRA\BlackSP.CRA.csproj" />
-    <ProjectReference Include="..\BlackSP.InMemory\BlackSP.InMemory.csproj" />
+    <ProjectReference Include="..\BlackSP.Simulator\BlackSP.Simulator.csproj" />
   </ItemGroup>
 
 

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Linq;
-using BlackSP.InMemory.Streams;
+using BlackSP.Simulator.Streams;
 using Nerdbank.Streams;
 
-namespace BlackSP.InMemory.Configuration
+namespace BlackSP.Simulator.Configuration
 {
     public class ConnectionTable
     {

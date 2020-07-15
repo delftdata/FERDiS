@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Serialization", "Bl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Kernel", "BlackSP.Kernel\BlackSP.Kernel.csproj", "{CF85803A-0D10-4EA0-9384-4B7E6B71A45C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Runtimes", "Runtimes", "{D3425C26-5CD8-4C72-88A6-0DDDDC3048CB}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{D3425C26-5CD8-4C72-88A6-0DDDDC3048CB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Serialization.UnitTests", "BlackSP.Serialization.UnitTests\BlackSP.Serialization.UnitTests.csproj", "{351AA152-01C8-4E04-AD80-865046AC0BA9}"
 EndProject
@@ -35,13 +35,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Infrastructure.Unit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Infrastructure", "BlackSP.Infrastructure\BlackSP.Infrastructure.csproj", "{FC485934-2DC4-4065-A6BA-B3666BDAB70B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.InMemory", "BlackSP.InMemory\BlackSP.InMemory.csproj", "{F2EA9D36-28EF-4890-896D-1F76062B92E9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Simulator", "BlackSP.Simulator\BlackSP.Simulator.csproj", "{F2EA9D36-28EF-4890-896D-1F76062B92E9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.OperatorShells", "BlackSP.OperatorShells\BlackSP.OperatorShells.csproj", "{9A22E27F-59E1-4A99-B061-E0B0F4D079AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackSP.OperatorShells.UnitTests", "BlackSP.OperatorShells.UnitTests\BlackSP.OperatorShells.UnitTests.csproj", "{750AA519-64FE-41FC-B034-E50D8AB269BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.OperatorShells.UnitTests", "BlackSP.OperatorShells.UnitTests\BlackSP.OperatorShells.UnitTests.csproj", "{750AA519-64FE-41FC-B034-E50D8AB269BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackSP.Streams", "BlackSP.Streams\BlackSP.Streams.csproj", "{72F541F5-F76B-4679-8BDF-04278A2B587A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Streams", "BlackSP.Streams\BlackSP.Streams.csproj", "{72F541F5-F76B-4679-8BDF-04278A2B587A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -111,6 +111,7 @@ Global
 		{351AA152-01C8-4E04-AD80-865046AC0BA9} = {C4FBAAC0-8EB7-4175-9F30-6A0B447A077D}
 		{5958B9DC-3A0F-4008-AE58-BCF10FF46AFC} = {1435AC8F-FC77-45B3-9C1B-ECA0F78FA2C0}
 		{1F14749B-4D61-487E-A141-037CE8332797} = {C4FBAAC0-8EB7-4175-9F30-6A0B447A077D}
+		{FC485934-2DC4-4065-A6BA-B3666BDAB70B} = {D3425C26-5CD8-4C72-88A6-0DDDDC3048CB}
 		{F2EA9D36-28EF-4890-896D-1F76062B92E9} = {D3425C26-5CD8-4C72-88A6-0DDDDC3048CB}
 		{750AA519-64FE-41FC-B034-E50D8AB269BA} = {C4FBAAC0-8EB7-4175-9F30-6A0B447A077D}
 	EndGlobalSection

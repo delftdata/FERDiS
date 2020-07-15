@@ -3,13 +3,13 @@ using BlackSP.Core.Controllers;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Models;
 using BlackSP.Infrastructure;
-using BlackSP.InMemory.Configuration;
+using BlackSP.Simulator.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.InMemory.Core
+namespace BlackSP.Simulator.Core
 {
     /// <summary>
     /// Represents a single machine in the simulated distributed system

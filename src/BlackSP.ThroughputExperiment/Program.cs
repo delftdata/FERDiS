@@ -11,7 +11,7 @@ namespace BlackSP.ThroughputExperiment
         {
             public void Configure(IOperatorGraphBuilder graph)
             {
-                var source = graph.AddSource<SampleSourceOperator, SampleEvent>(1);
+                var source = graph.AddSource<SampleSourceOperator, SampleEvent>(2);
                 //var filter = graph.AddFilter<SampleFilterOperator, SampleEvent>(1);
                 //var mapper = graph.AddMap<SampleMapOperator, SampleEvent, SampleEvent>(2);
                 //var aggregate = graph.AddAggregate<SampleAggregateOperator, SampleEvent, SampleEvent2>(1);
@@ -38,7 +38,7 @@ namespace BlackSP.ThroughputExperiment
             //await BlackSP.CRA.Launcher.LaunchWithAsync<ThroughputExperimentGraphConfiguration, AzureDataProvider>(args);
             
             //In Memory runtime usage..
-            await BlackSP.InMemory.Launcher.LaunchWithAsync<ThroughputExperimentGraphConfiguration>(args);
+            await BlackSP.Simulator.Launcher.LaunchWithAsync<ThroughputExperimentGraphConfiguration>(args);
         }
     }
 }
