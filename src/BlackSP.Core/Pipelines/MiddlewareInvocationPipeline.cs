@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core
+namespace BlackSP.Core.Pipelines
 {    
     
 
@@ -31,7 +31,7 @@ namespace BlackSP.Core
             }
         }
 
-        public async Task<IEnumerable<T>> Deliver(T message)
+        public async Task<IEnumerable<T>> Process(T message)
         {          
             return await ApplyDeliveryMiddlewares(message).ConfigureAwait(false);           
         }
@@ -44,7 +44,7 @@ namespace BlackSP.Core
                 var progatedMessages = new List<T>();
                 foreach(var msg in results)
                 {
-                    var nextMessages = await middleware.Handle(msg).ConfigureAwait(true) ?? throw new Exception($"Middleware of type {middleware.GetType()} returned null, expected IEnumerable");
+                    var nextMessages = await middleware.Handle(msg).ConfigureAwait(false) ?? throw new Exception($"Middleware of type {middleware.GetType()} returned null, expected IEnumerable");
                     progatedMessages.AddRange(nextMessages);
                 }
                 results = progatedMessages;

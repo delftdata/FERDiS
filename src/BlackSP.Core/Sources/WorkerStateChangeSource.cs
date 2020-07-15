@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.MessageSources
+namespace BlackSP.Core.Sources
 {
     /// <summary>
     /// Control message source that watches the internal state based on various monitors. Creates new control messages based on state changes.

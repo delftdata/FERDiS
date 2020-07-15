@@ -16,11 +16,11 @@ namespace BlackSP.Core.Middlewares
     {
         private readonly IVertexConfiguration _vertexConfig;
         private readonly ConnectionMonitor _connectionMonitor;
-        private readonly DataProcessMonitor _processMonitor;
+        private readonly DataLayerProcessMonitor _processMonitor;
         private bool UpstreamFullyConnected;
         private bool DownstreamFullyConnected;
 
-        public WorkerStatusResponseMiddleware(IVertexConfiguration vertexConfig, ConnectionMonitor connectionMonitor, DataProcessMonitor processMonitor)
+        public WorkerStatusResponseMiddleware(IVertexConfiguration vertexConfig, ConnectionMonitor connectionMonitor, DataLayerProcessMonitor processMonitor)
         {
             _vertexConfig = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
             _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));

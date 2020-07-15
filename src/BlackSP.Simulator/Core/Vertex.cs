@@ -40,11 +40,11 @@ namespace BlackSP.Simulator.Core
                 b.RegisterModule(Activator.CreateInstance(hostParameter.StartupModule) as Module);
             });
 
-            MultiSourceProcessController<ControlMessage> controller = null;
+            ControlLayerProcessController controller = null;
             var threads = new List<Task>();
             try
             {
-                controller = dependencyScope.Resolve<MultiSourceProcessController<ControlMessage>>();
+                controller = dependencyScope.Resolve<ControlLayerProcessController>();
                 var inputFactory = dependencyScope.Resolve<InputEndpoint.Factory>();
                 var outputFactory = dependencyScope.Resolve<OutputEndpoint.Factory>();
 
@@ -64,7 +64,7 @@ namespace BlackSP.Simulator.Core
                 await await Task.WhenAny(threads); //double await as whenany returns the task that completed
                 t.ThrowIfCancellationRequested();
             }
-            catch(OperationCanceledException e) { throw; } //shhh
+            catch(OperationCanceledException) { throw; } //shhh
             catch(Exception e)
             {
                 Console.WriteLine($"{instanceName} - DIED WITH EXCEPTION:\n{e}");
@@ -75,6 +75,7 @@ namespace BlackSP.Simulator.Core
             {
                 Console.WriteLine($"{instanceName} - DIED FINALLY");
                 dependencyScope.Dispose();
+                Console.WriteLine("SO YEAH>>><<<....");
             }
         }
     }

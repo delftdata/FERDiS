@@ -16,7 +16,7 @@ namespace BlackSP.CRA.Vertices
     {
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
-        private MultiSourceProcessController<ControlMessage> _controller;
+        private ControlLayerProcessController _controller;
         private IHostConfiguration _options;
         
         
@@ -41,7 +41,7 @@ namespace BlackSP.CRA.Vertices
             
             InitializeIoCContainer();
 
-            _controller = _vertexLifetimeScope.Resolve<MultiSourceProcessController<ControlMessage>>();
+            _controller = _vertexLifetimeScope.Resolve<ControlLayerProcessController>();
             _bspThread = _controller.StartProcess(_ctSource.Token);
             CreateEndpoints();
             
@@ -68,12 +68,18 @@ namespace BlackSP.CRA.Vertices
             foreach (var endpointConfig in _options.VertexConfiguration.InputEndpoints)
             {
                 var inputEndpoint = inputEndpointFactory.Invoke(endpointConfig.LocalEndpointName);
+#pragma warning disable CA2000 // Dispose objects before losing scope
                 AddAsyncInputEndpoint(endpointConfig.LocalEndpointName, new VertexInputEndpoint(inputEndpoint));
+#pragma warning restore CA2000 // Dispose objects before losing scope
             }
+
+            var outputEndpointFactory = _vertexLifetimeScope.Resolve<OutputEndpoint.Factory>();
             foreach (var endpointConfig in _options.VertexConfiguration.OutputEndpoints)
             {
-                //TODO: output endpoint factory
-                AddAsyncOutputEndpoint(endpointConfig.LocalEndpointName, _vertexLifetimeScope.Resolve<IAsyncShardedVertexOutputEndpoint>());
+                var outputEndpoint = outputEndpointFactory.Invoke(endpointConfig.LocalEndpointName);
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                AddAsyncOutputEndpoint(endpointConfig.LocalEndpointName, new VertexOutputEndpoint(outputEndpoint));
+#pragma warning restore CA2000 // Dispose objects before losing scope
             }
         }
 

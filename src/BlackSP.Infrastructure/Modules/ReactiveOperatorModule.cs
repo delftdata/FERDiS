@@ -2,6 +2,7 @@
 using BlackSP.Core;
 using BlackSP.Core.Controllers;
 using BlackSP.Core.Models;
+using BlackSP.Core.Pipelines;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Kernel;
 
@@ -24,7 +25,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.UseWorkerMonitors();
 
             //control processor
-            builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
+            builder.RegisterType<ControlLayerProcessController>().SingleInstance();
             builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().SingleInstance();
             builder.AddControlMiddlewaresForWorker();
 

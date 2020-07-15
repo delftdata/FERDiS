@@ -4,11 +4,11 @@ using System.Text;
 
 namespace BlackSP.Core.Monitors
 {
-    public class DataProcessMonitor
+    public class DataLayerProcessMonitor
     {
         public bool IsActive { get; private set; }
 
-        public DataProcessMonitor()
+        public DataLayerProcessMonitor()
         {
             IsActive = false;
         }

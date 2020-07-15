@@ -66,7 +66,7 @@ namespace BlackSP.Core.Dispatchers
 
             foreach(var targetConnectionKey in _partitioner.Partition(message))
             {
-                QueueForDispatch(targetConnectionKey, bytes, message.IsControl);
+                QueueForDispatch(targetConnectionKey, bytes, message.IsControl, t);
             }
         }
 
@@ -80,7 +80,7 @@ namespace BlackSP.Core.Dispatchers
             await Dispatch((IMessage)message, t).ConfigureAwait(false);
         }
 
-        private void QueueForDispatch(string targetConnectionKey, byte[] bytes, bool isControl)
+        private void QueueForDispatch(string targetConnectionKey, byte[] bytes, bool isControl, CancellationToken t)
         {
             var shouldDispatchMessage = _dispatchFlags.HasFlag(isControl ? DispatchFlags.Control : DispatchFlags.Data);
             var shouldBuffer = _dispatchFlags.HasFlag(DispatchFlags.Buffer);
@@ -93,7 +93,7 @@ namespace BlackSP.Core.Dispatchers
                 {
                     FlushBuffer(outputBuffer, outputQueue);
                 }
-                outputQueue.Add(bytes);
+                outputQueue.Add(bytes, t);
             } 
             else if(shouldBuffer)
             {

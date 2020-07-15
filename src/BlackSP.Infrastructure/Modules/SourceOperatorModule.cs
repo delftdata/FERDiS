@@ -1,9 +1,10 @@
 ﻿using Autofac;
 using BlackSP.Core;
 using BlackSP.Core.Controllers;
-using BlackSP.Core.MessageSources;
+using BlackSP.Core.Sources;
 using BlackSP.Core.Middlewares;
 using BlackSP.Core.Models;
+using BlackSP.Core.Pipelines;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
@@ -35,7 +36,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.RegisterType<SourceOperatorDataSource<TEvent>>().As<ISource<DataMessage>>();
 
             //control processor
-            builder.RegisterType<MultiSourceProcessController<ControlMessage>>().SingleInstance();
+            builder.RegisterType<ControlLayerProcessController>().SingleInstance();
             builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().SingleInstance();
             builder.AddControlMiddlewaresForWorker();
 

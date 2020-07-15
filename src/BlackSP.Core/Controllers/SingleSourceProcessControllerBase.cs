@@ -13,33 +13,33 @@ using System.Threading.Tasks;
 namespace BlackSP.Core.Controllers
 {
 
-    public class SingleSourceProcessController<TMessage> 
+    public abstract class SingleSourceProcessControllerBase<TMessage> 
         where TMessage : MessageBase
     {
-        private readonly ISource<TMessage> _dataSource;
-        private readonly IPipeline<TMessage> _deliverer;
+        private readonly ISource<TMessage> _source;
+        private readonly IPipeline<TMessage> _pipeline;
         private readonly IDispatcher<TMessage> _dispatcher;
 
-        public SingleSourceProcessController(
-            ISource<TMessage> dataSource,
-            IPipeline<TMessage> dataDeliverer,
+        public SingleSourceProcessControllerBase(
+            ISource<TMessage> source,
+            IPipeline<TMessage> pipeline,
             IDispatcher<TMessage> dispatcher)
         {
-            _dataSource = dataSource ?? throw new ArgumentNullException(nameof(dataSource));
-            _deliverer = dataDeliverer ?? throw new ArgumentNullException(nameof(dataDeliverer));
+            _source = source ?? throw new ArgumentNullException(nameof(source));
+            _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             
         }
 
         /// <summary>
-        /// Start core processes for data and control message processing
+        /// Start core processes for message processing
         /// </summary>
         public async Task StartProcess(CancellationToken t)
         {
             var dispatchQueue = new BlockingCollection<TMessage>(64);//TODO: determine proper capacity
             try
             {
-                var deliveryThread = Task.Run(() => DeliverFromSource(dispatchQueue, t));
+                var deliveryThread = Task.Run(() => ProcessFromSource(dispatchQueue, t));
                 var dispatchThread = Task.Run(() => DispatchResults(dispatchQueue, t));
                 await Task.WhenAll(deliveryThread, dispatchThread).ConfigureAwait(false);
                 t.ThrowIfCancellationRequested();
@@ -50,16 +50,16 @@ namespace BlackSP.Core.Controllers
             }
         }
 
-        private async Task DeliverFromSource(BlockingCollection<TMessage> dispatchQueue, CancellationToken t) {
+        private async Task ProcessFromSource(BlockingCollection<TMessage> dispatchQueue, CancellationToken t) {
             try
             {
                 while (!t.IsCancellationRequested)
                 {
-                    var message = _dataSource.Take(t) ?? throw new Exception($"Received null from {_dataSource.GetType()}.Take");
-                    var results = await _deliverer.Deliver(message).ConfigureAwait(false);
+                    var message = _source.Take(t) ?? throw new Exception($"Received null from {_source.GetType()}.Take");
+                    var results = await _pipeline.Process(message).ConfigureAwait(false);
                     foreach (var msg in results)
                     {
-                        dispatchQueue.Add(msg);
+                        dispatchQueue.Add(msg, t);
                     }
                 }
             }

@@ -4,7 +4,7 @@ using BlackSP.Core;
 using BlackSP.Core.Controllers;
 using BlackSP.Core.Dispatchers;
 using BlackSP.Core.Endpoints;
-using BlackSP.Core.MessageSources;
+using BlackSP.Core.Sources;
 using BlackSP.Core.Models;
 using BlackSP.Core.Monitors;
 using BlackSP.Core.Partitioners;
@@ -94,7 +94,7 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder UseWorkerMonitors(this ContainerBuilder builder)
         {
             builder.RegisterType<ConnectionMonitor>().AsSelf().SingleInstance();
-            builder.RegisterType<DataProcessMonitor>().AsSelf().SingleInstance();
+            builder.RegisterType<DataLayerProcessMonitor>().AsSelf().SingleInstance();
 
             return builder;
         }

@@ -63,7 +63,7 @@ namespace BlackSP.Simulator.Core
                     Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout);
                 }
-                catch(Exception e)
+                catch(Exception)
                 {
                     //exited without intent
                     if(maxRestarts-- == 0)

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using BlackSP.Core.Controllers;
+using BlackSP.Core;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -31,8 +32,8 @@ namespace BlackSP.Infrastructure.Extensions
             builder.RegisterType<CheckpointRestoreMiddleware>().As<IMiddleware<ControlMessage>>();
 
             //important control middleware: controls the subprocess that processes/generates data messages
-            builder.RegisterType<DataProcessControllerMiddleware>().As<IMiddleware<ControlMessage>>();
-            builder.RegisterType<SingleSourceProcessController<DataMessage>>().AsSelf();//dependency of DataProcessControllerMiddleware
+            builder.RegisterType<DataLayerControllerMiddleware>().As<IMiddleware<ControlMessage>>();
+            builder.RegisterType<DataLayerProcessController>().AsSelf();//dependency of DataProcessControllerMiddleware
 
             return builder;
         }
