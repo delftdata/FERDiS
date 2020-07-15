@@ -26,4 +26,8 @@
     <ProjectReference Include="..\BlackSP.Streams\BlackSP.Streams.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
 </Project>

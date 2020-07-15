@@ -44,7 +44,7 @@ namespace BlackSP.Core.Controllers
         /// </summary>
         public async Task StartProcess(CancellationToken t)
         {
-            var dispatchQueue = new BlockingCollection<TMessage>(64);//TODO: determine proper capacity
+            var dispatchQueue = new BlockingCollection<TMessage>(1 << 14);//TODO: determine proper capacity
             try
             {
                 var threads = StartThreads(dispatchQueue, t);

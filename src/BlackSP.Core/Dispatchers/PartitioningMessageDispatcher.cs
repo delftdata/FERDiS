@@ -70,15 +70,11 @@ namespace BlackSP.Core.Dispatchers
             }
         }
 
-        public async Task Dispatch(DataMessage message, CancellationToken t)
-        {
-            await Dispatch((IMessage)message, t).ConfigureAwait(false);
-        }
+        public async Task Dispatch(DataMessage message, CancellationToken t) 
+            => await Dispatch((IMessage)message, t).ConfigureAwait(false);
 
         public async Task Dispatch(ControlMessage message, CancellationToken t)
-        {
-            await Dispatch((IMessage)message, t).ConfigureAwait(false);
-        }
+            => await Dispatch((IMessage)message, t).ConfigureAwait(false);
 
         private void QueueForDispatch(string targetConnectionKey, byte[] bytes, bool isControl, CancellationToken t)
         {
@@ -130,7 +126,7 @@ namespace BlackSP.Core.Dispatchers
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
                     var connectionKey = endpointConfig.GetConnectionKey(shardId);
-                    _outputQueues.Add(connectionKey, new BlockingCollection<byte[]>(64));
+                    _outputQueues.Add(connectionKey, new BlockingCollection<byte[]>(1 << 14)); //CAPACITY??
                     _outputBuffers.Add(connectionKey, new List<byte[]>());
                 }
             }

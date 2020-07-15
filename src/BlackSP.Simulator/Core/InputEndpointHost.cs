@@ -85,24 +85,24 @@ namespace BlackSP.Simulator.Core
                     s = _connectionTable.GetIncomingStreams(instanceName, endpointName)[shardId];
                     c = _connectionTable.GetIncomingConnections(instanceName, endpointName)[shardId];
                    
-                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName} starting.\t(remote {c.FromInstanceName}${c.FromEndpointName}${c.FromShardId})");
+                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName}${shardId} starting.\t(remote {c.FromInstanceName}${c.FromEndpointName}${c.FromShardId})");
                     await _inputEndpoint.Ingress(s, c.FromEndpointName, c.FromShardId, t);
-                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName} exited without exceptions");                    
+                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName}${shardId} exited without exceptions");                    
                     return;
                 }
                 catch(OperationCanceledException)
                 {
-                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName} exiting due to cancellation");
+                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName}${shardId} exiting due to cancellation");
                     throw;
                 }
                 catch (Exception)
                 {
                     if (maxRestarts-- == 0)
                     {
-                        Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName} exited with exceptions, no restart: exceeded maxRestarts.");
+                        Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName}${shardId} exited with exceptions, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName} exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
+                    Console.WriteLine($"{c.ToInstanceName} - Input endpoint {c.ToEndpointName}${shardId} exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout, t);
                 }
             }

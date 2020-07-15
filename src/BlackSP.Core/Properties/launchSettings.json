@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "BlackSP.Core": {
-      "commandName": "Project",
-      "nativeDebugging": false
-    }
-  }
-}

@@ -59,8 +59,6 @@ namespace BlackSP.Core.Dispatchers
             return _outputQueues.Get(endpointKey);
         }
 
-        
-
         public async Task Dispatch(ControlMessage message, CancellationToken t)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
@@ -97,7 +95,7 @@ namespace BlackSP.Core.Dispatchers
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
                     var endpointKey = endpointConfig.GetConnectionKey(shardId);
-                    _outputQueues.Add(endpointKey, new BlockingCollection<byte[]>(64)); 
+                    _outputQueues.Add(endpointKey, new BlockingCollection<byte[]>(1 << 14));//CAPACITY TERUGZETTEN 64 
                     //TODO: determine proper capacity
                 }
             }

@@ -43,9 +43,9 @@ namespace BlackSP.Infrastructure.Modules
             //data processor
             builder.RegisterType<MiddlewareInvocationPipeline<DataMessage>>().As<IPipeline<DataMessage>>().SingleInstance();
 
-            //Note: consumer is expected to register data middlewares himself
+            //middlewares
             builder.RegisterType<PassthroughMiddleware<DataMessage>>().AsImplementedInterfaces();
-            //TODO: insert real middlewares
+            //TODO: insert middlewares
 
 
             //control + data dispatcher

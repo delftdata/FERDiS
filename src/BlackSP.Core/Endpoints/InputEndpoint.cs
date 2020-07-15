@@ -56,13 +56,13 @@ namespace BlackSP.Core.Endpoints
             {
                 throw new Exception($"Invalid IEndpointConfig, expected remote endpointname: {_endpointConfig.RemoteEndpointName} but was: {remoteEndpointName}");
             }
-            BlockingCollection<byte[]> sharedMsgQueue = new BlockingCollection<byte[]>(64);
+            BlockingCollection<byte[]> passthroughQueue = new BlockingCollection<byte[]>(1 << 14);
             try
             {
                 t.ThrowIfCancellationRequested();
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
-                var deserializerThread = Task.Run(() => DeserializeToReceiver(sharedMsgQueue, remoteShardId, t));
-                var exitedTask = await Task.WhenAny(deserializerThread, s.ReadMessagesTo(sharedMsgQueue, t)).ConfigureAwait(false);
+                var deserializerThread = Task.Run(() => DeserializeToReceiver(passthroughQueue, remoteShardId, t));
+                var exitedTask = await Task.WhenAny(deserializerThread, s.ReadMessagesTo(passthroughQueue, t)).ConfigureAwait(false);
                 await exitedTask.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
             }
             catch(Exception e)
@@ -72,7 +72,7 @@ namespace BlackSP.Core.Endpoints
             finally
             {
                 _connectionMonitor.MarkDisconnected(_endpointConfig, remoteShardId);
-                sharedMsgQueue.Dispose();
+                passthroughQueue.Dispose();
             }
         }
 

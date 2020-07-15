@@ -77,33 +77,32 @@ namespace BlackSP.Simulator.Core
         {
             while (!t.IsCancellationRequested)
             {
-                Stream s = null;
                 Connection c = null;
                 try
                 {
                     t.ThrowIfCancellationRequested();
-                    s = _connectionTable.GetOutgoingStreams(instanceName, endpointName)[shardId];
+                    Stream s = _connectionTable.GetOutgoingStreams(instanceName, endpointName)[shardId];
                     c = _connectionTable.GetOutgoingConnections(instanceName, endpointName)[shardId];
                     
-                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName} starting.\t(remote {c.ToInstanceName}${c.ToEndpointName}${c.ToShardId})");
+                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName}${shardId} starting.\t(remote {c.ToInstanceName}${c.ToEndpointName}${c.ToShardId})");
                     await _outputEndpoint.Egress(s, c.ToEndpointName, c.ToShardId, t);
-                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName} exited without exceptions");
+                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName}${shardId} exited without exceptions");
                     
                     return;
                 }
                 catch (OperationCanceledException)
                 {
-                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName} exiting due to cancellation");
+                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName}${shardId} exiting due to cancellation");
                     throw;
                 }
                 catch (Exception)
                 {
                     if (maxRestarts-- == 0)
                     {
-                        Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName} exited with exceptions, no restart: exceeded maxRestarts.");
+                        Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName}${shardId} exited with exceptions, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName} exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
+                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName}${shardId} exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout, t);
                 }
             }
