@@ -32,6 +32,11 @@ namespace BlackSP.Checkpointing.Core
             _state.Add(key, o);
         }
 
+        public bool Contains(string key)
+        {
+            return _state.ContainsKey(key);
+        }
+
         public Checkpoint TakeCheckpoint()
         {
             var cpDict = new Dictionary<string, ObjectSnapshot>();

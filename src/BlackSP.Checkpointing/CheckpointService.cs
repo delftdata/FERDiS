@@ -33,8 +33,12 @@ namespace BlackSP.Checkpointing
 
             var type = o.GetType();
             var identifier = type.AssemblyQualifiedName; //Note: currently the implementation supports only one instance of any concrete type 
-            //Under the assumption of exact same object registration order (at least regarding instances of the same type) this could be extended more or less easily
-
+            //Under the assumption of exact same object registration order (at least regarding instances of the same type) this could be extended to support multiple instances
+            if(_register.Contains(identifier))
+            {
+                throw new NotSupportedException($"Registering multiple instances of the same type is not supported");
+            }
+            
             if(!o.AssertCheckpointability())
             {
                 Console.WriteLine($"Type {type} is not checkpointable.");
@@ -49,10 +53,12 @@ namespace BlackSP.Checkpointing
         /// Take a checkpoint, returns registered object's [ApplicationState] annotated property values serialized in a restorable format
         /// </summary>
         /// <returns></returns>
-        public byte[] Checkpoint()
+        public Guid TakeCheckpoint()
         {
             var checkpoint = _register.TakeCheckpoint();
-            return checkpoint.BinarySerialize();
+            var cpBlob = checkpoint.BinarySerialize();
+            //TODO: store cp blob
+            return checkpoint.Id;
         }
 
         /// <summary>

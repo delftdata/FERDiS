@@ -9,7 +9,7 @@ namespace BlackSP.Checkpointing
         //- user operator class instance (in its entirity)
         //- operatorshells windows
         //- some counters in middlewares
-        //- checkpointing protocol related objects/middlewares
+        //- checkpointing protocol related object-properties
 
         //do we want to serialize the entire class instance of the operator?
         //- require serializable attribute and make user responsible

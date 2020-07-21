@@ -8,6 +8,7 @@ namespace BlackSP.Checkpointing.Core
     [Serializable]
     public class Checkpoint
     {
+        public Guid Id => _identifier;
         public IEnumerable<string> Keys => _snapshots.Keys;
         
         private readonly Guid _identifier;

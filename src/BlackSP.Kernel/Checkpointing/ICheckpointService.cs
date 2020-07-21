@@ -8,8 +8,8 @@ namespace BlackSP.Kernel.Checkpointing
     {
         bool Register(object o);
 
-        byte[] Checkpoint();
+        Guid TakeCheckpoint();
 
-        void Restore(byte[] checkpoint);
+        void RestoreCheckpoint(Guid checkpointId);
     }
 }

@@ -1,3 +1,4 @@
+using BlackSP.Checkpointing.Core;
 using BlackSP.Checkpointing.Exceptions;
 using BlackSP.Checkpointing.UnitTests.Models;
 using BlackSP.Kernel.Checkpointing;
@@ -31,7 +32,7 @@ namespace BlackSP.Checkpointing.UnitTests
         [SetUp]
         public void Setup()
         {
-            var objectRegisterMock = new Mock<ObjectRegister>();
+            var objectRegisterMock = new Mock<ObjectRegistry>();
 
             checkpointService = new CheckpointService(objectRegisterMock.Object);
 

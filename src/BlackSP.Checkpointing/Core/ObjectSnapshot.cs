@@ -7,7 +7,7 @@ using System.Text;
 namespace BlackSP.Checkpointing.Core
 {
     [Serializable]
-    class ObjectSnapshot
+    public class ObjectSnapshot
     {
         private readonly IDictionary<string, object> _fieldValues;
 
