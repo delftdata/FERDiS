@@ -43,6 +43,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.OperatorShells.Unit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackSP.Streams", "BlackSP.Streams\BlackSP.Streams.csproj", "{72F541F5-F76B-4679-8BDF-04278A2B587A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackSP.Checkpointing", "BlackSP.Checkpointing\BlackSP.Checkpointing.csproj", "{100F5FF8-0846-4205-8D86-99CA3EECD12F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackSP.Checkpointing.UnitTests", "BlackSP.Checkpointing.UnitTests\BlackSP.Checkpointing.UnitTests.csproj", "{C3B57ABC-C0CF-4480-9056-0032C07925B3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +105,14 @@ Global
 		{72F541F5-F76B-4679-8BDF-04278A2B587A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72F541F5-F76B-4679-8BDF-04278A2B587A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72F541F5-F76B-4679-8BDF-04278A2B587A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{100F5FF8-0846-4205-8D86-99CA3EECD12F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{100F5FF8-0846-4205-8D86-99CA3EECD12F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{100F5FF8-0846-4205-8D86-99CA3EECD12F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{100F5FF8-0846-4205-8D86-99CA3EECD12F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3B57ABC-C0CF-4480-9056-0032C07925B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3B57ABC-C0CF-4480-9056-0032C07925B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3B57ABC-C0CF-4480-9056-0032C07925B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3B57ABC-C0CF-4480-9056-0032C07925B3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -114,6 +126,7 @@ Global
 		{FC485934-2DC4-4065-A6BA-B3666BDAB70B} = {D3425C26-5CD8-4C72-88A6-0DDDDC3048CB}
 		{F2EA9D36-28EF-4890-896D-1F76062B92E9} = {D3425C26-5CD8-4C72-88A6-0DDDDC3048CB}
 		{750AA519-64FE-41FC-B034-E50D8AB269BA} = {C4FBAAC0-8EB7-4175-9F30-6A0B447A077D}
+		{C3B57ABC-C0CF-4480-9056-0032C07925B3} = {C4FBAAC0-8EB7-4175-9F30-6A0B447A077D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CF9BB3F1-2386-4605-9B68-BA0DBAA1576B}

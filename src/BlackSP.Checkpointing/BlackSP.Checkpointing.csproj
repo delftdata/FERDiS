@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlackSP.Kernel\BlackSP.Kernel.csproj" />
+    <ProjectReference Include="..\BlackSP.Serialization\BlackSP.Serialization.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -10,10 +10,6 @@ using BlackSP.Kernel.Operators;
 
 namespace BlackSP.OperatorShells
 {
-    //- each operator pair will have their own endpoints connected --> not shared among operators
-    //- operator can just enqueue outgoing events in all output queues
-    //- endpoints will write to input or read from assigned output queue
-    //      endpoints will respectively handle partitioning among shards etc
     public abstract class OperatorShellBase : IOperatorShell, IDisposable
     {
         private readonly IOperator _pluggedInOperator;

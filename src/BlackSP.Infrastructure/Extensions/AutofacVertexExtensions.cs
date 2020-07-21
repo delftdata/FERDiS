@@ -21,7 +21,16 @@ namespace BlackSP.Infrastructure.Extensions
 {
     public static class AutofacVertexExtensions
     {
-
+        /// <summary>
+        /// TODO: ALLES
+        /// </summary>
+        /// <param name="context"></param>
+        static void OnActivatedCheckpointManagerRegistrationExample(IActivatedEventArgs<object> context)
+        {
+            object obj = context.Instance;
+            var manager = context.Context.Resolve<Object>();
+            //manager.register(obj)
+        }
 
         /// <summary>
         /// Configure types to use network receiver as one or more message sources.
