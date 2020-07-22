@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.4.4" />
+    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.11.1" />
   </ItemGroup>
 
   <ItemGroup>

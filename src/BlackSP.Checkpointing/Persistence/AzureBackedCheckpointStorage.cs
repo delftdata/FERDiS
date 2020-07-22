@@ -59,9 +59,23 @@ namespace BlackSP.Checkpointing.Persistence
                 response.ThrowIfNotSuccessStatusCode();
                 blobDownloadStream.Seek(0, SeekOrigin.Begin);
                 return blobDownloadStream;
+            }, new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
             });
 
-            BatchBlock<string> batchBlock = new BatchBlock<string>(5, new GroupingDataflowBlockOptions() { Greedy = false });
+            var streamDeserializationAction = new ActionBlock<Stream>(stream =>
+            {
+                var downloadedObject = blobDownloadStream.BinaryDeserialize();
+                var snapshot = downloadedObject as ObjectSnapshot ?? throw new Exception($"Downloaded blob did not contain expected ObjectSnapshot");
+                snapshots.TryAdd(blob.Name, snapshot);
+            });
+
+            blobToStreamTransform.LinkTo(streamDeserializationAction, new DataflowLinkOptions
+            {
+                PropagateCompletion = true
+            });
+
 
 
             var parallelIteration = Parallel.ForEach(blobs, async blob =>
