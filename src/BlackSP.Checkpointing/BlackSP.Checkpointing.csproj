@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.4.4" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\BlackSP.Kernel\BlackSP.Kernel.csproj" />
     <ProjectReference Include="..\BlackSP.Serialization\BlackSP.Serialization.csproj" />
   </ItemGroup>

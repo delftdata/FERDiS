@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using BlackSP.Checkpointing.Core;
 using BlackSP.Checkpointing.Extensions;
@@ -6,11 +7,13 @@ using BlackSP.Kernel.Models;
 using BlackSP.Serialization.Extensions;
 using Microsoft.IO;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using System.Xml;
 
 namespace BlackSP.Checkpointing.Persistence
@@ -46,7 +49,20 @@ namespace BlackSP.Checkpointing.Persistence
             var blobContainerClient = await GetBlobContainerClientForCheckpoint(id);
 
             var blobs = blobContainerClient.GetBlobs(); //async version of GetBlobs is not actually async.. so keeping it synchronous for now
-            var snapshots = new Dictionary<string, ObjectSnapshot>();
+            var snapshots = new ConcurrentDictionary<string, ObjectSnapshot>();
+
+            var blobToStreamTransform = new TransformBlock<BlobItem, Stream>(async blob =>
+            {
+                var client = blobContainerClient.GetBlobClient(blob.Name);
+                var blobDownloadStream = _streamManager.GetStream();
+                var response = await client.DownloadToAsync(blobDownloadStream);
+                response.ThrowIfNotSuccessStatusCode();
+                blobDownloadStream.Seek(0, SeekOrigin.Begin);
+                return blobDownloadStream;
+            });
+
+            BatchBlock<string> batchBlock = new BatchBlock<string>(5, new GroupingDataflowBlockOptions() { Greedy = false });
+
 
             var parallelIteration = Parallel.ForEach(blobs, async blob =>
             {
@@ -57,9 +73,11 @@ namespace BlackSP.Checkpointing.Persistence
                     response.ThrowIfNotSuccessStatusCode();
                     var downloadedObject = blobDownloadStream.BinaryDeserialize();
                     var snapshot = downloadedObject as ObjectSnapshot ?? throw new Exception($"Downloaded blob did not contain expected ObjectSnapshot");
-                    snapshots.Add(blob.Name, snapshot);
+                    snapshots.TryAdd(blob.Name, snapshot);
                 }
             });
+
+
 
             if(!parallelIteration.IsCompleted)
             {
