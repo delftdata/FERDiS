@@ -8,7 +8,9 @@ using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BlackSP.Checkpointing.UnitTests
 {
@@ -29,13 +31,14 @@ namespace BlackSP.Checkpointing.UnitTests
         }
 
         [Test]
-        public void Test()
+        public async Task CheckpointStoreRetrieve_ReturnsSameCheckpointObject()
         {
             //create some objects with an internal state
             var objectA = new ClassA("value");
             objectA.Add(2);
             var objectB = new ClassB();
             objectB.IncrementCounter();
+            objectB.SetLargeArraySize(1 << 22); //22 = 32k
 
             //BUILD A CHECKPOINT
             Guid cpId = Guid.NewGuid();
@@ -44,12 +47,19 @@ namespace BlackSP.Checkpointing.UnitTests
             snapshots.Add("objectB", ObjectSnapshot.TakeSnapshot(objectB));
             Checkpoint cp = new Checkpoint(cpId, snapshots);
             //STORE IT
-            checkpointStorage.Store(cp);
+            await checkpointStorage.Store(cp);
             //RETRIEVE IT
-            var restoredCp = checkpointStorage.Retrieve(cpId);
+            var restoredCp = await checkpointStorage.Retrieve(cpId);
             //ASSERT SAME
             Assert.AreEqual(cp.Id, restoredCp.Id);
+            Assert.IsTrue(cp.Keys.SequenceEqual(restoredCp.Keys));
 
+            foreach(var key in cp.Keys)
+            {
+                var snapshot1 = cp.GetSnapshot(key);
+                var snapshot2 = restoredCp.GetSnapshot(key);
+                //Assert.AreEqual(snapshot1, snapshot2);
+            }
             //TEST MULTIPLE CHECKPOINTS
         }
 

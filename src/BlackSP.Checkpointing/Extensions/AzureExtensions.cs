@@ -10,8 +10,8 @@ namespace BlackSP.Checkpointing.Extensions
     {
         public static void ThrowIfNotSuccessStatusCode(this Azure.Response response)
         {
-            var statusCode = (HttpStatusCode)response.Status;
-            if (statusCode != HttpStatusCode.OK)
+            var statusCode = response.Status;
+            if (statusCode < 200 || statusCode > 299) //okay if 2xx
             {
                 throw new IOException($"Blob download failed with status code: {statusCode} - {response.ReasonPhrase}");
             }

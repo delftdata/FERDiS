@@ -33,7 +33,7 @@ namespace BlackSP.Checkpointing.Persistence
         {
             var connectionString = Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING");
             BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
-            BlobContainerClient containerClient = await blobServiceClient.CreateBlobContainerAsync($"{id}");
+            BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient($"{id}");
             await containerClient.CreateIfNotExistsAsync();
             return containerClient;
         }
@@ -51,24 +51,27 @@ namespace BlackSP.Checkpointing.Persistence
             var blobs = blobContainerClient.GetBlobs(); //async version of GetBlobs is not actually async.. so keeping it synchronous for now
             var snapshots = new ConcurrentDictionary<string, ObjectSnapshot>();
 
-            var blobToStreamTransform = new TransformBlock<BlobItem, Stream>(async blob =>
+            var blobToStreamTransform = new TransformBlock<BlobItem, Tuple<string, MemoryStream>>(async blob =>
             {
                 var client = blobContainerClient.GetBlobClient(blob.Name);
                 var blobDownloadStream = _streamManager.GetStream();
+                
                 var response = await client.DownloadToAsync(blobDownloadStream);
                 response.ThrowIfNotSuccessStatusCode();
                 blobDownloadStream.Seek(0, SeekOrigin.Begin);
-                return blobDownloadStream;
+                return Tuple.Create(blob.Name, blobDownloadStream);
             }, new ExecutionDataflowBlockOptions
             {
                 MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
             });
 
-            var streamDeserializationAction = new ActionBlock<Stream>(stream =>
+            var streamDeserializationAction = new ActionBlock<Tuple<string, MemoryStream>>(tuple =>
             {
-                var downloadedObject = blobDownloadStream.BinaryDeserialize();
+                var (name, stream) = tuple;
+                var downloadedObject = stream.BinaryDeserialize();
                 var snapshot = downloadedObject as ObjectSnapshot ?? throw new Exception($"Downloaded blob did not contain expected ObjectSnapshot");
-                snapshots.TryAdd(blob.Name, snapshot);
+                snapshots.TryAdd(name, snapshot);
+                stream.Dispose(); //ensure buffer is returned to manager
             });
 
             blobToStreamTransform.LinkTo(streamDeserializationAction, new DataflowLinkOptions
@@ -76,28 +79,11 @@ namespace BlackSP.Checkpointing.Persistence
                 PropagateCompletion = true
             });
 
-
-
-            var parallelIteration = Parallel.ForEach(blobs, async blob =>
-            {
-                var client = blobContainerClient.GetBlobClient(blob.Name);
-                using(var blobDownloadStream = _streamManager.GetStream())
-                {
-                    var response = await client.DownloadToAsync(blobDownloadStream);
-                    response.ThrowIfNotSuccessStatusCode();
-                    var downloadedObject = blobDownloadStream.BinaryDeserialize();
-                    var snapshot = downloadedObject as ObjectSnapshot ?? throw new Exception($"Downloaded blob did not contain expected ObjectSnapshot");
-                    snapshots.TryAdd(blob.Name, snapshot);
-                }
-            });
-
-
-
-            if(!parallelIteration.IsCompleted)
-            {
-                throw new Exception($"Checkpoint \"{id}\" download failed to complete");
-
+            foreach (var blob in blobs) {
+                await blobToStreamTransform.SendAsync(blob);
             }
+            blobToStreamTransform.Complete();
+            await streamDeserializationAction.Completion;
 
             var checkpoint = new Checkpoint(id, snapshots);
             return checkpoint;
@@ -107,25 +93,37 @@ namespace BlackSP.Checkpointing.Persistence
         {
             var blobContainerClient = await GetBlobContainerClientForCheckpoint(checkpoint.Id);
 
-            var parallelIteration = Parallel.ForEach(checkpoint.Keys, async key =>
+            var snapshotSerializeTransform = new TransformBlock<string, Tuple<string, MemoryStream>>(async cpKey =>
             {
-                var blobClient = blobContainerClient.GetBlobClient(key);
-                var snapshot = checkpoint.GetSnapshot(key);
-
-                using (var snapshotUploadStream = _streamManager.GetStream())
-                {
-                    snapshot.BinarySerializeTo(snapshotUploadStream);
-                    snapshotUploadStream.Seek(0, SeekOrigin.Begin);
-                    var response = await blobClient.UploadAsync(snapshotUploadStream);
-                }
+                var snapshot = checkpoint.GetSnapshot(cpKey);
+                var snapshotUploadStream = _streamManager.GetStream();
+                snapshot.BinarySerializeTo(snapshotUploadStream);
+                snapshotUploadStream.Seek(0, SeekOrigin.Begin);
+                return Tuple.Create(cpKey, snapshotUploadStream);
+            }, new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
             });
 
-            if(!parallelIteration.IsCompleted)
+            var streamUploadAction = new ActionBlock<Tuple<string, MemoryStream>>(async tuple =>
             {
-                throw new Exception($"Checkpoint \"{checkpoint.Id}\" upload failed to complete");
-            }
+                var (key, stream) = tuple;
+                var blobClient = blobContainerClient.GetBlobClient(key);
+                var response = await blobClient.UploadAsync(stream);
+                stream.Dispose(); //ensure buffer is returned to manager
+            });
 
-            throw new NotImplementedException();
+            snapshotSerializeTransform.LinkTo(streamUploadAction, new DataflowLinkOptions
+            {
+                PropagateCompletion = true
+            });
+
+            foreach(var cpKey in checkpoint.Keys)
+            {
+                await snapshotSerializeTransform.SendAsync(cpKey);
+            }
+            snapshotSerializeTransform.Complete();
+            await streamUploadAction.Completion;
         }
     }
 }
