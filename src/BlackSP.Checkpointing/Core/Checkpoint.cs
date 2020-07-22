@@ -20,6 +20,10 @@ namespace BlackSP.Checkpointing.Core
             _snapshots = snapshots ?? throw new ArgumentNullException(nameof(snapshots));
         }
 
-        
+        public ObjectSnapshot GetSnapshot(string key)
+        {
+            _ = key ?? throw new ArgumentNullException(nameof(key));
+            return _snapshots[key];
+        }
     }
 }

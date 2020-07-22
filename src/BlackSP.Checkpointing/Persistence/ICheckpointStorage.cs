@@ -2,13 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BlackSP.Checkpointing.Persistence
 {
-    interface ICheckpointStorage
+    public interface ICheckpointStorage
     {
-        void Store(Checkpoint checkpoint);
+        Task Store(Checkpoint checkpoint);
 
-        Checkpoint Retrieve(Guid id);
+        Task<Checkpoint> Retrieve(Guid id);
     }
 }

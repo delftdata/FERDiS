@@ -27,8 +27,8 @@ namespace BlackSP.Checkpointing.Extensions
             {
                 return false;
             }
-
-            if (checkpointableFields.All(f => f.FieldType.IsSerializable))
+            //checks the serializability of the field's value type, the field type itself is a bad indicator (ICollection vs List)
+            if (checkpointableFields.All(f => f.GetValue(o).GetType().IsSerializable))
             {
                 return true;
             }
@@ -53,7 +53,7 @@ namespace BlackSP.Checkpointing.Extensions
         public static IEnumerable<KeyValuePair<string, object>> GetCheckpointableFieldsAsKeyValuePairs(this object o)
         {
             foreach (var fieldinfo in o.GetCheckpointableFields()) {
-                yield return new KeyValuePair<string, object>(fieldinfo.Name, fieldinfo.GetValue(null));
+                yield return new KeyValuePair<string, object>(fieldinfo.Name, fieldinfo.GetValue(o));
             }
         }
 

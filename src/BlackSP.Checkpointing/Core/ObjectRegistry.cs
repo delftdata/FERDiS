@@ -58,15 +58,24 @@ namespace BlackSP.Checkpointing.Core
             if(!CanRestore(checkpoint)) 
             {
                 //this is bad, the checkpoint should contain each and every object in the registered state
-                throw new CheckpointRestorationException("Missing object(s) in ");
+                throw new CheckpointRestorationException("Checkpoint not compatible with currently registered objects");
             }
 
-            //insert/overwrite state deserialized state object
+            //restore
+            foreach(var kvp in _state)
+            {
+                var key = kvp.Key;
+                var obj = kvp.Value;
+
+                var snapshot = checkpoint.GetSnapshot(key);
+                snapshot.RestoreObject(obj);
+            }
         }
 
         public bool CanRestore(Checkpoint cp)
         {
             var keys = _state.Keys;
+            //all keys in registry are also present in checkpoint
             if (keys.Intersect(cp.Keys).Count() == keys.Count())
             {
                 return true;

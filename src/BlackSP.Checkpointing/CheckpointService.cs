@@ -6,28 +6,27 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using BlackSP.Checkpointing.Persistence;
+using BlackSP.Checkpointing.Exceptions;
+using System.Threading.Tasks;
 
 namespace BlackSP.Checkpointing
 {
-    /// <summary>
-    /// 
-    /// </summary>
+    ///<inheritdoc/>
     public class CheckpointService : ICheckpointService
     {
 
         private readonly ObjectRegistry _register;
+        private readonly ICheckpointStorage _storage;
 
-        public CheckpointService(ObjectRegistry register)
+        public CheckpointService(ObjectRegistry register, ICheckpointStorage checkpointStorage)
         {
             _register = register ?? throw new ArgumentNullException(nameof(register));
+            _storage = checkpointStorage ?? throw new ArgumentNullException(nameof(checkpointStorage));
         }
 
-        /// <summary>
-        /// Register an [ApplicationState] annotated class instance, will track registered object and include it in checkpoint creation and restoration<br/>
-        /// Will ignore registration invocations with non-annotated class instances;
-        /// </summary>
-        /// <param name="o"></param>
-        public bool Register(object o)
+        ///<inheritdoc/>
+        public bool RegisterObject(object o)
         {
             _ = o ?? throw new ArgumentNullException(nameof(o));
 
@@ -49,35 +48,20 @@ namespace BlackSP.Checkpointing
             return true;
         }
 
-        /// <summary>
-        /// Take a checkpoint, returns registered object's [ApplicationState] annotated property values serialized in a restorable format
-        /// </summary>
-        /// <returns></returns>
-        public Guid TakeCheckpoint()
+        ///<inheritdoc/>
+
+        public async Task<Guid> TakeCheckpoint()
         {
             var checkpoint = _register.TakeCheckpoint();
-            var cpBlob = checkpoint.BinarySerialize();
-            //TODO: store cp blob
+            await _storage.Store(checkpoint);
             return checkpoint.Id;
         }
 
-        /// <summary>
-        /// Restore a checkpoint, only returns false when there is a discrepancy between the objects registered and the objects in the checkpoint
-        /// </summary>
-        /// <param name="checkpointBytes"></param>
-        /// <returns></returns>
-        public void Restore(byte[] checkpointBytes)
+        ///<inheritdoc/>
+        public async Task RestoreCheckpoint(Guid checkpointId)
         {
-            _ = checkpointBytes ?? throw new ArgumentNullException(nameof(checkpointBytes));
-
-            var o = checkpointBytes.BinaryDeserialize();
-
-            var checkpoint = o as Checkpoint;
-            if (checkpoint == null)
-            {
-                throw new ArgumentException($"Attempted to restore state from object of invalid type: {o.GetType()}, expected: {nameof(IDictionary<string, object>)}", nameof(o));
-            }
-
+            var checkpoint = (await _storage.Retrieve(checkpointId)) 
+                ?? throw new CheckpointRestorationException($"Checkpoint storage returned null for checkpoint ID: {checkpointId}");
             _register.RestoreCheckpoint(checkpoint);
         }
 

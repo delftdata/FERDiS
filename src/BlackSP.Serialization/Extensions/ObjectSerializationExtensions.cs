@@ -26,6 +26,17 @@ namespace BlackSP.Serialization.Extensions
             }
         }
 
+        public static void BinarySerializeTo(this object obj, Stream stream)
+        {
+            if (obj == null)
+            {
+                return;
+            }
+
+            var binaryFormatter = new BinaryFormatter();
+            binaryFormatter.Serialize(stream, obj);
+        }
+
         public static object BinaryDeserialize(this byte[] arrBytes)
         {
             using (var memoryStream = new MemoryStream(arrBytes))
@@ -33,6 +44,12 @@ namespace BlackSP.Serialization.Extensions
                 var binaryFormatter = new BinaryFormatter();
                 return binaryFormatter.Deserialize(memoryStream);
             }
+        }
+
+        public static object BinaryDeserialize(this Stream stream)
+        {
+            var binaryFormatter = new BinaryFormatter();
+            return binaryFormatter.Deserialize(stream);
         }
     }
 }

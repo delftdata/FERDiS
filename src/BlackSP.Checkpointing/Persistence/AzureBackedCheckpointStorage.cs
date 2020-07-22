@@ -1,40 +1,97 @@
-﻿using BlackSP.Checkpointing.Core;
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
+using BlackSP.Checkpointing.Core;
+using BlackSP.Checkpointing.Extensions;
+using BlackSP.Kernel.Models;
+using BlackSP.Serialization.Extensions;
+using Microsoft.IO;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
 using System.Text;
+using System.Threading.Tasks;
+using System.Xml;
 
 namespace BlackSP.Checkpointing.Persistence
 {
-    class AzureBackedCheckpointStorage : ICheckpointStorage
+    public class AzureBackedCheckpointStorage : ICheckpointStorage
     {
-        public Checkpoint Retrieve(Guid id)
+
+        private readonly RecyclableMemoryStreamManager _streamManager;
+
+
+        public AzureBackedCheckpointStorage(RecyclableMemoryStreamManager streamManager)
         {
-            //- get memstreampool yay
-            //- make blockingcoll with capacity 1-2?
-            //- start two threads yay
-            //1. sequencially read from stream
-            //   pipe to other stream (pool)
-            //   
-            //2. iterate blocking coll
-            //   deserialize to objectsnapshot
-            //- take object snapshots and make Checkpoint
-            throw new NotImplementedException();
+            _streamManager = streamManager ?? throw new ArgumentNullException(nameof(streamManager));
         }
 
-        public void Store(Checkpoint checkpoint)
-        {            
-            //- get memstreampool yay
-            //- make blockingcollection with capacity 1
-            //- start two treads yay
-            //1. sequencially serialize objectsnapshots (streampool)
-            //   add to collection
-            //   
-            //2. iterate collection 
-            //   write to stream one by one
-            //- await completion
-            //- dispose coll
+        private async Task<BlobContainerClient> GetBlobContainerClientForCheckpoint(Guid id)
+        {
+            var connectionString = Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING");
+            BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
+            BlobContainerClient containerClient = await blobServiceClient.CreateBlobContainerAsync($"{id}");
+            await containerClient.CreateIfNotExistsAsync();
+            return containerClient;
+        }
 
+        public async Task Delete(Guid id)
+        {
+            var blobContainerClient = await GetBlobContainerClientForCheckpoint(id);
+            await blobContainerClient.DeleteAsync();
+        }
 
+        public async Task<Checkpoint> Retrieve(Guid id)
+        {
+            var blobContainerClient = await GetBlobContainerClientForCheckpoint(id);
+
+            var blobs = blobContainerClient.GetBlobs(); //async version of GetBlobs is not actually async.. so keeping it synchronous for now
+            var snapshots = new Dictionary<string, ObjectSnapshot>();
+
+            var parallelIteration = Parallel.ForEach(blobs, async blob =>
+            {
+                var client = blobContainerClient.GetBlobClient(blob.Name);
+                using(var blobDownloadStream = _streamManager.GetStream())
+                {
+                    var response = await client.DownloadToAsync(blobDownloadStream);
+                    response.ThrowIfNotSuccessStatusCode();
+                    var downloadedObject = blobDownloadStream.BinaryDeserialize();
+                    var snapshot = downloadedObject as ObjectSnapshot ?? throw new Exception($"Downloaded blob did not contain expected ObjectSnapshot");
+                    snapshots.Add(blob.Name, snapshot);
+                }
+            });
+
+            if(!parallelIteration.IsCompleted)
+            {
+                throw new Exception($"Checkpoint \"{id}\" download failed to complete");
+
+            }
+
+            var checkpoint = new Checkpoint(id, snapshots);
+            return checkpoint;
+        }
+
+        public async Task Store(Checkpoint checkpoint)
+        {
+            var blobContainerClient = await GetBlobContainerClientForCheckpoint(checkpoint.Id);
+
+            var parallelIteration = Parallel.ForEach(checkpoint.Keys, async key =>
+            {
+                var blobClient = blobContainerClient.GetBlobClient(key);
+                var snapshot = checkpoint.GetSnapshot(key);
+
+                using (var snapshotUploadStream = _streamManager.GetStream())
+                {
+                    snapshot.BinarySerializeTo(snapshotUploadStream);
+                    snapshotUploadStream.Seek(0, SeekOrigin.Begin);
+                    var response = await blobClient.UploadAsync(snapshotUploadStream);
+                }
+            });
+
+            if(!parallelIteration.IsCompleted)
+            {
+                throw new Exception($"Checkpoint \"{checkpoint.Id}\" upload failed to complete");
+            }
 
             throw new NotImplementedException();
         }
