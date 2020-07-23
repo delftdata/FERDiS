@@ -4,6 +4,7 @@ using BlackSP.Core.Endpoints;
 using BlackSP.Core.Models;
 using BlackSP.Infrastructure;
 using BlackSP.Simulator.Configuration;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -61,6 +62,9 @@ namespace BlackSP.Simulator.Core
                 }
 
                 threads.Add(Task.Run(() => controller.StartProcess(t)));
+
+                var logger = dependencyScope.Resolve<ILogger>();
+                logger.Information($"Setup of Vertex {instanceName} completed");
                 await await Task.WhenAny(threads); //double await as whenany returns the task that completed
                 t.ThrowIfCancellationRequested();
             }

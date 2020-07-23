@@ -12,6 +12,7 @@ using BlackSP.Kernel.MessageProcessing;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Serilog.Events;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -22,6 +23,7 @@ namespace BlackSP.Infrastructure.Modules
         protected override void Load(ContainerBuilder builder)
         {
             //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
+            builder.UseSerilog(LogEventLevel.Verbose, LogTargetFlags.Console);
             builder.UseCheckpointingService();
 
             builder.UseProtobufSerializer();

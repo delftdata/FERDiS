@@ -63,7 +63,7 @@ namespace BlackSP.Simulator.Core
                     Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout);
                 }
-                catch(Exception)
+                catch(Exception e)
                 {
                     //exited without intent
                     if(maxRestarts-- == 0)
@@ -71,7 +71,7 @@ namespace BlackSP.Simulator.Core
                         Console.WriteLine($"{instanceName} - Vertex exited with exceptions, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    Console.WriteLine($"{instanceName} - Vertex exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
+                    Console.WriteLine($"{instanceName} - Vertex exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds. {e}");
                     await Task.Delay(restartTimeout);
                 }
             }             
