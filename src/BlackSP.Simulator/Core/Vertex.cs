@@ -3,6 +3,7 @@ using BlackSP.Core.Controllers;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Models;
 using BlackSP.Infrastructure;
+using BlackSP.Infrastructure.Extensions;
 using BlackSP.Simulator.Configuration;
 using Serilog;
 using System;
@@ -34,13 +35,10 @@ namespace BlackSP.Simulator.Core
         {
             _ = instanceName ?? throw new ArgumentNullException(nameof(instanceName));
 
-            IHostConfiguration hostParameter = _identityTable.GetHostConfiguration(instanceName);
-            var dependencyScope = _parentScope.BeginLifetimeScope(b => {
-                b.RegisterInstance(hostParameter.VertexConfiguration).AsImplementedInterfaces();
-                b.RegisterInstance(hostParameter.GraphConfiguration).AsImplementedInterfaces();
-                b.RegisterModule(Activator.CreateInstance(hostParameter.StartupModule) as Module);
-            });
+            IHostConfiguration hostConfig = _identityTable.GetHostConfiguration(instanceName);
+            var dependencyScope = _parentScope.BeginLifetimeScope(b => b.ConfigureVertexHost(hostConfig));
 
+            ILogger logger = null;
             ControlLayerProcessController controller = null;
             var threads = new List<Task>();
             try
@@ -48,38 +46,37 @@ namespace BlackSP.Simulator.Core
                 controller = dependencyScope.Resolve<ControlLayerProcessController>();
                 var inputFactory = dependencyScope.Resolve<InputEndpoint.Factory>();
                 var outputFactory = dependencyScope.Resolve<OutputEndpoint.Factory>();
-
-                foreach (var endpointConfig in hostParameter.VertexConfiguration.InputEndpoints)
+                logger = dependencyScope.Resolve<ILogger>();
+                logger.Debug($"Setting up simulated vertex");
+                foreach (var endpointConfig in hostConfig.VertexConfiguration.InputEndpoints)
                 {
-                    var endpoint = new InputEndpointHost(inputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable);
+                    var endpoint = new InputEndpointHost(inputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable, dependencyScope.Resolve<ILogger>());
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
 
-                foreach (var endpointConfig in hostParameter.VertexConfiguration.OutputEndpoints)
+                foreach (var endpointConfig in hostConfig.VertexConfiguration.OutputEndpoints)
                 {
-                    var endpoint = new OutputEndpointHost(outputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable);
+                    var endpoint = new OutputEndpointHost(outputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable, dependencyScope.Resolve<ILogger>());
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
 
                 threads.Add(Task.Run(() => controller.StartProcess(t)));
 
-                var logger = dependencyScope.Resolve<ILogger>();
-                logger.Information($"Setup of Vertex {instanceName} completed");
+                logger.Debug($"Simulated vertex setup completed");
                 await await Task.WhenAny(threads); //double await as whenany returns the task that completed
                 t.ThrowIfCancellationRequested();
             }
             catch(OperationCanceledException) { throw; } //shhh
             catch(Exception e)
             {
-                Console.WriteLine($"{instanceName} - DIED WITH EXCEPTION:\n{e}");
+                logger.Fatal(e, $"Simulated vertex crashed with exception");
                 //await Task.WhenAll(threads);
                 throw;
             } 
             finally
             {
-                Console.WriteLine($"{instanceName} - DIED FINALLY");
+                logger.Information($"Shutting simulated vertex down");
                 dependencyScope.Dispose();
-                Console.WriteLine("SO YEAH>>><<<....");
             }
         }
     }

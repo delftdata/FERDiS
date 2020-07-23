@@ -11,18 +11,24 @@ using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using Serilog.Events;
+using System;
 
 namespace BlackSP.Infrastructure.Modules
 {
     public class SourceOperatorModule<TShell, TOperator, TEvent> : Module 
         where TEvent : class, IEvent
     {
-        //IHostConfiguration Configuration { get; set; }
+        private readonly IHostConfiguration _configuration;
+
+        public SourceOperatorModule(IHostConfiguration hostConfiguration)
+        {
+            _configuration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
+        }
 
         protected override void Load(ContainerBuilder builder)
         {
             //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
-            builder.UseSerilog(LogEventLevel.Verbose, LogTargetFlags.Console);
+            builder.UseSerilog(LogEventLevel.Verbose, LogTargetFlags.Console, _configuration.VertexConfiguration.InstanceName);
             builder.UseCheckpointingService(true);
 
             builder.UseProtobufSerializer();

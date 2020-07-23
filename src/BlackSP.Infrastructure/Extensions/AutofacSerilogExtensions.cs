@@ -3,6 +3,7 @@ using AutofacSerilogIntegration;
 using BlackSP.Kernel.Models;
 using Microsoft.Azure.Storage;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
@@ -21,31 +22,26 @@ namespace BlackSP.Infrastructure.Extensions
 
     public static class AutofacSerilogExtensions
     {
-        public static ContainerBuilder UseSerilog(this ContainerBuilder builder, LogEventLevel logLevel, LogTargetFlags targetFlags)
+        public static ContainerBuilder UseSerilog(this ContainerBuilder builder, LogEventLevel logLevel, LogTargetFlags targetFlags, string instanceName)
         {
-
-            builder.Register<ILogger>((c, p) =>
+            var logConfig = new LoggerConfiguration().MinimumLevel.Verbose();
+            
+            if (targetFlags.HasFlag(LogTargetFlags.Console))
             {
-                
-                var vertexConfig = c.Resolve<IVertexConfiguration>();
-                var logConfig = new LoggerConfiguration();
-                if(targetFlags.HasFlag(LogTargetFlags.Console))
-                {
-                    logConfig.WriteTo.Console(logLevel);
-                }
-                if (targetFlags.HasFlag(LogTargetFlags.File))
-                {
-                    logConfig.WriteTo.RollingFile(AppDomain.CurrentDomain.BaseDirectory + $"logs/{vertexConfig.InstanceName}/{{Date}}.log", logLevel);
-                }
-                if (targetFlags.HasFlag(LogTargetFlags.AzureBlob))
-                {
-                    var connectionString = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING"));
-                    logConfig.WriteTo.AzureBlobStorage(connectionString, logLevel, "logs", $"{vertexConfig.InstanceName}/{{yyyy}}-{{MM}}-{{dd}}.log");
-                }
-                return logConfig.CreateLogger();
-            }).InstancePerLifetimeScope();
+                logConfig.WriteTo.Console(logLevel, outputTemplate: $"[{instanceName}] [{{Timestamp:HH:mm:ss}} {{Level:u3}}]  {{Message}}{{NewLine}}{{Exception}}");
+            }
+            if (targetFlags.HasFlag(LogTargetFlags.File))
+            {
+                logConfig.WriteTo.RollingFile(AppDomain.CurrentDomain.BaseDirectory + $"logs/{instanceName}/{{Date}}.log", logLevel);
+            }
+            if (targetFlags.HasFlag(LogTargetFlags.AzureBlob))
+            {
+                var connectionString = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING"));
+                logConfig.WriteTo.AzureBlobStorage(connectionString, logLevel, "logs", $"{instanceName}/{{yyyy}}-{{MM}}-{{dd}}.log");
+            }
+            var log = logConfig.CreateLogger();
 
-            builder.RegisterLogger()//HMMM...
+            builder.RegisterLogger(log, autowireProperties: true);
 
             return builder;
         }

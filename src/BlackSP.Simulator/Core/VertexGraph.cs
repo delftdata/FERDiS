@@ -47,9 +47,7 @@ namespace BlackSP.Simulator.Core
                 _vertexCancellationSources[instanceName] = ctSource;
                 try
                 {
-                    Console.WriteLine($"{instanceName} - Vertex starting up");
                     await v.StartAs(instanceName, ctSource.Token);
-                    Console.WriteLine($"{instanceName} - Vertex exited without exceptions");
                     return;
                 } 
                 catch(OperationCanceledException)
@@ -57,10 +55,10 @@ namespace BlackSP.Simulator.Core
                     //exited with intent
                     if (maxRestarts-- == 0)
                     {
-                        Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, no restart: exceeded maxRestarts.");
+                        //Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, restart in {restartTimeout.TotalSeconds} seconds.");
+                    //Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout);
                 }
                 catch(Exception e)
@@ -68,10 +66,10 @@ namespace BlackSP.Simulator.Core
                     //exited without intent
                     if(maxRestarts-- == 0)
                     {
-                        Console.WriteLine($"{instanceName} - Vertex exited with exceptions, no restart: exceeded maxRestarts.");
+                        //Console.WriteLine($"{instanceName} - Vertex exited with exceptions, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    Console.WriteLine($"{instanceName} - Vertex exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds. {e}");
+                    //Console.WriteLine($"{instanceName} - Vertex exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds. {e}");
                     await Task.Delay(restartTimeout);
                 }
             }             

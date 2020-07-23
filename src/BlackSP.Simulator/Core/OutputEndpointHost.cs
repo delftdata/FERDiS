@@ -7,6 +7,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace BlackSP.Simulator.Core
 {
@@ -14,11 +15,13 @@ namespace BlackSP.Simulator.Core
     {
         private readonly IOutputEndpoint _outputEndpoint;
         private readonly ConnectionTable _connectionTable;
+        private readonly ILogger _logger;
 
-        public OutputEndpointHost(IOutputEndpoint outputEndpoint, ConnectionTable connectionTable)
+        public OutputEndpointHost(IOutputEndpoint outputEndpoint, ConnectionTable connectionTable, ILogger logger)
         {
             _outputEndpoint = outputEndpoint ?? throw new ArgumentNullException(nameof(outputEndpoint));
             _connectionTable = connectionTable ?? throw new ArgumentNullException(nameof(connectionTable));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -54,7 +57,7 @@ namespace BlackSP.Simulator.Core
                 }
                 catch (OperationCanceledException e) { /*shh*/}
 
-                Console.WriteLine($"{instanceName} - Output endpoint {endpointName} was cancelled and is now resetting streams");
+                _logger.Debug($"Output endpoint {endpointName} was cancelled and is now resetting streams");
                 foreach (var stream in outgoingStreams)
                 {
                     stream.Dispose(); //force close the stream to trigger exception in output endpoint as if it were a dropped network stream
@@ -69,7 +72,7 @@ namespace BlackSP.Simulator.Core
             }
             finally
             {
-                Console.WriteLine($"{instanceName} - exiting output host {endpointName}");
+                _logger.Information($"{instanceName} - exiting output host {endpointName}");
             }
         }
 
@@ -83,26 +86,26 @@ namespace BlackSP.Simulator.Core
                     t.ThrowIfCancellationRequested();
                     Stream s = _connectionTable.GetOutgoingStreams(instanceName, endpointName)[shardId];
                     c = _connectionTable.GetOutgoingConnections(instanceName, endpointName)[shardId];
-                    
-                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName}${shardId} starting.\t(remote {c.ToInstanceName}${c.ToEndpointName}${c.ToShardId})");
+
+                    _logger.Debug($"Output endpoint {c.FromEndpointName}${shardId} starting. (remote {c.ToInstanceName}${c.ToEndpointName}${c.ToShardId})");
                     await _outputEndpoint.Egress(s, c.ToEndpointName, c.ToShardId, t);
-                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName}${shardId} exited without exceptions");
+                    _logger.Debug($"Output endpoint {c.FromEndpointName}${shardId} exited without exceptions");
                     
                     return;
                 }
                 catch (OperationCanceledException)
                 {
-                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName}${shardId} exiting due to cancellation");
+                    _logger.Debug($"Output endpoint {c.FromEndpointName}${shardId} exiting due to cancellation");
                     throw;
                 }
                 catch (Exception)
                 {
                     if (maxRestarts-- == 0)
                     {
-                        Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName}${shardId} exited with exceptions, no restart: exceeded maxRestarts.");
+                        _logger.Fatal($"Output endpoint {c.FromEndpointName}${shardId} exited with exceptions, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    Console.WriteLine($"{c.FromInstanceName} - Output endpoint {c.FromEndpointName}${shardId} exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
+                    _logger.Warning($"Output endpoint {c.FromEndpointName}${shardId} exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout, t);
                 }
             }

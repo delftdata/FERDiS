@@ -18,12 +18,16 @@ namespace BlackSP.Infrastructure.Modules
 {
     public class CoordinatorModule : Module
     {
-        //IHostConfiguration Configuration { get; set; }
+        private readonly IHostConfiguration _configuration;
+
+        public CoordinatorModule(IHostConfiguration hostConfiguration)
+        {
+            _configuration = hostConfiguration ?? throw new ArgumentNullException(nameof(hostConfiguration));
+        }
 
         protected override void Load(ContainerBuilder builder)
         {
-            //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
-            builder.UseSerilog(LogEventLevel.Verbose, LogTargetFlags.Console);
+            builder.UseSerilog(LogEventLevel.Verbose, LogTargetFlags.Console, _configuration.VertexConfiguration.InstanceName);
             builder.UseCheckpointingService();
 
             builder.UseProtobufSerializer();
