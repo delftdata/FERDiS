@@ -37,8 +37,10 @@ namespace BlackSP.Checkpointing.Core
             return _state.ContainsKey(key);
         }
 
-        public Checkpoint TakeCheckpoint()
+        public Checkpoint TakeCheckpoint(CheckpointDependencyTracker tracker)
         {
+            _ = tracker ?? throw new ArgumentNullException(nameof(tracker));
+
             var cpDict = new Dictionary<string, ObjectSnapshot>();
             foreach (var kvp in _state)
             {
@@ -48,7 +50,7 @@ namespace BlackSP.Checkpointing.Core
                 var snapshot = ObjectSnapshot.TakeSnapshot(obj);
                 cpDict.Add(identifier, snapshot);
             }
-            return new Checkpoint(Guid.NewGuid(), cpDict);
+            return new Checkpoint(Guid.NewGuid(), cpDict, tracker.Dependencies);
         }
 
         public void RestoreCheckpoint(Checkpoint checkpoint)

@@ -32,6 +32,10 @@ namespace BlackSP.Checkpointing.UnitTests.Models
             return _largeBoi.Length;
         }
 
+        /// <summary>
+        /// Easy way to allocate a lot of memory
+        /// </summary>
+        /// <param name="size"></param>
         public void SetLargeArraySize(int size)
         {
             _largeBoi = new byte[size];

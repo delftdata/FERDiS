@@ -17,12 +17,19 @@ namespace BlackSP.Checkpointing
     {
 
         private readonly ObjectRegistry _register;
+        private readonly CheckpointDependencyTracker _dpTracker;
         private readonly ICheckpointStorage _storage;
 
-        public CheckpointService(ObjectRegistry register, ICheckpointStorage checkpointStorage)
+        public CheckpointService(ObjectRegistry register, CheckpointDependencyTracker dependencyTracker, ICheckpointStorage checkpointStorage)
         {
             _register = register ?? throw new ArgumentNullException(nameof(register));
             _storage = checkpointStorage ?? throw new ArgumentNullException(nameof(checkpointStorage));
+            _dpTracker = dependencyTracker ?? throw new ArgumentNullException(nameof(dependencyTracker));
+        }
+
+        public void UpdateCheckpointDependency(string origin, Guid checkpointId)
+        {
+            _dpTracker.UpdateDependency(origin, checkpointId);
         }
 
         ///<inheritdoc/>
@@ -49,10 +56,9 @@ namespace BlackSP.Checkpointing
         }
 
         ///<inheritdoc/>
-
         public async Task<Guid> TakeCheckpoint()
         {
-            var checkpoint = _register.TakeCheckpoint();
+            var checkpoint = _register.TakeCheckpoint(_dpTracker);
             await _storage.Store(checkpoint);
             return checkpoint.Id;
         }

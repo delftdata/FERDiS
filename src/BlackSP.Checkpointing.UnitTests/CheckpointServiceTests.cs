@@ -37,7 +37,8 @@ namespace BlackSP.Checkpointing.UnitTests
         {
             var objectRegisterMock = new Mock<ObjectRegistry>();
             var cpStorage = new VolatileCheckpointStorage();//new Mock<ICheckpointStorage>();
-            checkpointService = new CheckpointService(objectRegisterMock.Object, cpStorage);
+            var tracker = new CheckpointDependencyTracker();
+            checkpointService = new CheckpointService(objectRegisterMock.Object, tracker, cpStorage);
             
             objectAInitialValue = "initial value";
             objectA = new ClassA(objectAInitialValue);

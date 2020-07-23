@@ -10,6 +10,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,109 +22,178 @@ namespace BlackSP.Checkpointing.Persistence
     public class AzureBackedCheckpointStorage : ICheckpointStorage
     {
 
-        private readonly RecyclableMemoryStreamManager _streamManager;
-
-
-        public AzureBackedCheckpointStorage(RecyclableMemoryStreamManager streamManager)
+        private readonly ExecutionDataflowBlockOptions _blockOptions;
+        private readonly DataflowLinkOptions _linkOptions;
+        public AzureBackedCheckpointStorage()
         {
-            _streamManager = streamManager ?? throw new ArgumentNullException(nameof(streamManager));
+            _blockOptions = new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = Environment.ProcessorCount
+            };
+            _linkOptions = new DataflowLinkOptions
+            {
+                PropagateCompletion = true
+            };
         }
 
-        private async Task<BlobContainerClient> GetBlobContainerClientForCheckpoint(Guid id)
+        private BlobContainerClient GetBlobContainerClientForCheckpoints()
         {
             var connectionString = Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING");
             BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
-            BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient($"{id}");
-            await containerClient.CreateIfNotExistsAsync();
+            BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient($"checkpoints");
+            containerClient.CreateIfNotExists();
             return containerClient;
         }
 
         public async Task Delete(Guid id)
         {
-            var blobContainerClient = await GetBlobContainerClientForCheckpoint(id);
-            await blobContainerClient.DeleteAsync();
-        }
-
-        public async Task<Checkpoint> Retrieve(Guid id)
-        {
-            var blobContainerClient = await GetBlobContainerClientForCheckpoint(id);
-
-            var blobs = blobContainerClient.GetBlobs(); //async version of GetBlobs is not actually async.. so keeping it synchronous for now
-            var snapshots = new ConcurrentDictionary<string, ObjectSnapshot>();
-
-            var blobToStreamTransform = new TransformBlock<BlobItem, Tuple<string, MemoryStream>>(async blob =>
+            var blobContainerClient = GetBlobContainerClientForCheckpoints();
+            var blobClient = blobContainerClient.GetBlobClient($"id");
+            if(await blobClient.ExistsAsync())
             {
-                var client = blobContainerClient.GetBlobClient(blob.Name);
-                var blobDownloadStream = _streamManager.GetStream();
-                
-                var response = await client.DownloadToAsync(blobDownloadStream);
-                response.ThrowIfNotSuccessStatusCode();
-                blobDownloadStream.Seek(0, SeekOrigin.Begin);
-                return Tuple.Create(blob.Name, blobDownloadStream);
-            }, new ExecutionDataflowBlockOptions
-            {
-                MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
-            });
-
-            var streamDeserializationAction = new ActionBlock<Tuple<string, MemoryStream>>(tuple =>
-            {
-                var (name, stream) = tuple;
-                var downloadedObject = stream.BinaryDeserialize();
-                var snapshot = downloadedObject as ObjectSnapshot ?? throw new Exception($"Downloaded blob did not contain expected ObjectSnapshot");
-                snapshots.TryAdd(name, snapshot);
-                stream.Dispose(); //ensure buffer is returned to manager
-            });
-
-            blobToStreamTransform.LinkTo(streamDeserializationAction, new DataflowLinkOptions
-            {
-                PropagateCompletion = true
-            });
-
-            foreach (var blob in blobs) {
-                await blobToStreamTransform.SendAsync(blob);
+                await blobClient.DeleteAsync();
             }
-            blobToStreamTransform.Complete();
-            await streamDeserializationAction.Completion;
-
-            var checkpoint = new Checkpoint(id, snapshots);
-            return checkpoint;
         }
 
         public async Task Store(Checkpoint checkpoint)
         {
-            var blobContainerClient = await GetBlobContainerClientForCheckpoint(checkpoint.Id);
+            //ensure creation of blob container checkpoint will be stored in
+            var blobContainerClient = GetBlobContainerClientForCheckpoints();
 
-            var snapshotSerializeTransform = new TransformBlock<string, Tuple<string, MemoryStream>>(async cpKey =>
-            {
-                var snapshot = checkpoint.GetSnapshot(cpKey);
-                var snapshotUploadStream = _streamManager.GetStream();
-                snapshot.BinarySerializeTo(snapshotUploadStream);
-                snapshotUploadStream.Seek(0, SeekOrigin.Begin);
-                return Tuple.Create(cpKey, snapshotUploadStream);
-            }, new ExecutionDataflowBlockOptions
-            {
-                MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
-            });
+            await UploadCheckpointMetaData(checkpoint, blobContainerClient);
 
-            var streamUploadAction = new ActionBlock<Tuple<string, MemoryStream>>(async tuple =>
-            {
-                var (key, stream) = tuple;
-                var blobClient = blobContainerClient.GetBlobClient(key);
-                var response = await blobClient.UploadAsync(stream);
-                stream.Dispose(); //ensure buffer is returned to manager
-            });
+            //Define dataflow for checkpoint storage
+            var snapshotSerializeTransform = new TransformBlock<string, Tuple<string, MemoryStream>>(
+                snapshotKey => SerializeSnapshotToStream(snapshotKey, checkpoint),
+                _blockOptions
+            );
+            var streamUploadAction = new ActionBlock<Tuple<string, MemoryStream>>(
+                async tuple => await UploadStreamToBlob(tuple, blobContainerClient)
+            );
+            snapshotSerializeTransform.LinkTo(streamUploadAction, _linkOptions);
 
-            snapshotSerializeTransform.LinkTo(streamUploadAction, new DataflowLinkOptions
+            //Feed snapshotKeys to dataflow
+            foreach (var snapshotKey in checkpoint.Keys)
             {
-                PropagateCompletion = true
-            });
-
-            foreach(var cpKey in checkpoint.Keys)
-            {
-                await snapshotSerializeTransform.SendAsync(cpKey);
+                await snapshotSerializeTransform.SendAsync(snapshotKey);
             }
             snapshotSerializeTransform.Complete();
+            //Wait for upload completion
             await streamUploadAction.Completion;
         }
+
+        
+
+        public async Task<Checkpoint> Retrieve(Guid id)
+        {
+            //ensure existence of blob container checkpoint is stored in
+            var blobContainerClient = GetBlobContainerClientForCheckpoints();
+            var blobFolderClient = blobContainerClient.GetBlobClient($"{id}/meta");
+            if (!await blobFolderClient.ExistsAsync())
+            {
+                throw new Exception($"Attempted to retrieve checkpoint {id}, which was never stored");
+            }
+
+            var dependencies = await DownloadCheckpointMetaData<IDictionary<string, Guid>>(id, blobContainerClient);
+
+            //Define dataflow for checkpoint retrieval
+            var snapshots = new ConcurrentDictionary<string, ObjectSnapshot>();
+            var blobDownloadToStreamTransform = new TransformBlock<BlobItem, Tuple<string, MemoryStream>>(
+                async blob => await DownloadSerializedSnapshotToStream(blob, blobContainerClient), 
+                _blockOptions
+            );
+            var streamDeserializationAction = new ActionBlock<Tuple<string, MemoryStream>>(
+                tuple => DeserializeSnapshotToDictionary(tuple, snapshots)
+            );
+            blobDownloadToStreamTransform.LinkTo(streamDeserializationAction, _linkOptions);
+            //Feed blobs to dataflow
+            var blobs = blobContainerClient.GetBlobs(BlobTraits.None, BlobStates.None, $"{id}"); //async version of GetBlobs is not actually async.. so keeping it synchronous for now
+            foreach (var blob in blobs.Where(bi => !bi.Name.EndsWith("/meta"))) {
+                await blobDownloadToStreamTransform.SendAsync(blob);
+            }
+            blobDownloadToStreamTransform.Complete();
+            //Wait for completion of deserialization
+            await streamDeserializationAction.Completion; 
+            return new Checkpoint(id, snapshots, dependencies);
+        }
+
+        #region private dataflow methods
+        private async Task<Tuple<string, MemoryStream>> DownloadSerializedSnapshotToStream(BlobItem blob, BlobContainerClient containerClient)
+        {
+            if(!blob.Name.Contains('/'))
+            {
+                throw new Exception($"Blob name expected to start with virtual folder named by checkpointId");
+            }
+            var client = containerClient.GetBlobClient(blob.Name);
+            var blobDownloadStream = new MemoryStream();
+
+            var response = await client.DownloadToAsync(blobDownloadStream);
+            response.ThrowIfNotSuccessStatusCode();
+            blobDownloadStream.Seek(0, SeekOrigin.Begin);
+
+            return Tuple.Create(blob.Name.Split('/')[1], blobDownloadStream);
+        }
+
+        private void DeserializeSnapshotToDictionary(Tuple<string, MemoryStream> tuple, IDictionary<string, ObjectSnapshot> snapshots)
+        {
+            var (name, stream) = tuple;
+            var downloadedObject = stream.BinaryDeserialize();
+            var snapshot = downloadedObject as ObjectSnapshot ?? throw new Exception($"Downloaded blob did not contain expected {nameof(ObjectSnapshot)}");
+            snapshots[name] = snapshot;
+            stream.Dispose(); //ensure buffer memory is freed up
+        }
+
+        private Tuple<string, MemoryStream> SerializeSnapshotToStream(string snapshotKey, Checkpoint checkpoint)
+        {
+            var snapshot = checkpoint.GetSnapshot(snapshotKey);
+            var snapshotUploadStream = new MemoryStream();
+            snapshot.BinarySerializeTo(snapshotUploadStream);
+            snapshotUploadStream.Seek(0, SeekOrigin.Begin);
+            return Tuple.Create($"{checkpoint.Id}/{snapshotKey}", snapshotUploadStream);
+        }
+
+        private async Task UploadStreamToBlob(Tuple<string, MemoryStream> tuple, BlobContainerClient containerClient)
+        {
+            var (blobKey, stream) = tuple;
+            var blobClient = containerClient.GetBlobClient(blobKey);
+            await blobClient.UploadAsync(stream);
+            stream.Dispose(); //ensure buffer memory is freed up
+        }
+        #endregion
+
+        #region private metadata methods
+        private async Task UploadCheckpointMetaData(Checkpoint checkpoint, BlobContainerClient blobContainerClient)
+        {
+            var blobMetaClient = blobContainerClient.GetBlobClient($"{checkpoint.Id}/meta");
+            if (await blobMetaClient.ExistsAsync())
+            {
+                throw new Exception($"Attempted to upload metadata of checkpoint {checkpoint.Id}, which was already stored (duplicate id)");
+            }
+
+            var memStream = new MemoryStream();
+            checkpoint.GetDependencies().BinarySerializeTo(memStream);
+            memStream.Seek(0, SeekOrigin.Begin);
+            await blobMetaClient.UploadAsync(memStream);
+            memStream.Dispose();
+        }
+
+        private async Task<T> DownloadCheckpointMetaData<T>(Guid cpId, BlobContainerClient blobContainerClient)
+            where T : class
+        {
+            var blobMetaClient = blobContainerClient.GetBlobClient($"{cpId}/meta");
+            if (!await blobMetaClient.ExistsAsync())
+            {
+                throw new Exception($"Attempted to download metadata of checkpoint {cpId}, which was never stored (not found)");
+            }
+
+            var memStream = new MemoryStream();
+            (await blobMetaClient.DownloadToAsync(memStream)).ThrowIfNotSuccessStatusCode();
+            memStream.Seek(0, SeekOrigin.Begin);
+            var dependencies = memStream.BinaryDeserialize() as T;
+            memStream.Dispose();
+
+            return dependencies;
+        }
+        #endregion
     }
 }

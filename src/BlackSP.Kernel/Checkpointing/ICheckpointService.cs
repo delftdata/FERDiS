@@ -16,6 +16,13 @@ namespace BlackSP.Kernel.Checkpointing
         bool RegisterObject(object o);
 
         /// <summary>
+        /// Updates which checkpoints are dependent on. information is used in storage, retrieval and recovery
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="checkpointId"></param>
+        void UpdateCheckpointDependency(string origin, Guid checkpointId);
+
+        /// <summary>
         /// Take a checkpoint, returns an ID useable to restore said checkpoint
         /// </summary>
         /// <returns></returns>

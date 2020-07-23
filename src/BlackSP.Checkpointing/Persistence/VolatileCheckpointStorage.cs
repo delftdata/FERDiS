@@ -19,6 +19,15 @@ namespace BlackSP.Checkpointing.Persistence
             _formatter = new BinaryFormatter();
         }
 
+        public Task Delete(Guid id)
+        {
+            if(_store.ContainsKey(id))
+            {
+                _store.Remove(id);
+            }
+            return Task.CompletedTask;
+        }
+
         public Task<Checkpoint> Retrieve(Guid id)
         {
             var blob = _store[id];

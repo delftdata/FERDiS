@@ -21,17 +21,90 @@ namespace BlackSP.Checkpointing.UnitTests
 
         private ICheckpointStorage checkpointStorage;
 
+        private ICollection<Guid> checkpointIdsToDelete;
+
         [SetUp]
         public void SetUp()
         {
             Environment.SetEnvironmentVariable("AZURE_STORAGE_CONN_STRING", AzureStorageConnectionString);
 
-            var memstreamManager = new RecyclableMemoryStreamManager();
-            checkpointStorage = new AzureBackedCheckpointStorage(memstreamManager);
+            checkpointStorage = new AzureBackedCheckpointStorage();
+            checkpointIdsToDelete = new List<Guid>();
         }
 
         [Test]
         public async Task CheckpointStoreRetrieve_ReturnsSameCheckpointObject()
+        {
+            Checkpoint cp = BuildTestCheckpoint();
+
+            //STORE IT
+            await checkpointStorage.Store(cp);
+            checkpointIdsToDelete.Add(cp.Id);
+            //RETRIEVE IT
+            var restoredCp = await checkpointStorage.Retrieve(cp.Id);
+            //ASSERT SAME
+            Assert.AreEqual(cp.Id, restoredCp.Id);
+            Assert.IsTrue(cp.Keys.OrderBy(k => k).SequenceEqual(restoredCp.Keys.OrderBy(k => k)));
+            Assert.IsTrue(cp.GetDependencies().Keys.OrderBy(k => k).SequenceEqual(restoredCp.GetDependencies().Keys.OrderBy(k => k)));
+
+            foreach (var key in cp.Keys)
+            {
+                var snapshot1 = cp.GetSnapshot(key);
+                var snapshot2 = restoredCp.GetSnapshot(key);
+                Assert.AreEqual(snapshot1, snapshot2);
+            }
+        }
+
+        [Test]
+        public async Task CheckpointStoreRetrieve_ReturnsSameCheckpointObject_MultipleCheckpoints()
+        {
+            Checkpoint cp = BuildTestCheckpoint();
+            //STORE IT
+            await checkpointStorage.Store(cp);
+            checkpointIdsToDelete.Add(cp.Id);
+
+
+            Checkpoint cp2 = BuildTestCheckpoint();
+            //STORE IT
+            await checkpointStorage.Store(cp2);
+            checkpointIdsToDelete.Add(cp2.Id);
+
+
+            //RETRIEVE Both
+            var restoredCp = await checkpointStorage.Retrieve(cp.Id);
+            var restoredCp2 = await checkpointStorage.Retrieve(cp2.Id);
+
+            //ASSERT SAME
+            Assert.AreEqual(cp.Id, restoredCp.Id);
+            Assert.IsTrue(cp.Keys.OrderBy(k => k).SequenceEqual(restoredCp.Keys.OrderBy(k => k)));
+            Assert.IsTrue(cp.GetDependencies().Keys.OrderBy(k => k).SequenceEqual(restoredCp.GetDependencies().Keys.OrderBy(k => k)));
+
+            Assert.AreEqual(cp2.Id, restoredCp2.Id);
+            Assert.IsTrue(cp2.Keys.OrderBy(k => k).SequenceEqual(restoredCp2.Keys.OrderBy(k => k)));
+            Assert.IsTrue(cp2.GetDependencies().Keys.OrderBy(k => k).SequenceEqual(restoredCp2.GetDependencies().Keys.OrderBy(k => k)));
+
+
+            foreach (var key in cp.Keys)
+            {
+                var snapshot1 = cp.GetSnapshot(key);
+                var snapshot2 = restoredCp.GetSnapshot(key);
+                var snapshot3 = restoredCp2.GetSnapshot(key);
+                Assert.AreEqual(snapshot1, snapshot2);
+                Assert.AreEqual(snapshot1, snapshot3);
+
+            }
+        }
+
+        [TearDown]
+        public async Task TearDown()
+        {
+            foreach(var cpId in checkpointIdsToDelete)
+            {
+                await checkpointStorage.Delete(cpId);
+            }
+        }
+
+        private Checkpoint BuildTestCheckpoint()
         {
             //create some objects with an internal state
             var objectA = new ClassA("value");
@@ -39,34 +112,16 @@ namespace BlackSP.Checkpointing.UnitTests
             var objectB = new ClassB();
             objectB.IncrementCounter();
             objectB.SetLargeArraySize(1 << 22); //22 = 32k
-
             //BUILD A CHECKPOINT
             Guid cpId = Guid.NewGuid();
             var snapshots = new Dictionary<string, ObjectSnapshot>();
             snapshots.Add("objectA", ObjectSnapshot.TakeSnapshot(objectA));
             snapshots.Add("objectB", ObjectSnapshot.TakeSnapshot(objectB));
-            Checkpoint cp = new Checkpoint(cpId, snapshots);
-            //STORE IT
-            await checkpointStorage.Store(cp);
-            //RETRIEVE IT
-            var restoredCp = await checkpointStorage.Retrieve(cpId);
-            //ASSERT SAME
-            Assert.AreEqual(cp.Id, restoredCp.Id);
-            Assert.IsTrue(cp.Keys.SequenceEqual(restoredCp.Keys));
-
-            foreach(var key in cp.Keys)
-            {
-                var snapshot1 = cp.GetSnapshot(key);
-                var snapshot2 = restoredCp.GetSnapshot(key);
-                //Assert.AreEqual(snapshot1, snapshot2);
-            }
-            //TEST MULTIPLE CHECKPOINTS
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-
+            var dependencies = new Dictionary<string, Guid>();
+            dependencies.Add("vertex1", Guid.NewGuid());
+            dependencies.Add("vertex2", Guid.NewGuid());
+            dependencies.Add("vertex3", Guid.NewGuid());
+            return new Checkpoint(cpId, snapshots, dependencies);
         }
 
     }

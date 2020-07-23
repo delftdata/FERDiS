@@ -11,5 +11,7 @@ namespace BlackSP.Checkpointing.Persistence
         Task Store(Checkpoint checkpoint);
 
         Task<Checkpoint> Retrieve(Guid id);
+
+        Task Delete(Guid id);
     }
 }
