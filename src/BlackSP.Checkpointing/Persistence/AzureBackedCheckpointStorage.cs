@@ -48,10 +48,14 @@ namespace BlackSP.Checkpointing.Persistence
         public async Task Delete(Guid id)
         {
             var blobContainerClient = GetBlobContainerClientForCheckpoints();
-            var blobClient = blobContainerClient.GetBlobClient($"id");
-            if(await blobClient.ExistsAsync())
+            var blobsInCheckpoint = blobContainerClient.GetBlobs(prefix: $"id");
+            foreach(var blob in blobsInCheckpoint)
             {
-                await blobClient.DeleteAsync();
+                var subBlob = blobContainerClient.GetBlobClient(blob.Name);
+                if(await subBlob.ExistsAsync())
+                {
+                    await subBlob.DeleteAsync();
+                }
             }
         }
 
@@ -88,12 +92,7 @@ namespace BlackSP.Checkpointing.Persistence
         {
             //ensure existence of blob container checkpoint is stored in
             var blobContainerClient = GetBlobContainerClientForCheckpoints();
-            var blobFolderClient = blobContainerClient.GetBlobClient($"{id}/meta");
-            if (!await blobFolderClient.ExistsAsync())
-            {
-                throw new Exception($"Attempted to retrieve checkpoint {id}, which was never stored");
-            }
-
+            
             var dependencies = await DownloadCheckpointMetaData<IDictionary<string, Guid>>(id, blobContainerClient);
 
             //Define dataflow for checkpoint retrieval

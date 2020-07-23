@@ -69,6 +69,7 @@ namespace BlackSP.Checkpointing
             var checkpoint = (await _storage.Retrieve(checkpointId)) 
                 ?? throw new CheckpointRestorationException($"Checkpoint storage returned null for checkpoint ID: {checkpointId}");
             _register.RestoreCheckpoint(checkpoint);
+            _dpTracker.OverwriteDependencies(checkpoint.GetDependencies());
         }
 
     }

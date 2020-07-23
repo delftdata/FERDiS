@@ -15,6 +15,7 @@ namespace BlackSP.Infrastructure.Modules
         protected override void Load(ContainerBuilder builder)
         {
             //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
+            builder.UseCheckpointingService(true);
 
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();

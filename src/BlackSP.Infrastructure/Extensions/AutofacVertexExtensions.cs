@@ -16,6 +16,10 @@ using BlackSP.Serialization;
 using Microsoft.IO;
 using System;
 using System.Collections.Generic;
+using BlackSP.Kernel.Checkpointing;
+using BlackSP.Checkpointing.Core;
+using BlackSP.Checkpointing.Persistence;
+using BlackSP.Checkpointing;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -25,11 +29,32 @@ namespace BlackSP.Infrastructure.Extensions
         /// TODO: ALLES
         /// </summary>
         /// <param name="context"></param>
-        static void OnActivatedCheckpointManagerRegistrationExample(IActivatedEventArgs<object> context)
-        {
+        static void OnActivated_CheckpointServiceRegistration(object sender, IActivatedEventArgs<object> context)
+        {            
             object obj = context.Instance;
-            var manager = context.Context.Resolve<Object>();
-            //manager.register(obj)
+            var manager = context.Context.Resolve<ICheckpointService>();
+            var isRegistered = manager.RegisterObject(obj);
+            //TODO: log information
+        }
+
+        public static ContainerBuilder UseCheckpointingService(this ContainerBuilder builder, bool autoRegisterComponents = false)
+        {
+            _ = builder ?? throw new ArgumentNullException(nameof(builder));
+            builder.RegisterType<CheckpointDependencyTracker>().AsSelf();
+            builder.RegisterType<ObjectRegistry>().AsSelf();
+            builder.RegisterType<AzureBackedCheckpointStorage>().AsImplementedInterfaces();
+            //above are the dependencies of the service below
+            builder.RegisterType<CheckpointService>().As<ICheckpointService>().InstancePerLifetimeScope();
+            
+            if(autoRegisterComponents)
+            {
+                //include eventhandlers that ensure any DI resolved object is registered with the CheckpointService
+                builder.ComponentRegistryBuilder.Registered += (object sender, ComponentRegisteredEventArgs e) => {
+                    e.ComponentRegistration.Activated += OnActivated_CheckpointServiceRegistration;
+                };
+            }
+            
+            return builder;
         }
 
         /// <summary>
