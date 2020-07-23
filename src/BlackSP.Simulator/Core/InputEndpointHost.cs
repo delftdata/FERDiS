@@ -7,6 +7,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace BlackSP.Simulator.Core
 {
@@ -14,11 +15,14 @@ namespace BlackSP.Simulator.Core
     {
         private readonly IInputEndpoint _inputEndpoint;
         private readonly ConnectionTable _connectionTable;
+        private readonly ILogger _logger;
 
-        public InputEndpointHost(IInputEndpoint inputEndpoint, ConnectionTable connectionTable)
+        public InputEndpointHost(IInputEndpoint inputEndpoint, ConnectionTable connectionTable, ILogger logger)
         {
             _inputEndpoint = inputEndpoint ?? throw new ArgumentNullException(nameof(inputEndpoint));
             _connectionTable = connectionTable ?? throw new ArgumentNullException(nameof(connectionTable));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
         }
 
         /// <summary>
@@ -54,7 +58,7 @@ namespace BlackSP.Simulator.Core
                 } catch(OperationCanceledException e) { /*shh*/}
                 
                 
-                Console.WriteLine($"{instanceName} - Input endpoint {endpointName} was cancelled and is now resetting streams");
+                _logger.Information($"{instanceName} - Input endpoint {endpointName} was cancelled and is now resetting streams");
                 foreach (var stream in incomingStreams)
                 {
                     stream.Dispose(); //force close the stream to trigger exception in output endpoint as if it were a dropped network stream

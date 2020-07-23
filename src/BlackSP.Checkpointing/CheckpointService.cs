@@ -9,6 +9,7 @@ using System.Text;
 using BlackSP.Checkpointing.Persistence;
 using BlackSP.Checkpointing.Exceptions;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace BlackSP.Checkpointing
 {
@@ -19,12 +20,14 @@ namespace BlackSP.Checkpointing
         private readonly ObjectRegistry _register;
         private readonly CheckpointDependencyTracker _dpTracker;
         private readonly ICheckpointStorage _storage;
+        private readonly ILogger _logger;
 
-        public CheckpointService(ObjectRegistry register, CheckpointDependencyTracker dependencyTracker, ICheckpointStorage checkpointStorage)
+        public CheckpointService(ObjectRegistry register, CheckpointDependencyTracker dependencyTracker, ICheckpointStorage checkpointStorage, ILogger logger)
         {
             _register = register ?? throw new ArgumentNullException(nameof(register));
             _storage = checkpointStorage ?? throw new ArgumentNullException(nameof(checkpointStorage));
             _dpTracker = dependencyTracker ?? throw new ArgumentNullException(nameof(dependencyTracker));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public void UpdateCheckpointDependency(string origin, Guid checkpointId)
@@ -47,10 +50,9 @@ namespace BlackSP.Checkpointing
             
             if(!o.AssertCheckpointability())
             {
-                Console.WriteLine($"Type {type} is not checkpointable.");
                 return false;
             }
-            Console.WriteLine($"Object of type {type} is registered for checkpointing.");
+            _logger.Verbose($"Object of type {type} is registered for checkpointing with {nameof(CheckpointService)}.");
             _register.Add(identifier, o);
             return true;
         }

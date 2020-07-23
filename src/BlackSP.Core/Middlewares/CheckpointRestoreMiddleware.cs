@@ -4,6 +4,7 @@ using BlackSP.Core.Models.Payloads;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,12 @@ namespace BlackSP.Core.Middlewares
     public class CheckpointRestoreMiddleware : IMiddleware<ControlMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
+        private readonly ILogger _logger;
 
-        public CheckpointRestoreMiddleware(IVertexConfiguration vertexConfiguration)
+        public CheckpointRestoreMiddleware(IVertexConfiguration vertexConfiguration, ILogger logger)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<IEnumerable<ControlMessage>> Handle(ControlMessage message)
@@ -36,12 +39,11 @@ namespace BlackSP.Core.Middlewares
                 return Enumerable.Empty<ControlMessage>();
             }
 
-            //checkpoint restore does target current vertex
             Guid checkpointId = payload.InstanceCheckpointMap[_vertexConfiguration.InstanceName];
-            Console.WriteLine($"{_vertexConfiguration.InstanceName} - Restoring checkpoint {checkpointId} (fake)");
+            _logger.Information($"{_vertexConfiguration.InstanceName} - Restoring checkpoint {checkpointId} (fake)");
             await Task.Delay(5000).ConfigureAwait(false); 
             //TODO: restore actual checkpoint
-            Console.WriteLine($"{_vertexConfiguration.InstanceName} - Restored checkpoint {checkpointId}");
+            _logger.Information($"{_vertexConfiguration.InstanceName} - Restored checkpoint {checkpointId}");
 
             var msg = new ControlMessage();
             msg.AddPayload(new CheckpointRestoreCompletionPayload() { 

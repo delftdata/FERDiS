@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using AutofacSerilogIntegration;
 using BlackSP.Kernel.Models;
 using Microsoft.Azure.Storage;
 using Serilog;
@@ -25,6 +26,7 @@ namespace BlackSP.Infrastructure.Extensions
 
             builder.Register<ILogger>((c, p) =>
             {
+                
                 var vertexConfig = c.Resolve<IVertexConfiguration>();
                 var logConfig = new LoggerConfiguration();
                 if(targetFlags.HasFlag(LogTargetFlags.Console))
@@ -42,6 +44,8 @@ namespace BlackSP.Infrastructure.Extensions
                 }
                 return logConfig.CreateLogger();
             }).InstancePerLifetimeScope();
+
+            builder.RegisterLogger()//HMMM...
 
             return builder;
         }
