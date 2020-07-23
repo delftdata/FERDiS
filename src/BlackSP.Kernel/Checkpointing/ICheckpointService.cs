@@ -10,7 +10,7 @@ namespace BlackSP.Kernel.Checkpointing
 
         /// <summary>
         /// Register an [Checkpointable] annotated class instance, will track registered object and include it in checkpoint creation and restoration<br/>
-        /// Will ignore registration invocations with non-annotated class instances;
+        /// Will ignore registrations with non-annotated class instances;
         /// </summary>
         /// <param name="o"></param>
         bool RegisterObject(object o);

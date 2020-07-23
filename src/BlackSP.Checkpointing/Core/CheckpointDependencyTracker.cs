@@ -4,9 +4,10 @@ using System.Text;
 
 namespace BlackSP.Checkpointing.Core
 {
+
     public class CheckpointDependencyTracker
     {
-        public IDictionary<string, Guid> Dependencies => dependencies;
+        public IDictionary<string, Guid> Dependencies => new Dictionary<string, Guid>(dependencies);
         private IDictionary<string, Guid> dependencies;
 
         public CheckpointDependencyTracker() 
