@@ -47,7 +47,7 @@ namespace BlackSP.Simulator.Core
                 var inputFactory = dependencyScope.Resolve<InputEndpoint.Factory>();
                 var outputFactory = dependencyScope.Resolve<OutputEndpoint.Factory>();
                 logger = dependencyScope.Resolve<ILogger>();
-                logger.Debug($"Setting up simulated vertex");
+                logger.Debug($"Setting up vertex");
                 foreach (var endpointConfig in hostConfig.VertexConfiguration.InputEndpoints)
                 {
                     var endpoint = new InputEndpointHost(inputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable, dependencyScope.Resolve<ILogger>());
@@ -62,20 +62,14 @@ namespace BlackSP.Simulator.Core
 
                 threads.Add(Task.Run(() => controller.StartProcess(t)));
 
-                logger.Debug($"Simulated vertex setup completed");
+                logger.Debug($"Vertex setup completed");
                 await await Task.WhenAny(threads); //double await as whenany returns the task that completed
                 t.ThrowIfCancellationRequested();
             }
             catch(OperationCanceledException) { throw; } //shhh
-            catch(Exception e)
-            {
-                logger.Fatal(e, $"Simulated vertex crashed with exception");
-                //await Task.WhenAll(threads);
-                throw;
-            } 
             finally
             {
-                logger.Information($"Shutting simulated vertex down");
+                logger.Debug($"Vertex has shut down");
                 dependencyScope.Dispose();
             }
         }

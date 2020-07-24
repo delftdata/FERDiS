@@ -5,6 +5,7 @@ using Microsoft.Azure.Storage;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,7 +29,9 @@ namespace BlackSP.Infrastructure.Extensions
             
             if (targetFlags.HasFlag(LogTargetFlags.Console))
             {
-                logConfig.WriteTo.Console(logLevel, outputTemplate: $"[{instanceName}] [{{Timestamp:HH:mm:ss}} {{Level:u3}}]  {{Message}}{{NewLine}}{{Exception}}");
+                logConfig.WriteTo.Console(logLevel, 
+                    outputTemplate: $"[{{Timestamp:HH:mm:ss}} {{Level:u3}}] [{instanceName}] {{Message}}{{NewLine}}{{Exception}}",
+                    theme: AnsiConsoleTheme.Literate);
             }
             if (targetFlags.HasFlag(LogTargetFlags.File))
             {

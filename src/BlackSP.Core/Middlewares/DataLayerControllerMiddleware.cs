@@ -4,6 +4,7 @@ using BlackSP.Core.Models.Payloads;
 using BlackSP.Core.Monitors;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,16 +20,21 @@ namespace BlackSP.Core.Middlewares
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly DataLayerProcessController _controller;
         private readonly DataLayerProcessMonitor _processMonitor;
+        private readonly ILogger _logger;
 
         private CancellationTokenSource _ctSource;
         private Task _activeThread;
         private bool disposedValue;
 
-        public DataLayerControllerMiddleware(IVertexConfiguration vertexConfiguration, DataLayerProcessController processCtrl, DataLayerProcessMonitor dataProcessMonitor)
+        public DataLayerControllerMiddleware(IVertexConfiguration vertexConfiguration, 
+                                             DataLayerProcessController processCtrl, 
+                                             DataLayerProcessMonitor dataProcessMonitor,
+                                             ILogger logger)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _controller = processCtrl ?? throw new ArgumentNullException(nameof(processCtrl));
             _processMonitor = dataProcessMonitor ?? throw new ArgumentNullException(nameof(dataProcessMonitor));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<IEnumerable<ControlMessage>> Handle(ControlMessage message)
@@ -59,7 +65,7 @@ namespace BlackSP.Core.Middlewares
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{_vertexConfiguration.InstanceName} - Exception in {this.GetType()}:\n{e}");
+                _logger.Warning(e, $"Exception in {this.GetType()} while starting/stopping the data layer");
                 throw;
             }
 
@@ -73,11 +79,11 @@ namespace BlackSP.Core.Middlewares
                 _ctSource = new CancellationTokenSource();
                 _activeThread = _controller.StartProcess(_ctSource.Token);
                 _processMonitor.MarkActive(true);
-                Console.WriteLine($"{_vertexConfiguration.InstanceName} - Started data layer");
+                _logger.Information($"Data layer was started");
             }
             else
             {
-                Console.WriteLine($"{_vertexConfiguration.InstanceName} - Data layer already started");
+                _logger.Information($"Data layer already started, cannot start again");
             }
             return Task.CompletedTask;
         }
@@ -87,11 +93,11 @@ namespace BlackSP.Core.Middlewares
             if (_activeThread != null)
             {
                 await CancelProcessingAndResetLocally().ConfigureAwait(false);
-                Console.WriteLine($"{_vertexConfiguration.InstanceName} - Stopped data layer");
+                _logger.Information($"Data layer was stopped");
             }
             else
             {
-                Console.WriteLine($"{_vertexConfiguration.InstanceName} - Data layer already stopped");
+                _logger.Information($"Data layer already stopped, cannot stop again");
             }
         }
 

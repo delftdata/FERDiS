@@ -4,6 +4,7 @@ using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using BlackSP.Kernel.Serialization;
 using CRA.ClientLibrary;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,29 +16,32 @@ namespace BlackSP.CRA.Endpoints
 {
     public class VertexInputEndpoint : IAsyncShardedVertexInputEndpoint
     {
-        private readonly IInputEndpoint _bspInputEndpoint;
+        public delegate VertexInputEndpoint Factory(IInputEndpoint inputEndpoint);
 
-        public VertexInputEndpoint(IInputEndpoint inputEndpoint)
+        private readonly IInputEndpoint _bspInputEndpoint;
+        private readonly ILogger _logger;
+
+        public VertexInputEndpoint(IInputEndpoint inputEndpoint, ILogger logger)
         {
-            _bspInputEndpoint = inputEndpoint ?? throw new ArgumentNullException(nameof(inputEndpoint));    
+            _bspInputEndpoint = inputEndpoint ?? throw new ArgumentNullException(nameof(inputEndpoint));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task FromStreamAsync(Stream stream, string otherVertex, int otherShardId, string otherEndpoint, CancellationToken token)
         {
             //wraps overload as for input channels, we dont care which shard of other vertex it came from
-            Console.WriteLine("Starting input channel");
             try
             {
+                _logger.Debug($"About to ingress data from vertex {otherVertex}${otherShardId} from endpoint {otherEndpoint}");
                 //CRA invokes this method on a background thread so just invoke Ingress on current thread
                 await _bspInputEndpoint.Ingress(stream, otherEndpoint, otherShardId, token).ConfigureAwait(false);
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Exception on Ingress thread for connection {otherVertex}${otherEndpoint}");
-                Console.WriteLine(e.ToString());
+                _logger.Warning(e, $"Exception on endpoint from vertex {otherVertex}${otherShardId} from endpoint {otherEndpoint}");
                 throw;
             }
-            Console.WriteLine("Stopped input channel");
+           _logger.Debug($"Stopped ingressing data from vertex {otherVertex}${otherShardId} from endpoint {otherEndpoint}");
             token.ThrowIfCancellationRequested();
         }
 

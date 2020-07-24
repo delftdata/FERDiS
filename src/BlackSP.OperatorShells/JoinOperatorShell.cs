@@ -26,9 +26,7 @@ namespace BlackSP.OperatorShells
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
 
             var isInputTypeA = @event.GetType().Equals(typeof(TInA));
-            //Console.WriteLine("GONNA TRY JOIN " + @event.Key);
             return isInputTypeA ? PerformJoinLogic(@event as TInA) : PerformJoinLogic(@event as TInB);
-            
         }
 
         private IEnumerable<TOut> PerformJoinLogic(TInA targetEvent)

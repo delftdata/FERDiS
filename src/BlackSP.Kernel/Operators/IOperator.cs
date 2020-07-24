@@ -21,8 +21,6 @@ namespace BlackSP.Kernel.Operators
     public interface ISinkOperator<TEvent> : IOperator
         where TEvent : class, IEvent
     {
-        string KafkaTopicName { get; }
-
         /// <summary>
         /// Last step in the streaming process, emits event to external system
         /// </summary>

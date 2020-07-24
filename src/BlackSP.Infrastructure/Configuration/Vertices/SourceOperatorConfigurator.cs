@@ -9,7 +9,7 @@ using System.Collections.Generic;
 namespace BlackSP.Infrastructure.Configuration.Vertices
 {
     public class SourceOperatorConfigurator<TOperator, TOut> : ProducingOperatorConfiguratorBase<TOut>, ISourceOperatorConfigurator<TOperator, TOut>
-        where TOperator : ISourceOperator<TOut>, new()
+        where TOperator : ISourceOperator<TOut>
         where TOut : class, IEvent
     {
 

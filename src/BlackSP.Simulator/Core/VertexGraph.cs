@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using BlackSP.Simulator.Configuration;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,10 +14,13 @@ namespace BlackSP.Simulator.Core
         private readonly ILifetimeScope _lifetimeScope;
         private readonly IdentityTable _identityTable;
         private readonly IDictionary<string, CancellationTokenSource> _vertexCancellationSources;
-        public VertexGraph(ILifetimeScope lifetimeScope, IdentityTable identityTable)
+        private readonly ILogger _logger;
+
+        public VertexGraph(ILifetimeScope lifetimeScope, IdentityTable identityTable, ILogger logger)
         {
             _lifetimeScope = lifetimeScope ?? throw new ArgumentNullException(nameof(lifetimeScope));
             _identityTable = identityTable ?? throw new ArgumentNullException(nameof(identityTable));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _vertexCancellationSources = new Dictionary<string, CancellationTokenSource>();
         }
@@ -52,13 +56,7 @@ namespace BlackSP.Simulator.Core
                 } 
                 catch(OperationCanceledException)
                 {
-                    //exited with intent
-                    if (maxRestarts-- == 0)
-                    {
-                        //Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, no restart: exceeded maxRestarts.");
-                        throw;
-                    }
-                    //Console.WriteLine($"{instanceName} - Vertex exited due to cancellation, restart in {restartTimeout.TotalSeconds} seconds.");
+                    _logger.Warning($"Vertex exited due to cancellation, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout);
                 }
                 catch(Exception e)
@@ -66,10 +64,10 @@ namespace BlackSP.Simulator.Core
                     //exited without intent
                     if(maxRestarts-- == 0)
                     {
-                        //Console.WriteLine($"{instanceName} - Vertex exited with exceptions, no restart: exceeded maxRestarts.");
+                        _logger.Fatal($"Vertex exited with exceptions, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    //Console.WriteLine($"{instanceName} - Vertex exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds. {e}");
+                    _logger.Warning(e, $"Vertex exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout);
                 }
             }             

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace BlackSP.ThroughputExperiment
 {
@@ -19,16 +20,19 @@ namespace BlackSP.ThroughputExperiment
 
     class SampleSourceOperator : ISourceOperator<SampleEvent>
     {
-        public string KafkaTopicName => throw new NotImplementedException();
-
+        private readonly ILogger _logger;
         private int counter = 0;
+
+        public SampleSourceOperator(ILogger logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
         public SampleEvent ProduceNext(CancellationToken t)
         {
             if (counter == Constants.TotalEventsToSent)
             {
-                Console.WriteLine($"Produced {Constants.TotalEventsToSent} events");
-                //return null;
+                _logger.Debug($"Produced {Constants.TotalEventsToSent} events");
                 counter = 0;
             }
             counter++;
@@ -38,15 +42,17 @@ namespace BlackSP.ThroughputExperiment
 
     class SampleSinkOperator : ISinkOperator<SampleEvent>
     {
-        public string KafkaTopicName => throw new NotImplementedException();
+        private readonly ILogger _logger;
 
         private int totalEventCount = 0;
         public int EventCount { get; set; }
         public double TotalLatencyMs { get; set; }
         public DateTime StartTime { get; set; }
 
-        public SampleSinkOperator()
+        public SampleSinkOperator(ILogger logger)
         {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             EventCount = 0;
             TotalLatencyMs = 0;
         }
@@ -77,7 +83,7 @@ namespace BlackSP.ThroughputExperiment
                 var avgLatencyMs = TotalLatencyMs / EventCount;
                 //- min?
                 //- max?
-                Console.WriteLine($">> Sink stats - time: {runningTimeSeconds:0.00}s - events: {totalEventCount} - throughput: {avgThroughputPerSec:0.00} e/s - latency: {avgLatencyMs:0}ms");
+                _logger.Information($"Sink stats - time: {runningTimeSeconds:0.00}s - events: {totalEventCount} - throughput: {avgThroughputPerSec:0.00} e/s - latency: {avgLatencyMs:0}ms");
                 StartTime = DateTime.Now;
                 EventCount = 0;
                 TotalLatencyMs = 0;
@@ -95,12 +101,6 @@ namespace BlackSP.ThroughputExperiment
         public IEnumerable<SampleEvent> Map(SampleEvent @event)
         {
             counter++;
-
-            //if(counter%Constants.EventsBeforeProgressLog == 0)
-            //{
-            //    Console.WriteLine($">> Mapper is at {counter}");
-
-            //}
             yield return new SampleEvent(@event.Key, @event.EventTime, @event.Value);
         }
     }
@@ -109,18 +109,21 @@ namespace BlackSP.ThroughputExperiment
     {
         public SampleEvent Filter(SampleEvent @event)
         {
-            //Console.WriteLine($">> filter got {@event.Key}");
             return @event;
         }
     }
 
     class SampleAggregateOperator : IAggregateOperator<SampleEvent, SampleEvent2>
     {
+        private readonly ILogger _logger;
+
         public TimeSpan WindowSize => TimeSpan.FromSeconds(2);
         public int Counter { get; set; }
 
-        public SampleAggregateOperator()
+        public SampleAggregateOperator(ILogger logger)
         {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             Counter = 0;
         }
 
@@ -128,7 +131,9 @@ namespace BlackSP.ThroughputExperiment
         {
             if(!window.Any())
             {
-                throw new Exception("Dude?");
+                var msg = "Aggragate was called with an empty window";
+                _logger.Warning(msg);
+                throw new Exception(msg);
             }
             yield return new SampleEvent2($"AggregateResult_{Counter++}", window.Max(x => x.EventTime), $"{window.Count()} Events");
         }

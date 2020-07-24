@@ -18,7 +18,6 @@ namespace BlackSP.Infrastructure.Extensions
             var loadedPaths = loadedAssemblies.Where(a => !a.IsDynamic).Select(a => a.Location).ToArray();
 
             string assemblyDir = Path.GetDirectoryName(targetExecutingAssembly.Location);
-            Console.WriteLine($"Searching for assemblies in directory: {assemblyDir}, with executing assembly: {targetExecutingAssembly.FullName}");
             var referencedPaths = Directory.GetFiles(assemblyDir, "*.dll");
             var toLoad = referencedPaths.Where(r => !loadedPaths.Contains(r, StringComparer.InvariantCultureIgnoreCase)).ToList();
             

@@ -1,6 +1,7 @@
 ﻿using BlackSP.Core.Extensions;
 using BlackSP.Core.Models.Payloads;
 using BlackSP.Kernel.Models;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +28,8 @@ namespace BlackSP.Core.Monitors
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IVertexGraphConfiguration _graphConfiguration;
         private readonly ConnectionMonitor _connectionMonitor;
+        private readonly ILogger _logger;
+
         private readonly Dictionary<string, WorkerState> _workerStates;
 
         public delegate void AffectedWorkersEventHandler(IEnumerable<string> affectedInstanceNames);
@@ -34,7 +37,10 @@ namespace BlackSP.Core.Monitors
         public event AffectedWorkersEventHandler OnWorkersRestore;
         public event AffectedWorkersEventHandler OnWorkersHalt;
 
-        public WorkerStateMonitor(IVertexGraphConfiguration graphConfiguration, IVertexConfiguration vertexConfiguration, ConnectionMonitor connectionMonitor)
+        public WorkerStateMonitor(IVertexGraphConfiguration graphConfiguration,
+                                  IVertexConfiguration vertexConfiguration, 
+                                  ConnectionMonitor connectionMonitor,
+                                  ILogger logger)
         {
             //assumption: current vertexconfiguration is that of coordinator --> only has control channels to all vertices in system
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
@@ -42,7 +48,9 @@ namespace BlackSP.Core.Monitors
             
             _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
             _connectionMonitor.OnConnectionChange += ConnectionMonitor_OnConnectionChange;
-            
+
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             _workerStates = new Dictionary<string, WorkerState>();
             InitializeInternalWorkerStates();
         }
@@ -85,7 +93,7 @@ namespace BlackSP.Core.Monitors
 
             if (currentState != _workerStates.Get(changedInstanceName))
             {
-                Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {changedInstanceName} now has status {currentState} (connection)");
+                _logger.Debug($"State monitor: {changedInstanceName} now has status {currentState} (connection)");
                 _workerStates[changedInstanceName] = currentState;
                 EmitEvents();
             }
@@ -104,7 +112,7 @@ namespace BlackSP.Core.Monitors
             
             if(currentState != _workerStates.Get(originInstanceName))
             {
-                Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {originInstanceName} now has status {currentState} (hearbeat)");
+                _logger.Debug($"State monitor: {originInstanceName} now has status {currentState} (hearbeat)");
                 _workerStates[originInstanceName] = currentState;
                 EmitEvents();
             }
@@ -120,8 +128,8 @@ namespace BlackSP.Core.Monitors
             var currentState = _workerStates.Get(originInstanceName);
             if(currentState != WorkerState.Restoring)
             {
-                var msg = $"{_vertexConfiguration.InstanceName} - Received restore completion of worker {originInstanceName} which was not restoring";
-                Console.WriteLine(msg);
+                var msg = $"State monitor received restore completion of worker {originInstanceName} which was not restoring, throwing exception";
+                _logger.Warning(msg);
                 throw new Exception(msg);
             }
             _workerStates[originInstanceName] = WorkerState.Launchable;
@@ -195,7 +203,7 @@ namespace BlackSP.Core.Monitors
                     if (currentState != WorkerState.Halted && currentState != WorkerState.Faulted) //if not halted or faulted, change state to halted.
                     {
                         _workerStates[instance] = WorkerState.Halted;
-                        Console.WriteLine($"{_vertexConfiguration.InstanceName} - State monitor: {instance} now has status {_workerStates[instance]} (downstream)");
+                        _logger.Debug($"State monitor: {instance} now has status {_workerStates[instance]} (downstream)");
                         newlyHalted.Add(instance);
                     }
                 }

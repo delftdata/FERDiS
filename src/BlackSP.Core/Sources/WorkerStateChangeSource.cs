@@ -3,6 +3,7 @@ using BlackSP.Core.Models.Payloads;
 using BlackSP.Core.Monitors;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ namespace BlackSP.Core.Sources
     public class WorkerStateChangeSource : ISource<ControlMessage>, IDisposable
     {
         private readonly WorkerStateMonitor _workerStateMonitor;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// local list of messages ready to be taken from this ISource<br/>
@@ -30,9 +32,11 @@ namespace BlackSP.Core.Sources
         private TimeSpan heartBeatInterval;
         private bool disposedValue;
 
-        public WorkerStateChangeSource(WorkerStateMonitor workerStateMonitor)
+        public WorkerStateChangeSource(WorkerStateMonitor workerStateMonitor, ILogger logger)
         {
             _workerStateMonitor = workerStateMonitor ?? throw new ArgumentNullException(nameof(workerStateMonitor));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             _messages = new BlockingCollection<ControlMessage>(1 << 14);
             
             heartBeatInterval = TimeSpan.FromSeconds(5);
@@ -113,7 +117,7 @@ namespace BlackSP.Core.Sources
             }
             catch(OperationCanceledException)
             {
-                //Console.WriteLine("No internal state changes, requesting heartbeat from workers");
+                _logger.Verbose($"No internal state changes for {heartBeatInterval.TotalSeconds} seconds, requesting heartbeat from workers");
                 var msg = new ControlMessage(); //no new status-change message.. fall back to heartbeat request
                 msg.AddPayload(new WorkerRequestPayload { RequestType = WorkerRequestType.Status });
                 lastHeartBeat = DateTime.Now;

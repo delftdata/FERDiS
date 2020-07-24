@@ -4,8 +4,10 @@ using BlackSP.Core.Endpoints;
 using BlackSP.Core.Models;
 using BlackSP.CRA.Endpoints;
 using BlackSP.Infrastructure;
+using BlackSP.Infrastructure.Extensions;
 using BlackSP.Serialization.Extensions;
 using CRA.ClientLibrary;
+using Serilog;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,8 +19,7 @@ namespace BlackSP.CRA.Vertices
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
         private ControlLayerProcessController _controller;
-        private IHostConfiguration _options;
-        
+        private ILogger _logger;
         
         private CancellationTokenSource _ctSource;
 
@@ -35,50 +36,60 @@ namespace BlackSP.CRA.Vertices
 
         public override Task InitializeAsync(int shardId, ShardingInfo shardingInfo, object vertexParameter)
         {
-            Console.WriteLine("Starting CRA Vertex initialization");
-            _options = (vertexParameter as byte[])?.BinaryDeserialize() as IHostConfiguration ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IHostConfiguration)}"); ;
-            Console.WriteLine("Installing dependency container");
+            var configuration = (vertexParameter as byte[])?.BinaryDeserialize() as IHostConfiguration ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IHostConfiguration)}"); ;
+            InitializeIoC(configuration);
+            _logger = _vertexLifetimeScope.Resolve<ILogger>();
             
-            InitializeIoCContainer();
-
+            _logger.Information("Type registration completed succesfully, control layer start imminent");
             _controller = _vertexLifetimeScope.Resolve<ControlLayerProcessController>();
             _bspThread = _controller.StartProcess(_ctSource.Token);
-            CreateEndpoints();
             
-            Console.WriteLine("Vertex initialization completed");
+            _logger.Information("Endpoint initialisation imminent");
+            CreateEndpoints(configuration);
+
+            _logger.Information("Vertex initialisation completed");
             return Task.CompletedTask;
         }
 
-        private void InitializeIoCContainer()
+        /// <summary>
+        /// Configures Autofac to provide an Inversion of Control service according to the provided IHostConfiguration
+        /// </summary>
+        private void InitializeIoC(IHostConfiguration configuration)
         {
             var container = new ContainerBuilder(); 
             //TODO: BlackSP Setup (with modules)
-            container.RegisterType<VertexInputEndpoint>().As<IAsyncShardedVertexInputEndpoint>();
-            container.RegisterType<VertexOutputEndpoint>().As<IAsyncShardedVertexOutputEndpoint>();
-            
+            container.RegisterType<VertexInputEndpoint>().AsImplementedInterfaces().AsSelf();
+            container.RegisterType<VertexOutputEndpoint>().AsImplementedInterfaces().AsSelf();
+            container.ConfigureVertexHost(configuration); //configure vertexhost
             _dependencyContainer = container.Build();
 
-            Console.WriteLine("IoC setup completed");
             _vertexLifetimeScope = _dependencyContainer.BeginLifetimeScope();
         }
 
-        private void CreateEndpoints()
+        /// <summary>
+        /// Creates and registers CRA endpoints + BlackSP endpoints
+        /// </summary>
+        /// <param name="configuration"></param>
+        private void CreateEndpoints(IHostConfiguration configuration)
         {
             var inputEndpointFactory = _vertexLifetimeScope.Resolve<InputEndpoint.Factory>();
-            foreach (var endpointConfig in _options.VertexConfiguration.InputEndpoints)
+            var vertexInputEndpointFactory = _vertexLifetimeScope.Resolve<VertexInputEndpoint.Factory>();
+            foreach (var endpointConfig in configuration.VertexConfiguration.InputEndpoints)
             {
                 var inputEndpoint = inputEndpointFactory.Invoke(endpointConfig.LocalEndpointName);
 #pragma warning disable CA2000 // Dispose objects before losing scope
-                AddAsyncInputEndpoint(endpointConfig.LocalEndpointName, new VertexInputEndpoint(inputEndpoint));
+                AddAsyncInputEndpoint(endpointConfig.LocalEndpointName, vertexInputEndpointFactory.Invoke(inputEndpoint));
 #pragma warning restore CA2000 // Dispose objects before losing scope
             }
 
             var outputEndpointFactory = _vertexLifetimeScope.Resolve<OutputEndpoint.Factory>();
-            foreach (var endpointConfig in _options.VertexConfiguration.OutputEndpoints)
+            var vertexOutputEndpointFactory = _vertexLifetimeScope.Resolve<VertexOutputEndpoint.Factory>();
+
+            foreach (var endpointConfig in configuration.VertexConfiguration.OutputEndpoints)
             {
                 var outputEndpoint = outputEndpointFactory.Invoke(endpointConfig.LocalEndpointName);
 #pragma warning disable CA2000 // Dispose objects before losing scope
-                AddAsyncOutputEndpoint(endpointConfig.LocalEndpointName, new VertexOutputEndpoint(outputEndpoint));
+                AddAsyncOutputEndpoint(endpointConfig.LocalEndpointName, vertexOutputEndpointFactory.Invoke(outputEndpoint));
 #pragma warning restore CA2000 // Dispose objects before losing scope
             }
         }
@@ -96,8 +107,11 @@ namespace BlackSP.CRA.Vertices
             {
                 _ctSource.Cancel();
                 _bspThread.Wait();
-                _dependencyContainer.Dispose();
                 _bspThread.Dispose();
+                _ctSource.Dispose();
+                _dependencyContainer.Dispose();
+                _controller.Dispose();
+                _vertexLifetimeScope.Dispose();
             }
             base.Dispose(disposing);
         }

@@ -1,8 +1,10 @@
 ﻿using Autofac;
+using AutofacSerilogIntegration;
 using BlackSP.Infrastructure.Configuration;
 using BlackSP.Infrastructure.Models;
 using BlackSP.Simulator.Core;
 using BlackSP.Simulator.Extensions;
+using Serilog;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -47,7 +49,7 @@ namespace BlackSP.Simulator.Configuration
             builder.RegisterType<VertexGraph>();
             builder.RegisterInstance(_connectionTable);
             builder.RegisterInstance(_identityTable);
-
+            builder.RegisterLogger(new LoggerConfiguration().WriteTo.Console().CreateLogger());
             return Task.FromResult(builder.Build());
         }
     }

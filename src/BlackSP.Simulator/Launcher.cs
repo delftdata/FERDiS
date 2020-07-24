@@ -20,28 +20,19 @@ namespace BlackSP.Simulator
             where TConfiguration : IGraphConfigurator, new()
         {
             
-            try
+            var userGraphConfiguration = Activator.CreateInstance<TConfiguration>();
+            var graphConfigurator = new InMemoryOperatorGraphBuilder(new ConnectionTable(), new IdentityTable());
+            userGraphConfiguration.Configure(graphConfigurator); //pass configurator to user defined class
+            var container = await graphConfigurator.Build();
+            using (var lifetimeScope = container.BeginLifetimeScope())
             {
-                var userGraphConfiguration = Activator.CreateInstance<TConfiguration>();
-                var graphConfigurator = new InMemoryOperatorGraphBuilder(new ConnectionTable(), new IdentityTable());
-                userGraphConfiguration.Configure(graphConfigurator); //pass configurator to user defined class
-                var container = await graphConfigurator.Build();
-                using (var lifetimeScope = container.BeginLifetimeScope())
-                {
-                    var graph = lifetimeScope.Resolve<VertexGraph>();
+                var graph = lifetimeScope.Resolve<VertexGraph>();
 
-                    var vertexThreads = graph.StartAllVertices(2, TimeSpan.FromSeconds(5));
-
-                    var allWorkerThreads = vertexThreads.Append(Task.Run(() => VertexFaultTrigger(graph)));
-                    //TODO: console read instance name to kill?
-                    await Task.WhenAll(allWorkerThreads);
-                    Console.WriteLine("Graph operation stopped without exception");
-                }
-            } 
-            catch(Exception e)
-            {
-                Console.WriteLine($"Graph operation stopped with exception:\n{e}");
+                var vertexThreads = graph.StartAllVertices(3, TimeSpan.FromSeconds(5));
+                var allWorkerThreads = vertexThreads.Append(Task.Run(() => VertexFaultTrigger(graph)));
+                await Task.WhenAll(allWorkerThreads);
             }
+            
         }
 
         private static void VertexFaultTrigger(VertexGraph graph)
@@ -60,7 +51,7 @@ namespace BlackSP.Simulator
                 } 
                 catch(Exception e)
                 {
-                    Console.WriteLine($"--------- - Exception while trying to kill vertex with name: {input}.\n{e}");
+                    Console.WriteLine($"Exception while trying to kill vertex with name: {input}.\n{e}");
                 }
             }
             

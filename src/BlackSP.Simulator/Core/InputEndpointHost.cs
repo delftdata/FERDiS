@@ -67,12 +67,11 @@ namespace BlackSP.Simulator.Core
                 {
                     _connectionTable.RegisterConnection(connection); //re-register connection to create new streams around a failed instance
                 }
-                // ????  await Task.WhenAll(threads); //threads must all stop during cancellation..
                 throw;
             } 
             finally
             {
-                Console.WriteLine($"{instanceName} - exiting input host {endpointName}");
+                _logger.Debug($"{instanceName} - exiting input host {endpointName}");
             }
         }
 

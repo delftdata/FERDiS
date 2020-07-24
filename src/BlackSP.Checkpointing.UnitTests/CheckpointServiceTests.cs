@@ -5,6 +5,7 @@ using BlackSP.Checkpointing.UnitTests.Models;
 using BlackSP.Kernel.Checkpointing;
 using Moq;
 using NUnit.Framework;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -35,10 +36,11 @@ namespace BlackSP.Checkpointing.UnitTests
         [SetUp]
         public void Setup()
         {
+            var loggerMock = new Mock<ILogger>();
             var objectRegisterMock = new Mock<ObjectRegistry>();
             var cpStorage = new VolatileCheckpointStorage();//new Mock<ICheckpointStorage>();
             var tracker = new CheckpointDependencyTracker();
-            checkpointService = new CheckpointService(objectRegisterMock.Object, tracker, cpStorage);
+            checkpointService = new CheckpointService(objectRegisterMock.Object, tracker, cpStorage, loggerMock.Object);
             
             objectAInitialValue = "initial value";
             objectA = new ClassA(objectAInitialValue);
