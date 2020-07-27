@@ -9,7 +9,7 @@ using System.Text;
 namespace BlackSP.Infrastructure
 {
     /// <summary>
-    /// Model holding relevant types and configurations for a host instance for BlackSP
+    /// Model containing configurations for a vertex instance host
     /// </summary>
     public interface IHostConfiguration
     {

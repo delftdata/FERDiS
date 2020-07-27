@@ -45,7 +45,7 @@ namespace BlackSP.CRA
             EnforceEnvironmentVariables();
             userDataProvider = Activator.CreateInstance<TDataProvider>();
             userGraphConfiguration = Activator.CreateInstance<TConfiguration>();
-            await LaunchAsync(args);
+            await LaunchAsync(args).ConfigureAwait(false);
         }
 
         private static async Task LaunchAsync(string[] args)
