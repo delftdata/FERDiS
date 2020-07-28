@@ -1,21 +1,15 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
 using BlackSP.Checkpointing.Core;
 using BlackSP.Checkpointing.Extensions;
-using BlackSP.Kernel.Models;
 using BlackSP.Serialization.Extensions;
-using Microsoft.IO;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using System.Xml;
 
 namespace BlackSP.Checkpointing.Persistence
 {

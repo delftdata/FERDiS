@@ -1,13 +1,8 @@
 ﻿using CRA.ClientLibrary;
+using CRA.DataProvider;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using CRA.DataProvider;
-using CRA.DataProvider.Azure;
-using CRA.DataProvider.File;
 
 namespace BlackSP.CRA.Utilities
 {
@@ -33,8 +28,15 @@ namespace BlackSP.CRA.Utilities
                 dataProvider,
                 null,
                 connPoolSize);
-
-            worker.Start();
+            try
+            {
+                worker.Start();
+            } 
+            finally
+            {
+                worker.Dispose();
+            }
+            
         }
 
         //TODO: resolve correct ip? just got dockernat ip :/
