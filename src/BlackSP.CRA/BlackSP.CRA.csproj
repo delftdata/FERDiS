@@ -19,7 +19,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.CRA" Version="2020.5.7.2" />
+    <PackageReference Include="Microsoft.CRA" Version="2020.5.7.1" />
   </ItemGroup>
 
   <ItemGroup>

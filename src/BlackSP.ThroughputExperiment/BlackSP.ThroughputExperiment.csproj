@@ -2,9 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <SignAssembly>false</SignAssembly>
-    <OutputType>Exe</OutputType>
+    <OutputType>exe</OutputType>
+    
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -18,6 +17,5 @@
     <ProjectReference Include="..\BlackSP.CRA\BlackSP.CRA.csproj" />
     <ProjectReference Include="..\BlackSP.Simulator\BlackSP.Simulator.csproj" />
   </ItemGroup>
-
 
 </Project>

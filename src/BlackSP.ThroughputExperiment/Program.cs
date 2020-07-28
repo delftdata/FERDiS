@@ -1,8 +1,6 @@
-﻿using BlackSP.CRA.Utilities;
-using BlackSP.Infrastructure.Builders.Graph;
+﻿using BlackSP.Infrastructure.Builders.Graph;
 using BlackSP.Infrastructure.Models;
 using BlackSP.ThroughputExperiment.Events;
-using CRA.DataProvider.Azure;
 using System.Threading.Tasks;
 
 namespace BlackSP.ThroughputExperiment
