@@ -2,7 +2,7 @@
 using BlackSP.Infrastructure.Models;
 using System;
 
-namespace BlackSP.Infrastructure.Configuration
+namespace BlackSP.Infrastructure.Builders.Vertex
 {
     public abstract class ProducingOperatorVertexBuilderBase<T> : VertexBuilderBase, IProducingOperatorVertexBuilder<T>
     {

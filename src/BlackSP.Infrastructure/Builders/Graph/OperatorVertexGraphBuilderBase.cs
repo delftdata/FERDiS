@@ -1,6 +1,6 @@
-﻿using BlackSP.Infrastructure.Configuration;
-using BlackSP.Infrastructure.Configuration.Vertices;
+﻿using BlackSP.Infrastructure.Builders.Vertex;
 using BlackSP.Infrastructure.Models;
+using BlackSP.Kernel.Logging;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
@@ -8,17 +8,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Infrastructure
+namespace BlackSP.Infrastructure.Builders.Graph
 {
-    public abstract class OperatorVertexGraphBuilderBase : OperatorVertexGraphBuilderBase<object>
-    { }
-
-    public abstract class OperatorVertexGraphBuilderBase<TGraph> : IOperatorVertexGraphBuilder
+    public abstract class OperatorVertexGraphBuilderBase : IOperatorVertexGraphBuilder
     {
         public ICollection<IVertexBuilder> VertexBuilders { get; }
 
         private Dictionary<string, int> usedOperatorNameCount;
         private int usedInstanceCount;
+        
+        protected ILogConfiguration LogConfiguration { get; private set; }
 
         protected OperatorVertexGraphBuilderBase()
         {
@@ -28,17 +27,19 @@ namespace BlackSP.Infrastructure
         }
 
         /// <summary>
-        /// 
+        /// Implement infrastructure specific graph build
         /// </summary>
         /// <returns></returns>
-        protected abstract Task<TGraph> BuildGraph();
+        protected abstract Task<IApplication> BuildGraph();
 
         /// <summary>
-        /// Builds the graph as configured by user with a coordinator connected to all 
+        /// Builds the graph as configured by user with a coordinator connected to all existing vertices
         /// </summary>
         /// <returns></returns>
-        public async Task<TGraph> Build()
+        public async Task<IApplication> Build(ILogConfiguration logConfiguration)
         {
+            LogConfiguration = logConfiguration ?? throw new ArgumentNullException(nameof(logConfiguration));
+
             AddCoordinator();
             return await BuildGraph().ConfigureAwait(false);
         }

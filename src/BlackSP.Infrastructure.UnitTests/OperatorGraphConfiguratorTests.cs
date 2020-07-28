@@ -1,21 +1,23 @@
-using BlackSP.OperatorShells;
+using BlackSP.Infrastructure.Builders;
+using BlackSP.Infrastructure.Builders.Graph;
+using BlackSP.Infrastructure.Models;
+using BlackSP.Infrastructure.Modules;
 using BlackSP.Infrastructure.UnitTests.Events;
-using BlackSP.Infrastructure.Configuration;
+using BlackSP.OperatorShells;
 using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using BlackSP.Infrastructure.Modules;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.UnitTests
 {
     class TestOperatorGraphBuilder : OperatorVertexGraphBuilderBase
     {
-        protected override Task<object> BuildGraph()
+        protected override Task<IApplication> BuildGraph()
         {
-            return Task.FromResult<object>(null);
+            return Task.FromResult<IApplication>(null);
         }
     }
 
@@ -57,7 +59,9 @@ namespace BlackSP.Infrastructure.UnitTests
             aggregate.Append(sink);
             //sink does not have append method, awesome
 
-            await graphBuilder.Build(); //ensure complete (will add coordinator)
+            var logConfig = new LogConfiguration();
+
+            await graphBuilder.Build(logConfig); //ensure complete (will add coordinator)
 
             //Asserts
             var usedNames = new HashSet<string>();

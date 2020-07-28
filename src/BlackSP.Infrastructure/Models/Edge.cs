@@ -2,12 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using BlackSP.Infrastructure.Configuration;
+using BlackSP.Infrastructure.Builders;
 
 namespace BlackSP.Infrastructure.Models
 {
     /// <summary>
-    /// Model class that holds data regarding an edge in an Vertex graph
+    /// Model class that holds data regarding an edge in a Vertex graph
     /// </summary>
     public class Edge
     {

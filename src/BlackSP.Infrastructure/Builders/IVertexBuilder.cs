@@ -1,11 +1,12 @@
 ﻿using BlackSP.Infrastructure.Models;
 using BlackSP.Kernel;
+using BlackSP.Kernel.Logging;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 
-namespace BlackSP.Infrastructure.Configuration
+namespace BlackSP.Infrastructure.Builders
 {
     public interface IVertexBuilder
     {
@@ -21,7 +22,7 @@ namespace BlackSP.Infrastructure.Configuration
         /// Builds a set of IVertexConfiguration's representing the configurations for each shard of the Vertex
         /// </summary>
         /// <returns></returns>
-        IEnumerable<IVertexConfiguration> ToConfigurations();
+        IVertexConfiguration GetVertexConfiguration();
 
         /// <summary>
         /// Returns a new unique identifier for an output endpoint, gets persisted in OutputEndpointNames property
@@ -61,49 +62,4 @@ namespace BlackSP.Infrastructure.Configuration
         void Append<T2>(IConsumingOperatorVertexBuilder<T, T2> otherOperator);
         void Append<T2>(IConsumingOperatorVertexBuilder<T2, T> otherOperator);
     }
-
-/*
-    public interface ISinkOperatorConfigurator<TOperator, TEvent> : IConsumingOperatorVertexBuilder<TEvent>
-        where TOperator : ISinkOperator<TEvent>
-        where TEvent : class, IEvent
-    {
-    }
-
-    public interface ISourceOperatorConfigurator<TOperator, TEvent> : IProducingOperatorVertexBuilder<TEvent>
-        where TOperator : ISourceOperator<TEvent>
-        where TEvent : class, IEvent
-    {
-    }
-
-
-    public interface IMapOperatorConfigurator<TOperator, TIn, TOut> : IConsumingOperatorVertexBuilder<TIn>, IProducingOperatorVertexBuilder<TOut>
-        where TOperator : IMapOperator<TIn, TOut>
-        where TIn : class, IEvent
-        where TOut : class, IEvent
-    {
-    }
-
-    public interface IFilterOperatorConfigurator<TOperator, TEvent> : IConsumingOperatorVertexBuilder<TEvent>, IProducingOperatorVertexBuilder<TEvent>
-        where TOperator : IFilterOperator<TEvent>
-        where TEvent : class, IEvent
-    {
-    }
-
-    
-    public interface IAggregateOperatorConfigurator<TOperator, TIn, TOut> : IConsumingOperatorVertexBuilder<TIn>, IProducingOperatorVertexBuilder<TOut>
-        where TOperator : IAggregateOperator<TIn, TOut>
-        where TOut : class, IEvent
-        where TIn : class, IEvent
-    {
-    }
- 
-
-    public interface IJoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut> : IConsumingOperatorVertexBuilder<TIn1, TIn2>, IProducingOperatorVertexBuilder<TOut>
-        where TOperator : IJoinOperator<TIn1, TIn2, TOut>
-        where TOut : class, IEvent
-        where TIn1 : class, IEvent
-        where TIn2 : class, IEvent
-    {
-    }   
-*/
 }

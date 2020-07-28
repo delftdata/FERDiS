@@ -20,7 +20,12 @@ namespace BlackSP.Kernel.Models
         string VertexName { get; }
 
         /// <summary>
-        /// Name of this vertex (globally unique)
+        /// Instancenames this vertex is running on (globally unique)
+        /// </summary>
+        IEnumerable<string> InstanceNames { get; }
+
+        /// <summary>
+        /// Instance name that is currently hosting this vertex
         /// </summary>
         string InstanceName { get; }
 
@@ -38,6 +43,12 @@ namespace BlackSP.Kernel.Models
         /// Configuration of output endpoints.
         /// </summary>
         ICollection<IEndpointConfiguration> OutputEndpoints { get; }
+
+        /// <summary>
+        /// Sets the shard ID this vertex is taking on. Affects the InstanceName property.
+        /// </summary>
+        /// <param name="shardId"></param>
+        void SetCurrentShardId(int shardId);
     }
 
     

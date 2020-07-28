@@ -4,7 +4,7 @@ using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
 
-namespace BlackSP.Infrastructure.Configuration.Vertices
+namespace BlackSP.Infrastructure.Builders.Vertex
 {
 
     public class JoinOperatorVertexBuilder<TOperator, TIn1, TIn2, TOut> : ProducingOperatorVertexBuilderBase<TOut>, IConsumingOperatorVertexBuilder<TIn1, TIn2>

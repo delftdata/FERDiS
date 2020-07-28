@@ -1,5 +1,4 @@
-﻿using BlackSP.Infrastructure.Configuration;
-using BlackSP.Infrastructure.Configuration.Vertices;
+﻿using BlackSP.Infrastructure.Builders;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,7 +10,6 @@ namespace BlackSP.CRA.Kubernetes
     {
         private ICollection<IVertexBuilder> _configurators;
         private string lastWrittenYamlFile;
-        private string K8sNamespace => "blacksp";
 
         public KubernetesDeploymentUtility()
         {}
@@ -116,7 +114,7 @@ spec:
               args: [""{instanceName}"", ""1500""] #CRA instance name {instanceName}, exposed on port 1500
               #resources: #requests #cpu ""500m"" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
 ---
-";
+";  //TODO: consider putting entire environment in env section of yaml?
         }
     }
 }

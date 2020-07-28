@@ -5,6 +5,7 @@ using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using BlackSP.Kernel.Logging;
 
 namespace BlackSP.Infrastructure
 {
@@ -23,8 +24,8 @@ namespace BlackSP.Infrastructure
 
         IVertexConfiguration VertexConfiguration { get; }
 
-        object LogConfiguration { get; }
+        ILogConfiguration LogConfiguration { get; }
 
-        object CheckpointingConfiguration { get; }
+        //object CheckpointingConfiguration { get; }
     }
 }

@@ -6,7 +6,7 @@ using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 
-namespace BlackSP.Infrastructure.Configuration.Vertices
+namespace BlackSP.Infrastructure.Builders.Vertex
 {
     public class SourceOperatorVertexBuilder<TOperator, TOut> : ProducingOperatorVertexBuilderBase<TOut>
         where TOperator : ISourceOperator<TOut>

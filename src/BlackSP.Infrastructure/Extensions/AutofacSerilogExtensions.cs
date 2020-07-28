@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using AutofacSerilogIntegration;
+using BlackSP.Kernel.Logging;
 using BlackSP.Kernel.Models;
 using Microsoft.Azure.Storage;
 using Serilog;
@@ -12,19 +13,13 @@ using System.Text;
 
 namespace BlackSP.Infrastructure.Extensions
 {   
-    [Flags]
-    public enum LogTargetFlags
-    {
-        None = 0,
-        Console = 1 << 0,
-        File = 1 << 1,
-        AzureBlob = 1 << 2
-    }
-
     public static class AutofacSerilogExtensions
     {
-        public static ContainerBuilder UseSerilog(this ContainerBuilder builder, LogEventLevel logLevel, LogTargetFlags targetFlags, string instanceName)
+        public static ContainerBuilder UseSerilog(this ContainerBuilder builder, ILogConfiguration config, string instanceName)
         {
+            var targetFlags = config.TargetFlags;
+            var logLevel = config.EventLevel;
+            
             var logConfig = new LoggerConfiguration().MinimumLevel.Verbose();
             
             if (targetFlags.HasFlag(LogTargetFlags.Console))

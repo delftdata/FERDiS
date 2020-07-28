@@ -1,5 +1,4 @@
-﻿using BlackSP.Infrastructure.Configuration;
-using BlackSP.Infrastructure.Configuration.Vertices;
+﻿using BlackSP.Infrastructure.Builders.Vertex;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
@@ -7,8 +6,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Infrastructure
+namespace BlackSP.Infrastructure.Builders.Graph
 {
+    /// <summary>
+    /// Interface for building a graph of operator vertices by adding different types of operators
+    /// </summary>
     public interface IOperatorVertexGraphBuilder
     {
 

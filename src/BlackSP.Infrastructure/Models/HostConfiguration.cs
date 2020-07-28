@@ -1,10 +1,10 @@
 ﻿using BlackSP.OperatorShells;
-using BlackSP.Infrastructure.Configuration;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using BlackSP.Kernel.Logging;
 
 namespace BlackSP.Infrastructure.Models
 {
@@ -19,16 +19,17 @@ namespace BlackSP.Infrastructure.Models
 
         public IVertexGraphConfiguration GraphConfiguration { get; set; }
 
-        public object LogConfiguration => throw new NotImplementedException();
+        public ILogConfiguration LogConfiguration { get; set; }
 
-        public object CheckpointingConfiguration => throw new NotImplementedException();
+        //public object CheckpointingConfiguration => throw new NotImplementedException();
 
-        public HostConfiguration(Type startupModuleType, IVertexGraphConfiguration graphConfig, IVertexConfiguration vertexConfig)
+        public HostConfiguration(Type startupModuleType, IVertexGraphConfiguration graphConfig, IVertexConfiguration vertexConfig, ILogConfiguration logConfig)
         {
-            
-            _startupModuleString = startupModuleType?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(startupModuleType));
-            GraphConfiguration = graphConfig;
-            VertexConfiguration = vertexConfig;
+
+            _startupModuleString = startupModuleType?.AssemblyQualifiedName;// ?? throw new ArgumentNullException(nameof(startupModuleType));
+            GraphConfiguration = graphConfig;// ?? throw new ArgumentNullException(nameof(graphConfig));
+            VertexConfiguration = vertexConfig;// ?? throw new ArgumentNullException(nameof(vertexConfig));
+            LogConfiguration = logConfig;// ?? throw new ArgumentNullException(nameof(logConfig));
         }
     }
 }

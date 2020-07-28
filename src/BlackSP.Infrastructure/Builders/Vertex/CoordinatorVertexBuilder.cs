@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Infrastructure.Configuration.Vertices
+namespace BlackSP.Infrastructure.Builders.Vertex
 {
     public class CoordinatorVertexBuilder : VertexBuilderBase
     {

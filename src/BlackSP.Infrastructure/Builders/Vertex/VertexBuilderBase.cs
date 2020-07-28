@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Infrastructure.Configuration
+namespace BlackSP.Infrastructure.Builders.Vertex
 {
     public abstract class VertexBuilderBase : IVertexBuilder
     {
@@ -16,7 +16,7 @@ namespace BlackSP.Infrastructure.Configuration
         public ICollection<string> InstanceNames { get; }
 
         /// <summary>
-        /// Equivalent of CRA's 'VertexName'
+        /// Name of the vertex
         /// </summary>
         public string VertexName { get; }
 
@@ -59,19 +59,16 @@ namespace BlackSP.Infrastructure.Configuration
         /// Transforms configurator to a set of IVertexConfigurations to be passed to blacksp vertices
         /// </summary>
         /// <returns></returns>
-        public virtual IEnumerable<IVertexConfiguration> ToConfigurations()
+        public virtual IVertexConfiguration GetVertexConfiguration()
         {
-            foreach (var instanceName in InstanceNames)
+            return new VertexConfiguration()
             {
-                yield return new VertexConfiguration()
-                {
-                    InstanceName = instanceName,
-                    VertexName = VertexName,
-                    VertexType = VertexType,
-                    InputEndpoints = IncomingEdges.Select(e => AsEndpointConfiguration(e, true)).ToList(),
-                    OutputEndpoints = OutgoingEdges.Select(e => AsEndpointConfiguration(e, false)).ToList(),
-                };
-            }
+                InstanceNames = InstanceNames.ToArray(),
+                VertexName = VertexName,
+                VertexType = VertexType,
+                InputEndpoints = IncomingEdges.Select(e => AsEndpointConfiguration(e, true)).ToList(),
+                OutputEndpoints = OutgoingEdges.Select(e => AsEndpointConfiguration(e, false)).ToList(),
+            };
         }
 
         private static IEndpointConfiguration AsEndpointConfiguration(Edge edge, bool asInput)

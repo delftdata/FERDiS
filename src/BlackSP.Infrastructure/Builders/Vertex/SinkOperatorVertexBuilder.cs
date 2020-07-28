@@ -6,7 +6,7 @@ using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 
-namespace BlackSP.Infrastructure.Configuration.Vertices
+namespace BlackSP.Infrastructure.Builders.Vertex
 {
     public class SinkOperatorVertexBuilder<TOperator, TIn> : VertexBuilderBase, IConsumingOperatorVertexBuilder<TIn>
         where TOperator : ISinkOperator<TIn>

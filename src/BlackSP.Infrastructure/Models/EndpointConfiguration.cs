@@ -6,6 +6,8 @@ using System.Text;
 
 namespace BlackSP.Infrastructure.Models
 {
+
+    [Serializable]
     public class EndpointConfiguration : IEndpointConfiguration
     {
         public string LocalEndpointName { get; set; }

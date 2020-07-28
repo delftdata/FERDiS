@@ -22,7 +22,7 @@ namespace BlackSP.Infrastructure.Modules
         protected override void Load(ContainerBuilder builder)
         {
             //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
-            builder.UseSerilog(LogEventLevel.Verbose, LogTargetFlags.Console, _configuration.VertexConfiguration.InstanceName);
+            builder.UseSerilog(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
             builder.UseCheckpointingService(true);
 
             builder.UseProtobufSerializer();

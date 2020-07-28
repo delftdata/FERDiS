@@ -4,7 +4,7 @@ using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
 
-namespace BlackSP.Infrastructure.Configuration.Vertices
+namespace BlackSP.Infrastructure.Builders.Vertex
 {
     public class FilterOperatorVertexBuilder<TOperator, TEvent> : ProducingOperatorVertexBuilderBase<TEvent>, IConsumingOperatorVertexBuilder<TEvent>
         where TOperator : IFilterOperator<TEvent>
