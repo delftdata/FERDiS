@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace BlackSP.Infrastructure.Configuration
 {
-    public interface IVertexConfigurator
+    public interface IVertexBuilder
     {
         string VertexName { get; }
         ICollection<string> InstanceNames { get; }
@@ -18,7 +18,7 @@ namespace BlackSP.Infrastructure.Configuration
         Type ModuleType { get; }
         
         /// <summary>
-        /// Transforms configurator to set of IVertexConfiguration
+        /// Builds a set of IVertexConfiguration's representing the configurations for each shard of the Vertex
         /// </summary>
         /// <returns></returns>
         IEnumerable<IVertexConfiguration> ToConfigurations();
@@ -36,7 +36,7 @@ namespace BlackSP.Infrastructure.Configuration
         string GetAvailableInputEndpoint();
     }
 
-    public interface IOperatorConfigurator : IVertexConfigurator
+    public interface IOperatorVertexBuilder : IVertexBuilder
     {   
     }
 
@@ -44,7 +44,7 @@ namespace BlackSP.Infrastructure.Configuration
     /// Empty interface but highly relevant to perform compile-time typechecks against provided operator classes
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IConsumingOperatorConfigurator<T> : IOperatorConfigurator
+    public interface IConsumingOperatorVertexBuilder<T> : IOperatorVertexBuilder
     { }
 
     /// <summary>
@@ -52,53 +52,58 @@ namespace BlackSP.Infrastructure.Configuration
     /// </summary>
     /// <typeparam name="T1"></typeparam>
     /// <typeparam name="T2"></typeparam>
-    public interface IConsumingOperatorConfigurator<T1, T2> : IConsumingOperatorConfigurator<T1>
+    public interface IConsumingOperatorVertexBuilder<T1, T2> : IConsumingOperatorVertexBuilder<T1>
     { }
 
-    public interface IProducingOperatorConfigurator<T> : IOperatorConfigurator
+    public interface IProducingOperatorVertexBuilder<T> : IOperatorVertexBuilder
     {
-        void Append(IConsumingOperatorConfigurator<T> otherOperator);
-        void Append<T2>(IConsumingOperatorConfigurator<T, T2> otherOperator);
-        void Append<T2>(IConsumingOperatorConfigurator<T2, T> otherOperator);
+        void Append(IConsumingOperatorVertexBuilder<T> otherOperator);
+        void Append<T2>(IConsumingOperatorVertexBuilder<T, T2> otherOperator);
+        void Append<T2>(IConsumingOperatorVertexBuilder<T2, T> otherOperator);
     }
 
-    public interface ISinkOperatorConfigurator<TOperator, TEvent> : IConsumingOperatorConfigurator<TEvent>
+/*
+    public interface ISinkOperatorConfigurator<TOperator, TEvent> : IConsumingOperatorVertexBuilder<TEvent>
         where TOperator : ISinkOperator<TEvent>
         where TEvent : class, IEvent
     {
     }
 
-    public interface ISourceOperatorConfigurator<TOperator, TEvent> : IProducingOperatorConfigurator<TEvent>
+    public interface ISourceOperatorConfigurator<TOperator, TEvent> : IProducingOperatorVertexBuilder<TEvent>
         where TOperator : ISourceOperator<TEvent>
         where TEvent : class, IEvent
     {
     }
 
-    public interface IMapOperatorConfigurator<TOperator, TIn, TOut> : IConsumingOperatorConfigurator<TIn>, IProducingOperatorConfigurator<TOut>
+
+    public interface IMapOperatorConfigurator<TOperator, TIn, TOut> : IConsumingOperatorVertexBuilder<TIn>, IProducingOperatorVertexBuilder<TOut>
         where TOperator : IMapOperator<TIn, TOut>
         where TIn : class, IEvent
         where TOut : class, IEvent
     {
     }
 
-    public interface IFilterOperatorConfigurator<TOperator, TEvent> : IConsumingOperatorConfigurator<TEvent>, IProducingOperatorConfigurator<TEvent>
+    public interface IFilterOperatorConfigurator<TOperator, TEvent> : IConsumingOperatorVertexBuilder<TEvent>, IProducingOperatorVertexBuilder<TEvent>
         where TOperator : IFilterOperator<TEvent>
         where TEvent : class, IEvent
     {
     }
 
-    public interface IAggregateOperatorConfigurator<TOperator, TIn, TOut> : IConsumingOperatorConfigurator<TIn>, IProducingOperatorConfigurator<TOut>
+    
+    public interface IAggregateOperatorConfigurator<TOperator, TIn, TOut> : IConsumingOperatorVertexBuilder<TIn>, IProducingOperatorVertexBuilder<TOut>
         where TOperator : IAggregateOperator<TIn, TOut>
         where TOut : class, IEvent
         where TIn : class, IEvent
     {
     }
+ 
 
-    public interface IJoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut> : IConsumingOperatorConfigurator<TIn1, TIn2>, IProducingOperatorConfigurator<TOut>
+    public interface IJoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut> : IConsumingOperatorVertexBuilder<TIn1, TIn2>, IProducingOperatorVertexBuilder<TOut>
         where TOperator : IJoinOperator<TIn1, TIn2, TOut>
         where TOut : class, IEvent
         where TIn1 : class, IEvent
         where TIn2 : class, IEvent
     {
-    }
+    }   
+*/
 }

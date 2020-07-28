@@ -1,4 +1,4 @@
-﻿using BlackSP.CRA.UnitTests.Events;
+﻿using BlackSP.Infrastructure.UnitTests.Events;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.CRA.UnitTests
+namespace BlackSP.Infrastructure.UnitTests
 {
     class SampleSourceOperator : ISourceOperator<EventA>
     {

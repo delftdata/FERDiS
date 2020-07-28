@@ -1,6 +1,7 @@
 ﻿using BlackSP.CRA.Extensions;
 using BlackSP.CRA.Kubernetes;
 using BlackSP.CRA.Vertices;
+using BlackSP.Infrastructure;
 using BlackSP.Infrastructure.Configuration;
 using BlackSP.Infrastructure.Models;
 using BlackSP.Serialization.Extensions;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.CRA.Configuration
 {
-    class CRAOperatorGraphBuilder : OperatorGraphBuilderBase
+    class CRAOperatorGraphBuilder : OperatorVertexGraphBuilderBase
     {
         private readonly KubernetesDeploymentUtility _k8sDeploymentUtil;
         private readonly CRAClientLibrary _craClient;
@@ -24,31 +25,31 @@ namespace BlackSP.CRA.Configuration
 
         protected override async Task<object> BuildGraph()
         {
-            await RegisterGraphWithCRA();
-            _k8sDeploymentUtil.With(Configurators).WriteDeploymentYaml();
+            await RegisterGraphWithCRA().ConfigureAwait(false);
+            _k8sDeploymentUtil.With(VertexBuilders).WriteDeploymentYaml();
             _k8sDeploymentUtil.PrintUsage();
             return null;
         }
 
         protected async Task RegisterGraphWithCRA()
         {
-            await _craClient.ResetClusterAsync();
+            await _craClient.ResetClusterAsync().ConfigureAwait(false);
 
             string craVertexName = typeof(OperatorVertex).Name.ToLowerInvariant();
-            await _craClient.DefineVertexAsync(craVertexName, () => new OperatorVertex());
+            await _craClient.DefineVertexAsync(craVertexName, () => new OperatorVertex()).ConfigureAwait(false);
 
-            foreach (var configurator in Configurators)
+            foreach (var builder in VertexBuilders)
             {
-                await RegisterCRAVertexAsync(configurator, craVertexName);
+                await RegisterCRAVertexAsync(builder, craVertexName).ConfigureAwait(false);
             }
 
-            foreach (var edge in Configurators.SelectMany(c => c.OutgoingEdges))
+            foreach (var edge in VertexBuilders.SelectMany(c => c.OutgoingEdges))
             {
-                await _craClient.ConnectAsync(edge.FromVertex.VertexName, edge.FromEndpoint, edge.ToVertex.VertexName, edge.ToEndpoint);
+                await _craClient.ConnectAsync(edge.FromVertex.VertexName, edge.FromEndpoint, edge.ToVertex.VertexName, edge.ToEndpoint).ConfigureAwait(false);
             }
         } 
 
-        private async Task RegisterCRAVertexAsync(IVertexConfigurator target, string vertexDefinition)
+        private async Task RegisterCRAVertexAsync(IVertexBuilder target, string vertexDefinition)
         {
             var i = 0;
             foreach (var config in target.ToConfigurations())
@@ -61,6 +62,7 @@ namespace BlackSP.CRA.Configuration
                     hostParameter.BinarySerialize(),
                     i
                 ).ConfigureAwait(true);
+                
                 i++;
             }            
         }

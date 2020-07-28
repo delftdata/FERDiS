@@ -9,20 +9,20 @@ namespace BlackSP.CRA.Kubernetes
 {
     public class KubernetesDeploymentUtility
     {
-        private ICollection<IVertexConfigurator> _configurators;
+        private ICollection<IVertexBuilder> _configurators;
         private string lastWrittenYamlFile;
         private string K8sNamespace => "blacksp";
 
         public KubernetesDeploymentUtility()
         {}
         
-        public KubernetesDeploymentUtility(ICollection<IVertexConfigurator> configurators)
+        public KubernetesDeploymentUtility(ICollection<IVertexBuilder> configurators)
         {
             _configurators = configurators ?? throw new ArgumentNullException(nameof(configurators));
             lastWrittenYamlFile = string.Empty;
         }
 
-        public KubernetesDeploymentUtility With(ICollection<IVertexConfigurator> configurators)
+        public KubernetesDeploymentUtility With(ICollection<IVertexBuilder> configurators)
         {
             _configurators = configurators;
             return this;
@@ -82,7 +82,7 @@ namespace BlackSP.CRA.Kubernetes
             return deploymentYamlBuilder.ToString();
         }
 
-        private string BuildDeploymentSection(IVertexConfigurator configurator, string instanceName)
+        private string BuildDeploymentSection(IVertexBuilder configurator, string instanceName)
         {
             return $@"
 kind: Deployment

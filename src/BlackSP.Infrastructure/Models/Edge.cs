@@ -11,13 +11,13 @@ namespace BlackSP.Infrastructure.Models
     /// </summary>
     public class Edge
     {
-        public IVertexConfigurator FromVertex { get; private set; }
+        public IVertexBuilder FromVertex { get; private set; }
         public string FromEndpoint { get; private set; }
 
-        public IVertexConfigurator ToVertex { get; private set; }
+        public IVertexBuilder ToVertex { get; private set; }
         public string ToEndpoint { get; private set; }
 
-        public Edge(IVertexConfigurator fromVertex, string fromEndpoint, IVertexConfigurator toVertex, string toEndpoint)
+        public Edge(IVertexBuilder fromVertex, string fromEndpoint, IVertexBuilder toVertex, string toEndpoint)
         {
             FromVertex = fromVertex ?? throw new ArgumentNullException(nameof(fromVertex));
             FromEndpoint = fromEndpoint ?? throw new ArgumentNullException(nameof(fromEndpoint));

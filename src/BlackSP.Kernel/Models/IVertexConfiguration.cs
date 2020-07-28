@@ -5,6 +5,13 @@ using System.Text;
 
 namespace BlackSP.Kernel.Models
 {
+    public enum VertexType
+    {
+        Source,
+        Operator,
+        Coordinator
+    }
+
     public interface IVertexConfiguration
     {
         /// <summary>
@@ -33,10 +40,5 @@ namespace BlackSP.Kernel.Models
         ICollection<IEndpointConfiguration> OutputEndpoints { get; }
     }
 
-    public enum VertexType
-    {
-        Source,
-        Operator,
-        Coordinator
-    }
+    
 }

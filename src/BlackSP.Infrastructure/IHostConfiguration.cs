@@ -23,6 +23,8 @@ namespace BlackSP.Infrastructure
 
         IVertexConfiguration VertexConfiguration { get; }
 
+        object LogConfiguration { get; }
 
+        object CheckpointingConfiguration { get; }
     }
 }

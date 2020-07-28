@@ -6,13 +6,16 @@ using System;
 
 namespace BlackSP.Infrastructure.Configuration.Vertices
 {
-    public class FilterOperatorConfigurator<TOperator, TEvent> : ProducingOperatorConfiguratorBase<TEvent>, IFilterOperatorConfigurator<TOperator, TEvent>
+    public class FilterOperatorVertexBuilder<TOperator, TEvent> : ProducingOperatorVertexBuilderBase<TEvent>, IConsumingOperatorVertexBuilder<TEvent>
         where TOperator : IFilterOperator<TEvent>
         where TEvent : class, IEvent
     {
+
+        public override VertexType VertexType => VertexType.Operator;
+
         public override Type ModuleType => typeof(ReactiveOperatorModule<FilterOperatorShell<TEvent>, TOperator>);
 
-        public FilterOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
+        public FilterOperatorVertexBuilder(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }
     }
 }

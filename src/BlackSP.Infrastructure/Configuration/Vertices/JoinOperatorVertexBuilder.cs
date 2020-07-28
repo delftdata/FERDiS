@@ -7,15 +7,18 @@ using System;
 namespace BlackSP.Infrastructure.Configuration.Vertices
 {
 
-    public class JoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut> : ProducingOperatorConfiguratorBase<TOut>, IJoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut>
+    public class JoinOperatorVertexBuilder<TOperator, TIn1, TIn2, TOut> : ProducingOperatorVertexBuilderBase<TOut>, IConsumingOperatorVertexBuilder<TIn1, TIn2>
         where TOperator : IJoinOperator<TIn1, TIn2, TOut>
         where TIn1 : class, IEvent
         where TIn2 : class, IEvent
         where TOut : class, IEvent
     {
+
+        public override VertexType VertexType => VertexType.Operator;
+        
         public override Type ModuleType => typeof(ReactiveOperatorModule<JoinOperatorShell<TIn1, TIn2, TOut>, TOperator>);
 
-        public JoinOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
+        public JoinOperatorVertexBuilder(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }
     }
 }

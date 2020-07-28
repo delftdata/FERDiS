@@ -8,17 +8,16 @@ using System.Collections.Generic;
 
 namespace BlackSP.Infrastructure.Configuration.Vertices
 {
-    public class SourceOperatorConfigurator<TOperator, TOut> : ProducingOperatorConfiguratorBase<TOut>, ISourceOperatorConfigurator<TOperator, TOut>
+    public class SourceOperatorVertexBuilder<TOperator, TOut> : ProducingOperatorVertexBuilderBase<TOut>
         where TOperator : ISourceOperator<TOut>
         where TOut : class, IEvent
     {
-
+        
         public override Type ModuleType => typeof(SourceOperatorModule<SourceOperatorShell<TOut>, TOperator, TOut>);
 
         public override VertexType VertexType => VertexType.Source;
-        //public override ICollection<Edge> IncomingEdges => new List<Edge>();
 
-        public SourceOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
+        public SourceOperatorVertexBuilder(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         { }
     }
 }

@@ -1,26 +1,28 @@
-﻿using BlackSP.Infrastructure.Configuration.Vertices;
+﻿using BlackSP.Infrastructure.Configuration;
+using BlackSP.Infrastructure.Configuration.Vertices;
 using BlackSP.Infrastructure.Models;
 using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Infrastructure.Configuration
+namespace BlackSP.Infrastructure
 {
-    public abstract class OperatorGraphBuilderBase : OperatorGraphBuilderBase<object>
+    public abstract class OperatorVertexGraphBuilderBase : OperatorVertexGraphBuilderBase<object>
     { }
 
-    public abstract class OperatorGraphBuilderBase<TGraph> : IOperatorGraphBuilder
+    public abstract class OperatorVertexGraphBuilderBase<TGraph> : IOperatorVertexGraphBuilder
     {
-        public ICollection<IVertexConfigurator> Configurators { get; }
+        public ICollection<IVertexBuilder> VertexBuilders { get; }
 
         private Dictionary<string, int> usedOperatorNameCount;
         private int usedInstanceCount;
 
-        protected OperatorGraphBuilderBase()
+        protected OperatorVertexGraphBuilderBase()
         {
-            Configurators = new List<IVertexConfigurator>();
+            VertexBuilders = new List<IVertexBuilder>();
             usedInstanceCount = 0;
             usedOperatorNameCount = new Dictionary<string, int>();
         }
@@ -46,7 +48,7 @@ namespace BlackSP.Infrastructure.Configuration
             var allInstances = new List<string>();
             var allConnections = new List<Tuple<string, string>>();
 
-            foreach (var configurator in Configurators.Where(c => !c.VertexName.Contains("coordinator")))
+            foreach (var configurator in VertexBuilders.Where(c => !c.VertexName.Contains("coordinator")))
             {
                 //get instance names
                 //only use outgoing connections to build tuples
@@ -74,9 +76,9 @@ namespace BlackSP.Infrastructure.Configuration
         {
             var instanceName = GetNextAvailableInstanceName(); //coordinator is never sharded
             var vertexName = GetNextAvailableOperatorName("coordinator");
-            var coordinatorConfigurator = new CoordinatorConfigurator(new string[] { instanceName }, vertexName);
+            var coordinatorConfigurator = new CoordinatorVertexBuilder(new string[] { instanceName }, vertexName);
             //connect to all existing configurators (all workers)
-            foreach (var configurator in Configurators)
+            foreach (var configurator in VertexBuilders)
             {
                 var fromCoordinatorEdge = new Edge(coordinatorConfigurator, coordinatorConfigurator.GetAvailableOutputEndpoint(), configurator, configurator.GetAvailableInputEndpoint());
                 var toCoordinatorEdge = new Edge(configurator, configurator.GetAvailableOutputEndpoint(), coordinatorConfigurator, coordinatorConfigurator.GetAvailableInputEndpoint());
@@ -88,63 +90,79 @@ namespace BlackSP.Infrastructure.Configuration
                 configurator.OutgoingEdges.Add(toCoordinatorEdge);
 
             }
-            Configurators.Add(coordinatorConfigurator);
+            VertexBuilders.Add(coordinatorConfigurator);
         }
 
         //Note the explicit interface implementations below, this is to avoid duplicating generic type constraints from the interface
         //this makes the methods only available when casting object instance to the interface, and they cannot be marked public (even though they are)
 
-        IAggregateOperatorConfigurator<TOperator, TIn, TOut> IOperatorGraphBuilder.AddAggregate<TOperator, TIn, TOut>(int shardCount)
+        public AggregateOperatorVertexBuilder<TOperator, TIn, TOut> AddAggregate<TOperator, TIn, TOut>(int shardCount)
+            where TOperator : IAggregateOperator<TIn, TOut>
+            where TIn : class, IEvent
+            where TOut : class, IEvent
         {
             var instanceNames = GetNextAvailableInstanceNames(shardCount);
             var vertexName = GetNextAvailableOperatorName("aggregate");
-            var configurator = new AggregateOperatorConfigurator<TOperator, TIn, TOut>(instanceNames.ToArray(), vertexName);
-            Configurators.Add(configurator);
+            var configurator = new AggregateOperatorVertexBuilder<TOperator, TIn, TOut>(instanceNames.ToArray(), vertexName);
+            VertexBuilders.Add(configurator);
             return configurator;
         }
 
-        IFilterOperatorConfigurator<TOperator, TEvent> IOperatorGraphBuilder.AddFilter<TOperator, TEvent>(int shardCount)
+        public FilterOperatorVertexBuilder<TOperator, TEvent> AddFilter<TOperator, TEvent>(int shardCount)
+            where TOperator : IFilterOperator<TEvent>
+            where TEvent : class, IEvent
         {
             var instanceNames = GetNextAvailableInstanceNames(shardCount);
             var vertexName = GetNextAvailableOperatorName("filter");
-            var configurator = new FilterOperatorConfigurator<TOperator, TEvent>(instanceNames.ToArray(), vertexName);
-            Configurators.Add(configurator);
+            var configurator = new FilterOperatorVertexBuilder<TOperator, TEvent>(instanceNames.ToArray(), vertexName);
+            VertexBuilders.Add(configurator);
             return configurator;
         }
 
-        IJoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut> IOperatorGraphBuilder.AddJoin<TOperator, TIn1, TIn2, TOut>(int shardCount)
+        public JoinOperatorVertexBuilder<TOperator, TIn1, TIn2, TOut> AddJoin<TOperator, TIn1, TIn2, TOut>(int shardCount)
+            where TOperator : IJoinOperator<TIn1, TIn2, TOut>
+            where TIn1 : class, IEvent
+            where TIn2 : class, IEvent
+            where TOut : class, IEvent
         {
             var instanceNames = GetNextAvailableInstanceNames(shardCount);
             var vertexName = GetNextAvailableOperatorName("join");
-            var configurator = new JoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut>(instanceNames.ToArray(), vertexName);
-            Configurators.Add(configurator);
+            var configurator = new JoinOperatorVertexBuilder<TOperator, TIn1, TIn2, TOut>(instanceNames.ToArray(), vertexName);
+            VertexBuilders.Add(configurator);
             return configurator;
         }
 
-        IMapOperatorConfigurator<TOperator, TIn, TOut> IOperatorGraphBuilder.AddMap<TOperator, TIn, TOut>(int shardCount)
+        public MapOperatorVertexBuilder<TOperator, TIn, TOut> AddMap<TOperator, TIn, TOut>(int shardCount)
+            where TOperator : IMapOperator<TIn, TOut>
+            where TIn : class, IEvent
+            where TOut : class, IEvent
         {
             var instanceNames = GetNextAvailableInstanceNames(shardCount);
             var vertexName = GetNextAvailableOperatorName("map");
-            var configurator = new MapOperatorConfigurator<TOperator, TIn, TOut>(instanceNames.ToArray(), vertexName);
-            Configurators.Add(configurator);
+            var configurator = new MapOperatorVertexBuilder<TOperator, TIn, TOut>(instanceNames.ToArray(), vertexName);
+            VertexBuilders.Add(configurator);
             return configurator;
         }
 
-        ISinkOperatorConfigurator<TOperator, TIn> IOperatorGraphBuilder.AddSink<TOperator, TIn>(int shardCount)
+        public SinkOperatorVertexBuilder<TOperator, TIn> AddSink<TOperator, TIn>(int shardCount)
+            where TOperator : ISinkOperator<TIn>
+            where TIn : class, IEvent
         {
             var instanceNames = GetNextAvailableInstanceNames(shardCount);
             var vertexName = GetNextAvailableOperatorName("sink");
-            var configurator = new SinkOperatorConfigurator<TOperator, TIn>(instanceNames.ToArray(), vertexName);
-            Configurators.Add(configurator);
+            var configurator = new SinkOperatorVertexBuilder<TOperator, TIn>(instanceNames.ToArray(), vertexName);
+            VertexBuilders.Add(configurator);
             return configurator;
         }
 
-        ISourceOperatorConfigurator<TOperator, TOut> IOperatorGraphBuilder.AddSource<TOperator, TOut>(int shardCount)
+        public SourceOperatorVertexBuilder<TOperator, TOut> AddSource<TOperator, TOut>(int shardCount)
+            where TOperator : ISourceOperator<TOut>
+            where TOut : class, IEvent
         {
             var instanceNames = GetNextAvailableInstanceNames(shardCount);
             var vertexName = GetNextAvailableOperatorName("source");
-            var configurator = new SourceOperatorConfigurator<TOperator, TOut>(instanceNames.ToArray(), vertexName);
-            Configurators.Add(configurator);
+            var configurator = new SourceOperatorVertexBuilder<TOperator, TOut>(instanceNames.ToArray(), vertexName);
+            VertexBuilders.Add(configurator);
             return configurator;
         }
 

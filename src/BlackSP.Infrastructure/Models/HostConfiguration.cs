@@ -19,6 +19,10 @@ namespace BlackSP.Infrastructure.Models
 
         public IVertexGraphConfiguration GraphConfiguration { get; set; }
 
+        public object LogConfiguration => throw new NotImplementedException();
+
+        public object CheckpointingConfiguration => throw new NotImplementedException();
+
         public HostConfiguration(Type startupModuleType, IVertexGraphConfiguration graphConfig, IVertexConfiguration vertexConfig)
         {
             

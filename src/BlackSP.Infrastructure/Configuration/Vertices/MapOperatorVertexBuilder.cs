@@ -6,14 +6,16 @@ using System;
 
 namespace BlackSP.Infrastructure.Configuration.Vertices
 {
-    public class MapOperatorConfigurator<TOperator, TIn, TOut> : ProducingOperatorConfiguratorBase<TOut>, IMapOperatorConfigurator<TOperator, TIn, TOut>
+    public class MapOperatorVertexBuilder<TOperator, TIn, TOut> : ProducingOperatorVertexBuilderBase<TOut>, IConsumingOperatorVertexBuilder<TIn>
         where TOperator : IMapOperator<TIn, TOut>
         where TIn : class, IEvent
         where TOut : class, IEvent
     {
+        public override VertexType VertexType => VertexType.Operator;
+
         public override Type ModuleType => typeof(ReactiveOperatorModule<MapOperatorShell<TIn, TOut>, TOperator>);
 
-        public MapOperatorConfigurator(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
+        public MapOperatorVertexBuilder(string[] instanceNames, string operatorName) : base(instanceNames, operatorName)
         {}
     }
 }

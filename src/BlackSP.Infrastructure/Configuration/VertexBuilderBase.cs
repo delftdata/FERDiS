@@ -8,7 +8,7 @@ using System.Text;
 
 namespace BlackSP.Infrastructure.Configuration
 {
-    public abstract class VertexConfiguratorBase : IVertexConfigurator
+    public abstract class VertexBuilderBase : IVertexBuilder
     {
         /// <summary>
         /// The name of the machine instance where the operator will be executing
@@ -30,7 +30,7 @@ namespace BlackSP.Infrastructure.Configuration
         private ICollection<string> OutputEndpointNames { get; set; }
 
 
-        public VertexConfiguratorBase(string[] instanceNames, string vertexName)
+        public VertexBuilderBase(string[] instanceNames, string vertexName)
         {
             InstanceNames = instanceNames;
             VertexName = vertexName;

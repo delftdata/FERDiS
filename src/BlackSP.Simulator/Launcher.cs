@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using BlackSP.Infrastructure;
 using BlackSP.Infrastructure.Configuration;
 using BlackSP.Simulator.Configuration;
 using BlackSP.Simulator.Core;
@@ -17,12 +18,12 @@ namespace BlackSP.Simulator
         /// <typeparam name="TConfiguration"></typeparam>
         /// <param name="args"></param>
         public static async Task LaunchWithAsync<TConfiguration>(string[] args)
-            where TConfiguration : IGraphConfigurator, new()
+            where TConfiguration : IVertexGraphBuilder, new()
         {
             
             var userGraphConfiguration = Activator.CreateInstance<TConfiguration>();
             var graphConfigurator = new InMemoryOperatorGraphBuilder(new ConnectionTable(), new IdentityTable());
-            userGraphConfiguration.Configure(graphConfigurator); //pass configurator to user defined class
+            userGraphConfiguration.ConfigureVertices(graphConfigurator); //pass configurator to user defined class
             var container = await graphConfigurator.Build();
             using (var lifetimeScope = container.BeginLifetimeScope())
             {

@@ -1,6 +1,7 @@
 ﻿using BlackSP.CRA.Configuration;
 using BlackSP.CRA.Kubernetes;
 using BlackSP.CRA.Utilities;
+using BlackSP.Infrastructure;
 using BlackSP.Infrastructure.Configuration;
 using CRA.ClientLibrary;
 using CRA.DataProvider;
@@ -19,7 +20,7 @@ namespace BlackSP.CRA
         /// <summary>
         /// Holds reference solely used during BlackSP startup
         /// </summary>
-        private static IGraphConfigurator userGraphConfiguration;
+        private static IVertexGraphBuilder graphBuilder;
 
         /// <summary>
         /// Holds reference solely used during BlackSP startup
@@ -39,12 +40,12 @@ namespace BlackSP.CRA
         /// <typeparam name="TDataProvider"></typeparam>
         /// <param name="args"></param>
         public static async Task LaunchWithAsync<TConfiguration, TDataProvider>(string[] args)
-            where TConfiguration : IGraphConfigurator, new()
+            where TConfiguration : IVertexGraphBuilder, new()
             where TDataProvider : IDataProvider, new()
         {
             EnforceEnvironmentVariables();
-            userDataProvider = Activator.CreateInstance<TDataProvider>();
-            userGraphConfiguration = Activator.CreateInstance<TConfiguration>();
+            userDataProvider = Activator.CreateInstance<TDataProvider>();//fix to azureprovider
+            graphBuilder = Activator.CreateInstance<TConfiguration>();
             await LaunchAsync(args).ConfigureAwait(false);
         }
 
@@ -78,7 +79,7 @@ namespace BlackSP.CRA
         {
             var craClientLibrary = new CRAClientLibrary(userDataProvider);
             var graphConfigurator = new CRAOperatorGraphBuilder(new KubernetesDeploymentUtility(), craClientLibrary);
-            userGraphConfiguration.Configure(graphConfigurator); //pass configurator to user defined class
+            graphBuilder.ConfigureVertices(graphConfigurator); //pass configurator to user defined class
             await graphConfigurator.Build();
         }
 

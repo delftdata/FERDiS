@@ -1,7 +1,7 @@
 ﻿using BlackSP.Kernel.Models;
 using System;
 
-namespace BlackSP.CRA.UnitTests.Events
+namespace BlackSP.Infrastructure.UnitTests.Events
 {
     public class EventA : IEvent
     {

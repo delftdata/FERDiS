@@ -1,4 +1,5 @@
-﻿using BlackSP.Infrastructure.Configuration.Vertices;
+﻿using BlackSP.Infrastructure.Configuration;
+using BlackSP.Infrastructure.Configuration.Vertices;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
@@ -6,9 +7,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Infrastructure.Configuration
+namespace BlackSP.Infrastructure
 {
-    public interface IOperatorGraphBuilder
+    public interface IOperatorVertexGraphBuilder
     {
 
         /// <summary>
@@ -18,29 +19,29 @@ namespace BlackSP.Infrastructure.Configuration
         /// <typeparam name="TIn"></typeparam>
         /// <param name="shardCount"></param>
         /// <returns></returns>
-        ISinkOperatorConfigurator<TOperator, TIn> AddSink<TOperator, TIn>(int shardCount)
+        SinkOperatorVertexBuilder<TOperator, TIn> AddSink<TOperator, TIn>(int shardCount)
             where TOperator : ISinkOperator<TIn>
             where TIn : class, IEvent;
 
-        ISourceOperatorConfigurator<TOperator, TOut> AddSource<TOperator, TOut>(int shardCount)
+        SourceOperatorVertexBuilder<TOperator, TOut> AddSource<TOperator, TOut>(int shardCount)
             where TOperator : ISourceOperator<TOut>
             where TOut : class, IEvent;
 
-        IMapOperatorConfigurator<TOperator, TIn, TOut> AddMap<TOperator, TIn, TOut>(int shardCount)
+        MapOperatorVertexBuilder<TOperator, TIn, TOut> AddMap<TOperator, TIn, TOut>(int shardCount)
             where TOperator : IMapOperator<TIn, TOut>
             where TIn : class, IEvent
             where TOut : class, IEvent;
 
-        IFilterOperatorConfigurator<TOperator, TEvent> AddFilter<TOperator, TEvent>(int shardCount)
+        FilterOperatorVertexBuilder<TOperator, TEvent> AddFilter<TOperator, TEvent>(int shardCount)
             where TOperator : IFilterOperator<TEvent>
             where TEvent : class, IEvent;
 
-        IAggregateOperatorConfigurator<TOperator, TIn, TOut> AddAggregate<TOperator, TIn, TOut>(int shardCount)
+        AggregateOperatorVertexBuilder<TOperator, TIn, TOut> AddAggregate<TOperator, TIn, TOut>(int shardCount)
             where TOperator : IAggregateOperator<TIn, TOut>
             where TIn : class, IEvent
             where TOut : class, IEvent;
 
-        IJoinOperatorConfigurator<TOperator, TIn1, TIn2, TOut> AddJoin<TOperator, TIn1, TIn2, TOut>(int shardCount)
+        JoinOperatorVertexBuilder<TOperator, TIn1, TIn2, TOut> AddJoin<TOperator, TIn1, TIn2, TOut>(int shardCount)
             where TOperator : IJoinOperator<TIn1, TIn2, TOut>
             where TIn1 : class, IEvent
             where TIn2 : class, IEvent

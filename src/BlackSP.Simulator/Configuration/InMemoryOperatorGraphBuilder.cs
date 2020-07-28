@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using AutofacSerilogIntegration;
+using BlackSP.Infrastructure;
 using BlackSP.Infrastructure.Configuration;
 using BlackSP.Infrastructure.Models;
 using BlackSP.Simulator.Core;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Simulator.Configuration
 {
-    class InMemoryOperatorGraphBuilder : OperatorGraphBuilderBase<IContainer>
+    class InMemoryOperatorGraphBuilder : OperatorVertexGraphBuilderBase<IContainer>
     {
 
         private readonly ConnectionTable _connectionTable;
@@ -24,7 +25,7 @@ namespace BlackSP.Simulator.Configuration
 
         protected override Task<IContainer> BuildGraph()
         {   
-            foreach (var edge in Configurators.SelectMany(c => c.OutgoingEdges))
+            foreach (var edge in VertexBuilders.SelectMany(c => c.OutgoingEdges))
             {
                 foreach (var connection in edge.ToConnections())
                 {
@@ -34,11 +35,11 @@ namespace BlackSP.Simulator.Configuration
 
             var graphConfig = GetVertexGraphConfiguration();
             
-            foreach (var configurator in Configurators)
+            foreach (var vbuilder in VertexBuilders)
             {
-                foreach (var vertexConf in configurator.ToConfigurations()) 
+                foreach (var vertexConf in vbuilder.ToConfigurations()) 
                 {
-                    var hostParameter = new HostConfiguration(configurator.ModuleType, graphConfig, vertexConf);
+                    var hostParameter = new HostConfiguration(vbuilder.ModuleType, graphConfig, vertexConf);
                     _identityTable.Add(vertexConf.InstanceName, hostParameter);
                 }
             }
