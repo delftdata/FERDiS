@@ -4,6 +4,7 @@ using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
 using BlackSP.Streams.Extensions;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
@@ -22,12 +23,13 @@ namespace BlackSP.Core.Endpoints
         private readonly IReceiver _receiver;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
-
+        private readonly ILogger _logger;
         public InputEndpoint(string endpointName,
+                             IVertexConfiguration vertexConfig,
                              IObjectSerializer<IMessage> serializer,
                              IReceiver receiver,
-                             IVertexConfiguration vertexConfig,
-                             ConnectionMonitor connectionMonitor)
+                             ConnectionMonitor connectionMonitor,
+                             ILogger logger)
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _receiver = receiver ?? throw new ArgumentNullException(nameof(receiver));
@@ -36,6 +38,7 @@ namespace BlackSP.Core.Endpoints
             _endpointConfig = vertexConfig.InputEndpoints.FirstOrDefault(x => x.LocalEndpointName == endpointName);
 
             _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -54,6 +57,7 @@ namespace BlackSP.Core.Endpoints
             try
             {
                 t.ThrowIfCancellationRequested();
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName} starting read & deserialize threads. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
                 var deserializerThread = Task.Run(() => DeserializeToReceiver(passthroughQueue, remoteShardId, t));
                 var exitedTask = await Task.WhenAny(deserializerThread, s.ReadMessagesTo(passthroughQueue, t)).ConfigureAwait(false);
@@ -61,6 +65,7 @@ namespace BlackSP.Core.Endpoints
             }
             catch(Exception e)
             {
+                _logger.Warning(e, $"Input endpoint {_endpointConfig.LocalEndpointName} read & deserialize threads ran into an exception. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
                 throw;
             }
             finally

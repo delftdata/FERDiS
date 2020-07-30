@@ -87,9 +87,7 @@ namespace BlackSP.Simulator.Core
                     Stream s = _connectionTable.GetOutgoingStreams(instanceName, endpointName)[shardId];
                     c = _connectionTable.GetOutgoingConnections(instanceName, endpointName)[shardId];
 
-                    _logger.Debug($"Output endpoint {c.FromEndpointName}${shardId} starting. (remote {c.ToInstanceName}${c.ToEndpointName}${c.ToShardId})");
                     await _outputEndpoint.Egress(s, c.ToEndpointName, c.ToShardId, t);
-                    _logger.Debug($"Output endpoint {c.FromEndpointName}${shardId} exited without exceptions");
                     
                     return;
                 }

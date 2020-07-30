@@ -62,6 +62,14 @@ namespace BlackSP.Streams
             return writtenBytes;
         }
 
+        public async Task FlushAndRefreshBuffer(int bytesToWrite = 4096, CancellationToken t = default)
+        {
+            writer.Advance(writtenBytes);
+            await writer.FlushAsync(t);
+            writtenBytes = 0;
+            buffer = writer.GetMemory(bytesToWrite);
+        }
+
         private async Task EnsureBufferCapacity(int bytesToWrite, CancellationToken t)
         {
             if (writtenBytes + bytesToWrite <= buffer.Length)
@@ -74,14 +82,6 @@ namespace BlackSP.Streams
             await FlushAndRefreshBuffer(bytesToWrite, t);
         }
 
-        private async Task FlushAndRefreshBuffer(int bytesToWrite = 4096, CancellationToken t = default)
-        {
-            writer.Advance(writtenBytes);
-            await writer.FlushAsync(t);
-            writtenBytes = 0;
-            buffer = writer.GetMemory(bytesToWrite);
-        }
-
         protected virtual void Dispose(bool disposing)
         {
             if (!disposed)
@@ -89,6 +89,7 @@ namespace BlackSP.Streams
                 if (disposing)
                 {
                     writer.Complete();
+                    stream.Close();
                 }
                 disposed = true;
             }

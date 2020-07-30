@@ -17,7 +17,7 @@ namespace BlackSP.Infrastructure.Builders
         IApplicationBuilder ConfigureOperators(Action<IOperatorVertexGraphBuilder> builder);
 
         /// <summary>
-        /// Allows specifying handle for setting the log configuration passed to every vertex
+        /// Sets the log configuration passed to every vertex
         /// </summary>
         /// <param name="logging"></param>
         IApplicationBuilder ConfigureLogging(ILogConfiguration logging);

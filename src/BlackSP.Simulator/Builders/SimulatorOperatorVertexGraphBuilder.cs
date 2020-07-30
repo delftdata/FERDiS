@@ -46,10 +46,10 @@ namespace BlackSP.Simulator.Builders
                 for(int i = 0; i < vertexConf.InstanceNames.Count(); i++)
                 {
                     var shardId = i;
-                    var configCopy = vertexConf.BinarySerialize().BinaryDeserialize() as IVertexConfiguration;
-                    configCopy.SetCurrentShardId(shardId);
-                    var hostParameter = new HostConfiguration(vbuilder.ModuleType, graphConfig, vertexConf, logConfig);
-                    _identityTable.Add(vertexConf.InstanceName, hostParameter);
+                    var vertexConfCopy = vertexConf.BinarySerialize().BinaryDeserialize() as IVertexConfiguration;
+                    vertexConfCopy.SetCurrentShardId(shardId);
+                    var hostParameter = new HostConfiguration(vbuilder.ModuleType, graphConfig, vertexConfCopy, logConfig);
+                    _identityTable.Add(vertexConfCopy.InstanceName, hostParameter);
                 }
 
             }

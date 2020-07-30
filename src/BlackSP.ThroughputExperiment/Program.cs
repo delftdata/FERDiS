@@ -1,6 +1,8 @@
 ﻿using BlackSP.Infrastructure.Builders.Graph;
 using BlackSP.Infrastructure.Models;
+using BlackSP.Kernel.Logging;
 using BlackSP.ThroughputExperiment.Events;
+using Serilog.Events;
 using System.Threading.Tasks;
 
 namespace BlackSP.ThroughputExperiment
@@ -9,14 +11,15 @@ namespace BlackSP.ThroughputExperiment
     {
         static async Task Main(string[] args)
         {
-            var useSimulator = false;
+            var useSimulator = true;
 
             //Worker.Launch("crainst01", 1500, new AzureDataProvider(), null);
-
+            var logTargets = useSimulator ? LogTargetFlags.Console | LogTargetFlags.File : LogTargetFlags.Console | LogTargetFlags.AzureBlob;
+            var logLevel = LogEventLevel.Verbose;
 
             var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
             var app = await appBuilder
-                .ConfigureLogging(new LogConfiguration(Kernel.Logging.LogTargetFlags.Console, Serilog.Events.LogEventLevel.Verbose))
+                .ConfigureLogging(new LogConfiguration(logTargets, logLevel))
                 .ConfigureOperators(ConfigureOperatorGraph)
                 .Build();
 
@@ -25,11 +28,11 @@ namespace BlackSP.ThroughputExperiment
 
         static void ConfigureOperatorGraph(IOperatorVertexGraphBuilder graph)
         {
-            var source = graph.AddSource<SampleSourceOperator, SampleEvent>(5);
+            var source = graph.AddSource<SampleSourceOperator, SampleEvent>(1);
             var filter = graph.AddFilter<SampleFilterOperator, SampleEvent>(1);
-            var mapper = graph.AddMap<SampleMapOperator, SampleEvent, SampleEvent>(2);
-            var aggregate = graph.AddAggregate<SampleAggregateOperator, SampleEvent, SampleEvent2>(1);
-            var sink = graph.AddSink<SampleSinkOperator, SampleEvent>(2);
+            var mapper = graph.AddMap<SampleMapOperator, SampleEvent, SampleEvent>(1);
+            //var aggregate = graph.AddAggregate<SampleAggregateOperator, SampleEvent, SampleEvent2>(1);
+            var sink = graph.AddSink<SampleSinkOperator, SampleEvent>(1);
 
             if (true)
             {

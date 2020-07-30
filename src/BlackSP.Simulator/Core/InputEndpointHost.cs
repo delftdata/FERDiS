@@ -88,9 +88,7 @@ namespace BlackSP.Simulator.Core
                     s = _connectionTable.GetIncomingStreams(instanceName, endpointName)[shardId];
                     c = _connectionTable.GetIncomingConnections(instanceName, endpointName)[shardId];
 
-                    _logger.Debug($"Input endpoint {c.ToEndpointName}${shardId} starting. (remote {c.FromInstanceName}${c.FromEndpointName}${c.FromShardId})");
                     await _inputEndpoint.Ingress(s, c.FromEndpointName, c.FromShardId, t);
-                    _logger.Debug($"Input endpoint {c.ToEndpointName}${shardId} exited without exceptions");                    
                     return;
                 }
                 catch(OperationCanceledException)

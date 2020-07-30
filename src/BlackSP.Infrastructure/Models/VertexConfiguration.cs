@@ -37,7 +37,7 @@ namespace BlackSP.Infrastructure.Models
 
         public void SetCurrentShardId(int shardId)
         {
-            this._currentInstanceName = InstanceNames.ElementAt(shardId);
+            _currentInstanceName = InstanceNames.ElementAt(shardId);
         }
     }
 }

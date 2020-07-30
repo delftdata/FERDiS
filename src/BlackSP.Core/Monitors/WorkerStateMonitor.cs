@@ -63,12 +63,12 @@ namespace BlackSP.Core.Monitors
         private void ConnectionMonitor_OnConnectionChange(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
         {
             var (changedConnection, isConnected) = e.ChangedConnection;
-            if(changedConnection.IsUpstream)
+            if(!changedConnection.IsUpstream)
             {
-                return; //we will get two reports, one from upstream, one from downstream, selectively ignore upstream to not handle duplicates.
+                return; //we will get two reports, one from upstream, one from downstream, selectively ignore downstream to not handle duplicates.
             }
             var changedInstanceName = changedConnection.Endpoint.RemoteInstanceNames.ElementAt(changedConnection.ShardId);
-            
+            _logger.Debug($"Vertex on instance {changedInstanceName} {(isConnected ? "dis" : "")}connected");
             var currentState = _workerStates.Get(changedInstanceName);
             switch(currentState)
             {
@@ -93,7 +93,7 @@ namespace BlackSP.Core.Monitors
 
             if (currentState != _workerStates.Get(changedInstanceName))
             {
-                _logger.Debug($"State monitor: {changedInstanceName} now has status {currentState} (connection)");
+                _logger.Debug($"State monitor: instance {changedInstanceName} now has status {currentState} (connection)");
                 _workerStates[changedInstanceName] = currentState;
                 EmitEvents();
             }
@@ -102,7 +102,8 @@ namespace BlackSP.Core.Monitors
         public void NotifyWorkerHeartbeat(string originInstanceName, WorkerStatusPayload statusPayload)
         {
             _ = statusPayload ?? throw new ArgumentNullException(nameof(statusPayload));
-            
+            _logger.Debug($"Heartbeat received from instance {originInstanceName}");
+
             var currentState = _workerStates.Get(originInstanceName);
             if(currentState == WorkerState.Offline)
             {
@@ -125,6 +126,7 @@ namespace BlackSP.Core.Monitors
         /// <param name="originInstanceName"></param>
         public void NotifyRestoreCompletion(string originInstanceName)
         {
+            _logger.Debug($"Checkpoint restore notification received from vertex running on instance {originInstanceName}");
             var currentState = _workerStates.Get(originInstanceName);
             if(currentState != WorkerState.Restoring)
             {

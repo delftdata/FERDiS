@@ -37,7 +37,7 @@ metadata:
     namespace: default
     name: crainst02
     labels:
-        operator: source01
+        operator: filter01
         instance: crainst02
 spec:
     replicas: 1
@@ -48,7 +48,7 @@ spec:
         metadata:
             name: crainst02
             labels:
-                operator: source01
+                operator: filter01
                 instance: crainst02
         spec:
             containers:
@@ -69,7 +69,7 @@ metadata:
     namespace: default
     name: crainst03
     labels:
-        operator: source01
+        operator: map01
         instance: crainst03
 spec:
     replicas: 1
@@ -80,7 +80,7 @@ spec:
         metadata:
             name: crainst03
             labels:
-                operator: source01
+                operator: map01
                 instance: crainst03
         spec:
             containers:
@@ -101,7 +101,7 @@ metadata:
     namespace: default
     name: crainst04
     labels:
-        operator: source01
+        operator: sink01
         instance: crainst04
 spec:
     replicas: 1
@@ -112,7 +112,7 @@ spec:
         metadata:
             name: crainst04
             labels:
-                operator: source01
+                operator: sink01
                 instance: crainst04
         spec:
             containers:
@@ -133,7 +133,7 @@ metadata:
     namespace: default
     name: crainst05
     labels:
-        operator: source01
+        operator: coordinator01
         instance: crainst05
 spec:
     replicas: 1
@@ -144,7 +144,7 @@ spec:
         metadata:
             name: crainst05
             labels:
-                operator: source01
+                operator: coordinator01
                 instance: crainst05
         spec:
             containers:
@@ -156,229 +156,5 @@ spec:
               - name: AZURE_STORAGE_CONN_STRING
                 value: "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
               args: ["crainst05", "1500"] #CRA instance name crainst05, exposed on port 1500
-              #resources: #requests #cpu "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
----
-
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-    namespace: default
-    name: crainst06
-    labels:
-        operator: filter01
-        instance: crainst06
-spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            instance: crainst06
-    template:
-        metadata:
-            name: crainst06
-            labels:
-                operator: filter01
-                instance: crainst06
-        spec:
-            containers:
-            - name: crainst06
-              image: mdzwart/cra-net2.1:latest
-              ports:
-              - containerPort: 1500
-              env:
-              - name: AZURE_STORAGE_CONN_STRING
-                value: "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
-              args: ["crainst06", "1500"] #CRA instance name crainst06, exposed on port 1500
-              #resources: #requests #cpu "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
----
-
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-    namespace: default
-    name: crainst07
-    labels:
-        operator: map01
-        instance: crainst07
-spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            instance: crainst07
-    template:
-        metadata:
-            name: crainst07
-            labels:
-                operator: map01
-                instance: crainst07
-        spec:
-            containers:
-            - name: crainst07
-              image: mdzwart/cra-net2.1:latest
-              ports:
-              - containerPort: 1500
-              env:
-              - name: AZURE_STORAGE_CONN_STRING
-                value: "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
-              args: ["crainst07", "1500"] #CRA instance name crainst07, exposed on port 1500
-              #resources: #requests #cpu "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
----
-
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-    namespace: default
-    name: crainst08
-    labels:
-        operator: map01
-        instance: crainst08
-spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            instance: crainst08
-    template:
-        metadata:
-            name: crainst08
-            labels:
-                operator: map01
-                instance: crainst08
-        spec:
-            containers:
-            - name: crainst08
-              image: mdzwart/cra-net2.1:latest
-              ports:
-              - containerPort: 1500
-              env:
-              - name: AZURE_STORAGE_CONN_STRING
-                value: "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
-              args: ["crainst08", "1500"] #CRA instance name crainst08, exposed on port 1500
-              #resources: #requests #cpu "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
----
-
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-    namespace: default
-    name: crainst09
-    labels:
-        operator: aggregate01
-        instance: crainst09
-spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            instance: crainst09
-    template:
-        metadata:
-            name: crainst09
-            labels:
-                operator: aggregate01
-                instance: crainst09
-        spec:
-            containers:
-            - name: crainst09
-              image: mdzwart/cra-net2.1:latest
-              ports:
-              - containerPort: 1500
-              env:
-              - name: AZURE_STORAGE_CONN_STRING
-                value: "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
-              args: ["crainst09", "1500"] #CRA instance name crainst09, exposed on port 1500
-              #resources: #requests #cpu "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
----
-
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-    namespace: default
-    name: crainst10
-    labels:
-        operator: sink01
-        instance: crainst10
-spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            instance: crainst10
-    template:
-        metadata:
-            name: crainst10
-            labels:
-                operator: sink01
-                instance: crainst10
-        spec:
-            containers:
-            - name: crainst10
-              image: mdzwart/cra-net2.1:latest
-              ports:
-              - containerPort: 1500
-              env:
-              - name: AZURE_STORAGE_CONN_STRING
-                value: "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
-              args: ["crainst10", "1500"] #CRA instance name crainst10, exposed on port 1500
-              #resources: #requests #cpu "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
----
-
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-    namespace: default
-    name: crainst11
-    labels:
-        operator: sink01
-        instance: crainst11
-spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            instance: crainst11
-    template:
-        metadata:
-            name: crainst11
-            labels:
-                operator: sink01
-                instance: crainst11
-        spec:
-            containers:
-            - name: crainst11
-              image: mdzwart/cra-net2.1:latest
-              ports:
-              - containerPort: 1500
-              env:
-              - name: AZURE_STORAGE_CONN_STRING
-                value: "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
-              args: ["crainst11", "1500"] #CRA instance name crainst11, exposed on port 1500
-              #resources: #requests #cpu "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
----
-
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-    namespace: default
-    name: crainst12
-    labels:
-        operator: coordinator01
-        instance: crainst12
-spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            instance: crainst12
-    template:
-        metadata:
-            name: crainst12
-            labels:
-                operator: coordinator01
-                instance: crainst12
-        spec:
-            containers:
-            - name: crainst12
-              image: mdzwart/cra-net2.1:latest
-              ports:
-              - containerPort: 1500
-              env:
-              - name: AZURE_STORAGE_CONN_STRING
-                value: "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
-              args: ["crainst12", "1500"] #CRA instance name crainst12, exposed on port 1500
               #resources: #requests #cpu "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
 ---

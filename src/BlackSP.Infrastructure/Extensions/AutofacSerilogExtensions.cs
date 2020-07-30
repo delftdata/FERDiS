@@ -17,11 +17,12 @@ namespace BlackSP.Infrastructure.Extensions
     {
         public static ContainerBuilder UseSerilog(this ContainerBuilder builder, ILogConfiguration config, string instanceName)
         {
+            _ = config ?? throw new ArgumentNullException(nameof(config));
+
             var targetFlags = config.TargetFlags;
             var logLevel = config.EventLevel;
             
             var logConfig = new LoggerConfiguration().MinimumLevel.Verbose();
-            
             if (targetFlags.HasFlag(LogTargetFlags.Console))
             {
                 logConfig.WriteTo.Console(logLevel, 
@@ -30,12 +31,12 @@ namespace BlackSP.Infrastructure.Extensions
             }
             if (targetFlags.HasFlag(LogTargetFlags.File))
             {
-                logConfig.WriteTo.RollingFile(AppDomain.CurrentDomain.BaseDirectory + $"logs/{instanceName}/{{Date}}.log", logLevel);
+                logConfig.WriteTo.RollingFile($"{AppDomain.CurrentDomain.BaseDirectory}logs/{instanceName}-{{Date}}.log", logLevel);
             }
             if (targetFlags.HasFlag(LogTargetFlags.AzureBlob))
             {
                 var connectionString = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING"));
-                logConfig.WriteTo.AzureBlobStorage(connectionString, logLevel, "logs", $"{instanceName}/{{yyyy}}-{{MM}}-{{dd}}.log");
+                logConfig.WriteTo.AzureBlobStorage(connectionString, logLevel, "logs", $"{instanceName}-{{yyyy}}-{{MM}}-{{dd}}.log");
             }
             var log = logConfig.CreateLogger();
 
