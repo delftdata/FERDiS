@@ -72,6 +72,7 @@ namespace BlackSP.Core.Endpoints
             {
                 _connectionMonitor.MarkDisconnected(_endpointConfig, remoteShardId);
                 passthroughQueue.Dispose();
+                s.Close();
             }
         }
 

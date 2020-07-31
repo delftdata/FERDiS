@@ -88,7 +88,8 @@ namespace BlackSP.CRA.Configuration
         {
             Console.WriteLine($"Registering connection \"{edge.FromVertex.VertexName} {edge.FromEndpoint}\" to \"{edge.ToVertex.VertexName} {edge.ToEndpoint}\"");
             SetConsoleSilenced(true);
-            await _craClient.ConnectAsync(edge.FromVertex.VertexName, edge.FromEndpoint, edge.ToVertex.VertexName, edge.ToEndpoint).ConfigureAwait(false);
+            var initiator = edge.FromVertex.VertexName.Contains("coordinator") ? ConnectionInitiator.ToSide : ConnectionInitiator.FromSide;
+            await _craClient.ConnectAsync(edge.FromVertex.VertexName, edge.FromEndpoint, edge.ToVertex.VertexName, edge.ToEndpoint, initiator).ConfigureAwait(false);
             SetConsoleSilenced(false);
         }
     }

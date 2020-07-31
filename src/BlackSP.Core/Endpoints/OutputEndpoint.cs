@@ -77,7 +77,7 @@ namespace BlackSP.Core.Endpoints
                     {
                         await writer.WriteMessage(message, t).ConfigureAwait(false);
                     }
-                    _logger.Verbose($"Message written to {_endpointConfig.RemoteVertexName} on {_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}");
+                    //_logger.Verbose($"Message written to {_endpointConfig.RemoteVertexName} on {_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}");
 
                     //await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
                 }

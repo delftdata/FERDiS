@@ -39,7 +39,7 @@ namespace BlackSP.Core.Sources
 
             _messages = new BlockingCollection<ControlMessage>(1 << 14);
             
-            heartBeatInterval = TimeSpan.FromSeconds(5);
+            heartBeatInterval = TimeSpan.FromMilliseconds(1000 * 5);
             lastHeartBeat = DateTime.Now.Add(-heartBeatInterval);//make sure we start off with a heartbeat
 
             _workerStateMonitor.OnWorkersStart += WorkerStateMonitor_OnWorkersStart;//on subset ready to launch --> instruct launch

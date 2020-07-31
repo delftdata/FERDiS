@@ -29,13 +29,7 @@ namespace BlackSP.CRA.Endpoints
             try
             {
                 //CRA invokes current method on a background thread so just invoke Egress on this thread
-                _logger.Debug($"Starting egress to vertex {otherVertex}${otherShardId} on endpoint {otherEndpoint}");
                 await _bspOutputEndpoint.Egress(stream, otherEndpoint, otherShardId, token).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                _logger.Warning(e, $"Exception on egress to vertex {otherVertex}${otherShardId} on endpoint {otherEndpoint}");
-                throw;
             }
             finally
             {

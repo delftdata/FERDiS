@@ -28,7 +28,7 @@ namespace BlackSP.Core.Monitors
         public event ConnectionChangeEventHandler OnConnectionChange;
 
         //mark connected
-        public void MarkConnected(IEndpointConfiguration endpoint, int shardId)
+        public virtual void MarkConnected(IEndpointConfiguration endpoint, int shardId)
         {
             _ = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
             var activeConnection = BuildActiveConnection(endpoint, shardId);
@@ -48,7 +48,7 @@ namespace BlackSP.Core.Monitors
         }
         
         //mark disconnected
-        public void MarkDisconnected(IEndpointConfiguration endpoint, int shardId)
+        public virtual void MarkDisconnected(IEndpointConfiguration endpoint, int shardId)
         {
             _ = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
             var activeConnection = BuildActiveConnection(endpoint, shardId);

@@ -38,6 +38,7 @@ namespace BlackSP.Streams
             {
                 throw new IOException($"{this.GetType()} tried to write to unwritable stream");
             }
+            
 
             int nextMsgLength = Convert.ToInt32(message.Length);
             Memory<byte> nextMsgLengthBytes = BitConverter.GetBytes(nextMsgLength).AsMemory();

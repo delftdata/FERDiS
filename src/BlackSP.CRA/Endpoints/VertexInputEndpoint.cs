@@ -32,16 +32,13 @@ namespace BlackSP.CRA.Endpoints
             //wraps overload as for input channels, we dont care which shard of other vertex it came from
             try
             {
-                _logger.Debug($"Starting ingress from vertex {otherVertex}${otherShardId} from endpoint {otherEndpoint}");
                 //CRA invokes this method on a background thread so just invoke Ingress on current thread
                 await _bspInputEndpoint.Ingress(stream, otherEndpoint, otherShardId, token).ConfigureAwait(false);
             }
-            catch (Exception e)
+            finally
             {
-                _logger.Warning(e, $"Exception on ingress from vertex {otherVertex}${otherShardId} from endpoint {otherEndpoint}");
-                throw;
+                _logger.Debug($"Stopped ingressing data from vertex {otherVertex}${otherShardId} from endpoint {otherEndpoint}");
             }
-           _logger.Debug($"Stopped ingressing data from vertex {otherVertex}${otherShardId} from endpoint {otherEndpoint}");
             token.ThrowIfCancellationRequested();
         }
 

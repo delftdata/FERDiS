@@ -50,6 +50,13 @@ namespace BlackSP.Core.UnitTests.Endpoints
             _targetOperator = operatorMoq.Object;
 
             var arrayPool = ArrayPool<byte>.Create();
+
+            //imaginative endpoint name
+            //mock vertex config
+            //mock iobjectserializer
+            //mock ireceiver
+            //mock connectionmonitor
+
             //_testEndpoint = new InputEndpoint(_targetOperator, _serializer, arrayPool);
         }
 

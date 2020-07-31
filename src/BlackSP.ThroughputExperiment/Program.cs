@@ -11,10 +11,11 @@ namespace BlackSP.ThroughputExperiment
     {
         static async Task Main(string[] args)
         {
-            var useSimulator = true;
+            var useSimulator = false;
 
             //Worker.Launch("crainst01", 1500, new AzureDataProvider(), null);
-            var logTargets = useSimulator ? LogTargetFlags.Console | LogTargetFlags.File : LogTargetFlags.Console | LogTargetFlags.AzureBlob;
+            var logTargets = LogTargetFlags.Console;
+            logTargets = logTargets | (useSimulator ? LogTargetFlags.File : LogTargetFlags.AzureBlob);
             var logLevel = LogEventLevel.Verbose;
 
             var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
