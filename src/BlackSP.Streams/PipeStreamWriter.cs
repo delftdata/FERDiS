@@ -23,10 +23,21 @@ namespace BlackSP.Streams
         {
             writtenBytes = 0;
             stream = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
-            writer = outputStream.UsePipeWriter();
+            writer = outputStream.UsePipe().Output;
             buffer = writer.GetMemory();
             alwaysFlush = flushAfterEveryMessage;
             
+            disposed = false;
+        }
+
+        public PipeStreamWriter(PipeWriter pipeWriter, bool flushAfterEveryMessage)
+        {
+            writtenBytes = 0;
+            writer = pipeWriter ?? throw new ArgumentNullException(nameof(pipeWriter));
+            stream = pipeWriter.AsStream();
+            buffer = writer.GetMemory();
+            alwaysFlush = flushAfterEveryMessage;
+
             disposed = false;
         }
 
@@ -63,7 +74,7 @@ namespace BlackSP.Streams
             return writtenBytes;
         }
 
-        public async Task FlushAndRefreshBuffer(int bytesToWrite = 4096, CancellationToken t = default)
+        private async Task FlushAndRefreshBuffer(int bytesToWrite = 4096, CancellationToken t = default)
         {
             writer.Advance(writtenBytes);
             await writer.FlushAsync(t);
@@ -75,10 +86,8 @@ namespace BlackSP.Streams
         {
             if (writtenBytes + bytesToWrite <= buffer.Length)
             {   //buffer capacity is sufficient
-                //last flush happened less than 'interval' ago
                 return;
             }
-
             //the writebuffer is about to overflow, flush first
             await FlushAndRefreshBuffer(bytesToWrite, t);
         }

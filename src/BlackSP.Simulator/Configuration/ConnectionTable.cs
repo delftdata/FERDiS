@@ -51,13 +51,13 @@ namespace BlackSP.Simulator.Configuration
                 outConnections = new Connection[connection.ToShardCount];
                 _outgoingConnectionDict.Add(fromKey, outConnections);
             }
+            var (inStream, outStream) = FullDuplexStream.CreatePair();
+            //var shareableStream = new ();//new ProducerConsumerStream();// Stream.Synchronized(new ProducerConsumerStream());
 
-            var shareableStream = new SimplexStream();//new ProducerConsumerStream();// Stream.Synchronized(new ProducerConsumerStream());
-
-            inStreams[connection.FromShardId] = shareableStream;
+            inStreams[connection.FromShardId] = inStream;
             inConnections[connection.FromShardId] = connection;
 
-            outStreams[connection.ToShardId] = shareableStream;
+            outStreams[connection.ToShardId] = outStream;
             outConnections[connection.ToShardId] = connection;
 
         }

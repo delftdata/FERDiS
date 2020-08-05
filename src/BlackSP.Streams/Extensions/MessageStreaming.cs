@@ -18,6 +18,7 @@ namespace BlackSP.Streams.Extensions
         /// <param name="outputQueue"></param>
         /// <param name="t"></param>
         /// <returns></returns>
+        [Obsolete("Use BlackSP.Streams.PipeStreamReader instead", true)]
         public static async Task ReadMessagesTo(this Stream s, BlockingCollection<byte[]> outputQueue, CancellationToken t)
         {
             _ = outputQueue ?? throw new ArgumentNullException(nameof(outputQueue));
@@ -28,17 +29,27 @@ namespace BlackSP.Streams.Extensions
             
             while (!t.IsCancellationRequested)
             {
-                if (currentBuffer.TryReadMessage(out var msgbodySequence, out var readPosition))
+                var timeoutSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(10 * 1000));
+                var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
+                try
                 {
-                    outputQueue.Add(msgbodySequence.ToArray());
-                    currentBuffer = currentBuffer.Slice(readPosition);
-                }
-                else
+                    if (currentBuffer.TryReadMessage(out var msgbodySequence, out var readPosition))
+                    {
+                        outputQueue.Add(msgbodySequence.ToArray());
+                        currentBuffer = currentBuffer.Slice(readPosition);
+                    }
+                    else
+                    {
+                        reader.AdvanceTo(readPosition);
+                        readRes = await reader.ReadAsync(linkedSource.Token);
+                        currentBuffer = readRes.Buffer;
+                    }
+                } 
+                catch(OperationCanceledException) when(timeoutSource.IsCancellationRequested)
                 {
-                    reader.AdvanceTo(readPosition);
-                    readRes = await reader.ReadAsync(t);
-                    currentBuffer = readRes.Buffer;
+                    Console.WriteLine("nothing to read for 10 seconds..");
                 }
+                
             }
             t.ThrowIfCancellationRequested();
         }
@@ -51,6 +62,7 @@ namespace BlackSP.Streams.Extensions
         /// <param name="remoteShardId"></param>
         /// <param name="t"></param>
         /// <returns></returns>
+        [Obsolete("Use BlackSP.Streams.PipeStreamWriter instead", true)]
         public static async Task WriteMessagesFrom(this Stream outputStream, BlockingCollection<byte[]> inputQueue, CancellationToken t)
         {
             _ = inputQueue ?? throw new ArgumentNullException(nameof(inputQueue));

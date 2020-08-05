@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BlackSP.Streams.Exceptions;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
@@ -20,24 +21,27 @@ namespace BlackSP.Streams.Extensions
         /// <remarks>Does not advance the PipeReader!</remarks>
         public static ReadOnlySequence<byte> ReadMessage(this ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> msgBodySequence)
         {
-            var msgLengthSequence = buffer.Slice(0, Math.Min(buffer.Length, 4));
+            var msgLengthSequence = buffer.Slice(buffer.Start, Math.Min(buffer.Length, 4));
             if (msgLengthSequence.Length != 4)
             {
-                msgBodySequence = default;
-                return buffer.Slice(buffer.Start, 0); //the reader hasnt received the next message yet, abort to try again
+                throw new ReadMessageFromStreamException("Missing message length");
             }
 
             Span<byte> spanOnStack = stackalloc byte[(int)msgLengthSequence.Length];
-
             msgLengthSequence.CopyTo(spanOnStack);
+            
             int msgLength = MemoryMarshal.Read<int>(spanOnStack);
+            if(msgLength == 0)
+            {
+                throw new ReadMessageFromStreamException("Zero length message");
+                //msgBodySequence = default;
+                //return buffer.Slice(buffer.Start, 0);
+            }
 
             msgBodySequence = buffer.Slice(4, Math.Min(buffer.Length-4, msgLength));
             if (msgBodySequence.Length != msgLength)
             {
-                msgBodySequence = default;
-                
-                return buffer.Slice(buffer.Start, 0); //the reader hasnt received the full message yet, abort to try again
+                throw new ReadMessageFromStreamException("Invalid message length");
             }
 
             return buffer.Slice(0, msgLength+4);
@@ -51,10 +55,21 @@ namespace BlackSP.Streams.Extensions
         /// <returns></returns>
         public static bool TryReadMessage(this ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> msgBodySequence, out SequencePosition readPosition)
         {
-            var readSequence = buffer.ReadMessage(out msgBodySequence);
-            readPosition = readSequence.End;
-            //slice what was read off the buffer
-            return readSequence.Length > 0;
+            bool result;
+            try
+            {
+                var readSequence = buffer.ReadMessage(out msgBodySequence);
+                readPosition = readSequence.End;
+                //slice what was read off the buffer
+                result = true;
+            }
+            catch(ReadMessageFromStreamException)
+            {
+                msgBodySequence = buffer.Slice(buffer.Start, 0);
+                readPosition = msgBodySequence.End;
+                result = false;
+            }
+            return result;
         }
 
         /// <summary>

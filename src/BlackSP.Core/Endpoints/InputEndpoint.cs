@@ -3,7 +3,9 @@ using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
+using BlackSP.Streams;
 using BlackSP.Streams.Extensions;
+using Nerdbank.Streams;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
@@ -24,6 +26,7 @@ namespace BlackSP.Core.Endpoints
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
+
         public InputEndpoint(string endpointName,
                              IVertexConfiguration vertexConfig,
                              IObjectSerializer<IMessage> serializer,
@@ -53,14 +56,18 @@ namespace BlackSP.Core.Endpoints
             {
                 throw new Exception($"Invalid IEndpointConfig, expected remote endpointname: {_endpointConfig.RemoteEndpointName} but was: {remoteEndpointName}");
             }
-            BlockingCollection<byte[]> passthroughQueue = new BlockingCollection<byte[]>(1 << 14);
+            BlockingCollection<byte[]> passthroughQueue = new BlockingCollection<byte[]>(1 << 12);
+
+
             try
             {
                 t.ThrowIfCancellationRequested();
                 _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName} starting read & deserialize threads. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
+                //TODO: keepalive thread?
+                var readerThread = Task.Run(() => ReadMessagesFromStream(s, passthroughQueue, t));
                 var deserializerThread = Task.Run(() => DeserializeToReceiver(passthroughQueue, remoteShardId, t));
-                var exitedTask = await Task.WhenAny(deserializerThread, s.ReadMessagesTo(passthroughQueue, t)).ConfigureAwait(false);
+                var exitedTask = await Task.WhenAny(deserializerThread, readerThread).ConfigureAwait(false);
                 await exitedTask.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
             }
             catch(Exception e)
@@ -73,6 +80,49 @@ namespace BlackSP.Core.Endpoints
                 _connectionMonitor.MarkDisconnected(_endpointConfig, remoteShardId);
                 passthroughQueue.Dispose();
                 s.Close();
+            }
+        }
+
+        private async Task ReadMessagesFromStream(Stream s, BlockingCollection<byte[]> passthroughQueue, CancellationToken t)
+        {
+            var pipe = s.UsePipe();
+            PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
+            PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for keepalive checks, should always flush
+            while (!t.IsCancellationRequested)
+            {
+                CancellationTokenSource timeoutSource, linkedSource;
+                timeoutSource = linkedSource = null;
+                try
+                {
+                    var timeoutSeconds = 30;
+                    //if no message received for XXX seconds:
+                    //assume connection dropped and throw exception
+                    timeoutSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+                    linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
+                    var msg = await streamReader.ReadNextMessage(linkedSource.Token).ConfigureAwait(false);
+                    
+                    if(msg.Length == 1 && msg[0] == (byte)255)
+                    {
+                        _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName} received PING from {_endpointConfig.RemoteVertexName}");
+                        //its a ping message, respond with a pong
+                        await streamWriter.WriteMessage(new byte[1] { (byte)255 }, t).ConfigureAwait(false); //note we dont use the linkedsource here, the timeout did not happen so we no longer have to consider it
+                    } 
+                    else
+                    {
+                        //its a regular message, queue it for processing
+                        passthroughQueue.Add(msg);
+                    }
+                }
+                catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
+                {
+                    _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} PING timeout, rethrowing to exit read thread");
+                    throw;
+                }
+                finally
+                {
+                    timeoutSource.Dispose();
+                    linkedSource.Dispose();
+                }
             }
         }
 

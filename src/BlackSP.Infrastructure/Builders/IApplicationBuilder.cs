@@ -27,6 +27,10 @@ namespace BlackSP.Infrastructure.Builders
         /// </summary>
         IApplicationBuilder ConfigureCheckpointing();
 
+        /// <summary>
+        /// Build the IApplication
+        /// </summary>
+        /// <returns></returns>
         Task<IApplication> Build();
     }
 

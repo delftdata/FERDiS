@@ -27,7 +27,8 @@ namespace BlackSP.CRA.Configuration
         }
 
         /// <summary>
-        /// Little utility method to get rid of the huge mess CRA prints on the console
+        /// Little utility method to redirect console output to TextWriter.Null or the default Console.Out<br/>
+        /// Created to get rid of the mess CRA prints on the console
         /// </summary>
         /// <param name="silenced"></param>
         private void SetConsoleSilenced(bool silenced)
@@ -89,7 +90,7 @@ namespace BlackSP.CRA.Configuration
             Console.WriteLine($"Registering connection \"{edge.FromVertex.VertexName} {edge.FromEndpoint}\" to \"{edge.ToVertex.VertexName} {edge.ToEndpoint}\"");
             SetConsoleSilenced(true);
             var initiator = edge.FromVertex.VertexName.Contains("coordinator") ? ConnectionInitiator.ToSide : ConnectionInitiator.FromSide;
-            await _craClient.ConnectAsync(edge.FromVertex.VertexName, edge.FromEndpoint, edge.ToVertex.VertexName, edge.ToEndpoint, initiator).ConfigureAwait(false);
+            await _craClient.ConnectAsync(edge.FromVertex.VertexName, edge.FromEndpoint, edge.ToVertex.VertexName, edge.ToEndpoint).ConfigureAwait(false);
             SetConsoleSilenced(false);
         }
     }

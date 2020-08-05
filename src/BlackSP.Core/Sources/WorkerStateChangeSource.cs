@@ -37,7 +37,7 @@ namespace BlackSP.Core.Sources
             _workerStateMonitor = workerStateMonitor ?? throw new ArgumentNullException(nameof(workerStateMonitor));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _messages = new BlockingCollection<ControlMessage>(1 << 14);
+            _messages = new BlockingCollection<ControlMessage>(1 << 12);
             
             heartBeatInterval = TimeSpan.FromMilliseconds(1000 * 5);
             lastHeartBeat = DateTime.Now.Add(-heartBeatInterval);//make sure we start off with a heartbeat
@@ -100,7 +100,7 @@ namespace BlackSP.Core.Sources
         public Task Flush()
         {
             _messages.CompleteAdding();
-            _messages = new BlockingCollection<ControlMessage>(1 << 14);
+            _messages = new BlockingCollection<ControlMessage>(1 << 12);
             return Task.CompletedTask; //nothing to flush here
         }
 

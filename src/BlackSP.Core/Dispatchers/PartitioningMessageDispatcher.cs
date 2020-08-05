@@ -126,7 +126,7 @@ namespace BlackSP.Core.Dispatchers
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
                     var connectionKey = endpointConfig.GetConnectionKey(shardId);
-                    _outputQueues.Add(connectionKey, new BlockingCollection<byte[]>(1 << 14)); //CAPACITY??
+                    _outputQueues.Add(connectionKey, new BlockingCollection<byte[]>(1 << 12)); //CAPACITY??
                     _outputBuffers.Add(connectionKey, new List<byte[]>());
                 }
             }
