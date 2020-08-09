@@ -47,21 +47,22 @@ namespace BlackSP.Simulator.Core
 
             try
             {
-                await await Task.WhenAny(threads); //exited means the thread broke out of the restart loop
+                var exitedThread = await Task.WhenAny(threads).ConfigureAwait(false); //exited means the thread broke out of the restart loop
+                await exitedThread.ConfigureAwait(false); //ensure rethrowing any exception on the exited thread
             }
             catch(OperationCanceledException)
             {
                 try
                 {
                     linkedCTSource.Cancel();
-                    await Task.WhenAll(threads);
-                } catch(OperationCanceledException e) { /*shh*/}
+                    await Task.WhenAll(threads).ConfigureAwait(false);
+                } catch(OperationCanceledException) { /*shh*/}
                 
                 
                 _logger.Debug($"{instanceName} - Input endpoint {endpointName} was cancelled and is now resetting streams");
                 foreach (var stream in incomingStreams)
                 {
-                    stream.Dispose(); //force close the stream to trigger exception in output endpoint as if it were a dropped network stream
+                    //stream.Dispose();
                 }
                 foreach(var connection in incomingConnections)
                 {

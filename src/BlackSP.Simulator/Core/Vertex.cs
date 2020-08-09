@@ -43,30 +43,33 @@ namespace BlackSP.Simulator.Core
             var threads = new List<Task>();
             try
             {
+                logger = dependencyScope.Resolve<ILogger>();
+                logger.Debug($"Vertex startup initiated");
+
                 controller = dependencyScope.Resolve<ControlLayerProcessController>();
                 var inputFactory = dependencyScope.Resolve<InputEndpoint.Factory>();
                 var outputFactory = dependencyScope.Resolve<OutputEndpoint.Factory>();
-                logger = dependencyScope.Resolve<ILogger>();
-                logger.Debug($"Setting up vertex");
+                
                 foreach (var endpointConfig in hostConfig.VertexConfiguration.InputEndpoints)
                 {
                     var endpoint = new InputEndpointHost(inputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable, dependencyScope.Resolve<ILogger>());
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
+                logger.Debug($"Input endpoints created");
 
                 foreach (var endpointConfig in hostConfig.VertexConfiguration.OutputEndpoints)
                 {
                     var endpoint = new OutputEndpointHost(outputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable, dependencyScope.Resolve<ILogger>());
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
-
+                logger.Debug($"Output endpoints created");
                 threads.Add(Task.Run(() => controller.StartProcess(t)));
 
-                logger.Debug($"Vertex setup completed");
+                logger.Debug($"Vertex startup completed");
                 await await Task.WhenAny(threads); //double await as whenany returns the task that completed
                 t.ThrowIfCancellationRequested();
             }
-            catch(OperationCanceledException) { throw; } //shhh
+            catch(OperationCanceledException) { throw; }
             finally
             {
                 logger.Debug($"Vertex has shut down");

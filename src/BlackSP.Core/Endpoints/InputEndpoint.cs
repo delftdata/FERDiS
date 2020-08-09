@@ -92,9 +92,9 @@ namespace BlackSP.Core.Endpoints
             {
                 CancellationTokenSource timeoutSource, linkedSource;
                 timeoutSource = linkedSource = null;
+                int timeoutSeconds = 30;
                 try
                 {
-                    var timeoutSeconds = 30;
                     //if no message received for XXX seconds:
                     //assume connection dropped and throw exception
                     timeoutSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
@@ -115,8 +115,8 @@ namespace BlackSP.Core.Endpoints
                 }
                 catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
                 {
-                    _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} PING timeout, rethrowing to exit read thread");
-                    throw;
+                    _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} PING timeout, throwing IOException");
+                    throw new IOException($"Connection timeout, did not receive any messages for {timeoutSeconds} seconds");
                 }
                 finally
                 {

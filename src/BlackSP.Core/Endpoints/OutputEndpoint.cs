@@ -64,28 +64,34 @@ namespace BlackSP.Core.Endpoints
         public async Task Egress(Stream outputStream, string remoteEndpointName, int remoteShardId, CancellationToken t)
         {
             _ = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
+            string targetInstanceName = _endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId);
 
             PipeStreamWriter writer = null;
             PipeStreamReader reader = null;
             CancellationTokenSource linkedSource = null;
+            CancellationToken pongTimeoutToken = default;
             try
             {
-                _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} starting output stream writer. Writing to \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
+                _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} starting output stream writer. Writing to vertex {_endpointConfig.RemoteVertexName} on instance {targetInstanceName} on endpoint {remoteEndpointName}");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
 
-                var pipe = outputStream.UsePipe();
-
                 var msgQueue = _dispatcher.GetDispatchQueue(_endpointConfig, remoteShardId);
+
+                var pipe = outputStream.UsePipe();
                 writer = new PipeStreamWriter(pipe.Output, _endpointConfig.IsControl);
                 reader = new PipeStreamReader(pipe.Input);
 
-                var pongTimeoutToken = await StartPongListener(reader, _pongTimeoutSeconds, t).ConfigureAwait(false);
+                pongTimeoutToken = await StartPongListener(reader, _pongTimeoutSeconds, t).ConfigureAwait(false);
                 linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, pongTimeoutToken);
                 await StartWritingOutputWhilePinging(writer, msgQueue, _pingSeconds, linkedSource.Token).ConfigureAwait(false);
             } 
+            catch(OperationCanceledException) when(pongTimeoutToken.IsCancellationRequested)
+            {
+                throw new IOException($"Connection timeout, did not receive any PONG responses from {targetInstanceName} for {_pongTimeoutSeconds} seconds");
+            }
             catch(Exception e)
             {
-                _logger.Warning(e, $"Output endpoint {_endpointConfig.LocalEndpointName} output stream writer ran into an exception. Writing to \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
+                _logger.Warning(e, $"Output endpoint {_endpointConfig.LocalEndpointName} output stream writer ran into an exception. Writing to vertex {_endpointConfig.RemoteVertexName} on instance {targetInstanceName} on endpoint {remoteEndpointName}");
                 throw;
             }
             finally
@@ -114,12 +120,11 @@ namespace BlackSP.Core.Endpoints
 
                 var nextPingOffset = lastPingOffset.AddSeconds(pingFrequencySeconds);
                 var timeTillNextPing = nextPingOffset - DateTimeOffset.Now;
-                var msTillNextPing = (int)timeTillNextPing.TotalMilliseconds; //note truncation due to cast (basically equals flooring the value)
-                
+                var msTillNextPing = (int)timeTillNextPing.TotalMilliseconds; //note truncation due to cast (basically flooring the value)
                 if (msTillNextPing < 0 || !msgQueue.TryTake(out var message, msTillNextPing))
                 {   //either there are no more miliseconds to wait for the next ping --> (time for another ping)
                     //or we couldnt fetch a message from the queue before those milliseconds passed --> (time for another ping)
-                    _logger.Verbose($"Sending out PING on output {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
+                    _logger.Debug($"PING sent on output {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
                     lastPingOffset = DateTimeOffset.Now;
                     message = new byte[1] { (byte)255 }; //empty arrays are used as ping & pong messages
                 }
@@ -175,7 +180,7 @@ namespace BlackSP.Core.Endpoints
                         } 
                         else
                         {
-                            _logger.Debug($"Received PONG on output {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
+                            _logger.Debug($"PONG received on output {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
                             lastPongReception = DateTimeOffset.Now;
                             //all good, wait for the next one
                         }

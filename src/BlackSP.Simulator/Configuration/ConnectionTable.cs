@@ -28,6 +28,8 @@ namespace BlackSP.Simulator.Configuration
 
         public void RegisterConnection(Connection connection)
         {
+            _ = connection ?? throw new ArgumentNullException(nameof(connection));
+
             var fromKey = GetKey(connection.FromInstanceName, connection.FromEndpointName);
             var toKey = GetKey(connection.ToInstanceName, connection.ToEndpointName);
             if (!_incomingStreamDict.TryGetValue(toKey, out Stream[] inStreams))

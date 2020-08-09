@@ -83,7 +83,7 @@ namespace BlackSP.CRA.Kubernetes
         private string BuildDeploymentSection(IVertexBuilder configurator, string instanceName)
         {
             return $@"
-kind: Deployment
+kind: StatefulSet
 apiVersion: apps/v1
 metadata:
     namespace: default
@@ -93,6 +93,7 @@ metadata:
         instance: {instanceName}
 spec:
     replicas: 1
+    serviceName: {instanceName}
     selector:
         matchLabels:
             instance: {instanceName}

@@ -11,13 +11,13 @@ namespace BlackSP.ThroughputExperiment
     {
         static async Task Main(string[] args)
         {
-            var useSimulator = true;
+            var useSimulator = false;
 
             //Worker.Launch("crainst01", 1500, new AzureDataProvider(), null);
             var logTargets = LogTargetFlags.Console;
             logTargets = logTargets | (useSimulator ? LogTargetFlags.File : LogTargetFlags.AzureBlob);
             
-            var logLevel = LogEventLevel.Verbose;
+            var logLevel = LogEventLevel.Debug;
 
             var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
             var app = await appBuilder
@@ -31,19 +31,19 @@ namespace BlackSP.ThroughputExperiment
         static void ConfigureOperatorGraph(IOperatorVertexGraphBuilder graph)
         {
             var source = graph.AddSource<SampleSourceOperator, SampleEvent>(1);
-            //var filter = graph.AddFilter<SampleFilterOperator, SampleEvent>(1);
-            //var mapper = graph.AddMap<SampleMapOperator, SampleEvent, SampleEvent>(1);
+            var filter = graph.AddFilter<SampleFilterOperator, SampleEvent>(1);
+            var mapper = graph.AddMap<SampleMapOperator, SampleEvent, SampleEvent>(1);
             //var aggregate = graph.AddAggregate<SampleAggregateOperator, SampleEvent, SampleEvent2>(1);
             var sink = graph.AddSink<SampleSinkOperator, SampleEvent>(1);
 
-            /*
+            ///*
             source.Append(filter);
             filter.Append(mapper);
             //mapper.Append(aggregate);
             mapper.Append(sink);
-            */
+            //*/
 
-            source.Append(sink);
+            //source.Append(sink);
         }
     }
 }
