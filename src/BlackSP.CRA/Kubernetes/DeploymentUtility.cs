@@ -8,6 +8,8 @@ namespace BlackSP.CRA.Kubernetes
 {
     public class KubernetesDeploymentUtility
     {
+        private const string DockerHubImageName = "mdzwart/cra-net3.1:latest";
+
         private ICollection<IVertexBuilder> _configurators;
         private string lastWrittenYamlFile;
 
@@ -49,7 +51,7 @@ namespace BlackSP.CRA.Kubernetes
             Console.WriteLine($"");
             Console.WriteLine($"================================= Launching on Docker =================================");
             Console.Write($"> docker run --env AZURE_STORAGE_CONN_STRING=\"{Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING")}\"");
-            Console.Write($" mdzwart/cra-net2.1:latest"); //container spec
+            Console.Write($" {DockerHubImageName}"); //container spec
             Console.WriteLine($" crainst01 1500"); //commandline args
             Console.WriteLine($"=======================================================================================");
             Console.WriteLine($"");
@@ -106,7 +108,7 @@ spec:
         spec:
             containers:
             - name: {instanceName}
-              image: mdzwart/cra-net2.1:latest
+              image: {DockerHubImageName}
               ports:
               - containerPort: 1500
               env:

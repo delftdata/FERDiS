@@ -68,7 +68,7 @@ namespace BlackSP.Core.Monitors
                 return; //we will get two reports, one from upstream, one from downstream, selectively ignore downstream to not handle duplicates.
             }
             var changedInstanceName = changedConnection.Endpoint.RemoteInstanceNames.ElementAt(changedConnection.ShardId);
-            _logger.Debug($"Vertex on instance {changedInstanceName} {(isConnected ? "dis" : "")}connected");
+            _logger.Debug($"Vertex on instance {changedInstanceName} {(isConnected ? "" : "dis")}connected");
             var currentState = _workerStates.Get(changedInstanceName);
             switch(currentState)
             {

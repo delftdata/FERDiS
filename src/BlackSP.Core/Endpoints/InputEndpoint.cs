@@ -58,19 +58,22 @@ namespace BlackSP.Core.Endpoints
             }
             BlockingCollection<byte[]> passthroughQueue = new BlockingCollection<byte[]>(1 << 12);
 
-
             try
             {
                 t.ThrowIfCancellationRequested();
                 _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName} starting read & deserialize threads. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
-                //TODO: keepalive thread?
                 var readerThread = Task.Run(() => ReadMessagesFromStream(s, passthroughQueue, t));
                 var deserializerThread = Task.Run(() => DeserializeToReceiver(passthroughQueue, remoteShardId, t));
                 var exitedTask = await Task.WhenAny(deserializerThread, readerThread).ConfigureAwait(false);
                 await exitedTask.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
             }
-            catch(Exception e)
+            catch (OperationCanceledException) when (t.IsCancellationRequested)
+            {
+                _logger.Information($"Input endpoint {_endpointConfig.LocalEndpointName} is handling cancellation request from caller side");
+                throw;
+            }
+            catch (Exception e)
             {
                 _logger.Warning(e, $"Input endpoint {_endpointConfig.LocalEndpointName} read & deserialize threads ran into an exception. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
                 throw;
@@ -85,7 +88,7 @@ namespace BlackSP.Core.Endpoints
 
         private async Task ReadMessagesFromStream(Stream s, BlockingCollection<byte[]> passthroughQueue, CancellationToken t)
         {
-            var pipe = s.UsePipe();
+            var pipe = s.UsePipe(cancellationToken: t);
             PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
             PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for keepalive checks, should always flush
             while (!t.IsCancellationRequested)
@@ -101,15 +104,16 @@ namespace BlackSP.Core.Endpoints
                     linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
                     var msg = await streamReader.ReadNextMessage(linkedSource.Token).ConfigureAwait(false);
                     
-                    if(msg.Length == 1 && msg[0] == (byte)255)
+                    if(msg.IsKeepAliveMessage())
                     {
-                        _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName} received PING from {_endpointConfig.RemoteVertexName}");
-                        //its a ping message, respond with a pong
-                        await streamWriter.WriteMessage(new byte[1] { (byte)255 }, t).ConfigureAwait(false); //note we dont use the linkedsource here, the timeout did not happen so we no longer have to consider it
-                    } 
-                    else
+                        _logger.Debug($"PING received on input endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
+                        //respond with a the same message (keepalive)
+                        await streamWriter.WriteMessage(msg, t).ConfigureAwait(false); //note we dont use the linkedsource here, the timeout did not happen so we no longer have to consider it
+                        _logger.Debug($"PONG sent on input endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
+
+                    }
+                    else //its a regular message, queue it for processing
                     {
-                        //its a regular message, queue it for processing
                         passthroughQueue.Add(msg);
                     }
                 }
@@ -124,6 +128,7 @@ namespace BlackSP.Core.Endpoints
                     linkedSource.Dispose();
                 }
             }
+            t.ThrowIfCancellationRequested();
         }
 
         private async Task DeserializeToReceiver(BlockingCollection<byte[]> inputqueue, int shardId, CancellationToken t)

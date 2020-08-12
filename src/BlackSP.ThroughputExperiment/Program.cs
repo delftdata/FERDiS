@@ -17,7 +17,7 @@ namespace BlackSP.ThroughputExperiment
             var logTargets = LogTargetFlags.Console;
             logTargets = logTargets | (useSimulator ? LogTargetFlags.File : LogTargetFlags.AzureBlob);
             
-            var logLevel = LogEventLevel.Debug;
+            var logLevel = LogEventLevel.Verbose;
 
             var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
             var app = await appBuilder
