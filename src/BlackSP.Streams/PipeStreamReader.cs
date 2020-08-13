@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Streams
 {
-    public class PipeStreamReader
+    public class PipeStreamReader : IDisposable
     {
 
         private readonly Stream _stream;
@@ -21,19 +21,20 @@ namespace BlackSP.Streams
         private ReadResult _lastRead;
         private ReadOnlySequence<byte> _buffer;
         private bool _didRead;
-        
+        private bool _disposed;
+
         public PipeStreamReader(Stream source)
         {
             _stream = source ?? throw new ArgumentNullException(nameof(source));
             _reader = _stream.UsePipeReader();
-            _didRead = false;
+            _didRead = _disposed = false;
         }
 
         public PipeStreamReader(PipeReader reader)
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _stream = reader.AsStream();
-            _didRead = false;
+            _didRead = _disposed = false;
         }
 
         public async Task<byte[]> ReadNextMessage(CancellationToken t)
@@ -45,7 +46,6 @@ namespace BlackSP.Streams
                 if (_didRead && _buffer.TryReadMessage(out var msgbodySequence, out var readPosition))
                 {
                     _buffer = _buffer.Slice(readPosition);
-                    
                     return msgbodySequence.ToArray();
                 }
 
@@ -60,5 +60,37 @@ namespace BlackSP.Streams
             t.ThrowIfCancellationRequested(); //if we end up here it's due to cancellation
             throw null;//so the compiler knows we always throw here
         }
+
+        #region dispose pattern
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    //dispose managed state (managed objects)
+                    _reader.Complete();
+                    _stream.Dispose();
+                }
+                _disposed = true;
+            }
+        }
+
+        // // override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~PipeStreamReader()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
     }
 }

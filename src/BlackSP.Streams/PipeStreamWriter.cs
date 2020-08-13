@@ -26,7 +26,10 @@ namespace BlackSP.Streams
             writer = outputStream.UsePipe().Output;
             buffer = writer.GetMemory();
             alwaysFlush = flushAfterEveryMessage;
-            
+            if (!stream.CanWrite)
+            {
+                throw new IOException($"{this.GetType()} tried to construct with unwritable stream");
+            }
             disposed = false;
         }
 
@@ -45,11 +48,6 @@ namespace BlackSP.Streams
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
             t.ThrowIfCancellationRequested();
-            if(!stream.CanWrite)
-            {
-                throw new IOException($"{this.GetType()} tried to write to unwritable stream");
-            }
-            
 
             int nextMsgLength = Convert.ToInt32(message.Length);
             Memory<byte> nextMsgLengthBytes = BitConverter.GetBytes(nextMsgLength).AsMemory();
@@ -74,12 +72,12 @@ namespace BlackSP.Streams
             return writtenBytes;
         }
 
-        private async Task FlushAndRefreshBuffer(int bytesToWrite = 4096, CancellationToken t = default)
+        public async Task FlushAndRefreshBuffer(int newBufferSize = 4096, CancellationToken t = default)
         {
             writer.Advance(writtenBytes);
             await writer.FlushAsync(t);
             writtenBytes = 0;
-            buffer = writer.GetMemory(bytesToWrite);
+            buffer = writer.GetMemory(newBufferSize);
         }
 
         private async Task EnsureBufferCapacity(int bytesToWrite, CancellationToken t)
@@ -99,7 +97,7 @@ namespace BlackSP.Streams
                 if (disposing)
                 {
                     writer.Complete();
-                    stream.Close();
+                    stream.Dispose();
                 }
                 disposed = true;
             }

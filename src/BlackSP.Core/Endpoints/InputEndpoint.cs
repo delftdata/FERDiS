@@ -89,8 +89,9 @@ namespace BlackSP.Core.Endpoints
         private async Task ReadMessagesFromStream(Stream s, BlockingCollection<byte[]> passthroughQueue, CancellationToken t)
         {
             var pipe = s.UsePipe(cancellationToken: t);
-            PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
-            PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for keepalive checks, should always flush
+            using PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
+            using PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for keepalive checks, should always flush
+            
             while (!t.IsCancellationRequested)
             {
                 CancellationTokenSource timeoutSource, linkedSource;
