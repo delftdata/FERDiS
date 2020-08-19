@@ -123,7 +123,7 @@ namespace BlackSP.Core.Endpoints
                 
                 await writer.WriteMessage(message, t).ConfigureAwait(false);
 
-                if(message.IsKeepAliveMessage()) //ensure flushing to network to prevent buffering and timing out
+                if(message.IsKeepAliveMessage()) //ensure flushing to network to prevent keepalive message getting suck in the output buffer, eventually causing a timeout
                 {
                     await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
                 }
