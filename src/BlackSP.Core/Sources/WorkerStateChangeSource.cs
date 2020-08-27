@@ -55,13 +55,10 @@ namespace BlackSP.Core.Sources
             }
 
             //TODO: recovery line calculation
-            Dictionary<string, Guid> checkpointMap = affectedInstanceNames.ToDictionary(name => name, name => Guid.NewGuid());
+            var checkpointMap = affectedInstanceNames.ToDictionary(name => name, name => Guid.NewGuid());
 
             var msg = new ControlMessage();
-            msg.AddPayload(new CheckpointRestoreRequestPayload
-            {
-                InstanceCheckpointMap = checkpointMap
-            });
+            msg.AddPayload(new CheckpointRestoreRequestPayload(checkpointMap));
             _messages.Add(msg);
         }
 

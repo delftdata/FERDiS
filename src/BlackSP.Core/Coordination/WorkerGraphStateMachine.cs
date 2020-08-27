@@ -5,15 +5,32 @@ using System.Text;
 
 namespace BlackSP.Core.Coordination
 {
-    public enum WorkerGraphState
-    {
-        Starting,
-        Faulted,
-        Recovering
-    }
-
+    
     public class WorkerGraphStateMachine
     {
+        public enum State
+        {
+            Idle,
+            Running,
+            /// <summary>
+            /// State indicating one or more workers are in faulted state (reentrant in face of multiple failures)
+            /// </summary>
+            Faulted,
+            Recovering
+        }
+
+        public enum Trigger
+        {
+            /// <summary>
+            /// Trigger indicating that one or more workers have reached a faulted state
+            /// </summary>
+            WorkersFaulted,
+            /// <summary>
+            /// Trigger indicating that all workers have reached running or halted state
+            /// </summary>
+            WorkersHealthy
+        }
+
         /// <summary>
         /// Autofac delegate factory
         /// </summary>
@@ -24,6 +41,7 @@ namespace BlackSP.Core.Coordination
         private readonly IDictionary<string, WorkerStateMachine> _workerStateMachines;
 
         public delegate void GraphStateChangeEventArgs();
+        public event GraphStateChangeEventArgs Lol;
 
         public WorkerGraphStateMachine(IEnumerable<string> workerInstanceNames, WorkerStateMachine.Factory stateMachineFactory)
         {
@@ -40,9 +58,24 @@ namespace BlackSP.Core.Coordination
             }
         }
 
-        private void WorkerStateMachine_OnStateChange(string affectedInstanceName, WorkerStateMachine.WorkerState oldState, WorkerStateMachine.WorkerState newState)
+        private void WorkerStateMachine_OnStateChange(string affectedInstanceName, WorkerStateMachine.State newState)
         {
-            throw new NotImplementedException();
+            //if any faulted (even when already other faulted)
+            //- prepare recovery line (or overwrite if already present)
+            //- halt workers that are affected (and in running state)
+            //- wait
+           
+            //... workers will automagically go back to halted state when they restart
+
+            //when no faulted and a subset is halted..
+            //if recovery line prepared, transition to restoring state
+            //if no recovery line prepared, transition to running
+
+            //when restoring
+            //- trigger restore in every worker state machine with checkpoint ID
+            //- remove prepared recovery line
+
+            //... workers will automagically go back to halted state when checkpoint restore completes
         }
 
         

@@ -18,7 +18,13 @@ namespace BlackSP.Core.Models.Payloads
         /// Lastly, if there is no value for a given key, no checkpoint has to be restored
         /// </summary>
         [ProtoMember(1)]
-        public Dictionary<string, Guid> InstanceCheckpointMap { get; set; }
+        public IDictionary<string, Guid> InstanceCheckpointMap { get; private set; }
+
+
+        public CheckpointRestoreRequestPayload(IDictionary<string, Guid> checkpointMap)
+        {
+            InstanceCheckpointMap = checkpointMap ?? throw new ArgumentNullException(nameof(checkpointMap));
+        }
 
     }
 }
