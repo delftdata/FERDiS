@@ -8,6 +8,8 @@ namespace BlackSP.Checkpointing.Persistence
 {
     public interface ICheckpointStorage
     {
+        Task<IEnumerable<MetaData>> GetAllMetaData();
+
         Task Store(Checkpoint checkpoint);
 
         Task<Checkpoint> Retrieve(Guid id);

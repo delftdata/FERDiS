@@ -8,23 +8,22 @@ namespace BlackSP.Checkpointing.Core
     [Serializable]
     public class Checkpoint
     {
-        public Guid Id => _identifier;
-
+        public Guid Id { get; }
+        
+        public MetaData MetaData { get; }
+        
         /// <summary>
         /// Returns snapshot keys enumerable, usable for fetching snapshots
         /// </summary>
         public IEnumerable<string> Keys => _snapshots.Keys;
-        
-        private readonly Guid _identifier;
-        private readonly IDictionary<string, ObjectSnapshot> _snapshots;
-        private readonly IDictionary<string, Guid> _dependencies;
 
+        private readonly IDictionary<string, ObjectSnapshot> _snapshots;
         
-        public Checkpoint(Guid identifier, IDictionary<string, ObjectSnapshot> snapshots, IDictionary<string, Guid> dependencies)
+        public Checkpoint(Guid identifier, IDictionary<string, ObjectSnapshot> snapshots, MetaData metaData)
         {
-            _identifier = identifier;
+            Id = identifier;
             _snapshots = snapshots ?? throw new ArgumentNullException(nameof(snapshots));
-            _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
+            MetaData = metaData ?? throw new ArgumentNullException(nameof(metaData));
         }
 
         public ObjectSnapshot GetSnapshot(string key)
@@ -32,16 +31,5 @@ namespace BlackSP.Checkpointing.Core
             _ = key ?? throw new ArgumentNullException(nameof(key));
             return _snapshots[key];
         }
-
-        /// <summary>
-        /// returns dictionary with key: Vertex instance name and value: checkpointId of that instance
-        /// </summary>
-        /// <returns></returns>
-        public IDictionary<string, Guid> GetDependencies()
-        {
-            return _dependencies;
-        }
-
-
     }
 }

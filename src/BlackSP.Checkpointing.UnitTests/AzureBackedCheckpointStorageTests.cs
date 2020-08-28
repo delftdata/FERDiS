@@ -16,7 +16,7 @@ namespace BlackSP.Checkpointing.UnitTests
 {
     class AzureBackedCheckpointStorageTests
     {
-
+        private string instanceName;
         private static readonly string AzureStorageConnectionString = "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net";
 
         private ICheckpointStorage checkpointStorage;
@@ -28,6 +28,7 @@ namespace BlackSP.Checkpointing.UnitTests
         {
             Environment.SetEnvironmentVariable("AZURE_STORAGE_CONN_STRING", AzureStorageConnectionString);
 
+            instanceName = "instance01";
             checkpointStorage = new AzureBackedCheckpointStorage();
             checkpointIdsToDelete = new List<Guid>();
         }
@@ -45,7 +46,7 @@ namespace BlackSP.Checkpointing.UnitTests
             //ASSERT SAME
             Assert.AreEqual(cp.Id, restoredCp.Id);
             Assert.IsTrue(cp.Keys.OrderBy(k => k).SequenceEqual(restoredCp.Keys.OrderBy(k => k)));
-            Assert.IsTrue(cp.GetDependencies().Keys.OrderBy(k => k).SequenceEqual(restoredCp.GetDependencies().Keys.OrderBy(k => k)));
+            Assert.IsTrue(cp.MetaData.Dependencies.Keys.OrderBy(k => k).SequenceEqual(restoredCp.MetaData.Dependencies.Keys.OrderBy(k => k)));
 
             foreach (var key in cp.Keys)
             {
@@ -77,11 +78,13 @@ namespace BlackSP.Checkpointing.UnitTests
             //ASSERT SAME
             Assert.AreEqual(cp.Id, restoredCp.Id);
             Assert.IsTrue(cp.Keys.OrderBy(k => k).SequenceEqual(restoredCp.Keys.OrderBy(k => k)));
-            Assert.IsTrue(cp.GetDependencies().Keys.OrderBy(k => k).SequenceEqual(restoredCp.GetDependencies().Keys.OrderBy(k => k)));
+            Assert.AreEqual(cp.MetaData.InstanceName, restoredCp.MetaData.InstanceName);
+            Assert.IsTrue(cp.MetaData.Dependencies.Keys.OrderBy(k => k).SequenceEqual(restoredCp.MetaData.Dependencies.Keys.OrderBy(k => k)));
 
             Assert.AreEqual(cp2.Id, restoredCp2.Id);
             Assert.IsTrue(cp2.Keys.OrderBy(k => k).SequenceEqual(restoredCp2.Keys.OrderBy(k => k)));
-            Assert.IsTrue(cp2.GetDependencies().Keys.OrderBy(k => k).SequenceEqual(restoredCp2.GetDependencies().Keys.OrderBy(k => k)));
+            Assert.AreEqual(cp2.MetaData.InstanceName, restoredCp2.MetaData.InstanceName);
+            Assert.IsTrue(cp2.MetaData.Dependencies.Keys.OrderBy(k => k).SequenceEqual(restoredCp2.MetaData.Dependencies.Keys.OrderBy(k => k)));
 
 
             foreach (var key in cp.Keys)
@@ -121,7 +124,8 @@ namespace BlackSP.Checkpointing.UnitTests
             dependencies.Add("vertex1", Guid.NewGuid());
             dependencies.Add("vertex2", Guid.NewGuid());
             dependencies.Add("vertex3", Guid.NewGuid());
-            return new Checkpoint(cpId, snapshots, dependencies);
+            var metaData = new MetaData(dependencies, instanceName);
+            return new Checkpoint(cpId, snapshots, metaData);
         }
 
     }

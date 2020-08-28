@@ -40,5 +40,16 @@ namespace BlackSP.Checkpointing.Persistence
             _store.Add(checkpoint.Id, blob);
             return Task.CompletedTask;
         }
+
+        public Task<IEnumerable<MetaData>> GetAllMetaData()
+        {
+            var metadatas = new List<MetaData>(_store.Count);
+            foreach(var blob in _store.Values)
+            {
+                var checkpoint = (Checkpoint)blob.BinaryDeserialize();
+                metadatas.Add(checkpoint.MetaData);
+            }
+            return Task.FromResult((IEnumerable<MetaData>)metadatas);
+        }
     }
 }

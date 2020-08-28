@@ -58,7 +58,7 @@ namespace BlackSP.Checkpointing.Persistence
             //ensure creation of blob container checkpoint will be stored in
             var blobContainerClient = GetBlobContainerClientForCheckpoints();
 
-            await UploadCheckpointMetaData(checkpoint, blobContainerClient);
+            await UploadCheckpointMetaData(checkpoint, blobContainerClient).ConfigureAwait(false);
 
             //Define dataflow for checkpoint storage
             var snapshotSerializeTransform = new TransformBlock<string, Tuple<string, MemoryStream>>(
@@ -87,7 +87,7 @@ namespace BlackSP.Checkpointing.Persistence
             //ensure existence of blob container checkpoint is stored in
             var blobContainerClient = GetBlobContainerClientForCheckpoints();
             
-            var dependencies = await DownloadCheckpointMetaData<IDictionary<string, Guid>>(id, blobContainerClient);
+            var dependencies = await DownloadCheckpointMetaData(id, blobContainerClient);
 
             //Define dataflow for checkpoint retrieval
             var snapshots = new ConcurrentDictionary<string, ObjectSnapshot>();
@@ -96,7 +96,7 @@ namespace BlackSP.Checkpointing.Persistence
                 _blockOptions
             );
             var streamDeserializationAction = new ActionBlock<Tuple<string, MemoryStream>>(
-                tuple => DeserializeSnapshotToDictionary(tuple, snapshots)
+                tuple => DeserializeToDictionary(tuple, snapshots)
             );
             blobDownloadToStreamTransform.LinkTo(streamDeserializationAction, _linkOptions);
             //Feed blobs to dataflow
@@ -109,6 +109,7 @@ namespace BlackSP.Checkpointing.Persistence
             await streamDeserializationAction.Completion; 
             return new Checkpoint(id, snapshots, dependencies);
         }
+
 
         #region private dataflow methods
         private async Task<Tuple<string, MemoryStream>> DownloadSerializedSnapshotToStream(BlobItem blob, BlobContainerClient containerClient)
@@ -127,11 +128,12 @@ namespace BlackSP.Checkpointing.Persistence
             return Tuple.Create(blob.Name.Split('/')[1], blobDownloadStream);
         }
 
-        private void DeserializeSnapshotToDictionary(Tuple<string, MemoryStream> tuple, IDictionary<string, ObjectSnapshot> snapshots)
+        private void DeserializeToDictionary<T>(Tuple<string, MemoryStream> tuple, IDictionary<string, T> snapshots)
+            where T : class
         {
             var (name, stream) = tuple;
             var downloadedObject = stream.BinaryDeserialize();
-            var snapshot = downloadedObject as ObjectSnapshot ?? throw new Exception($"Downloaded blob did not contain expected {nameof(ObjectSnapshot)}");
+            var snapshot = downloadedObject as T ?? throw new Exception($"Downloaded blob did not contain expected {nameof(T)}");
             snapshots[name] = snapshot;
             stream.Dispose(); //ensure buffer memory is freed up
         }
@@ -164,14 +166,13 @@ namespace BlackSP.Checkpointing.Persistence
             }
 
             var memStream = new MemoryStream();
-            checkpoint.GetDependencies().BinarySerializeTo(memStream);
+            checkpoint.MetaData.BinarySerializeTo(memStream);
             memStream.Seek(0, SeekOrigin.Begin);
             await blobMetaClient.UploadAsync(memStream);
             memStream.Dispose();
         }
 
-        private async Task<T> DownloadCheckpointMetaData<T>(Guid cpId, BlobContainerClient blobContainerClient)
-            where T : class
+        private async Task<MetaData> DownloadCheckpointMetaData(Guid cpId, BlobContainerClient blobContainerClient)
         {
             var blobMetaClient = blobContainerClient.GetBlobClient($"{cpId}/meta");
             if (!await blobMetaClient.ExistsAsync())
@@ -182,10 +183,34 @@ namespace BlackSP.Checkpointing.Persistence
             var memStream = new MemoryStream();
             (await blobMetaClient.DownloadToAsync(memStream)).ThrowIfNotSuccessStatusCode();
             memStream.Seek(0, SeekOrigin.Begin);
-            var dependencies = memStream.BinaryDeserialize() as T;
+            var dependencies = memStream.BinaryDeserialize() as MetaData;
             memStream.Dispose();
 
             return dependencies;
+        }
+
+        public async Task<IEnumerable<MetaData>> GetAllMetaData()
+        {
+            var blobContainerClient = GetBlobContainerClientForCheckpoints();
+            //Define dataflow for metadata retrieval
+            var metadatas = new ConcurrentBag<MetaData>();
+            var downloadCheckpointMetaData = new ActionBlock<Guid>(
+                async cpId => metadatas.Add(await DownloadCheckpointMetaData(cpId, blobContainerClient).ConfigureAwait(false)),
+                _blockOptions
+            );
+
+            //Feed medatada blobs to dataflow
+            var blobs = blobContainerClient.GetBlobs(BlobTraits.None, BlobStates.None); //async version of GetBlobs is not actually async.. so keeping it synchronous for now
+            foreach (var blob in blobs.Where(bi => bi.Name.EndsWith("/meta")))
+            {
+                var idString = blob.Name.Split('/')[0];
+                var checkpointId = Guid.Parse(idString);
+                await downloadCheckpointMetaData.SendAsync(checkpointId).ConfigureAwait(false);
+            }
+            downloadCheckpointMetaData.Complete();
+            //Wait for completion of deserialization
+            await downloadCheckpointMetaData.Completion.ConfigureAwait(false);
+            return metadatas;
         }
         #endregion
     }

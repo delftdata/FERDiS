@@ -35,6 +35,11 @@ namespace BlackSP.Checkpointing
             _dpTracker.UpdateDependency(origin, checkpointId);
         }
 
+        public void CalculateRecoveryLine()
+        {
+            
+        }
+
         ///<inheritdoc/>
         public bool RegisterObject(object o)
         {
@@ -58,10 +63,12 @@ namespace BlackSP.Checkpointing
         }
 
         ///<inheritdoc/>
-        public async Task<Guid> TakeCheckpoint()
+        public async Task<Guid> TakeCheckpoint(string currentInstanceName)
         {
-            var checkpoint = _register.TakeCheckpoint(_dpTracker);
-            await _storage.Store(checkpoint);
+            var snapshots = _register.TakeObjectSnapshots();
+            var metadata = new MetaData(_dpTracker.Dependencies, currentInstanceName);
+            var checkpoint = new Checkpoint(Guid.NewGuid(), snapshots, metadata);
+            await _storage.Store(checkpoint).ConfigureAwait(false);
             return checkpoint.Id;
         }
 
@@ -71,7 +78,7 @@ namespace BlackSP.Checkpointing
             var checkpoint = (await _storage.Retrieve(checkpointId)) 
                 ?? throw new CheckpointRestorationException($"Checkpoint storage returned null for checkpoint ID: {checkpointId}");
             _register.RestoreCheckpoint(checkpoint);
-            _dpTracker.OverwriteDependencies(checkpoint.GetDependencies());
+            _dpTracker.OverwriteDependencies(checkpoint.MetaData.Dependencies);
         }
 
     }

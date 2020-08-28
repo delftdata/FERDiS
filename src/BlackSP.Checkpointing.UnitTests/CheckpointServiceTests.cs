@@ -16,6 +16,8 @@ namespace BlackSP.Checkpointing.UnitTests
     {
         private ICheckpointService checkpointService;
 
+        private string instanceName;
+
         private string objectAInitialValue;
         private ClassA objectA;
         private ClassB objectB;
@@ -36,6 +38,8 @@ namespace BlackSP.Checkpointing.UnitTests
         [SetUp]
         public void Setup()
         {
+            instanceName = "instance01";
+
             var loggerMock = new Mock<ILogger>();
             var objectRegisterMock = new Mock<ObjectRegistry>();
             var cpStorage = new VolatileCheckpointStorage();//new Mock<ICheckpointStorage>();
@@ -86,7 +90,7 @@ namespace BlackSP.Checkpointing.UnitTests
             checkpointService.RegisterObject(objectA);
             checkpointService.RegisterObject(objectB);
 
-            var cpId = await checkpointService.TakeCheckpoint();
+            var cpId = await checkpointService.TakeCheckpoint(instanceName);
             Assert.Greater(cpId, Guid.Empty);
         }
 
@@ -103,7 +107,7 @@ namespace BlackSP.Checkpointing.UnitTests
             Assert.AreEqual(objectA.GetTotal(), 1);
             Assert.AreEqual(objectB.Counter, 0);
             //checkpoint initial state;
-            var cpId = await checkpointService.TakeCheckpoint();
+            var cpId = await checkpointService.TakeCheckpoint(instanceName);
             Assert.Greater(cpId, Guid.Empty);
 
             string appendedText = "nice";

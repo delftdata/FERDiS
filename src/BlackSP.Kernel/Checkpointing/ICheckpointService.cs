@@ -26,7 +26,7 @@ namespace BlackSP.Kernel.Checkpointing
         /// Take a checkpoint, returns an ID useable to restore said checkpoint
         /// </summary>
         /// <returns></returns>
-        Task<Guid> TakeCheckpoint();
+        Task<Guid> TakeCheckpoint(string currentInstanceName);
 
         /// <summary>
         /// Restore a checkpoint, fails when there is a discrepancy between the objects registered and the objects in the checkpoint
