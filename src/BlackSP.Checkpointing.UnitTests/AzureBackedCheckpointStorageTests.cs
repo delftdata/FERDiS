@@ -124,8 +124,8 @@ namespace BlackSP.Checkpointing.UnitTests
             dependencies.Add("vertex1", Guid.NewGuid());
             dependencies.Add("vertex2", Guid.NewGuid());
             dependencies.Add("vertex3", Guid.NewGuid());
-            var metaData = new MetaData(dependencies, instanceName);
-            return new Checkpoint(cpId, snapshots, metaData);
+            var metaData = new MetaData(cpId, dependencies, instanceName, DateTime.UtcNow);
+            return new Checkpoint(metaData, snapshots);
         }
 
     }

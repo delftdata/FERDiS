@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BlackSP.Kernel.Models;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,5 +35,11 @@ namespace BlackSP.Kernel.Checkpointing
         /// <param name="checkpointBytes"></param>
         /// <returns></returns>
         Task RestoreCheckpoint(Guid checkpointId);
+
+        /// <summary>
+        /// Determines recovery line 
+        /// </summary>
+        /// <returns></returns>
+        Task<IRecoveryLine> CalculateRecoveryLine();
     }
 }

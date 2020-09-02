@@ -8,7 +8,7 @@ namespace BlackSP.Checkpointing.Core
     [Serializable]
     public class Checkpoint
     {
-        public Guid Id { get; }
+        public Guid Id => MetaData.Id;
         
         public MetaData MetaData { get; }
         
@@ -19,11 +19,11 @@ namespace BlackSP.Checkpointing.Core
 
         private readonly IDictionary<string, ObjectSnapshot> _snapshots;
         
-        public Checkpoint(Guid identifier, IDictionary<string, ObjectSnapshot> snapshots, MetaData metaData)
+        public Checkpoint(MetaData metaData, IDictionary<string, ObjectSnapshot> snapshots)
         {
-            Id = identifier;
-            _snapshots = snapshots ?? throw new ArgumentNullException(nameof(snapshots));
             MetaData = metaData ?? throw new ArgumentNullException(nameof(metaData));
+            _snapshots = snapshots ?? throw new ArgumentNullException(nameof(snapshots));
+
         }
 
         public ObjectSnapshot GetSnapshot(string key)

@@ -3,6 +3,7 @@ using BlackSP.Checkpointing.Core;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Serialization.Extensions;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -10,6 +11,8 @@ using BlackSP.Checkpointing.Persistence;
 using BlackSP.Checkpointing.Exceptions;
 using System.Threading.Tasks;
 using Serilog;
+using System.Collections.Immutable;
+using BlackSP.Kernel.Models;
 
 namespace BlackSP.Checkpointing
 {
@@ -22,7 +25,11 @@ namespace BlackSP.Checkpointing
         private readonly ICheckpointStorage _storage;
         private readonly ILogger _logger;
 
-        public CheckpointService(ObjectRegistry register, CheckpointDependencyTracker dependencyTracker, ICheckpointStorage checkpointStorage, ILogger logger)
+        public CheckpointService(ObjectRegistry register, 
+                                 CheckpointDependencyTracker dependencyTracker,
+                                 
+                                 ICheckpointStorage checkpointStorage, 
+                                 ILogger logger)
         {
             _register = register ?? throw new ArgumentNullException(nameof(register));
             _storage = checkpointStorage ?? throw new ArgumentNullException(nameof(checkpointStorage));
@@ -35,9 +42,33 @@ namespace BlackSP.Checkpointing
             _dpTracker.UpdateDependency(origin, checkpointId);
         }
 
-        public void CalculateRecoveryLine()
+        public async Task<IRecoveryLine> CalculateRecoveryLine()
         {
-            
+            IEnumerable<string> failedInstances = Enumerable.Empty<string>();//todo make argument (also interface)
+
+            var allCheckpointMetadatas = await _storage.GetAllMetaData().ConfigureAwait(false);
+            var cpStacksPerInstance = allCheckpointMetadatas
+                .GroupBy(m => m.InstanceName)
+                .Select(group => group.OrderBy(m => m.CreatedAtUtc))
+                .Select(sortedGroup => new Stack<MetaData>(sortedGroup));
+
+            //TODO: push future checkpoint on any non-failed instance's stack
+            foreach(var cpStack in cpStacksPerInstance)
+            {
+                if (failedInstances.Contains(cpStack.Peek().InstanceName))
+                {
+                    continue; //skip failed instances
+                }
+                //create future checkpoint meta data (default id?)
+                //- need to know direct upstream 
+                //push future checkpoint 
+            }
+            //TODO: pop off dependencies that depend on other stack tops
+
+            IDictionary<string, Guid> recoveryMap = cpStacksPerInstance.Select(metaStack => metaStack.Peek()) //select the remaining checkpoint atop each stack
+                .ToDictionary(meta => meta.InstanceName, meta => meta.Id);
+
+            return new RecoveryLine(recoveryMap);
         }
 
         ///<inheritdoc/>
@@ -66,9 +97,10 @@ namespace BlackSP.Checkpointing
         public async Task<Guid> TakeCheckpoint(string currentInstanceName)
         {
             var snapshots = _register.TakeObjectSnapshots();
-            var metadata = new MetaData(_dpTracker.Dependencies, currentInstanceName);
-            var checkpoint = new Checkpoint(Guid.NewGuid(), snapshots, metadata);
+            var metadata = new MetaData(Guid.NewGuid(), _dpTracker.Dependencies, currentInstanceName, DateTime.UtcNow);
+            var checkpoint = new Checkpoint(metadata, snapshots);
             await _storage.Store(checkpoint).ConfigureAwait(false);
+            _dpTracker.UpdateDependency(currentInstanceName, checkpoint.Id); //ensure next checkpoint depends on current
             return checkpoint.Id;
         }
 

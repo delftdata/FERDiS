@@ -87,7 +87,7 @@ namespace BlackSP.Checkpointing.Persistence
             //ensure existence of blob container checkpoint is stored in
             var blobContainerClient = GetBlobContainerClientForCheckpoints();
             
-            var dependencies = await DownloadCheckpointMetaData(id, blobContainerClient);
+            var metaData = await DownloadCheckpointMetaData(id, blobContainerClient);
 
             //Define dataflow for checkpoint retrieval
             var snapshots = new ConcurrentDictionary<string, ObjectSnapshot>();
@@ -107,7 +107,7 @@ namespace BlackSP.Checkpointing.Persistence
             blobDownloadToStreamTransform.Complete();
             //Wait for completion of deserialization
             await streamDeserializationAction.Completion; 
-            return new Checkpoint(id, snapshots, dependencies);
+            return new Checkpoint(metaData, snapshots);
         }
 
 

@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.Models;
+﻿using BlackSP.Kernel.Checkpointing;
+using BlackSP.Kernel.Models;
 using Stateless;
 using System;
 using System.Collections.Generic;
@@ -50,16 +51,18 @@ namespace BlackSP.Core.Coordination
 
         private readonly IEnumerable<string> _workerInstanceNames;
         private readonly WorkerStateManager.Factory _stateMachineFactory;
+        private readonly ICheckpointService _checkpointService;
         private readonly IDictionary<string, WorkerStateManager> _workerStateMachines;
         private readonly StateMachine<State, Trigger> _graphStateMachine;
 
         public delegate void StateChangeEvent();
         public event StateChangeEvent Lol;
 
-        public WorkerGraphStateManager(IEnumerable<string> workerInstanceNames, WorkerStateManager.Factory stateMachineFactory)
+        public WorkerGraphStateManager(IEnumerable<string> workerInstanceNames, WorkerStateManager.Factory stateMachineFactory, ICheckpointService checkpointService)
         {
             _workerInstanceNames = workerInstanceNames ?? throw new ArgumentNullException(nameof(workerInstanceNames));
             _stateMachineFactory = stateMachineFactory ?? throw new ArgumentNullException(nameof(stateMachineFactory));
+            _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
             _workerStateMachines = new Dictionary<string, WorkerStateManager>();
             _graphStateMachine = new StateMachine<State, Trigger>(State.Idle);
             
@@ -142,6 +145,8 @@ namespace BlackSP.Core.Coordination
 
         private void PrepareRecoveryLine()
         {
+            //_checkpointService.CalculateRecoveryLine ...?
+            
             throw new NotImplementedException();
             //TODO: halt affected workers (downstream/all?)
         }
