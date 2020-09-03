@@ -47,28 +47,12 @@ namespace BlackSP.Checkpointing
             IEnumerable<string> failedInstances = Enumerable.Empty<string>();//todo make argument (also interface)
 
             var allCheckpointMetadatas = await _storage.GetAllMetaData().ConfigureAwait(false);
-            var cpStacksPerInstance = allCheckpointMetadatas
-                .GroupBy(m => m.InstanceName)
-                .Select(group => group.OrderBy(m => m.CreatedAtUtc))
-                .Select(sortedGroup => new Stack<MetaData>(sortedGroup));
 
-            //TODO: push future checkpoint on any non-failed instance's stack
-            foreach(var cpStack in cpStacksPerInstance)
-            {
-                if (failedInstances.Contains(cpStack.Peek().InstanceName))
-                {
-                    continue; //skip failed instances
-                }
-                //create future checkpoint meta data (default id?)
-                //- need to know direct upstream 
-                //push future checkpoint 
-            }
-            //TODO: pop off dependencies that depend on other stack tops
+            //TODO: utilize recoverylinecalculator;
 
-            IDictionary<string, Guid> recoveryMap = cpStacksPerInstance.Select(metaStack => metaStack.Peek()) //select the remaining checkpoint atop each stack
-                .ToDictionary(meta => meta.InstanceName, meta => meta.Id);
+            throw new NotImplementedException();
 
-            return new RecoveryLine(recoveryMap);
+            //return new RecoveryLine(recoveryMap);
         }
 
         ///<inheritdoc/>

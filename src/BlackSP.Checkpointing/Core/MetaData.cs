@@ -9,6 +9,10 @@ namespace BlackSP.Checkpointing.Core
     {
         public Guid Id { get; private set; }
 
+        /// <summary>
+        /// Dictionary containing the checkpoint id's of other (usually upstream) instances<br/>
+        /// The checkpoint associated with this metadata should not be restored if a dependency is being restored.
+        /// </summary>
         public IDictionary<string, Guid> Dependencies { get; private set; }
 
         public string InstanceName { get; private set; }
