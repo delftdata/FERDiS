@@ -42,13 +42,13 @@ namespace BlackSP.Simulator.Builders
             {
                 var vertexConf = vbuilder.GetVertexConfiguration();
                 var logConfig = LogConfiguration;
-                
+                var cpConfig = CheckpointConfiguration;
                 for(int i = 0; i < vertexConf.InstanceNames.Count(); i++)
                 {
                     var shardId = i;
                     var vertexConfCopy = vertexConf.BinarySerialize().BinaryDeserialize() as IVertexConfiguration;
                     vertexConfCopy.SetCurrentShardId(shardId);
-                    var hostParameter = new HostConfiguration(vbuilder.ModuleType, graphConfig, vertexConfCopy, logConfig);
+                    var hostParameter = new HostConfiguration(vbuilder.ModuleType, graphConfig, vertexConfCopy, logConfig, cpConfig);
                     _identityTable.Add(vertexConfCopy.InstanceName, hostParameter);
                 }
 

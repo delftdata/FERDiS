@@ -4,7 +4,7 @@ using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using BlackSP.Kernel.Logging;
+using BlackSP.Checkpointing;
 
 namespace BlackSP.Infrastructure.Models
 {
@@ -21,15 +21,17 @@ namespace BlackSP.Infrastructure.Models
 
         public ILogConfiguration LogConfiguration { get; set; }
 
-        //public object CheckpointingConfiguration => throw new NotImplementedException();
+        public ICheckpointConfiguration CheckpointingConfiguration { get; set; }
 
-        public HostConfiguration(Type startupModuleType, IVertexGraphConfiguration graphConfig, IVertexConfiguration vertexConfig, ILogConfiguration logConfig)
+        public HostConfiguration(Type startupModuleType, IVertexGraphConfiguration graphConfig, IVertexConfiguration vertexConfig, 
+            ILogConfiguration logConfig, ICheckpointConfiguration checkpointingConfig)
         {
 
-            _startupModuleString = startupModuleType?.AssemblyQualifiedName;// ?? throw new ArgumentNullException(nameof(startupModuleType));
-            GraphConfiguration = graphConfig;// ?? throw new ArgumentNullException(nameof(graphConfig));
-            VertexConfiguration = vertexConfig;// ?? throw new ArgumentNullException(nameof(vertexConfig));
-            LogConfiguration = logConfig;// ?? throw new ArgumentNullException(nameof(logConfig));
+            _startupModuleString = startupModuleType?.AssemblyQualifiedName;
+            GraphConfiguration = graphConfig;
+            VertexConfiguration = vertexConfig;
+            LogConfiguration = logConfig;
+            CheckpointingConfiguration = checkpointingConfig;
         }
     }
 }

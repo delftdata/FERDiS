@@ -22,37 +22,38 @@ namespace BlackSP.Checkpointing
 
         private readonly ObjectRegistry _register;
         private readonly CheckpointDependencyTracker _dpTracker;
+        private readonly RecoveryLineCalculator.Factory _rlCalcFactory;
         private readonly ICheckpointStorage _storage;
+        private readonly ICheckpointConfiguration _checkpointConfiguration;
         private readonly ILogger _logger;
 
         public CheckpointService(ObjectRegistry register, 
                                  CheckpointDependencyTracker dependencyTracker,
-                                 
+                                 RecoveryLineCalculator.Factory rlCalcFactory,
                                  ICheckpointStorage checkpointStorage, 
+                                 ICheckpointConfiguration checkpointConfiguration,
                                  ILogger logger)
         {
             _register = register ?? throw new ArgumentNullException(nameof(register));
-            _storage = checkpointStorage ?? throw new ArgumentNullException(nameof(checkpointStorage));
             _dpTracker = dependencyTracker ?? throw new ArgumentNullException(nameof(dependencyTracker));
+            _storage = checkpointStorage ?? throw new ArgumentNullException(nameof(checkpointStorage));
+            _rlCalcFactory = rlCalcFactory ?? throw new ArgumentNullException(nameof(rlCalcFactory));
+            _checkpointConfiguration = checkpointConfiguration ?? throw new ArgumentNullException(nameof(checkpointConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        ///<inheritdoc/>
         public void UpdateCheckpointDependency(string origin, Guid checkpointId)
         {
             _dpTracker.UpdateDependency(origin, checkpointId);
         }
 
-        public async Task<IRecoveryLine> CalculateRecoveryLine()
+        ///<inheritdoc/>
+        public async Task<IRecoveryLine> CalculateRecoveryLine(IEnumerable<string> failedInstanceNames)
         {
-            IEnumerable<string> failedInstances = Enumerable.Empty<string>();//todo make argument (also interface)
-
             var allCheckpointMetadatas = await _storage.GetAllMetaData().ConfigureAwait(false);
-
-            //TODO: utilize recoverylinecalculator;
-
-            throw new NotImplementedException();
-
-            //return new RecoveryLine(recoveryMap);
+            var calculator = _rlCalcFactory.Invoke(allCheckpointMetadatas);
+            return calculator.CalculateRecoveryLine(_checkpointConfiguration.AllowReusingState, failedInstanceNames);
         }
 
         ///<inheritdoc/>
@@ -91,7 +92,7 @@ namespace BlackSP.Checkpointing
         ///<inheritdoc/>
         public async Task RestoreCheckpoint(Guid checkpointId)
         {
-            var checkpoint = (await _storage.Retrieve(checkpointId)) 
+            var checkpoint = (await _storage.Retrieve(checkpointId).ConfigureAwait(false)) 
                 ?? throw new CheckpointRestorationException($"Checkpoint storage returned null for checkpoint ID: {checkpointId}");
             _register.RestoreCheckpoint(checkpoint);
             _dpTracker.OverwriteDependencies(checkpoint.MetaData.Dependencies);

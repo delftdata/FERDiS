@@ -1,5 +1,5 @@
-﻿using BlackSP.Infrastructure.Builders.Graph;
-using BlackSP.Kernel.Logging;
+﻿using BlackSP.Checkpointing;
+using BlackSP.Infrastructure.Builders.Graph;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,9 +23,9 @@ namespace BlackSP.Infrastructure.Builders
         IApplicationBuilder ConfigureLogging(ILogConfiguration logging);
 
         /// <summary>
-        /// TODO: give signature
+        /// Sets the checkpoint configuration passed to every vertex
         /// </summary>
-        IApplicationBuilder ConfigureCheckpointing();
+        IApplicationBuilder ConfigureCheckpointing(ICheckpointConfiguration checkpointConfig);
 
         /// <summary>
         /// Build the IApplication

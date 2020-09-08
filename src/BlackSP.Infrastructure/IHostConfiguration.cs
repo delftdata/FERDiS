@@ -5,7 +5,7 @@ using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using BlackSP.Kernel.Logging;
+using BlackSP.Checkpointing;
 
 namespace BlackSP.Infrastructure
 {
@@ -26,6 +26,6 @@ namespace BlackSP.Infrastructure
 
         ILogConfiguration LogConfiguration { get; }
 
-        //object CheckpointingConfiguration { get; }
+        ICheckpointConfiguration CheckpointingConfiguration { get; }
     }
 }

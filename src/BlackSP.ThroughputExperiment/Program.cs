@@ -1,6 +1,7 @@
-﻿using BlackSP.Infrastructure.Builders.Graph;
+﻿using BlackSP.Checkpointing;
+using BlackSP.Infrastructure;
+using BlackSP.Infrastructure.Builders.Graph;
 using BlackSP.Infrastructure.Models;
-using BlackSP.Kernel.Logging;
 using BlackSP.ThroughputExperiment.Events;
 using Serilog.Events;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace BlackSP.ThroughputExperiment
             var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
             var app = await appBuilder
                 .ConfigureLogging(new LogConfiguration(logTargets, logLevel))
+                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Coordinated, true))
                 .ConfigureOperators(ConfigureOperatorGraph)
                 .Build();
 

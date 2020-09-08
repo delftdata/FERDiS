@@ -60,8 +60,8 @@ namespace BlackSP.Infrastructure.UnitTests
             //sink does not have append method, awesome
 
             var logConfig = new LogConfiguration();
-
-            await graphBuilder.Build(logConfig); //ensure complete (will add coordinator)
+            var cpConfig = new CheckpointConfiguration(0,false);
+            await graphBuilder.Build(logConfig, cpConfig); //ensure complete (will add coordinator)
 
             //Asserts
             var usedNames = new HashSet<string>();

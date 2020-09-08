@@ -3,6 +3,7 @@ using BlackSP.Checkpointing.Exceptions;
 using BlackSP.Checkpointing.Persistence;
 using BlackSP.Checkpointing.UnitTests.Models;
 using BlackSP.Kernel.Checkpointing;
+using BlackSP.Kernel.Models;
 using Moq;
 using NUnit.Framework;
 using Serilog;
@@ -41,10 +42,14 @@ namespace BlackSP.Checkpointing.UnitTests
             instanceName = "instance01";
 
             var loggerMock = new Mock<ILogger>();
+            var graphConfigMock = new Mock<IVertexGraphConfiguration>();
+            var cpConfigMock = new Mock<ICheckpointConfiguration>();
             var objectRegisterMock = new Mock<ObjectRegistry>();
             var cpStorage = new VolatileCheckpointStorage();//new Mock<ICheckpointStorage>();
+            RecoveryLineCalculator.Factory factory = (IEnumerable<MetaData> allMetas) => new RecoveryLineCalculator(allMetas, graphConfigMock.Object);
+            
             var tracker = new CheckpointDependencyTracker();
-            checkpointService = new CheckpointService(objectRegisterMock.Object, tracker, cpStorage, loggerMock.Object);
+            checkpointService = new CheckpointService(objectRegisterMock.Object, tracker, factory, cpStorage, cpConfigMock.Object, loggerMock.Object);
             
             objectAInitialValue = "initial value";
             objectA = new ClassA(objectAInitialValue);

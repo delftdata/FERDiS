@@ -74,7 +74,7 @@ namespace BlackSP.CRA.Configuration
             SetConsoleSilenced(true);
             
             var vertexConfig = target.GetVertexConfiguration();
-            var hostConfig = new HostConfiguration(target.ModuleType, GetVertexGraphConfiguration(), vertexConfig, LogConfiguration);
+            var hostConfig = new HostConfiguration(target.ModuleType, GetVertexGraphConfiguration(), vertexConfig, LogConfiguration, CheckpointConfiguration);
             await _craClient.InstantiateVertexAsync(
                 target.InstanceNames.ToArray(),
                 target.VertexName,

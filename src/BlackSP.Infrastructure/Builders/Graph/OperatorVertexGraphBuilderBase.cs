@@ -1,6 +1,6 @@
-﻿using BlackSP.Infrastructure.Builders.Vertex;
+﻿using BlackSP.Checkpointing;
+using BlackSP.Infrastructure.Builders.Vertex;
 using BlackSP.Infrastructure.Models;
-using BlackSP.Kernel.Logging;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
@@ -18,6 +18,7 @@ namespace BlackSP.Infrastructure.Builders.Graph
         private int usedInstanceCount;
         
         protected ILogConfiguration LogConfiguration { get; private set; }
+        protected ICheckpointConfiguration CheckpointConfiguration { get; private set; }
 
         protected OperatorVertexGraphBuilderBase()
         {
@@ -36,9 +37,10 @@ namespace BlackSP.Infrastructure.Builders.Graph
         /// Builds the graph as configured by user with a coordinator connected to all existing vertices
         /// </summary>
         /// <returns></returns>
-        public async Task<IApplication> Build(ILogConfiguration logConfiguration)
+        public async Task<IApplication> Build(ILogConfiguration logConfiguration, ICheckpointConfiguration checkpointConfiguration)
         {
             LogConfiguration = logConfiguration ?? throw new ArgumentNullException(nameof(logConfiguration));
+            CheckpointConfiguration = checkpointConfiguration ?? throw new ArgumentNullException(nameof(checkpointConfiguration));
 
             AddCoordinator();
             return await BuildGraph().ConfigureAwait(false);

@@ -37,9 +37,13 @@ namespace BlackSP.Kernel.Checkpointing
         Task RestoreCheckpoint(Guid checkpointId);
 
         /// <summary>
-        /// Determines recovery line 
+        /// Determines recovery line under failure assumptions
         /// </summary>
+        /// <param name="allowReusingExistingState">
+        /// Indicates if calculation should atempt to keep running instances running with their existing internal state.
+        /// </param>
+        /// <param name="failedInstanceNames"></param>
         /// <returns></returns>
-        Task<IRecoveryLine> CalculateRecoveryLine();
+        Task<IRecoveryLine> CalculateRecoveryLine(IEnumerable<string> failedInstanceNames);
     }
 }

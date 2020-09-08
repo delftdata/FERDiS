@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Kernel.Logging
+namespace BlackSP.Infrastructure
 {
     [Flags]
     public enum LogTargetFlags

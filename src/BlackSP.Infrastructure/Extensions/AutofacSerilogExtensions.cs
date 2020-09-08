@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using AutofacSerilogIntegration;
-using BlackSP.Kernel.Logging;
 using BlackSP.Kernel.Models;
 using Microsoft.Azure.Storage;
 using Serilog;
