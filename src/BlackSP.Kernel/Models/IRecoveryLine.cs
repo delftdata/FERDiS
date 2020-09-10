@@ -11,7 +11,8 @@ namespace BlackSP.Kernel.Models
     {
 
         /// <summary>
-        /// A list of all instance names that are affected if this recovery line is applied
+        /// A list of all instance names that are affected if this recovery line is applied<br/>
+        /// Note: this is a (non-strict) subset of the keys in the RecoveryMap dictionary
         /// </summary>
         IEnumerable<string> AffectedWorkers { get; }
 

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BlackSP.Core.Coordination
 {
@@ -49,23 +50,27 @@ namespace BlackSP.Core.Coordination
         /// <returns></returns>
         public delegate WorkerGraphStateManager Factory(IEnumerable<string> workerInstanceNames);
 
+        public IEnumerable<WorkerStateManager> WorkerStateManagers => _workerStateManagers.Values;
+        public State CurrentState => _graphStateMachine.State;
+
         private readonly IEnumerable<string> _workerInstanceNames;
         private readonly WorkerStateManager.Factory _stateMachineFactory;
         private readonly ICheckpointService _checkpointService;
-        private readonly IDictionary<string, WorkerStateManager> _workerStateMachines;
+        private readonly IDictionary<string, WorkerStateManager> _workerStateManagers;
         private readonly StateMachine<State, Trigger> _graphStateMachine;
 
-        public delegate void StateChangeEvent();
-        public event StateChangeEvent Lol;
+        private IRecoveryLine _preparedRecoveryLine;
 
         public WorkerGraphStateManager(IEnumerable<string> workerInstanceNames, WorkerStateManager.Factory stateMachineFactory, ICheckpointService checkpointService)
         {
             _workerInstanceNames = workerInstanceNames ?? throw new ArgumentNullException(nameof(workerInstanceNames));
             _stateMachineFactory = stateMachineFactory ?? throw new ArgumentNullException(nameof(stateMachineFactory));
             _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
-            _workerStateMachines = new Dictionary<string, WorkerStateManager>();
-            _graphStateMachine = new StateMachine<State, Trigger>(State.Idle);
             
+            _workerStateManagers = new Dictionary<string, WorkerStateManager>();
+            _graphStateMachine = new StateMachine<State, Trigger>(State.Idle);
+            _preparedRecoveryLine = null;
+
             InitializeWorkerStateMachines();
             InitializeGraphStateMachine();
         }
@@ -75,18 +80,13 @@ namespace BlackSP.Core.Coordination
             foreach (var instanceName in _workerInstanceNames)
             {
                 var workerStateMachine = _stateMachineFactory.Invoke(instanceName);
-                _workerStateMachines.Add(instanceName, workerStateMachine);
+                _workerStateManagers.Add(instanceName, workerStateMachine);
                 workerStateMachine.OnStateChange += WorkerStateMachine_OnStateChange;
             }
         }
 
         private void WorkerStateMachine_OnStateChange(string affectedInstanceName, WorkerStateManager.State newState)
         {
-            //if any faulted (even when already other faulted)
-            //- prepare recovery line (or overwrite if already present)
-            //- halt workers that are affected (and in running state)
-            //- wait
-           
             if(newState == WorkerStateManager.State.Faulted)
             {
                 _graphStateMachine.Fire(Trigger.WorkerFaulted);
@@ -98,46 +98,44 @@ namespace BlackSP.Core.Coordination
             }
 
             //... workers will automagically go back to halted state when they restart
-
-            //when no faulted and a subset is halted..
-            //if recovery line prepared, transition to restoring state
-            //if no recovery line prepared, transition to running
-
-            //when restoring
-            //- trigger restore in every worker state machine with checkpoint ID
-            //- remove prepared recovery line
-
             //... workers will automagically go back to halted state when checkpoint restore completes
         }
 
         private void InitializeGraphStateMachine()
         {
-            _graphStateMachine.Configure(State.Idle)
-                .PermitIf(Trigger.WorkerHealthy, State.Running, () => !IsRecoveryLinePrepared())
-                .PermitIf(Trigger.WorkerHealthy, State.Restoring, IsRecoveryLinePrepared)
-                .IgnoreIf(Trigger.WorkerHealthy, () => !AreAllWorkersInState(WorkerStateManager.State.Halted, WorkerStateManager.State.Running))
-                .Permit(Trigger.WorkerFaulted, State.Faulted);
+            Func<bool> allWorkersHaltedOrRunningGuard = () => AreAllWorkersInState(WorkerStateManager.State.Halted, WorkerStateManager.State.Running);
+            Func<bool> isNoRecoveryLinePreparedGuard = () => !IsRecoveryLinePrepared();
+            Func<bool> isRecoveryLinePreparedGuard = () => IsRecoveryLinePrepared();
 
+            _graphStateMachine.Configure(State.Idle)
+                .IgnoreIf(Trigger.WorkerHealthy, () => !allWorkersHaltedOrRunningGuard(), "Ignore while not all workers ready to start")
+                .PermitIf(Trigger.WorkerHealthy, State.Running, Tuple.Create(isNoRecoveryLinePreparedGuard, "No recovery line must be prepared to start workers"), Tuple.Create(allWorkersHaltedOrRunningGuard, "All workers must be ready to start"))
+                .PermitIf(Trigger.WorkerHealthy, State.Restoring, Tuple.Create(isRecoveryLinePreparedGuard, "Recovery line must be prepared to restore it"), Tuple.Create(allWorkersHaltedOrRunningGuard, "All workers must be ready to start"))
+                .Permit(Trigger.WorkerFaulted, State.Faulted);
+;
             _graphStateMachine.Configure(State.Running)
                 .OnEntry(LaunchAllWorkers)
                 .Permit(Trigger.WorkerFaulted, State.Faulted);
 
             _graphStateMachine.Configure(State.Restoring)
                 .OnEntry(RecoverPreparedRecoveryLine)
-                .Permit(Trigger.WorkerFaulted, State.Faulted);
+                .Permit(Trigger.WorkerFaulted, State.Faulted)
+                .PermitIf(Trigger.WorkerHealthy, State.Running, allWorkersHaltedOrRunningGuard)
+                .IgnoreIf(Trigger.WorkerHealthy, () => !allWorkersHaltedOrRunningGuard(), "Ignore while there are still failed workers");
 
             _graphStateMachine.Configure(State.Faulted)
                 .OnEntry(PrepareRecoveryLine)
                 .PermitReentry(Trigger.WorkerFaulted)
-                .PermitIf(Trigger.WorkerHealthy, State.Idle)
-                .IgnoreIf(Trigger.WorkerHealthy, () => !AreAllWorkersInState(WorkerStateManager.State.Halted, WorkerStateManager.State.Running));
+                .PermitIf(Trigger.WorkerHealthy, State.Restoring, allWorkersHaltedOrRunningGuard)
+                .IgnoreIf(Trigger.WorkerHealthy, () => !allWorkersHaltedOrRunningGuard(), "Ignore while there are still failed workers");
         }
 
         #region state transition entry actions
 
         private void LaunchAllWorkers()
         {
-            foreach(var workerManager in _workerStateMachines.Values)
+            var haltedWorkers = _workerStateManagers.Values.Where(sm => sm.CurrentState == WorkerStateManager.State.Halted);
+            foreach (var workerManager in haltedWorkers)
             {
                 workerManager.FireTrigger(WorkerStateManager.Trigger.DataProcessorStart);
             }
@@ -145,15 +143,30 @@ namespace BlackSP.Core.Coordination
 
         private void PrepareRecoveryLine()
         {
-            //_checkpointService.CalculateRecoveryLine ...?
-            
-            throw new NotImplementedException();
-            //TODO: halt affected workers (downstream/all?)
+            var failedInstances = _workerStateManagers.Values.Where(sm => sm.CurrentState == WorkerStateManager.State.Faulted).Select(sm => sm.InstanceName);
+            var t = Task.Run(async () =>
+            {
+                _preparedRecoveryLine = await _checkpointService.CalculateRecoveryLine(failedInstances).ConfigureAwait(false) 
+                    ?? throw new Exception("Recovery line calculation yielded null, cannot continue");
+                var workersToHalt = _workerStateManagers.Where(kv => _preparedRecoveryLine.AffectedWorkers.Contains(kv.Key))
+                                    .Where(kv => kv.Value.CurrentState == WorkerStateManager.State.Running)
+                                    .Select(kv => kv.Value);
+
+                foreach (var statemachine in workersToHalt)
+                {
+                    statemachine.FireTrigger(WorkerStateManager.Trigger.DataProcessorHalt);
+                }
+            });
+            t.Wait(); //wait for async operation to complete before returning
         }
 
         private void RecoverPreparedRecoveryLine()
         {
-            throw new NotImplementedException();
+            foreach(var name in _preparedRecoveryLine.AffectedWorkers)
+            {
+                _workerStateManagers[name].FireTrigger(WorkerStateManager.Trigger.CheckpointRestoreStart, _preparedRecoveryLine.RecoveryMap[name]);
+            }
+            _preparedRecoveryLine = null;
         }
 
         #endregion
@@ -162,22 +175,22 @@ namespace BlackSP.Core.Coordination
 
         private bool IsRecoveryLinePrepared()
         {
-            throw new NotImplementedException();
+            return _preparedRecoveryLine != null;
         }
 
         private bool AreAllWorkersInState(params WorkerStateManager.State[] states)
         {
             var allInState = true;
-            foreach(var workerManager in _workerStateMachines.Values)
+            foreach(var workerManager in _workerStateManagers.Values)
             {
                 allInState = allInState && states.Contains(workerManager.CurrentState);
             }
             return allInState;
         }
 
-        private bool AreAnyWorkersInState(params WorkerStateManager.State[] states)
+        private bool IsAnyWorkerInState(params WorkerStateManager.State[] states)
         {
-            foreach (var workerManager in _workerStateMachines.Values)
+            foreach (var workerManager in _workerStateManagers.Values)
             {
                 if(states.Contains(workerManager.CurrentState))
                 {
@@ -186,8 +199,6 @@ namespace BlackSP.Core.Coordination
             }
             return false;
         }
-
-        //private bool 
 
         #endregion
     }

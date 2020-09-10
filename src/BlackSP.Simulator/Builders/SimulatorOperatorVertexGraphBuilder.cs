@@ -41,14 +41,12 @@ namespace BlackSP.Simulator.Builders
             foreach (var vbuilder in VertexBuilders)
             {
                 var vertexConf = vbuilder.GetVertexConfiguration();
-                var logConfig = LogConfiguration;
-                var cpConfig = CheckpointConfiguration;
                 for(int i = 0; i < vertexConf.InstanceNames.Count(); i++)
                 {
                     var shardId = i;
                     var vertexConfCopy = vertexConf.BinarySerialize().BinaryDeserialize() as IVertexConfiguration;
                     vertexConfCopy.SetCurrentShardId(shardId);
-                    var hostParameter = new HostConfiguration(vbuilder.ModuleType, graphConfig, vertexConfCopy, logConfig, cpConfig);
+                    var hostParameter = new HostConfiguration(vbuilder.ModuleType, graphConfig, vertexConfCopy, LogConfiguration, CheckpointConfiguration);
                     _identityTable.Add(vertexConfCopy.InstanceName, hostParameter);
                 }
 
@@ -63,7 +61,7 @@ namespace BlackSP.Simulator.Builders
             //Note: this is only a top level logger (used in types defined here), BlackSP types use their respective log configurations
             builder.RegisterLogger(new LoggerConfiguration().WriteTo.Console().CreateLogger()); 
 
-            IApplication runnable = new SimulatorRunnable(builder.Build());
+            IApplication runnable = new SimulatorApplication(builder.Build());
             return Task.FromResult(runnable);
         }
     }

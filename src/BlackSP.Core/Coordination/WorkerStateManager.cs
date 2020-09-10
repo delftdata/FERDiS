@@ -136,7 +136,7 @@ namespace BlackSP.Core.Coordination
 
         private bool EnsureCorrectCheckpointRestored(Guid checkpointId)
         {
-            return RestoringCheckpointId == checkpointId;
+            return restoringCheckpointId == checkpointId;
         }
 
         private bool EnsureValidCheckpointId(Guid checkpointId)
@@ -158,13 +158,11 @@ namespace BlackSP.Core.Coordination
 
         private void OnStartDataProcessor()
         {
-            //TODO: send out launch event/message
             OnStateChangeNotificationRequired?.Invoke(InstanceName, _stateMachine.State);
         }
 
         private void OnHaltDataProcessor()
         {
-            //TODO: send out halt event/message
             OnStateChangeNotificationRequired?.Invoke(InstanceName, _stateMachine.State);
         }
         #endregion
@@ -176,7 +174,7 @@ namespace BlackSP.Core.Coordination
         {
             if(trigger == Trigger.CheckpointRestoreStart || trigger == Trigger.CheckpointRestoreCompleted)
             {
-                throw new ArgumentException("Checkpoint related triggers require guid argument", nameof(trigger));
+                throw new ArgumentException("Checkpoint related triggers require Guid argument", nameof(trigger));
             }
             
             try
@@ -186,6 +184,7 @@ namespace BlackSP.Core.Coordination
             catch (InvalidOperationException e)
             {
                 _logger.Debug(e, $"Invalid worker state transition using trigger {trigger}");
+                throw;
             }
         }
 
@@ -207,6 +206,7 @@ namespace BlackSP.Core.Coordination
             catch(InvalidOperationException e)
             {
                 _logger.Debug(e, $"Invalid worker state transition using trigger {trigger}");
+                throw;
             }
         }
 

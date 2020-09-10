@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Simulator.Builders
 {
-    public class SimulatorRunnable : IApplication
+    public class SimulatorApplication : IApplication
     {
 
         private readonly IContainer _container;
 
-        public SimulatorRunnable(IContainer container)
+        public SimulatorApplication(IContainer container)
         {
             _container = container ?? throw new ArgumentNullException(nameof(container));
         }

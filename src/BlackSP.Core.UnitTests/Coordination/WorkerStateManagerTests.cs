@@ -9,7 +9,7 @@ using System.Text;
 
 namespace BlackSP.Core.UnitTests.Coordination
 {
-    class WorkerStateMachineTests
+    class WorkerStateManagerTests
     {
 
 

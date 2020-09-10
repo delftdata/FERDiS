@@ -74,9 +74,11 @@ namespace BlackSP.Checkpointing.Core
 
         public bool CanRestore(Checkpoint cp)
         {
+            _ = cp ?? throw new ArgumentNullException(nameof(cp));
+
             var keys = _state.Keys;
             //all keys in registry are also present in checkpoint
-            if (keys.Intersect(cp.Keys).Count() == keys.Count())
+            if (keys.Intersect(cp.Keys).Count() == keys.Count)
             {
                 return true;
             }

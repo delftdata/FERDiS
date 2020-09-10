@@ -1,6 +1,7 @@
 ﻿using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace BlackSP.Checkpointing.Core
@@ -8,7 +9,7 @@ namespace BlackSP.Checkpointing.Core
     /// <inheritdoc/>
     public class RecoveryLine : IRecoveryLine
     {
-        public IEnumerable<string> AffectedWorkers => RecoveryMap.Keys;
+        public IEnumerable<string> AffectedWorkers => RecoveryMap.Where(kv => kv.Value != Guid.Empty).Select(kv => kv.Key);
 
         public IDictionary<string, Guid> RecoveryMap { get; private set; }
 
