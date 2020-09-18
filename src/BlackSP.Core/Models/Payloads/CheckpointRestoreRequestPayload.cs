@@ -12,18 +12,16 @@ namespace BlackSP.Core.Models.Payloads
 
         public static new string MetaDataKey => "control:checkpointrestore";
 
+
         /// <summary>
-        /// Holds instancename-guid pairs indicating which checkpoint guid should be restored for each instance.
-        /// Instances are expected to retrieve their respective value from the dictionary.<br/>
-        /// Lastly, if there is no value for a given key, no checkpoint has to be restored
+        /// Checkpoint identifier requested to restore
         /// </summary>
         [ProtoMember(1)]
-        public IDictionary<string, Guid> InstanceCheckpointMap { get; private set; }
+        public Guid CheckpointId { get; set; }
 
-
-        public CheckpointRestoreRequestPayload(IDictionary<string, Guid> checkpointMap)
+        public CheckpointRestoreRequestPayload(Guid checkpointId)
         {
-            InstanceCheckpointMap = checkpointMap ?? throw new ArgumentNullException(nameof(checkpointMap));
+            CheckpointId = checkpointId;
         }
 
     }

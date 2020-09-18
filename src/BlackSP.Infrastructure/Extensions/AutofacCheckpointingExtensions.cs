@@ -24,12 +24,17 @@ namespace BlackSP.Infrastructure.Extensions
             //TODO: log information
         }
 
-        public static ContainerBuilder UseCheckpointingService(this ContainerBuilder builder, bool autoRegisterComponents = false)
+        public static ContainerBuilder UseCheckpointingService(this ContainerBuilder builder, ICheckpointConfiguration config, bool autoRegisterComponents = false)
         {
             _ = builder ?? throw new ArgumentNullException(nameof(builder));
+            _ = config ?? throw new ArgumentNullException(nameof(config));
+
+            builder.RegisterInstance(config).AsImplementedInterfaces();
+
             builder.RegisterType<CheckpointDependencyTracker>().AsSelf();
             builder.RegisterType<ObjectRegistry>().AsSelf();
             builder.RegisterType<AzureBackedCheckpointStorage>().AsImplementedInterfaces();
+            builder.RegisterType<RecoveryLineCalculator>().AsSelf();
             //above are the dependencies of the service below
             builder.RegisterType<CheckpointService>().As<ICheckpointService>().InstancePerLifetimeScope();
 

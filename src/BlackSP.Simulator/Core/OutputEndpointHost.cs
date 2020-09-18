@@ -41,7 +41,7 @@ namespace BlackSP.Simulator.Core
                 int shardId = i;
                 Stream s = outgoingStreams[shardId];
                 Connection c = outgoingConnections[shardId];
-                threads.Add(Task.Run(() => EgressWithRestart(instanceName, endpointName, shardId, 99, TimeSpan.FromSeconds(5), linkedCTSource.Token)));
+                threads.Add(Task.Run(() => EgressWithRestart(instanceName, endpointName, shardId, 99, TimeSpan.FromSeconds(15), linkedCTSource.Token)));
             }
 
             try
@@ -52,7 +52,7 @@ namespace BlackSP.Simulator.Core
             {
                 try
                 {
-                    linkedCTSource.Cancel();
+                    hostCTSource.Cancel();
                     await Task.WhenAll(threads);
                 }
                 catch (OperationCanceledException e) { /*shh*/}
@@ -67,43 +67,45 @@ namespace BlackSP.Simulator.Core
                     _connectionTable.RegisterConnection(connection); //re-register connection to create new streams around a failed instance
                 }
 
-                // ????  await Task.WhenAll(threads); //threads must all stop during cancellation..
                 throw;
             }
             finally
             {
-                _logger.Information($"{instanceName} - exiting output host {endpointName}");
+                _logger.Debug($"Exiting output host {endpointName}");
             }
         }
 
         private async Task EgressWithRestart(string instanceName, string endpointName, int shardId, int maxRestarts, TimeSpan restartTimeout, CancellationToken t)
         {
+            await Task.Delay(restartTimeout).ConfigureAwait(false);
+
             while (!t.IsCancellationRequested)
             {
                 Connection c = null;
                 try
                 {
                     t.ThrowIfCancellationRequested();
+
                     Stream s = _connectionTable.GetOutgoingStreams(instanceName, endpointName)[shardId];
                     c = _connectionTable.GetOutgoingConnections(instanceName, endpointName)[shardId];
 
-                    await _outputEndpoint.Egress(s, c.ToEndpointName, c.ToShardId, t);
-                    
-                    return;
+                    _logger.Debug($"Output endpoint {c.FromEndpointName}${shardId} starting egress");
+                    await _outputEndpoint.Egress(s, c.ToEndpointName, c.ToShardId, t).ConfigureAwait(false);
+                    _logger.Debug($"Output endpoint {c.FromEndpointName}${shardId} exiting gracefully");
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (t.IsCancellationRequested)
                 {
                     _logger.Debug($"Output endpoint {c.FromEndpointName}${shardId} exiting due to cancellation");
                     throw;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     if (maxRestarts-- == 0)
                     {
                         _logger.Fatal($"Output endpoint {c.FromEndpointName}${shardId} exited with exceptions, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    _logger.Warning($"Output endpoint {c.FromEndpointName}${shardId} exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
+                    _logger.Warning(e, $"Output endpoint {c.FromEndpointName}${shardId} exited with {e.GetType()}, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout, t);
                 }
             }

@@ -42,7 +42,7 @@ namespace BlackSP.Simulator.Core
                 int shardId = i;
                 Stream s = incomingStreams[shardId];
                 Connection c = incomingConnections[shardId];
-                threads.Add(Task.Run(() => IngressWithRestart(instanceName, endpointName, shardId, 99, TimeSpan.FromSeconds(5), linkedCTSource.Token)));
+                threads.Add(Task.Run(() => IngressWithRestart(instanceName, endpointName, shardId, 99, TimeSpan.FromSeconds(15), linkedCTSource.Token)));
             }
 
             try
@@ -54,15 +54,15 @@ namespace BlackSP.Simulator.Core
             {
                 try
                 {
-                    linkedCTSource.Cancel();
+                    hostCTSource.Cancel();
                     await Task.WhenAll(threads).ConfigureAwait(false);
                 } catch(OperationCanceledException) { /*shh*/}
                 
                 
-                _logger.Debug($"{instanceName} - Input endpoint {endpointName} was cancelled and is now resetting streams");
+                _logger.Debug($"Input endpoint {endpointName} was cancelled and is now resetting streams");
                 foreach (var stream in incomingStreams)
                 {
-                    //stream.Dispose();
+                    stream.Dispose();
                 }
                 foreach(var connection in incomingConnections)
                 {
@@ -72,39 +72,42 @@ namespace BlackSP.Simulator.Core
             } 
             finally
             {
-                _logger.Debug($"{instanceName} - exiting input host {endpointName}");
+                _logger.Debug($"Exiting input host {endpointName}");
             }
         }
 
         private async Task IngressWithRestart(string instanceName, string endpointName, int shardId, int maxRestarts, TimeSpan restartTimeout, CancellationToken t)
         {
+            await Task.Delay(restartTimeout).ConfigureAwait(false);
             while (!t.IsCancellationRequested)
             {
-                Stream s = null;
                 Connection c = null;
                 try
                 {
+
                     t.ThrowIfCancellationRequested();
 
-                    s = _connectionTable.GetIncomingStreams(instanceName, endpointName)[shardId];
+                    Stream s = _connectionTable.GetIncomingStreams(instanceName, endpointName)[shardId];
                     c = _connectionTable.GetIncomingConnections(instanceName, endpointName)[shardId];
+                    
+                    _logger.Debug($"Input endpoint {c.ToEndpointName}${shardId} starting ingress");
+                    await _inputEndpoint.Ingress(s, c.FromEndpointName, c.FromShardId, t).ConfigureAwait(false);
+                    _logger.Debug($"Input endpoint {c.ToEndpointName}${shardId} exiting gracefully");
 
-                    await _inputEndpoint.Ingress(s, c.FromEndpointName, c.FromShardId, t);
-                    return;
                 }
-                catch(OperationCanceledException)
+                catch (OperationCanceledException) when (t.IsCancellationRequested)
                 {
                     _logger.Debug($"Input endpoint {c.ToEndpointName}${shardId} exiting due to cancellation");
                     throw;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     if (maxRestarts-- == 0)
                     {
                         _logger.Fatal($"Input endpoint {c.ToEndpointName}${shardId} exited with exceptions, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    _logger.Warning($"Input endpoint {c.ToEndpointName}${shardId} exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
+                    _logger.Warning(e, $"Input endpoint {c.ToEndpointName}${shardId} exited with {e.GetType()}, restart in {restartTimeout.TotalSeconds} seconds.");
                     await Task.Delay(restartTimeout, t);
                 }
             }

@@ -11,9 +11,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Controllers
+namespace BlackSP.Core.Processors
 {
-    public abstract class MultiSourceProcessControllerBase<TMessage> : IDisposable
+    public abstract class MultiSourceProcessorBase<TMessage> : IDisposable
         where TMessage : MessageBase
     {
         private readonly IEnumerable<ISource<TMessage>> _sources;
@@ -22,7 +22,7 @@ namespace BlackSP.Core.Controllers
         private readonly SemaphoreSlim _csSemaphore;
         private bool disposed;
 
-        public MultiSourceProcessControllerBase(
+        public MultiSourceProcessorBase(
             IEnumerable<ISource<TMessage>> sources,
             IPipeline<TMessage> pipeline,
             IDispatcher<TMessage> dispatcher)
@@ -52,6 +52,7 @@ namespace BlackSP.Core.Controllers
             }
             finally
             {
+                dispatchQueue.CompleteAdding();
                 dispatchQueue.Dispose();
             }
         }
@@ -78,10 +79,6 @@ namespace BlackSP.Core.Controllers
                 }
             }
             catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
-            finally
-            {
-                dispatchQueue.CompleteAdding();
-            }
         }
 
         private async Task ProcessMessageInCriticalSection(TMessage message, BlockingCollection<TMessage> dispatchQueue, CancellationToken t)

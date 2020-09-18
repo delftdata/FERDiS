@@ -7,7 +7,7 @@ using BlackSP.Core.Middlewares;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using BlackSP.Core.Controllers;
+using BlackSP.Core.Processors;
 using BlackSP.Core;
 
 namespace BlackSP.Infrastructure.Extensions
@@ -19,8 +19,8 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder AddControlMiddlewaresForCoordinator(this ContainerBuilder builder)
         {
             //TODO: register coordinator control middlewares in order
-            builder.RegisterType<WorkerStatusReceptionMiddleware>().AsImplementedInterfaces();
-            builder.RegisterType<CheckpointRestoreCompletionMiddleware>().As<IMiddleware<ControlMessage>>();
+            builder.RegisterType<WorkerResponseHandler>().AsImplementedInterfaces();
+            builder.RegisterType<CheckpointRestoreResponseHandler>().As<IMiddleware<ControlMessage>>();
 
             return builder;
         }
@@ -28,12 +28,12 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder AddControlMiddlewaresForWorker(this ContainerBuilder builder)
         {
             //TODO: register worker control middlewares in order
-            builder.RegisterType<WorkerStatusResponseMiddleware>().As<IMiddleware<ControlMessage>>();
-            builder.RegisterType<CheckpointRestoreMiddleware>().As<IMiddleware<ControlMessage>>();
+            builder.RegisterType<WorkerRequestHandler>().As<IMiddleware<ControlMessage>>();
+            builder.RegisterType<CheckpointRestoreRequestHandler>().As<IMiddleware<ControlMessage>>();
 
             //important control middleware: controls the subprocess that processes/generates data messages
-            builder.RegisterType<DataLayerControllerMiddleware>().As<IMiddleware<ControlMessage>>();
-            builder.RegisterType<DataLayerProcessController>().AsSelf();//dependency of DataProcessControllerMiddleware
+            builder.RegisterType<WorkerRequestHandler>().As<IMiddleware<ControlMessage>>();
+            builder.RegisterType<DataMessageProcessor>().AsSelf();//dependency of DataProcessControllerMiddleware
 
             return builder;
         }

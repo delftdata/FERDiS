@@ -87,7 +87,7 @@ namespace BlackSP.Core.Dispatchers
             {
                 lock(outputBuffer) //TODO: consider removing lock statements
                 {
-                    FlushBuffer(outputBuffer, outputQueue);
+                    FlushBuffer(outputBuffer, outputQueue, t);
                 }
                 outputQueue.Add(bytes, t);
             } 
@@ -106,13 +106,13 @@ namespace BlackSP.Core.Dispatchers
         /// <param name="outputBuffer"></param>
         /// <param name="outputQueue"></param>
         /// <param name="targetEndpointKey"></param>
-        private void FlushBuffer(ICollection<byte[]> outputBuffer, BlockingCollection<byte[]> outputQueue)
+        private void FlushBuffer(ICollection<byte[]> outputBuffer, BlockingCollection<byte[]> outputQueue, CancellationToken t)
         {
             if (outputBuffer.Any())
             {
                 foreach (var msg in outputBuffer)
                 {
-                    outputQueue.Add(msg);
+                    outputQueue.Add(msg, t);
                 }
                 outputBuffer.Clear();
             }

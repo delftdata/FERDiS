@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Middlewares
 {
-    public class PassthroughMiddleware<TMessage> : IMiddleware<TMessage> where TMessage : IMessage
+    public class NoopMessageHandler<TMessage> : IMiddleware<TMessage> where TMessage : IMessage
     {
 
 
-        public PassthroughMiddleware()
+        public NoopMessageHandler()
         {
         }
 

@@ -1,7 +1,7 @@
 ﻿using Autofac;
 using Autofac.Core;
 using BlackSP.Core;
-using BlackSP.Core.Controllers;
+using BlackSP.Core.Processors;
 using BlackSP.Core.Dispatchers;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Sources;
@@ -20,6 +20,7 @@ using BlackSP.Kernel.Checkpointing;
 using BlackSP.Checkpointing.Core;
 using BlackSP.Checkpointing.Persistence;
 using BlackSP.Checkpointing;
+using BlackSP.Core.Coordination;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -94,19 +95,18 @@ namespace BlackSP.Infrastructure.Extensions
         }
 
 
-        public static ContainerBuilder UseWorkerMonitors(this ContainerBuilder builder)
+        public static ContainerBuilder UseStatusMonitors(this ContainerBuilder builder)
         {
             builder.RegisterType<ConnectionMonitor>().AsSelf().SingleInstance();
-            builder.RegisterType<DataLayerProcessMonitor>().AsSelf().SingleInstance();
-
             return builder;
         }
 
-        public static ContainerBuilder UseCoordinatorMonitors(this ContainerBuilder builder)
-        {
-            builder.RegisterType<ConnectionMonitor>().AsSelf().SingleInstance();
-            builder.RegisterType<WorkerStateMonitor>().AsSelf().SingleInstance();
 
+        public static ContainerBuilder UseStateManagers(this ContainerBuilder builder)
+        {
+            
+            builder.RegisterType<WorkerStateManager>().AsSelf().InstancePerDependency();
+            builder.RegisterType<WorkerGraphStateManager>().AsSelf().SingleInstance();
             return builder;
         }
     }

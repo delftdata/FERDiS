@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.Controllers;
+﻿using BlackSP.Core.Processors;
 using BlackSP.Core.Models;
 using BlackSP.Core.Models.Payloads;
 using BlackSP.Core.Monitors;
@@ -12,29 +12,38 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BlackSP.Core.Extensions;
 
 namespace BlackSP.Core.Middlewares
 {
-    public class DataLayerControllerMiddleware : IMiddleware<ControlMessage>, IDisposable
+    /// <summary>
+    /// ControlMessage handler dedicated to handling requests on the worker side
+    /// </summary>
+    public class WorkerRequestHandler : IMiddleware<ControlMessage>, IDisposable
     {
         private readonly IVertexConfiguration _vertexConfiguration;
-        private readonly DataLayerProcessController _controller;
-        private readonly DataLayerProcessMonitor _processMonitor;
+        private readonly DataMessageProcessor _processor;
+        private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
 
         private CancellationTokenSource _ctSource;
         private Task _activeThread;
+        private bool upstreamFullyConnected;
+        private bool downstreamFullyConnected;
         private bool disposedValue;
 
-        public DataLayerControllerMiddleware(IVertexConfiguration vertexConfiguration, 
-                                             DataLayerProcessController processCtrl, 
-                                             DataLayerProcessMonitor dataProcessMonitor,
-                                             ILogger logger)
-        {
+        public WorkerRequestHandler(DataMessageProcessor processor,
+                                    ConnectionMonitor connectionMonitor,
+                                    IVertexConfiguration vertexConfiguration,  
+                                    ILogger logger)
+        {            
+            _processor = processor ?? throw new ArgumentNullException(nameof(processor));
+            _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
-            _controller = processCtrl ?? throw new ArgumentNullException(nameof(processCtrl));
-            _processMonitor = dataProcessMonitor ?? throw new ArgumentNullException(nameof(dataProcessMonitor));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            upstreamFullyConnected = downstreamFullyConnected = false;
+            _connectionMonitor.OnConnectionChange += ConnectionMonitor_OnConnectionChange;
         }
 
         public async Task<IEnumerable<ControlMessage>> Handle(ControlMessage message)
@@ -45,31 +54,52 @@ namespace BlackSP.Core.Middlewares
                 return new List<ControlMessage>() { message }.AsEnumerable();
             }
 
-            if (!payload.TargetInstanceNames.Contains(_vertexConfiguration.InstanceName))
-            {
-                return Enumerable.Empty<ControlMessage>();
-            }
+            await PerformRequestedAction(payload.RequestType).ConfigureAwait(false);
 
+            var response = new ControlMessage();
+            response.AddPayload(new WorkerResponsePayload()
+            {
+                OriginInstanceName = _vertexConfiguration.InstanceName,
+                UpstreamFullyConnected = upstreamFullyConnected,
+                DownstreamFullyConnected = downstreamFullyConnected,
+                DataProcessActive = _activeThread != null,
+                OriginalRequestType = payload.RequestType
+            });
+            return response.Yield();
+        }
+
+        private async Task PerformRequestedAction(WorkerRequestType requestType)
+        {
             try
             {
                 Task action = null;
-                if (payload.RequestType == WorkerRequestType.StartProcessing)
+                switch (requestType)
                 {
-                    action = StartDataProcess();
-                }
-                else if (payload.RequestType == WorkerRequestType.StopProcessing)
-                {
-                    action = StopDataProcess();
+                    case WorkerRequestType.Status:
+                        action = Task.CompletedTask;
+                        break;
+                    case WorkerRequestType.StartProcessing:
+                        action = StartDataProcess();
+                        break;
+                    case WorkerRequestType.StopProcessing:
+                        action = StopDataProcess();
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Worker received instruction \"{requestType}\" which is not implemented in {this.GetType()}");
                 }
                 await action.ConfigureAwait(false);
             }
             catch (Exception e)
             {
-                _logger.Warning(e, $"Exception in {this.GetType()} while starting/stopping the data layer");
+                _logger.Warning(e, $"Exception in {this.GetType()} while handling request of type \"{requestType}\"");
                 throw;
             }
+        }
 
-            return Enumerable.Empty<ControlMessage>();
+        private void ConnectionMonitor_OnConnectionChange(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
+        {
+            upstreamFullyConnected = e.UpstreamFullyConnected;
+            downstreamFullyConnected = e.DownstreamFullyConnected;
         }
 
         private Task StartDataProcess()
@@ -77,13 +107,12 @@ namespace BlackSP.Core.Middlewares
             if (_activeThread == null)
             {
                 _ctSource = new CancellationTokenSource();
-                _activeThread = _controller.StartProcess(_ctSource.Token);
-                _processMonitor.MarkActive(true);
-                _logger.Information($"Data layer was started");
+                _activeThread = _processor.StartProcess(_ctSource.Token);
+                _logger.Information($"Data processor was started");
             }
             else
             {
-                _logger.Information($"Data layer already started, cannot start again");
+                _logger.Information($"Data processor already started, cannot start again");
             }
             return Task.CompletedTask;
         }
@@ -107,7 +136,6 @@ namespace BlackSP.Core.Middlewares
             {
                 _ctSource.Cancel();
                 await _activeThread.ConfigureAwait(false);
-                _processMonitor.MarkActive(false);
                 _ctSource.Dispose();
             }
             catch (OperationCanceledException) { /* silence cancellation exceptions, these are expected. */}

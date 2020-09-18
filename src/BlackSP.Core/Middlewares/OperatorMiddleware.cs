@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core;
+using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
 using BlackSP.Core.Models.Payloads;
 using BlackSP.Kernel.MessageProcessing;
@@ -27,7 +28,7 @@ namespace BlackSP.Core.Middlewares
             
             if(!message.TryGetPayload<EventPayload>(out var eventPayload))
             {
-                return Task.FromResult(Enumerable.Repeat(message, 1));
+                return Task.FromResult(message.Yield());
             }
             
             IEvent payload = eventPayload.Event;
@@ -40,5 +41,6 @@ namespace BlackSP.Core.Middlewares
 
             return Task.FromResult(result);
         }
+
     }
 }

@@ -13,9 +13,6 @@ namespace BlackSP.Core.Models.Payloads
         
         [ProtoMember(1)]
         public WorkerRequestType RequestType { get; set; } 
-
-        [ProtoMember(2)]
-        public IEnumerable<string> TargetInstanceNames { get; set; }
     }
 
     public enum WorkerRequestType

@@ -1,6 +1,6 @@
 ﻿using Autofac;
 using BlackSP.Core;
-using BlackSP.Core.Controllers;
+using BlackSP.Core.Processors;
 using BlackSP.Core.Sources;
 using BlackSP.Core.Middlewares;
 using BlackSP.Core.Models;
@@ -29,7 +29,7 @@ namespace BlackSP.Infrastructure.Modules
         {
             //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
             builder.UseSerilog(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
-            builder.UseCheckpointingService(true);
+            builder.UseCheckpointingService(_configuration.CheckpointingConfiguration, true);
 
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();
@@ -37,7 +37,7 @@ namespace BlackSP.Infrastructure.Modules
             //receiver only as control source
             builder.UseReceiverMessageSource(false);
             
-            builder.UseWorkerMonitors();
+            builder.UseStatusMonitors();
             
             //data source (local source operator)
             builder.RegisterType<TOperator>().AsImplementedInterfaces();
@@ -45,7 +45,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.RegisterType<SourceOperatorDataSource<TEvent>>().As<ISource<DataMessage>>();
 
             //control processor
-            builder.RegisterType<ControlLayerProcessController>().SingleInstance();
+            builder.RegisterType<ControlMessageProcessor>().SingleInstance();
             builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().SingleInstance();
             builder.AddControlMiddlewaresForWorker();
 
@@ -53,7 +53,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.RegisterType<MiddlewareInvocationPipeline<DataMessage>>().As<IPipeline<DataMessage>>().SingleInstance();
 
             //middlewares
-            builder.RegisterType<PassthroughMiddleware<DataMessage>>().AsImplementedInterfaces();
+            builder.RegisterType<NoopMessageHandler<DataMessage>>().AsImplementedInterfaces();
             //TODO: insert middlewares
 
 

@@ -30,7 +30,7 @@ namespace BlackSP.Simulator.Builders
             {
                 var graph = lifetimeScope.Resolve<VertexGraph>();
 
-                var vertexThreads = graph.StartAllVertices(3, TimeSpan.FromSeconds(5));
+                var vertexThreads = graph.StartAllVertices(3, TimeSpan.FromSeconds(15));
                 
                 var allWorkerThreads = vertexThreads.Append(Task.Run(() => VertexFaultTrigger(graph)));
                 await Task.WhenAll(allWorkerThreads);

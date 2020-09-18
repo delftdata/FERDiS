@@ -7,9 +7,9 @@ using System.Text;
 namespace BlackSP.Core.Models.Payloads
 {
     [ProtoContract]
-    public class WorkerStatusPayload : MessagePayloadBase
+    public class WorkerResponsePayload : MessagePayloadBase
     {
-        public static new string MetaDataKey => "worker:status";
+        public static new string MetaDataKey => "worker:response";
 
         [ProtoMember(1)]
         public string OriginInstanceName { get; set; }
@@ -22,5 +22,8 @@ namespace BlackSP.Core.Models.Payloads
 
         [ProtoMember(4)]
         public bool DataProcessActive { get; set; }
+
+        [ProtoMember(5)]
+        public WorkerRequestType OriginalRequestType { get; set; }
     }
 }

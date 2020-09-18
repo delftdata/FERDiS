@@ -10,17 +10,17 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Controllers
+namespace BlackSP.Core.Processors
 {
 
-    public abstract class SingleSourceProcessControllerBase<TMessage> 
+    public abstract class SingleSourceProcessorBase<TMessage> 
         where TMessage : MessageBase
     {
         private readonly ISource<TMessage> _source;
         private readonly IPipeline<TMessage> _pipeline;
         private readonly IDispatcher<TMessage> _dispatcher;
 
-        public SingleSourceProcessControllerBase(
+        public SingleSourceProcessorBase(
             ISource<TMessage> source,
             IPipeline<TMessage> pipeline,
             IDispatcher<TMessage> dispatcher)

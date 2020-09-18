@@ -19,13 +19,19 @@ namespace BlackSP.Core.Models
 
         public ControlMessage()
         {
-            PartitionKey = 0; //TODO: ??
+            PartitionKey = default;
             MetaData = new Dictionary<string, MessagePayloadBase>();
         }
 
-        public ControlMessage(IDictionary<string, MessagePayloadBase> metaData)
+        public ControlMessage(int partitionKey)
         {
-            PartitionKey = 0; //TODO: ??
+            PartitionKey = partitionKey;
+            MetaData = new Dictionary<string, MessagePayloadBase>();
+        }
+
+        public ControlMessage(IDictionary<string, MessagePayloadBase> metaData, int partitionKey = default)
+        {
+            PartitionKey = partitionKey;
             MetaData = new Dictionary<string, MessagePayloadBase>(metaData);
         }
     }

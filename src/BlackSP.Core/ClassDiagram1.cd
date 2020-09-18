@@ -30,14 +30,14 @@
     </TypeIdentifier>
     <Lollipop Position="0.2" />
   </Class>
-  <Class Name="BlackSP.Core.Controllers.SingleSourceProcessController&lt;TMessage&gt;">
+  <Class Name="BlackSP.Core.Processors.SingleSourceProcessController&lt;TMessage&gt;">
     <Position X="6.25" Y="1.5" Width="3.25" />
     <TypeIdentifier>
       <HashCode>AAAAAAAACAAAAQAJAEAAAAAAAAAAgAAgAAABAEAAAAA=</HashCode>
       <FileName>Controllers\SingleSourceProcessController.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="BlackSP.Core.Controllers.MultiSourceProcessController&lt;TMessage&gt;">
+  <Class Name="BlackSP.Core.Processors.MultiSourceProcessController&lt;TMessage&gt;">
     <Position X="6.25" Y="5.5" Width="3.25" />
     <TypeIdentifier>
       <HashCode>AAAAAAAACAAAAQAJAAAAAAAAAAAAgAAgCAABAFAAAAA=</HashCode>

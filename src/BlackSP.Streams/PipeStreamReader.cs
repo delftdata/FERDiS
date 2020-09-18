@@ -43,22 +43,31 @@ namespace BlackSP.Streams
             {
                 t.ThrowIfCancellationRequested();
 
-                if (_didRead && _buffer.TryReadMessage(out var msgbodySequence, out var readPosition))
+                if (_buffer.TryReadMessage(out var msgbodySequence, out var readPosition))
                 {
                     _buffer = _buffer.Slice(readPosition);
-                    return msgbodySequence.ToArray();
-                }
-
-                if (_didRead)
+                    var bytes = msgbodySequence.ToArray();
+                    await AdvanceReader(t).ConfigureAwait(false);
+                    return bytes;
+                } 
+                else
                 {
-                    _reader.AdvanceTo(_buffer.Start);
+                    await AdvanceReader(t).ConfigureAwait(false);
                 }
-                _lastRead = await _reader.ReadAsync(t);
-                _didRead = true;
-                _buffer = _lastRead.Buffer;
             }
             t.ThrowIfCancellationRequested(); //if we end up here it's due to cancellation
             throw null;//so the compiler knows we always throw here
+        }
+
+        private async Task AdvanceReader(CancellationToken t)
+        {
+            if (_didRead)
+            {
+                _reader.AdvanceTo(_buffer.Start);
+            }
+            _lastRead = await _reader.ReadAsync(t).ConfigureAwait(false);
+            _buffer = _lastRead.Buffer;
+            _didRead = true;
         }
 
         #region dispose pattern
@@ -71,7 +80,7 @@ namespace BlackSP.Streams
                 {
                     //dispose managed state (managed objects)
                     _reader.Complete();
-                    _stream.Dispose();
+                    //_stream.Dispose();
                 }
                 _disposed = true;
             }

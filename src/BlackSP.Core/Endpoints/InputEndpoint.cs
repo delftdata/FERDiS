@@ -70,19 +70,18 @@ namespace BlackSP.Core.Endpoints
             }
             catch (OperationCanceledException) when (t.IsCancellationRequested)
             {
-                _logger.Information($"Input endpoint {_endpointConfig.LocalEndpointName} is handling cancellation request from caller side");
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName} is handling cancellation request from caller side");
                 throw;
             }
             catch (Exception e)
             {
-                _logger.Warning(e, $"Input endpoint {_endpointConfig.LocalEndpointName} read & deserialize threads ran into an exception. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
+                _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} read & deserialize threads ran into an exception. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
                 throw;
             }
             finally
             {
                 _connectionMonitor.MarkDisconnected(_endpointConfig, remoteShardId);
                 passthroughQueue.Dispose();
-                s.Close();
             }
         }
 
@@ -99,23 +98,20 @@ namespace BlackSP.Core.Endpoints
                 int timeoutSeconds = 30;
                 try
                 {
-                    //if no message received for XXX seconds:
-                    //assume connection dropped and throw exception
                     timeoutSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
                     linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
                     var msg = await streamReader.ReadNextMessage(linkedSource.Token).ConfigureAwait(false);
                     
                     if(msg.IsKeepAliveMessage())
                     {
-                        _logger.Debug($"PING received on input endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
+                        _logger.Verbose($"PING received on input endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
                         //respond with a the same message (keepalive)
                         await streamWriter.WriteMessage(msg, t).ConfigureAwait(false); //note we dont use the linkedsource here, the timeout did not happen so we no longer have to consider it
-                        _logger.Debug($"PONG sent on input endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
-
+                        _logger.Verbose($"PONG sent on input endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
                     }
                     else //its a regular message, queue it for processing
                     {
-                        passthroughQueue.Add(msg);
+                        passthroughQueue.Add(msg, t);
                     }
                 }
                 catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)

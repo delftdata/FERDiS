@@ -12,7 +12,7 @@ namespace BlackSP.ThroughputExperiment
     {
         static async Task Main(string[] args)
         {
-            var useSimulator = false;
+            var useSimulator = true;
 
             //Worker.Launch("crainst01", 1500, new AzureDataProvider(), null);
             var logTargets = LogTargetFlags.Console;
@@ -33,19 +33,19 @@ namespace BlackSP.ThroughputExperiment
         static void ConfigureOperatorGraph(IOperatorVertexGraphBuilder graph)
         {
             var source = graph.AddSource<SampleSourceOperator, SampleEvent>(1);
-            var filter = graph.AddFilter<SampleFilterOperator, SampleEvent>(1);
-            var mapper = graph.AddMap<SampleMapOperator, SampleEvent, SampleEvent>(1);
+            //var filter = graph.AddFilter<SampleFilterOperator, SampleEvent>(1);
+            //var mapper = graph.AddMap<SampleMapOperator, SampleEvent, SampleEvent>(1);
             //var aggregate = graph.AddAggregate<SampleAggregateOperator, SampleEvent, SampleEvent2>(1);
             var sink = graph.AddSink<SampleSinkOperator, SampleEvent>(1);
 
             ///*
-            source.Append(filter);
-            filter.Append(mapper);
+            //source.Append(filter);
+            //filter.Append(mapper);
             //mapper.Append(aggregate);
-            mapper.Append(sink);
+            //mapper.Append(sink);
             //*/
 
-            //source.Append(sink);
+            source.Append(sink);
         }
     }
 }

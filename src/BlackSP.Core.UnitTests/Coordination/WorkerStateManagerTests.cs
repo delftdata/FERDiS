@@ -27,45 +27,45 @@ namespace BlackSP.Core.UnitTests.Coordination
         [Test]
         public void StartsInOfflineState()
         {
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Offline);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Offline);
         }
 
         [Test]
         public void ConnectionAfterStartYieldsHaltedState()
         {
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.NetworkConnected);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Halted);
+            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Halted);
         }
 
         [Test]
         public void FailureAfterHaltedYieldsFaulted()
         {
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
             bool stateChangeFired = false;
             stateMachine.OnStateChangeNotificationRequired += (name, state) => stateChangeFired = true;
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.Failure);
+            stateMachine.FireTrigger(WorkerStateTrigger.Failure);
             Assert.IsFalse(stateChangeFired); //event does not get fired as its only used for when the worker needs to be notified of its new state (failure does not)
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Faulted);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Faulted);
         }
 
         [Test]
         public void StartAfterHaltedYieldsLaunchedState()
         {
-            WorkerStateManager.State eventState = WorkerStateManager.State.Offline;
+            WorkerState eventState = WorkerState.Offline;
             stateMachine.OnStateChangeNotificationRequired += (name, state) => eventState = state;
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.NetworkConnected);
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.DataProcessorStart);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Running);
-            Assert.AreEqual(eventState, WorkerStateManager.State.Running);
+            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorStart);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Running);
+            Assert.AreEqual(eventState, WorkerState.Running);
         }
 
         [Test]
         public void InvalidTriggerYieldsNoStateChange()
         {
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.NetworkConnected);
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.DataProcessorStart);
+            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorStart);
             var preInvalidTriggerState = stateMachine.CurrentState;
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
             Assert.AreEqual(stateMachine.CurrentState, preInvalidTriggerState);
         }
 
@@ -74,21 +74,21 @@ namespace BlackSP.Core.UnitTests.Coordination
         {
             var fakeCpId = Guid.NewGuid();
 
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.NetworkConnected);
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.DataProcessorStart);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Running);
+            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorStart);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Running);
 
             //cant start recovery straight from started state
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.CheckpointRestoreStart, fakeCpId);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Running);
+            Assert.Throws<InvalidOperationException>(() => stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId));
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Running);
             
             //halt & trigger restore
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.DataProcessorHalt);
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.CheckpointRestoreStart, fakeCpId);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Recovering);
+            stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorHalt);
+            stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Recovering);
 
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.CheckpointRestoreCompleted, fakeCpId);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Halted);
+            stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreCompleted, fakeCpId);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Halted);
         }
 
         [Test]
@@ -96,23 +96,23 @@ namespace BlackSP.Core.UnitTests.Coordination
         {
             stateMachine.OnStateChangeNotificationRequired += (a, b) => Console.WriteLine($"{a} - {b}");
 
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
 
             var fakeCpId = Guid.NewGuid();
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.CheckpointRestoreStart, fakeCpId);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Recovering);
+            stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Recovering);
 
             var fakeCpId2 = Guid.NewGuid();
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.CheckpointRestoreStart, fakeCpId2);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Recovering);
+            stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId2);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Recovering);
 
             //completion of initial checkpoint gets ignored
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.CheckpointRestoreCompleted, fakeCpId);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Recovering);
+            stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreCompleted, fakeCpId);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Recovering);
 
             //but second checkpoint does yield transition
-            stateMachine.FireTrigger(WorkerStateManager.Trigger.CheckpointRestoreCompleted, fakeCpId2);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerStateManager.State.Halted);
+            stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreCompleted, fakeCpId2);
+            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Halted);
         }
 
         [Test]
@@ -121,12 +121,12 @@ namespace BlackSP.Core.UnitTests.Coordination
             var fakeCpId = Guid.NewGuid();
 
             //checkpoint triggers require guid argument
-            Assert.Throws<ArgumentException>(() => stateMachine.FireTrigger(WorkerStateManager.Trigger.CheckpointRestoreStart));
-            Assert.Throws<ArgumentException>(() => stateMachine.FireTrigger(WorkerStateManager.Trigger.CheckpointRestoreCompleted));
+            Assert.Throws<ArgumentException>(() => stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart));
+            Assert.Throws<ArgumentException>(() => stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreCompleted));
 
             //any other trigger should not include the guid argument (2 examples for test)
-            Assert.Throws<ArgumentException>(() => stateMachine.FireTrigger(WorkerStateManager.Trigger.DataProcessorStart, fakeCpId));
-            Assert.Throws<ArgumentException>(() => stateMachine.FireTrigger(WorkerStateManager.Trigger.Failure, fakeCpId));
+            Assert.Throws<ArgumentException>(() => stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorStart, fakeCpId));
+            Assert.Throws<ArgumentException>(() => stateMachine.FireTrigger(WorkerStateTrigger.Failure, fakeCpId));
       
         }
 

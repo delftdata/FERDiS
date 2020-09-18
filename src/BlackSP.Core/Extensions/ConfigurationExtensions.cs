@@ -47,5 +47,45 @@ namespace BlackSP.Core.Extensions
                 yield return endpointConfig.GetConnectionKey(i);
             }
         }
+
+        public static int GetPartitionKeyForInstanceName(this IVertexConfiguration vertexConfig, string instanceName)
+        {
+            _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
+
+            foreach(var endpoint in vertexConfig.OutputEndpoints)
+            {
+                int i = 0;
+                foreach(var remoteInstanceName in endpoint.RemoteInstanceNames)
+                {
+                    if(remoteInstanceName == instanceName)
+                    {
+                        return endpoint.GetConnectionKey(i).GetHashCode();
+                    }
+                    i++;
+                }
+            }
+            throw new Exception($"Could not find partitionkey for instancename: {instanceName}");
+        }
+
+        public static string GetConnectionKeyByPartitionKey(this IVertexConfiguration vertexConfig, int partitionKey)
+        {
+            _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
+
+            foreach (var endpoint in vertexConfig.OutputEndpoints)
+            {
+                int i = 0;
+                foreach (var remoteInstanceName in endpoint.RemoteInstanceNames)
+                {
+                    var connectionKey = endpoint.GetConnectionKey(i);
+                    if (connectionKey.GetHashCode() == partitionKey)
+                    {
+                        return connectionKey;
+                    }
+                    i++;
+                }
+            }
+            throw new Exception($"Could not find connectionkey for partitionkey: {partitionKey}");
+
+        }
     }
 }

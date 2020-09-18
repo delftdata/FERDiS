@@ -66,7 +66,7 @@ namespace BlackSP.Streams
             writtenBytes += bytesToWrite;
             if (alwaysFlush)
             {
-                await FlushAndRefreshBuffer();
+                await FlushAndRefreshBuffer(t: t);
             }
 
             return writtenBytes;
@@ -97,7 +97,7 @@ namespace BlackSP.Streams
                 if (disposing)
                 {
                     writer.Complete();
-                    stream.Dispose();
+                    //stream.Dispose();
                 }
                 disposed = true;
             }

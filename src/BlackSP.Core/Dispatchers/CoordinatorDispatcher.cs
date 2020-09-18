@@ -64,10 +64,14 @@ namespace BlackSP.Core.Dispatchers
             _ = message ?? throw new ArgumentNullException(nameof(message));
 
             byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(false);
-            var targets = _vertexConfiguration.OutputEndpoints.SelectMany(e => e.GetAllConnectionKeys());
-            foreach(var targetConnectionKey in targets)
+
+            IEnumerable<string> targetConnectionKeys = message.PartitionKey == default
+                ? _vertexConfiguration.OutputEndpoints.SelectMany(e => e.GetAllConnectionKeys())
+                : _vertexConfiguration.GetConnectionKeyByPartitionKey(message.PartitionKey).Yield();
+
+            foreach(var targetConnectionKey in targetConnectionKeys)
             {
-                QueueForDispatch(targetConnectionKey, bytes);
+                QueueForDispatch(targetConnectionKey, bytes, t);
             }
         }
 
@@ -76,14 +80,14 @@ namespace BlackSP.Core.Dispatchers
             throw new NotSupportedException($"Only GetDispatchQueue is supported through IDispatcher<IMessage> interface in {this.GetType()}");
         }
         
-        private void QueueForDispatch(string targetConnectionKey, byte[] bytes)
+        private void QueueForDispatch(string targetConnectionKey, byte[] bytes, CancellationToken t)
         {
             var shouldDispatchMessage = _dispatchFlags.HasFlag(DispatchFlags.Control);
 
             var outputQueue = _outputQueues.Get(targetConnectionKey);
             if (shouldDispatchMessage)
             {
-                outputQueue.Add(bytes);
+                outputQueue.Add(bytes, t);
             } 
         }
 
@@ -95,7 +99,7 @@ namespace BlackSP.Core.Dispatchers
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
                     var endpointKey = endpointConfig.GetConnectionKey(shardId);
-                    _outputQueues.Add(endpointKey, new BlockingCollection<byte[]>(1 << 12));//CAPACITY TERUGZETTEN 64 
+                    _outputQueues.Add(endpointKey, new BlockingCollection<byte[]>(1 << 12));//CAPACITY ??
                     //TODO: determine proper capacity
                 }
             }

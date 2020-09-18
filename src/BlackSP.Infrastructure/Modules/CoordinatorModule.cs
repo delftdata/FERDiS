@@ -1,6 +1,6 @@
 ﻿using Autofac;
 using BlackSP.Core;
-using BlackSP.Core.Controllers;
+using BlackSP.Core.Processors;
 using BlackSP.Core.Sources;
 using BlackSP.Core.Middlewares;
 using BlackSP.Core.Models;
@@ -28,19 +28,20 @@ namespace BlackSP.Infrastructure.Modules
         protected override void Load(ContainerBuilder builder)
         {
             builder.UseSerilog(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
-            builder.UseCheckpointingService();
+            builder.UseCheckpointingService(_configuration.CheckpointingConfiguration);
 
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();
 
             //sources (control only)
-            builder.RegisterType<WorkerStateChangeSource>().As<ISource<ControlMessage>>();
+            builder.RegisterType<WorkerRequestSource>().As<ISource<ControlMessage>>();
             builder.UseReceiverMessageSource(false);
 
-            builder.UseCoordinatorMonitors();
+            builder.UseStatusMonitors();
+            builder.UseStateManagers();
 
             //processor (control only)
-            builder.RegisterType<ControlLayerProcessController>().SingleInstance();
+            builder.RegisterType<ControlMessageProcessor>().SingleInstance();
             builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().SingleInstance();
 
             //middlewares (control only - handles worker responses)

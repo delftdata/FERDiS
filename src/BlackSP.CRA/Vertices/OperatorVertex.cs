@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using BlackSP.Core.Controllers;
+using BlackSP.Core.Processors;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Models;
 using BlackSP.CRA.Endpoints;
@@ -18,7 +18,7 @@ namespace BlackSP.CRA.Vertices
     {
         private IContainer _dependencyContainer;
         private ILifetimeScope _vertexLifetimeScope;
-        private ControlLayerProcessController _controller;
+        private ControlMessageProcessor _controller;
         private ILogger _logger;
         
         private CancellationTokenSource _ctSource;
@@ -42,7 +42,7 @@ namespace BlackSP.CRA.Vertices
             _logger = _vertexLifetimeScope.Resolve<ILogger>();
             
             _logger.Information("Type registration completed succesfully, control layer start imminent");
-            _controller = _vertexLifetimeScope.Resolve<ControlLayerProcessController>();
+            _controller = _vertexLifetimeScope.Resolve<ControlMessageProcessor>();
             _bspThread = _controller.StartProcess(_ctSource.Token);
             
             _logger.Information("Endpoint initialisation imminent");

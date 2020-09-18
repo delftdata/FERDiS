@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using BlackSP.Core.Controllers;
+using BlackSP.Core.Processors;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Models;
 using BlackSP.Infrastructure;
@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using BlackSP.Kernel.Checkpointing;
 
 namespace BlackSP.Simulator.Core
 {
@@ -39,14 +40,13 @@ namespace BlackSP.Simulator.Core
             var dependencyScope = _parentScope.BeginLifetimeScope(b => b.ConfigureVertexHost(hostConfig));
 
             ILogger logger = null;
-            ControlLayerProcessController controller = null;
+            ControlMessageProcessor controller = null;
             var threads = new List<Task>();
             try
             {
                 logger = dependencyScope.Resolve<ILogger>();
                 logger.Debug($"Vertex startup initiated");
 
-                controller = dependencyScope.Resolve<ControlLayerProcessController>();
                 var inputFactory = dependencyScope.Resolve<InputEndpoint.Factory>();
                 var outputFactory = dependencyScope.Resolve<OutputEndpoint.Factory>();
                 
@@ -63,6 +63,8 @@ namespace BlackSP.Simulator.Core
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
                 logger.Debug($"Output endpoints created");
+
+                controller = dependencyScope.Resolve<ControlMessageProcessor>();
                 threads.Add(Task.Run(() => controller.StartProcess(t)));
 
                 logger.Debug($"Vertex startup completed");
