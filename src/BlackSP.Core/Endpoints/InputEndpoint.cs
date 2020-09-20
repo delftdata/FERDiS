@@ -95,10 +95,9 @@ namespace BlackSP.Core.Endpoints
             {
                 CancellationTokenSource timeoutSource, linkedSource;
                 timeoutSource = linkedSource = null;
-                int timeoutSeconds = 30;
                 try
                 {
-                    timeoutSource = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+                    timeoutSource = new CancellationTokenSource(TimeSpan.FromSeconds(Constants.KeepAliveTimeoutSeconds));
                     linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
                     var msg = await streamReader.ReadNextMessage(linkedSource.Token).ConfigureAwait(false);
                     
@@ -111,13 +110,14 @@ namespace BlackSP.Core.Endpoints
                     }
                     else //its a regular message, queue it for processing
                     {
+                        _logger.Verbose($"Real message received deserialize queue size: {passthroughQueue.Count} - on input endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
                         passthroughQueue.Add(msg, t);
                     }
                 }
                 catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
                 {
                     _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} PING timeout, throwing IOException");
-                    throw new IOException($"Connection timeout, did not receive any messages for {timeoutSeconds} seconds");
+                    throw new IOException($"Connection timeout, did not receive any messages for {Constants.KeepAliveTimeoutSeconds} seconds");
                 }
                 finally
                 {

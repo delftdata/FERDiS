@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.Coordination;
+using BlackSP.Core.Coordination;
 using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
 using BlackSP.Core.Models.Payloads;
@@ -41,7 +41,7 @@ namespace BlackSP.Core.Sources
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             messages = new BlockingCollection<ControlMessage>(1 << 12);
-            heartbeatInterval = TimeSpan.FromMilliseconds(1000 * 5);
+            heartbeatInterval = TimeSpan.FromSeconds(Constants.HeartbeatSeconds);
             lastHeartBeat = DateTime.Now.Add(-heartbeatInterval);//make sure we start off with a heartbeat
 
             RegisterWorkerStateChangeEventHandlers();

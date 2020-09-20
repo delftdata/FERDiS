@@ -26,10 +26,6 @@ namespace BlackSP.Core.Endpoints
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
-        
-        //TODO: get ping/pong settings from environment?
-        private const int KeepAliveTimeoutSeconds = 30;
-        private const int KeepAliveIntervalSeconds = 10;
 
         public OutputEndpoint(string endpointName, 
             IDispatcher<IMessage> dispatcher, 
@@ -55,17 +51,17 @@ namespace BlackSP.Core.Endpoints
         /// <param name="outputStream"></param>
         /// <param name="remoteShardId"></param>
         /// <param name="t"></param>
-        public async Task Egress(Stream outputStream, string remoteEndpointName, int remoteShardId, CancellationToken t)
+        public async Task Egress(Stream outputStream, string remoteEndpointName, int remoteShardId, CancellationToken callerToken)
         {
             _ = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
             string targetInstanceName = _endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId);
-            var pipe = outputStream.UsePipe(cancellationToken: t);
 
             using CancellationTokenSource exceptionSource = new CancellationTokenSource();
-            using CancellationTokenSource callerOrExceptionSource = CancellationTokenSource.CreateLinkedTokenSource(exceptionSource.Token, t);
-            using PipeStreamWriter writer = new PipeStreamWriter(pipe.Output, _endpointConfig.IsControl); //CHANGE BACK TO ISCONTROL BOOL
+            using CancellationTokenSource callerOrExceptionSource = CancellationTokenSource.CreateLinkedTokenSource(exceptionSource.Token, callerToken);
+            var pipe = outputStream.UsePipe(cancellationToken: callerOrExceptionSource.Token);
+            using PipeStreamWriter writer = new PipeStreamWriter(pipe.Output, _endpointConfig.IsControl);
             using PipeStreamReader reader = new PipeStreamReader(pipe.Input);
-            CancellationToken pongTimeoutToken = StartPongListener(reader, KeepAliveTimeoutSeconds, callerOrExceptionSource.Token);
+            CancellationToken pongTimeoutToken = StartPongListener(reader, Constants.KeepAliveTimeoutSeconds, callerOrExceptionSource.Token);
             using CancellationTokenSource callerExceptionOrTimeoutSource = CancellationTokenSource.CreateLinkedTokenSource(callerOrExceptionSource.Token, pongTimeoutToken);
 
             try
@@ -74,9 +70,9 @@ namespace BlackSP.Core.Endpoints
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
 
                 var msgQueue = _dispatcher.GetDispatchQueue(_endpointConfig, remoteShardId);
-                await StartWritingOutputWithKeepAlive(writer, msgQueue, KeepAliveIntervalSeconds, callerExceptionOrTimeoutSource.Token).ConfigureAwait(false);
+                await StartWritingOutputWithKeepAlive(writer, msgQueue, Constants.KeepAliveIntervalSeconds, callerExceptionOrTimeoutSource.Token).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (t.IsCancellationRequested)
+            catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
             {
                 _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} is handling cancellation request from caller side");
                 throw;
@@ -85,7 +81,7 @@ namespace BlackSP.Core.Endpoints
             {
                 _logger.Warning($"Output endpoint {_endpointConfig.LocalEndpointName} PONG-reception timeout, throwing IOException");
                 exceptionSource.Cancel();
-                throw new IOException($"Connection timeout, did not receive any PONG responses from {targetInstanceName} for {KeepAliveTimeoutSeconds} seconds");
+                throw new IOException($"Connection timeout, did not receive any PONG responses from {targetInstanceName} for {Constants.KeepAliveTimeoutSeconds} seconds");
             }
             catch (Exception e)
             {
@@ -115,37 +111,27 @@ namespace BlackSP.Core.Endpoints
 
                 var nextPingOffset = lastPingOffset.AddSeconds(pingFrequencySeconds);
                 var timeTillNextPing = nextPingOffset - DateTimeOffset.Now;
-                var msTillNextPing = (int)timeTillNextPing.TotalMilliseconds; //note truncation due to cast (basically flooring the value)
+                var msTillNextPing = Math.Max(0, (int)timeTillNextPing.TotalMilliseconds); //note truncation due to cast (basically flooring the value)
                 
                 byte[] message;
-                //if(_vertexConfig.InstanceName == "crainst01")
-                //{
-                //    _logger.Verbose($"MAY PING in {msTillNextPing}ms on output endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
-                //}
-
-                if (msTillNextPing <= 0 || !msgQueue.TryTake(out message, msTillNextPing, t))
+                if(_vertexConfig.InstanceName == "crainst01")
+                {
+                    _logger.Verbose($"MAY PING in {msTillNextPing}ms with {msgQueue.Count}msgs in queue - on output endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
+                }
+                if (msTillNextPing == 0 || !msgQueue.TryTake(out message, msTillNextPing, t))
                 {   //either there are no more miliseconds to wait for the next ping --> (time for another ping)
                     //or we couldnt fetch a message from the queue before those milliseconds passed --> (time for another ping)
                     message = KeepAliveExtensions.ConstructKeepAliveMessage();
                     lastPingOffset = DateTimeOffset.Now;
                     _logger.Verbose($"PING prepared on output endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
                 }
-
-                //endpoint drops messages if dispatcher flags indicate there should not be dispatched
-                //var endpointTypeDeliveryFlag = _endpointConfig.IsControl ? DispatchFlags.Control : DispatchFlags.Data;
-                //if (_dispatcher.GetFlags().HasFlag(endpointTypeDeliveryFlag))
-                //{ }
-
                 await writer.WriteMessage(message, t).ConfigureAwait(false);
-
-                
-                if(!_endpointConfig.IsControl && message.IsKeepAliveMessage()) //ensure flushing to network to prevent keepalive message getting suck in the output buffer, eventually causing a timeout
+                if (!_endpointConfig.IsControl && message.IsKeepAliveMessage()) //ensure flushing to network to prevent keepalive message getting suck in the output buffer, eventually causing a timeout
                 {
                     _logger.Verbose($"PING force-sending on output endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
                     await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
                     _logger.Verbose($"PING force-sent on output endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
                 }
-                
             }
             t.ThrowIfCancellationRequested();
         }
@@ -162,7 +148,7 @@ namespace BlackSP.Core.Endpoints
 #pragma warning disable CA2000 // Dispose objects before losing scope
             //both objects get disposed in task continuation
             var pongListenerTimeoutSource = new CancellationTokenSource(); //manually cancelled after a timeout occurs
-            var pongListenerLinkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, pongListenerTimeoutSource.Token);
+            //var pongListenerLinkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, pongListenerTimeoutSource.Token);
 #pragma warning restore CA2000 // Dispose objects before losing scope
             
             _ = Task.Run(async () =>
@@ -171,8 +157,9 @@ namespace BlackSP.Core.Endpoints
                 
                 CancellationTokenSource pongTimeoutSource = null; //to track individual pong timeouts
                 CancellationTokenSource linkedSource = null; //to track timeouts AND caller cancellation
-                while (!pongListenerLinkedSource.IsCancellationRequested)
+                while (true)
                 {
+                    t.ThrowIfCancellationRequested();
                     try
                     {
                         TimeSpan timeTillNextTimeout = lastPongReception.AddSeconds(pongTimeoutSeconds) - DateTimeOffset.Now;
@@ -180,7 +167,7 @@ namespace BlackSP.Core.Endpoints
                         
                         pongTimeoutSource = new CancellationTokenSource(Math.Max(msTillNextTimeout, 1)); //never wait negative
                         linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, pongTimeoutSource.Token);
-                        _logger.Verbose($"awaiting PONG on output endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
+                        _logger.Verbose($"awaiting PONG on output endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName} within {msTillNextTimeout}ms");
                         
                         var message = await reader.ReadNextMessage(linkedSource.Token).ConfigureAwait(false);
                         if (!message.IsKeepAliveMessage())
@@ -226,10 +213,10 @@ namespace BlackSP.Core.Endpoints
                 }
 
                 pongListenerTimeoutSource.Dispose();
-                pongListenerLinkedSource.Dispose();
+                //pongListenerLinkedSource.Dispose();
             }, TaskScheduler.Current);
 
-            return pongListenerLinkedSource.Token;
+            return pongListenerTimeoutSource.Token;
         }
     }
 }

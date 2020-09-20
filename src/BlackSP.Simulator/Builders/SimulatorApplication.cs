@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using BlackSP.Core;
 using BlackSP.Infrastructure.Builders;
 using BlackSP.Simulator.Core;
 using System;
@@ -30,7 +31,7 @@ namespace BlackSP.Simulator.Builders
             {
                 var graph = lifetimeScope.Resolve<VertexGraph>();
 
-                var vertexThreads = graph.StartAllVertices(3, TimeSpan.FromSeconds(15));
+                var vertexThreads = graph.StartAllVertices(10, TimeSpan.FromSeconds(Constants.KeepAliveTimeoutSeconds * 1.5));
                 
                 var allWorkerThreads = vertexThreads.Append(Task.Run(() => VertexFaultTrigger(graph)));
                 await Task.WhenAll(allWorkerThreads);

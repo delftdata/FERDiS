@@ -47,6 +47,12 @@ namespace BlackSP.Simulator.Core
                 logger = dependencyScope.Resolve<ILogger>();
                 logger.Debug($"Vertex startup initiated");
 
+                controller = dependencyScope.Resolve<ControlMessageProcessor>();
+                threads.Add(Task.Run(() => controller.StartProcess(t)));
+
+                //Note: let the vertex start up before creating endpoints (vertex needs to detect endpoint connection)
+                await Task.Delay(5000).ConfigureAwait(false);
+
                 var inputFactory = dependencyScope.Resolve<InputEndpoint.Factory>();
                 var outputFactory = dependencyScope.Resolve<OutputEndpoint.Factory>();
                 
@@ -64,8 +70,7 @@ namespace BlackSP.Simulator.Core
                 }
                 logger.Debug($"Output endpoints created");
 
-                controller = dependencyScope.Resolve<ControlMessageProcessor>();
-                threads.Add(Task.Run(() => controller.StartProcess(t)));
+                
 
                 logger.Debug($"Vertex startup completed");
                 await await Task.WhenAny(threads); //double await as whenany returns the task that completed

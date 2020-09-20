@@ -76,6 +76,7 @@ namespace BlackSP.Core.Middlewares
                 switch (requestType)
                 {
                     case WorkerRequestType.Status:
+                        _logger.Information("Processing status request");
                         action = Task.CompletedTask;
                         break;
                     case WorkerRequestType.StartProcessing:
@@ -122,7 +123,7 @@ namespace BlackSP.Core.Middlewares
             if (_activeThread != null)
             {
                 await CancelProcessingAndResetLocally().ConfigureAwait(false);
-                _logger.Information($"Data layer was stopped");
+                _logger.Information($"Data processor was stopped");
             }
             else
             {

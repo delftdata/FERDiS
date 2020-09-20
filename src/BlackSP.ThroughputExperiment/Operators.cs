@@ -30,7 +30,7 @@ namespace BlackSP.ThroughputExperiment
 
         public SampleEvent ProduceNext(CancellationToken t)
         {
-            //Task.Delay(10, t).Wait();
+            //Task.Delay(1, t).Wait();
             if (counter == Constants.TotalEventsToSent)
             {
                 _logger.Debug($"Produced {Constants.TotalEventsToSent} events");

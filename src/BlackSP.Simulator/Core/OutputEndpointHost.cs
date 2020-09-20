@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
+using BlackSP.Core;
 
 namespace BlackSP.Simulator.Core
 {
@@ -41,7 +42,7 @@ namespace BlackSP.Simulator.Core
                 int shardId = i;
                 Stream s = outgoingStreams[shardId];
                 Connection c = outgoingConnections[shardId];
-                threads.Add(Task.Run(() => EgressWithRestart(instanceName, endpointName, shardId, 99, TimeSpan.FromSeconds(15), linkedCTSource.Token)));
+                threads.Add(Task.Run(() => EgressWithRestart(instanceName, endpointName, shardId, 10, TimeSpan.FromSeconds(Constants.KeepAliveTimeoutSeconds * 1.5), linkedCTSource.Token)));
             }
 
             try
@@ -77,7 +78,7 @@ namespace BlackSP.Simulator.Core
 
         private async Task EgressWithRestart(string instanceName, string endpointName, int shardId, int maxRestarts, TimeSpan restartTimeout, CancellationToken t)
         {
-            await Task.Delay(restartTimeout).ConfigureAwait(false);
+            //await Task.Delay(2500).ConfigureAwait(false);
 
             while (!t.IsCancellationRequested)
             {
