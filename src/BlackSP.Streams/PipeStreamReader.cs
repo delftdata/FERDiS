@@ -42,7 +42,7 @@ namespace BlackSP.Streams
             while(!t.IsCancellationRequested)
             {
                 t.ThrowIfCancellationRequested();
-
+                
                 if (_buffer.TryReadMessage(out var msgbodySequence, out var readPosition))
                 {
                     _buffer = _buffer.Slice(readPosition);

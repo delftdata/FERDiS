@@ -12,12 +12,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Middlewares
+namespace BlackSP.Core.Handlers
 {
     /// <summary>
     /// ControlMessage handler that handles responses of worker requests on the coordinator side
     /// </summary>
-    public class WorkerResponseHandler : IMiddleware<ControlMessage>
+    public class WorkerResponseHandler : IHandler<ControlMessage>
     {
 
         private readonly WorkerGraphStateManager _stateManager;

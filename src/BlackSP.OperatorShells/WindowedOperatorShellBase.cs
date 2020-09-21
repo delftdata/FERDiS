@@ -1,4 +1,5 @@
-﻿using BlackSP.Core.Windows;
+﻿using BlackSP.Checkpointing.Attributes;
+using BlackSP.Core.Windows;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
@@ -16,6 +17,8 @@ namespace BlackSP.OperatorShells
     {
 
         private readonly IWindowedOperator _pluggedInOperator;
+
+        [Checkpointable]
         private FixedEventWindow<TIn> _currentWindow;
         
         public WindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)

@@ -32,6 +32,7 @@ namespace BlackSP.Simulator.Configuration
 
             var fromKey = GetKey(connection.FromInstanceName, connection.FromEndpointName);
             var toKey = GetKey(connection.ToInstanceName, connection.ToEndpointName);
+            /*
             if (!_incomingStreamDict.TryGetValue(toKey, out Stream[] inStreams))
             {
                 inStreams = new Stream[connection.FromShardCount];
@@ -42,6 +43,16 @@ namespace BlackSP.Simulator.Configuration
                 outStreams = new Stream[connection.ToShardCount];
                 _outgoingStreamDict.Add(fromKey, outStreams);
             }
+            if(inStreams[connection.FromShardId] != null)
+            {
+                inStreams[connection.FromShardId].Dispose();
+            }
+
+            if(outStreams[connection.ToShardId] != null)
+            {
+                outStreams[connection.ToShardId].Dispose();
+            }
+            */
 
             if (!_incomingConnectionDict.TryGetValue(toKey, out Connection[] inConnections))
             {
@@ -54,38 +65,41 @@ namespace BlackSP.Simulator.Configuration
                 _outgoingConnectionDict.Add(fromKey, outConnections);
             }
 
-            var (inStream, outStream) = FullDuplexStream.CreatePair();
+            
 
-            inStreams[connection.FromShardId] = inStream;
+            //var (inStream, outStream) = FullDuplexStream.CreatePair();
+
+            //inStreams[connection.FromShardId] = inStream;
             inConnections[connection.FromShardId] = connection;
 
-            outStreams[connection.ToShardId] = outStream;
+            //outStreams[connection.ToShardId] = outStream;
             outConnections[connection.ToShardId] = connection;
         }
-
+        
         public Connection[] GetIncomingConnections(string instanceName, string endpointName)
         {
             var key = GetKey(instanceName, endpointName);
             return _incomingConnectionDict[key];
         }
-
-        public Stream[] GetIncomingStreams(string instanceName, string endpointName)
-        {
-            var key = GetKey(instanceName, endpointName);
-            return _incomingStreamDict[key];
-        }
-
+        /*
+                public Stream[] GetIncomingStreams(string instanceName, string endpointName)
+                {
+                    var key = GetKey(instanceName, endpointName);
+                    return _incomingStreamDict[key];
+                }
+        public Stream[] GetOutgoingStreams(string instanceName, string endpointName)
+                {
+                    var key = GetKey(instanceName, endpointName);
+                    return _outgoingStreamDict[key];
+                }
+                */
         public Connection[] GetOutgoingConnections(string instanceName, string endpointName)
         {
             var key = GetKey(instanceName, endpointName);
             return _outgoingConnectionDict[key];
         }
 
-        public Stream[] GetOutgoingStreams(string instanceName, string endpointName)
-        {
-            var key = GetKey(instanceName, endpointName);
-            return _outgoingStreamDict[key];
-        }
+        
 
         private string GetKey(string instanceName, string endpointName)
         {

@@ -2,7 +2,7 @@
 using BlackSP.Core;
 using BlackSP.Core.Processors;
 using BlackSP.Core.Sources;
-using BlackSP.Core.Middlewares;
+using BlackSP.Core.Handlers;
 using BlackSP.Core.Models;
 using BlackSP.Core.Pipelines;
 using BlackSP.Infrastructure.Extensions;
@@ -12,6 +12,7 @@ using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using Serilog.Events;
 using System;
+using BlackSP.Infrastructure.Operators;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -40,9 +41,9 @@ namespace BlackSP.Infrastructure.Modules
             builder.UseStatusMonitors();
             
             //data source (local source operator)
-            builder.RegisterType<TOperator>().AsImplementedInterfaces();
-            builder.RegisterType<TShell>().As<IOperatorShell>();
-            builder.RegisterType<SourceOperatorDataSource<TEvent>>().As<ISource<DataMessage>>();
+            builder.RegisterType<TOperator>().AsImplementedInterfaces().SingleInstance();
+            builder.RegisterType<TShell>().As<IOperatorShell>().SingleInstance();
+            builder.RegisterType<SourceOperatorDataSource<TEvent>>().As<ISource<DataMessage>>().SingleInstance();
 
             //control processor
             builder.RegisterType<ControlMessageProcessor>().SingleInstance();

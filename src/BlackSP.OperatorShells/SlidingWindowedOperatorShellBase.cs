@@ -1,4 +1,5 @@
-﻿using BlackSP.Core.Windows;
+﻿using BlackSP.Checkpointing.Attributes;
+using BlackSP.Core.Windows;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;
@@ -12,6 +13,8 @@ namespace BlackSP.OperatorShells
     public abstract class SlidingWindowedOperatorShellBase : OperatorShellBase
     {
         private readonly IWindowedOperator _pluggedInOperator;
+
+        [Checkpointable]
         private readonly IDictionary<Type, SlidingEventWindow<IEvent>> _currentWindows;
 
         public SlidingWindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)

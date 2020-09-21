@@ -6,6 +6,7 @@
     <OutputType>Library</OutputType>
     <StartupObject />
     <SignAssembly>false</SignAssembly>
+    <LangVersion>8</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Middlewares
+namespace BlackSP.Core.Handlers
 {
-    public class NoopMessageHandler<TMessage> : IMiddleware<TMessage> where TMessage : IMessage
+    public class NoopMessageHandler<TMessage> : IHandler<TMessage> where TMessage : IMessage
     {
 
 

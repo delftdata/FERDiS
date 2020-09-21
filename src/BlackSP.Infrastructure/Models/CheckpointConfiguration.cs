@@ -5,6 +5,7 @@ using System.Text;
 
 namespace BlackSP.Infrastructure.Models
 {
+    [Serializable]
     public class CheckpointConfiguration : ICheckpointConfiguration
     {
         public bool AllowReusingState { get; set; }

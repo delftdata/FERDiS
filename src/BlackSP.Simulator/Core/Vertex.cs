@@ -69,11 +69,9 @@ namespace BlackSP.Simulator.Core
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
                 logger.Debug($"Output endpoints created");
-
-                
-
                 logger.Debug($"Vertex startup completed");
-                await await Task.WhenAny(threads); //double await as whenany returns the task that completed
+                var exitedThread = await Task.WhenAny(threads).ConfigureAwait(false); //double await as whenany returns the task that completed
+                await exitedThread.ConfigureAwait(false);
                 t.ThrowIfCancellationRequested();
             }
             catch(OperationCanceledException) { throw; }

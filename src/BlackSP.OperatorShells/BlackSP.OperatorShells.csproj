@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BlackSP.Checkpointing\BlackSP.Checkpointing.csproj" />
     <ProjectReference Include="..\BlackSP.Kernel\BlackSP.Kernel.csproj" />
   </ItemGroup>
 

@@ -42,9 +42,9 @@ namespace BlackSP.Core.Processors
         /// <summary>
         /// Start core processes for multi-source message processing
         /// </summary>
-        public async Task StartProcess(CancellationToken t)
+        public virtual async Task StartProcess(CancellationToken t)
         {
-            var dispatchQueue = new BlockingCollection<TMessage>(1 << 12);//TODO: determine proper capacity
+            var dispatchQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
             try
             {
                 var threads = StartThreads(dispatchQueue, t);

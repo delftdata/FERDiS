@@ -20,9 +20,9 @@ namespace BlackSP.Core.Pipelines
     public class MiddlewareInvocationPipeline<T> : IPipeline<T> where T : IMessage
     {
 
-        private readonly IEnumerable<IMiddleware<T>> _middlewares;
+        private readonly IEnumerable<IHandler<T>> _middlewares;
 
-        public MiddlewareInvocationPipeline(IEnumerable<IMiddleware<T>> middlewares)
+        public MiddlewareInvocationPipeline(IEnumerable<IHandler<T>> middlewares)
         {
             _middlewares = middlewares ?? throw new ArgumentNullException(nameof(middlewares));
             if(!_middlewares.Any())

@@ -10,14 +10,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Middlewares
+namespace BlackSP.Infrastructure.Operators
 {
-    public class OperatorMiddleware : IMiddleware<DataMessage>
+    public class OperatorEventHandler : IHandler<DataMessage>
     {
 
         private readonly IOperatorShell _operatorShell;
 
-        public OperatorMiddleware(IOperatorShell operatorShell)
+        public OperatorEventHandler(IOperatorShell operatorShell)
         {
             _operatorShell = operatorShell ?? throw new ArgumentNullException(nameof(operatorShell));
         }

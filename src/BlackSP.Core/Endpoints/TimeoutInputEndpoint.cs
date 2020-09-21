@@ -16,14 +16,14 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Endpoints
 {
-    public class InputEndpoint : IInputEndpoint, IDisposable
+    public class TimeoutInputEndpoint : IInputEndpoint, IDisposable
     {
         /// <summary>
         /// Autofac delegate factory
         /// </summary>
         /// <param name="endpointName"></param>
         /// <returns></returns>
-        public delegate InputEndpoint Factory(string endpointName);
+        public delegate TimeoutInputEndpoint Factory(string endpointName);
 
         private readonly IObjectSerializer<IMessage> _serializer;
         private readonly IReceiver _receiver;
@@ -31,7 +31,7 @@ namespace BlackSP.Core.Endpoints
         private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
 
-        public InputEndpoint(string endpointName,
+        public TimeoutInputEndpoint(string endpointName,
                              IVertexConfiguration vertexConfig,
                              IObjectSerializer<IMessage> serializer,
                              IReceiver receiver,
@@ -56,7 +56,7 @@ namespace BlackSP.Core.Endpoints
         /// <param name="t"></param>
         public async Task Ingress(Stream s, string remoteEndpointName, int remoteShardId, CancellationToken t)
         {
-            if(_endpointConfig.RemoteEndpointName != remoteEndpointName)
+            if (_endpointConfig.RemoteEndpointName != remoteEndpointName)
             {
                 throw new Exception($"Invalid IEndpointConfig, expected remote endpointname: {_endpointConfig.RemoteEndpointName} but was: {remoteEndpointName}");
             }
@@ -79,7 +79,7 @@ namespace BlackSP.Core.Endpoints
             }
             catch (Exception e)
             {
-                _logger.Warning(e, $"Input endpoint {_endpointConfig.LocalEndpointName} read & deserialize threads ran into an exception. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
+                _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} read & deserialize threads ran into an exception. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
                 throw;
             }
             finally
@@ -93,21 +93,51 @@ namespace BlackSP.Core.Endpoints
         {
             var pipe = s.UsePipe(cancellationToken: t);
             using PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
-            
+            using PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for keepalive checks, should always flush
+
             while (!t.IsCancellationRequested)
             {
-                var msg = await streamReader.ReadNextMessage(t).ConfigureAwait(false); 
-                passthroughQueue.Add(msg, t);                
+                CancellationTokenSource timeoutSource, linkedSource;
+                timeoutSource = linkedSource = null;
+                try
+                {
+                    timeoutSource = new CancellationTokenSource(TimeSpan.FromSeconds(Constants.KeepAliveTimeoutSeconds));
+                    linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
+                    var msg = await streamReader.ReadNextMessage(linkedSource.Token).ConfigureAwait(false);
+
+                    if (msg.IsKeepAliveMessage())
+                    {
+                        _logger.Verbose($"PING received on input endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
+                        //respond with a the same message (keepalive)
+                        await streamWriter.WriteMessage(msg, t).ConfigureAwait(false); //note we dont use the linkedsource here, the timeout did not happen so we no longer have to consider it
+                        _logger.Verbose($"PONG sent on input endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
+                    }
+                    else //its a regular message, queue it for processing
+                    {
+                        //_logger.Verbose($"Real message received deserialize queue size: {passthroughQueue.Count} - on input endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
+                        passthroughQueue.Add(msg, t);
+                    }
+                }
+                catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
+                {
+                    _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} PING timeout, throwing IOException");
+                    throw new IOException($"Connection timeout, did not receive any messages for {Constants.KeepAliveTimeoutSeconds} seconds");
+                }
+                finally
+                {
+                    timeoutSource.Dispose();
+                    linkedSource.Dispose();
+                }
             }
             t.ThrowIfCancellationRequested();
         }
 
         private async Task DeserializeToReceiver(BlockingCollection<byte[]> inputqueue, int shardId, CancellationToken t)
         {
-            foreach(var bytes in inputqueue.GetConsumingEnumerable(t))
+            foreach (var bytes in inputqueue.GetConsumingEnumerable(t))
             {
                 IMessage message = await _serializer.DeserializeAsync(bytes, t).ConfigureAwait(false);
-                if(message == null)
+                if (message == null)
                 {
                     throw new Exception("unexpected null message from deserializer");//TODO: custom exception?
                 }

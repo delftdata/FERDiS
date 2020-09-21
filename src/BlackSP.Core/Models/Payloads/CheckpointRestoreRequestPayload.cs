@@ -19,6 +19,11 @@ namespace BlackSP.Core.Models.Payloads
         [ProtoMember(1)]
         public Guid CheckpointId { get; set; }
 
+        public CheckpointRestoreRequestPayload()
+        {
+
+        }
+
         public CheckpointRestoreRequestPayload(Guid checkpointId)
         {
             CheckpointId = checkpointId;

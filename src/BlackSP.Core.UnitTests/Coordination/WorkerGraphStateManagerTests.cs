@@ -38,10 +38,11 @@ namespace BlackSP.Core.UnitTests.Coordination
 
             var graphConfigMock = new Mock<IVertexGraphConfiguration>();
             graphConfigMock.Setup(gc => gc.InstanceNames).Returns(instanceNames);
+            
             var vertexConfigMock = new Mock<IVertexConfiguration>();
             vertexConfigMock.Setup(vc => vc.InstanceName).Returns(coordinatorInstanceName);
-            manager = new WorkerGraphStateManager(wsmFactory, cpServiceMock.Object, graphConfigMock.Object, vertexConfigMock.Object);
 
+            manager = new WorkerGraphStateManager(wsmFactory, cpServiceMock.Object, graphConfigMock.Object, vertexConfigMock.Object, loggerMock.Object);
         }
 
         [Test]

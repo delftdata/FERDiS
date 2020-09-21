@@ -90,6 +90,30 @@ namespace BlackSP.Checkpointing
         }
 
         ///<inheritdoc/>
+        public async Task TakeInitialCheckpointIfNotExists(string currentInstanceName)
+        {
+            var allCheckpointMetadatas = await _storage.GetAllMetaData().ConfigureAwait(false);
+            if(allCheckpointMetadatas.Any(m => m.InstanceName == currentInstanceName && !m.Dependencies.ContainsKey(currentInstanceName)))
+            {
+                //there is a checkpoint taken by this instance, without any dependencies on its own older checkpoints so it must be the initial one
+                _logger.Information($"Skipping initial checkpoint, it already exists");
+                return;
+            }
+            _logger.Information($"Taking checkpoint of initial state");
+            try
+            {
+                await TakeCheckpoint(currentInstanceName).ConfigureAwait(false);
+                _logger.Information($"Initial checkpoint successfully taken");
+            } 
+            catch(Exception e)
+            {
+                _logger.Warning("Failed to take initial checkpoint, rethrowing exception");
+                throw;
+            }
+            
+        }
+
+        ///<inheritdoc/>
         public async Task RestoreCheckpoint(Guid checkpointId)
         {
             var checkpoint = (await _storage.Retrieve(checkpointId).ConfigureAwait(false)) 

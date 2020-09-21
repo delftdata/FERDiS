@@ -1,6 +1,7 @@
 ﻿using BlackSP.Core.Monitors;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Models;
+using Serilog;
 using Stateless;
 using System;
 using System.Collections.Generic;
@@ -50,18 +51,23 @@ namespace BlackSP.Core.Coordination
         private readonly IEnumerable<string> _workerInstanceNames;
         private readonly WorkerStateManager.Factory _stateMachineFactory;
         private readonly ICheckpointService _checkpointService;
+        private readonly ILogger _logger;
         private readonly IDictionary<string, WorkerStateManager> _workerStateManagers;
         private readonly StateMachine<State, Trigger> _graphStateMachine;
 
         private IRecoveryLine _preparedRecoveryLine;
 
-        public WorkerGraphStateManager(WorkerStateManager.Factory stateMachineFactory, ICheckpointService checkpointService, IVertexGraphConfiguration graphConfiguration, IVertexConfiguration vertexConfiguration)
+        public WorkerGraphStateManager(WorkerStateManager.Factory stateMachineFactory, 
+                                       ICheckpointService checkpointService, 
+                                       IVertexGraphConfiguration graphConfiguration, 
+                                       IVertexConfiguration vertexConfiguration,
+                                       ILogger logger)
         {
             _ = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
             _workerInstanceNames = graphConfiguration.InstanceNames.Where(s => s != vertexConfiguration.InstanceName);
             _stateMachineFactory = stateMachineFactory ?? throw new ArgumentNullException(nameof(stateMachineFactory));
             _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
-            
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _workerStateManagers = new Dictionary<string, WorkerStateManager>();
             _graphStateMachine = new StateMachine<State, Trigger>(State.Idle);
             _preparedRecoveryLine = null;
@@ -97,15 +103,14 @@ namespace BlackSP.Core.Coordination
 
         private void WorkerStateMachine_OnStateChange(string affectedInstanceName, WorkerState newState)
         {
-            if(newState == WorkerState.Faulted)
+            _logger.Information($"Worker {affectedInstanceName} transitioned to state: {newState}");
+            if (newState == WorkerState.Faulted)
             {
-                Console.WriteLine($"BEEP BOOP WORKER {affectedInstanceName} FAULTED");
                 _graphStateMachine.Fire(Trigger.WorkerFaulted);
             }
 
             if(newState == WorkerState.Halted)
             {
-                Console.WriteLine($"BEEP BOOP WORKER {affectedInstanceName} HEALTHY");
                 _graphStateMachine.Fire(Trigger.WorkerHealthy);
             }
 
@@ -121,7 +126,6 @@ namespace BlackSP.Core.Coordination
                 return; //we will get two reports, one from upstream, one from downstream, selectively ignore downstream to not handle duplicates.
             }
             var changedInstanceName = changedConnection.Endpoint.RemoteInstanceNames.ElementAt(changedConnection.ShardId);
-            Console.WriteLine($"BEEP BOOP WORKER {changedInstanceName} CONNECTION STATUS: {isConnected}");
             var workerManager = this.GetWorkerStateManager(changedInstanceName);
             workerManager.FireTrigger(isConnected ? WorkerStateTrigger.NetworkConnected : WorkerStateTrigger.Failure); //Note: if we lose connection to the worker we assume it failed
         }
@@ -154,6 +158,10 @@ namespace BlackSP.Core.Coordination
                 .PermitReentry(Trigger.WorkerFaulted)
                 .PermitIf(Trigger.WorkerHealthy, State.Restoring, allWorkersHaltedOrRunningGuard)
                 .IgnoreIf(Trigger.WorkerHealthy, () => !allWorkersHaltedOrRunningGuard(), "Ignore while there are still failed workers");
+
+            _graphStateMachine.OnTransitioned(transition => {
+                _logger.Information($"Graph transitioned to state: {transition.Destination}{(transition.IsReentry ? " (reentry)" : " ")} due to trigger {transition.Trigger}");
+            });
         }
 
         #region state transition entry actions

@@ -30,6 +30,13 @@ namespace BlackSP.Kernel.Checkpointing
         Task<Guid> TakeCheckpoint(string currentInstanceName);
 
         /// <summary>
+        /// Will attempt to take a checkpoint of the application's initial state. 
+        /// If this checkpoint was already taken and the vertex is recovering from a failure, no checkpoint will be taken
+        /// </summary>
+        /// <returns></returns>
+        Task TakeInitialCheckpointIfNotExists(string currentInstanceName);
+
+        /// <summary>
         /// Restore a checkpoint, fails when there is a discrepancy between the objects registered and the objects in the checkpoint
         /// </summary>
         /// <param name="checkpointBytes"></param>

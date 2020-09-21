@@ -29,7 +29,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BlackSP.Kernel\BlackSP.Kernel.csproj" />
-    <ProjectReference Include="..\BlackSP.OperatorShells\BlackSP.OperatorShells.csproj" />
     <ProjectReference Include="..\BlackSP.Serialization\BlackSP.Serialization.csproj" />
     <ProjectReference Include="..\BlackSP.Streams\BlackSP.Streams.csproj" />
   </ItemGroup>

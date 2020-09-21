@@ -1,5 +1,6 @@
 ﻿using BlackSP.Infrastructure.Models;
 using BlackSP.Simulator.Configuration;
+using System;
 using System.Collections.Generic;
 
 namespace BlackSP.Simulator.Extensions
@@ -13,6 +14,7 @@ namespace BlackSP.Simulator.Extensions
         /// <returns></returns>
         public static IEnumerable<Connection> ToConnections(this Edge edge)
         {
+            _ = edge ?? throw new ArgumentNullException(nameof(edge));
             int fromShardId = 0;
             foreach(var fromInstanceName in edge.FromVertex.InstanceNames)
             {

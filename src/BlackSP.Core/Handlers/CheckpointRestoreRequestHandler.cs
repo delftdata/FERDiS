@@ -2,6 +2,7 @@
 using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
 using BlackSP.Core.Models.Payloads;
+using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
@@ -11,15 +12,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Middlewares
+namespace BlackSP.Core.Handlers
 {
-    public class CheckpointRestoreRequestHandler : IMiddleware<ControlMessage>
+    public class CheckpointRestoreRequestHandler : IHandler<ControlMessage>
     {
+        private readonly ICheckpointService _checkpointService;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ILogger _logger;
 
-        public CheckpointRestoreRequestHandler(IVertexConfiguration vertexConfiguration, ILogger logger)
+        public CheckpointRestoreRequestHandler(ICheckpointService checkpointService, IVertexConfiguration vertexConfiguration, ILogger logger)
         {
+            _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -34,10 +37,9 @@ namespace BlackSP.Core.Middlewares
             }
 
             Guid checkpointId = payload.CheckpointId;
-            _logger.Information($"{_vertexConfiguration.InstanceName} - Restoring checkpoint {checkpointId} (FAKE/TODO)");
-            await Task.Delay(5000).ConfigureAwait(false); 
-            //TODO: restore actual checkpoint
-            _logger.Information($"{_vertexConfiguration.InstanceName} - Restored checkpoint {checkpointId} (FAKE/TODO)");
+            _logger.Information($"{_vertexConfiguration.InstanceName} - Restoring checkpoint {checkpointId}");
+            await _checkpointService.RestoreCheckpoint(checkpointId).ConfigureAwait(false);
+            _logger.Information($"{_vertexConfiguration.InstanceName} - Restored checkpoint {checkpointId}");
 
             var msg = new ControlMessage();
             msg.AddPayload(new CheckpointRestoreCompletionPayload() { 

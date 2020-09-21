@@ -16,15 +16,15 @@ namespace BlackSP.ThroughputExperiment.Events
         public DateTime EventTime { get; set; }
 
         [ProtoMember(3)]
-        public string Value2 { get; set; }
+        public int EventCount { get; set; }
 
         public SampleEvent2() { }
 
-        public SampleEvent2(string key, DateTime? eventTime, string value2)
+        public SampleEvent2(string key, DateTime? eventTime, int count)
         {
             Key = key;
             EventTime = eventTime ?? throw new ArgumentNullException(nameof(eventTime));
-            Value2 = value2 ?? throw new ArgumentNullException(nameof(value2));
+            EventCount = count;
         }
 
         public int GetPartitionKey()

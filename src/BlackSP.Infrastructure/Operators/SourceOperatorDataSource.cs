@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Core.Models.Payloads;
 
-namespace BlackSP.Core.Sources
+namespace BlackSP.Infrastructure.Operators
 {
     public class SourceOperatorDataSource<TEvent> : ISource<DataMessage>
         where TEvent : class, IEvent

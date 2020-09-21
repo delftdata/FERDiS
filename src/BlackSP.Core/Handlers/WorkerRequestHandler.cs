@@ -14,12 +14,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Core.Extensions;
 
-namespace BlackSP.Core.Middlewares
+namespace BlackSP.Core.Handlers
 {
     /// <summary>
     /// ControlMessage handler dedicated to handling requests on the worker side
     /// </summary>
-    public class WorkerRequestHandler : IMiddleware<ControlMessage>, IDisposable
+    public class WorkerRequestHandler : IHandler<ControlMessage>, IDisposable
     {
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly DataMessageProcessor _processor;

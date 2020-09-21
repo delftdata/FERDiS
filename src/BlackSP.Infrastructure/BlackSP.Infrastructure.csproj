@@ -27,6 +27,7 @@
     <ProjectReference Include="..\BlackSP.Checkpointing\BlackSP.Checkpointing.csproj" />
     <ProjectReference Include="..\BlackSP.Core\BlackSP.Core.csproj" />
     <ProjectReference Include="..\BlackSP.Kernel\BlackSP.Kernel.csproj" />
+    <ProjectReference Include="..\BlackSP.OperatorShells\BlackSP.OperatorShells.csproj" />
     <ProjectReference Include="..\BlackSP.Serialization\BlackSP.Serialization.csproj" />
   </ItemGroup>
 </Project>

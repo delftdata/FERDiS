@@ -32,18 +32,17 @@ namespace BlackSP.Simulator.Core
         /// <returns></returns>
         public async Task Start(string instanceName, string endpointName, CancellationToken t)
         {
-            var incomingStreams = _connectionTable.GetIncomingStreams(instanceName, endpointName);
+            //var incomingStreams = _connectionTable.GetIncomingStreams(instanceName, endpointName);
             var incomingConnections = _connectionTable.GetIncomingConnections(instanceName, endpointName);
 
-            var hostCTSource = new CancellationTokenSource();
-            var linkedCTSource = CancellationTokenSource.CreateLinkedTokenSource(t, hostCTSource.Token);
+            using var hostCTSource = new CancellationTokenSource();
+            using var linkedCTSource = CancellationTokenSource.CreateLinkedTokenSource(t, hostCTSource.Token);
             var threads = new List<Task>();
             for(var i = 0; i < incomingConnections.Length; i++)
             {
                 int shardId = i;
-                Stream s = incomingStreams[shardId];
-                Connection c = incomingConnections[shardId];
-                threads.Add(Task.Run(() => IngressWithRestart(instanceName, endpointName, shardId, 10, TimeSpan.FromSeconds(Constants.KeepAliveTimeoutSeconds * 1.5), linkedCTSource.Token)));
+                //Connection c = incomingConnections[shardId];
+                threads.Add(Task.Run(() => IngressWithRestart(instanceName, endpointName, shardId, 10, TimeSpan.FromSeconds(10), linkedCTSource.Token)));
             }
 
             try
@@ -57,17 +56,13 @@ namespace BlackSP.Simulator.Core
                 {
                     hostCTSource.Cancel();
                     await Task.WhenAll(threads).ConfigureAwait(false);
-                } catch(OperationCanceledException) { /*shh*/}
+                } 
+                catch(OperationCanceledException) { /*shh*/}
                 
-                
-                _logger.Debug($"Input endpoint {endpointName} was cancelled and is now resetting streams");
-                foreach (var stream in incomingStreams)
-                {
-                    stream.Dispose();
-                }
+                _logger.Debug($"Input endpoint {endpointName} was cancelled and is now resetting connections");
                 foreach(var connection in incomingConnections)
                 {
-                    _connectionTable.RegisterConnection(connection); //re-register connection to create new streams around a failed instance
+                    connection.Reset(); //reset connection to cancel sending endpoint and reset streams
                 }
                 throw;
             } 
@@ -78,24 +73,18 @@ namespace BlackSP.Simulator.Core
         }
 
         private async Task IngressWithRestart(string instanceName, string endpointName, int shardId, int maxRestarts, TimeSpan restartTimeout, CancellationToken t)
-        {
-            //await Task.Delay(2500).ConfigureAwait(false);
-            
+        {          
             while (!t.IsCancellationRequested)
             {
                 Connection c = null;
                 try
                 {
-
                     t.ThrowIfCancellationRequested();
-
-                    Stream s = _connectionTable.GetIncomingStreams(instanceName, endpointName)[shardId];
                     c = _connectionTable.GetIncomingConnections(instanceName, endpointName)[shardId];
-                    
+                    using var callerOrResetSource = CancellationTokenSource.CreateLinkedTokenSource(t, c.ResetToken);
                     _logger.Debug($"Input endpoint {c.ToEndpointName}${shardId} starting ingress");
-                    await _inputEndpoint.Ingress(s, c.FromEndpointName, c.FromShardId, t).ConfigureAwait(false);
+                    await _inputEndpoint.Ingress(c.FromStream, c.FromEndpointName, c.FromShardId, callerOrResetSource.Token).ConfigureAwait(false);
                     _logger.Debug($"Input endpoint {c.ToEndpointName}${shardId} exiting gracefully");
-
                 }
                 catch (OperationCanceledException) when (t.IsCancellationRequested)
                 {
@@ -109,8 +98,8 @@ namespace BlackSP.Simulator.Core
                         _logger.Fatal($"Input endpoint {c.ToEndpointName}${shardId} exited with exceptions, no restart: exceeded maxRestarts.");
                         throw;
                     }
-                    _logger.Warning(e, $"Input endpoint {c.ToEndpointName}${shardId} exited with {e.GetType()}, restart in {restartTimeout.TotalSeconds} seconds.");
-                    await Task.Delay(restartTimeout, t);
+                    _logger.Warning($"Input endpoint {c.ToEndpointName}${shardId} exited with {e.GetType()}, restart in {restartTimeout.TotalSeconds} seconds.");
+                    await Task.Delay(restartTimeout, t).ConfigureAwait(false);
                 }
             }
             t.ThrowIfCancellationRequested();

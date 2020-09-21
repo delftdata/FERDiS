@@ -11,9 +11,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Middlewares
+namespace BlackSP.Core.Handlers
 {
-    public class CheckpointRestoreResponseHandler : IMiddleware<ControlMessage>
+    public class CheckpointRestoreResponseHandler : IHandler<ControlMessage>
     {
         private readonly WorkerGraphStateManager _graphManager;
         private readonly ILogger _logger;
