@@ -15,10 +15,10 @@ using System.Threading.Tasks;
 namespace BlackSP.Core.Dispatchers
 {
     /// <summary>
-    /// Special dispatcher for coordinator instances. 
-    /// Can target specific Workers
+    /// Special dispatcher for coordinator instances. <br/>
+    /// Can target specific Workers through partitionkey as instanceName's hashcode OR broadcast by leaving partitionkey 0.
     /// </summary>
-    public class CoordinatorDispatcher : IDispatcher<ControlMessage>, IDispatcher<IMessage>
+    public class ControlMessageDispatcher : IDispatcher<ControlMessage>, IDispatcher<IMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IObjectSerializer<IMessage> _serializer;
@@ -27,7 +27,7 @@ namespace BlackSP.Core.Dispatchers
 
         private DispatchFlags _dispatchFlags;
 
-        public CoordinatorDispatcher(IVertexConfiguration vertexConfiguration, IObjectSerializer<IMessage> serializer)
+        public ControlMessageDispatcher(IVertexConfiguration vertexConfiguration, IObjectSerializer<IMessage> serializer)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));

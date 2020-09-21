@@ -51,7 +51,7 @@ namespace BlackSP.Infrastructure.Extensions
         /// <returns></returns>
         public static ContainerBuilder UseWorkerDispatcher(this ContainerBuilder builder)
         {
-            builder.RegisterType<MessageDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>, IDispatcher<DataMessage>>().SingleInstance();
+            builder.RegisterType<PartitioningMessageDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>, IDispatcher<DataMessage>>().SingleInstance();
             builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer<IMessage>>();
             builder.RegisterType<MessageHashPartitioner>().As<IPartitioner<IMessage>>();
 
@@ -65,7 +65,7 @@ namespace BlackSP.Infrastructure.Extensions
         /// <returns></returns>
         public static ContainerBuilder UseCoordinatorDispatcher(this ContainerBuilder builder)
         {
-            builder.RegisterType<CoordinatorDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>>().SingleInstance();
+            builder.RegisterType<ControlMessageDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>>().SingleInstance();
             builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer<IMessage>>();
             return builder;
         }

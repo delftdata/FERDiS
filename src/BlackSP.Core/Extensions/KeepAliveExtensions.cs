@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.Endpoints
+namespace BlackSP.Core.Extensions
 {
     internal static class KeepAliveExtensions
     {

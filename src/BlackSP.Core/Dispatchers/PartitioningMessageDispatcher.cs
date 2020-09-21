@@ -14,7 +14,10 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Dispatchers
 {
-    public class MessageDispatcher : IDispatcher<IMessage>, IDispatcher<DataMessage>, IDispatcher<ControlMessage>
+    /// <summary>
+    /// Can dispatch any type of IMessage utilizing a provided IPartitioner
+    /// </summary>
+    public class PartitioningMessageDispatcher : IDispatcher<IMessage>, IDispatcher<DataMessage>, IDispatcher<ControlMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IObjectSerializer<IMessage> _serializer;
@@ -25,7 +28,7 @@ namespace BlackSP.Core.Dispatchers
 
         private DispatchFlags _dispatchFlags;
 
-        public MessageDispatcher(IVertexConfiguration vertexConfiguration,
+        public PartitioningMessageDispatcher(IVertexConfiguration vertexConfiguration,
                                  IObjectSerializer<IMessage> serializer,
                                  IPartitioner<IMessage> partitioner)
         {

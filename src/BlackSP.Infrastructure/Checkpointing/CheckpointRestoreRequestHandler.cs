@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Handlers
+namespace BlackSP.Infrastructure.Checkpointing
 {
     public class CheckpointRestoreRequestHandler : IHandler<ControlMessage>
     {

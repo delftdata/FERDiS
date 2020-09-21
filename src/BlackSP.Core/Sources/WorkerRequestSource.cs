@@ -93,7 +93,6 @@ namespace BlackSP.Core.Sources
         {
             int partitionKey = _vertexConfiguration.GetPartitionKeyForInstanceName(affectedInstanceName);
             var msg = new ControlMessage(partitionKey);
-            _logger.Debug($"Worker {affectedInstanceName} now has state {newState}");
             switch (newState)
             {
                 case WorkerState.Running:

@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Handlers
+namespace BlackSP.Infrastructure.Checkpointing
 {
     public class CheckpointRestoreResponseHandler : IHandler<ControlMessage>
     {

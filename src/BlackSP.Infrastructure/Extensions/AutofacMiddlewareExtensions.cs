@@ -10,6 +10,7 @@ using System.Text;
 using BlackSP.Core.Processors;
 using BlackSP.Core;
 using BlackSP.Infrastructure.Operators;
+using BlackSP.Infrastructure.Checkpointing;
 
 namespace BlackSP.Infrastructure.Extensions
 {
