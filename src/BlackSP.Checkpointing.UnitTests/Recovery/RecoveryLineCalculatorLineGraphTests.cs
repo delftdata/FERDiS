@@ -54,8 +54,8 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
         {
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
             var recoveryLine = calculator.CalculateRecoveryLine(true, instance2);
-            Assert.AreEqual(recoveryLine.AffectedWorkers.Count(), 3);
-            Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance1]); //guid.empty indicates runtime-state, so no rollback
+            Assert.AreEqual(recoveryLine.AffectedWorkers.Count(), 2); //only two affected
+            Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance1]); //guid.empty indicates runtime-state, so no rollback (counts as not affected)
             Assert.AreEqual(instance2LatestCp, recoveryLine.RecoveryMap[instance2]); //recovers latest checkpoint
             Assert.AreEqual(initialCheckpoints[instance3], recoveryLine.RecoveryMap[instance3]); //recovers latest checkpoint that does not depend on instance2 (ie, initial cp)
             //instance 3 remains unaffected due to the recovery line being at instance 3 its initial state
@@ -66,7 +66,7 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
         {
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
             var recoveryLine = calculator.CalculateRecoveryLine(true, instance3);
-            Assert.AreEqual(recoveryLine.AffectedWorkers.Count(), 3);
+            Assert.AreEqual(recoveryLine.AffectedWorkers.Count(), 1);
             //instance 1 and 2 remain unaffected due to its runtime state still being valid
             Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance1]);
             Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance2]);

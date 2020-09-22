@@ -17,23 +17,25 @@ using System.Threading.Tasks;
 namespace BlackSP.Core.Endpoints
 {
 
-    public class OutputEndpoint : IOutputEndpoint
+    public class OutputEndpoint<TMessage> : IOutputEndpoint
+        where TMessage : IMessage
     {
+
         /// <summary>
         /// Autofac delegate factory
         /// </summary>
         /// <param name="endpointName"></param>
         /// <returns></returns>
-        public delegate OutputEndpoint Factory(string endpointName);
+        public delegate OutputEndpoint<TMessage> Factory(string endpointName);
 
-        private readonly IDispatcher<IMessage> _dispatcher;
+        private readonly IDispatcher<TMessage> _dispatcher;
         private readonly IVertexConfiguration _vertexConfig;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
 
         public OutputEndpoint(string endpointName, 
-            IDispatcher<IMessage> dispatcher, 
+            IDispatcher<TMessage> dispatcher, 
             IVertexConfiguration vertexConfiguration, 
             ConnectionMonitor connectionMonitor,
             ILogger logger)

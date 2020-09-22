@@ -1,19 +1,18 @@
+using BlackSP.Core;
 using BlackSP.Core.Coordination;
 using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
-using BlackSP.Core.Models.Payloads;
 using BlackSP.Core.Monitors;
+using BlackSP.Infrastructure.Layers.Control.Payloads;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Sources
+namespace BlackSP.Infrastructure.Layers.Control.Sources
 {
     /// <summary>
     /// Generates worker request messages based on internal state changes

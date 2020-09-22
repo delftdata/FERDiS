@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Serialization
 {
-    public class PooledBufferMessageSerializer : IObjectSerializer<IMessage>
+    public class PooledBufferMessageSerializer : IObjectSerializer
     {
 
         private readonly IStreamSerializer _serializer;
@@ -26,7 +26,7 @@ namespace BlackSP.Serialization
             _msgBufferPool = memStreamPool ?? throw new ArgumentNullException(nameof(memStreamPool));
         }
 
-        public async Task<byte[]> SerializeAsync(IMessage message, CancellationToken t)
+        public async Task<byte[]> SerializeAsync<T>(T message, CancellationToken t)
         {
             var msgBuffer = _msgBufferPool.GetStream();
             await _serializer.Serialize(msgBuffer, message).ConfigureAwait(false);
@@ -35,12 +35,12 @@ namespace BlackSP.Serialization
             return msgBytes;
         }
 
-        public async Task<IMessage> DeserializeAsync(byte[] msgBytes, CancellationToken t)
+        public async Task<T> DeserializeAsync<T>(byte[] msgBytes, CancellationToken t)
         {
             var msgStream = new MemoryStream(msgBytes);
             try
             {
-                IMessage nextMessage = await _serializer.Deserialize<IMessage>(msgStream, t).ConfigureAwait(false);
+                T nextMessage = await _serializer.Deserialize<T>(msgStream, t).ConfigureAwait(false);
                 if (nextMessage == null)
                 {
                     throw new SerializationException($"Message deserialization returned null");

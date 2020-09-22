@@ -74,7 +74,6 @@ namespace BlackSP.Core.Processors
                 {
                     //take a message from the source
                     var message = source.Take(t) ?? throw new Exception($"Received null from {source.GetType()}.Take");
-                    //enter the critical section to have the message processed
                     await ProcessMessageInCriticalSection(message, dispatchQueue, t).ConfigureAwait(false);
                 }
             }
@@ -85,7 +84,7 @@ namespace BlackSP.Core.Processors
         {
             try
             {
-                await _csSemaphore.WaitAsync(t).ConfigureAwait(false);
+                await _csSemaphore.WaitAsync(t).ConfigureAwait(false); //enter cs
                 IEnumerable<TMessage> responses = await _pipeline.Process(message).ConfigureAwait(false);
                 foreach (var msg in responses)
                 {
@@ -94,7 +93,7 @@ namespace BlackSP.Core.Processors
             }
             finally
             {
-                _csSemaphore.Release();
+                _csSemaphore.Release(); //leave cs
             }
         }
 

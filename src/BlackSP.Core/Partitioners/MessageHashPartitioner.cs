@@ -8,6 +8,9 @@ using System.Text;
 
 namespace BlackSP.Core.Partitioners
 {
+    /// <summary>
+    /// Partitions using a simple modulo operation over the number of possible remote instances
+    /// </summary>
     public class MessageHashPartitioner : IPartitioner<IMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;

@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Models;
+using BlackSP.Core.Processors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.MessageProcessing;
@@ -9,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Processors
+namespace BlackSP.Infrastructure.Layers.Control
 {
     /// <summary>
     /// Controls the message passing between underlying components<br/>

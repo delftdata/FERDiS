@@ -10,14 +10,17 @@ namespace BlackSP.Kernel.Models
 
         int PartitionKey { get; }
 
+        IEnumerable<MessagePayloadBase> Payloads { get; }
+
         /// <summary>
-        /// Try to get a strongly typed MessagePayloadBase implementation<br/>
+        /// Try to extract a strongly typed MessagePayloadBase implementation<br/>
+        /// Should remove the payload from the message if it is present<br/>
         /// Should return false/null if no such payload type is present in the message
         /// </summary>
         /// <typeparam name="TPayload"></typeparam>
         /// <param name="payload"></param>
         /// <returns></returns>
-        bool TryGetPayload<TPayload>(out TPayload payload) where TPayload : MessagePayloadBase;
+        bool TryExtractPayload<TPayload>(out TPayload payload) where TPayload : MessagePayloadBase;
 
         /// <summary>
         /// Adds a payload to the message. Any existing payload with the same TPayload should be overwritten.

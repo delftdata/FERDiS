@@ -21,13 +21,13 @@ namespace BlackSP.Core.Dispatchers
     public class ControlMessageDispatcher : IDispatcher<ControlMessage>, IDispatcher<IMessage>
     {
         private readonly IVertexConfiguration _vertexConfiguration;
-        private readonly IObjectSerializer<IMessage> _serializer;
+        private readonly IObjectSerializer _serializer;
 
         private readonly IDictionary<string, BlockingCollection<byte[]>> _outputQueues;
 
         private DispatchFlags _dispatchFlags;
 
-        public ControlMessageDispatcher(IVertexConfiguration vertexConfiguration, IObjectSerializer<IMessage> serializer)
+        public ControlMessageDispatcher(IVertexConfiguration vertexConfiguration, IObjectSerializer serializer)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -66,7 +66,7 @@ namespace BlackSP.Core.Dispatchers
             byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(false);
 
             IEnumerable<string> targetConnectionKeys = message.PartitionKey == default
-                ? _vertexConfiguration.OutputEndpoints.SelectMany(e => e.GetAllConnectionKeys())
+                ? _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl).SelectMany(e => e.GetAllConnectionKeys())
                 : _vertexConfiguration.GetConnectionKeyByPartitionKey(message.PartitionKey).Yield();
 
             foreach(var targetConnectionKey in targetConnectionKeys)

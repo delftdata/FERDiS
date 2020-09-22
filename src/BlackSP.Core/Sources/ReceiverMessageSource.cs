@@ -17,82 +17,42 @@ namespace BlackSP.Core.Sources
     /// Receives input from any source. Exposes received messages through the IMessageSource interface.<br/>
     /// Sorts and orders input based on message types to be consumed one-by-one.
     /// </summary>
-    public sealed class ReceiverMessageSource : IReceiver, ISource<DataMessage>, ISource<ControlMessage>
+    public sealed class ReceiverMessageSource<TMessage> : IReceiver<TMessage>, ISource<TMessage>, IDisposable
+        where TMessage : IMessage
     {
-        private BlockingCollection<DataMessage> _dataQueue;
-        private BlockingCollection<ControlMessage> _controlQueue;
-        private BlockingCollection<IMessage> _inputBuffer;
+        private BlockingCollection<TMessage> _msgQueue;
         private ReceptionFlags _receptionFlags;
-        private readonly object lockObj;
+        private bool disposedValue;
 
         public ReceiverMessageSource()
         {
-            _dataQueue = new BlockingCollection<DataMessage>(1 << 12);//CAPACITY?!
-            _controlQueue = new BlockingCollection<ControlMessage>(1 << 12);
-
-            _inputBuffer = new BlockingCollection<IMessage>();
+            _msgQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
             _receptionFlags = ReceptionFlags.Control | ReceptionFlags.Data; //TODO: even set flags on constuct?
-            lockObj = new object();
         }
 
-        #region Data message source
-        
-        DataMessage ISource<DataMessage>.Take(CancellationToken t)
+        public TMessage Take(CancellationToken t)
         {
-            return _dataQueue.Take(t);
+            while(_msgQueue.IsAddingCompleted)
+            {
+                Task.Delay(10, t).Wait();
+            }
+            return _msgQueue.Take(t);
         }
 
-        Task ISource<DataMessage>.Flush()
+        public Task Flush()
         {
-            _dataQueue.CompleteAdding();
-            _dataQueue.Dispose();
-            _dataQueue = new BlockingCollection<DataMessage>(1 << 12);
+            _msgQueue.CompleteAdding();
+            _msgQueue.Dispose();
+            _msgQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
             return Task.CompletedTask;
         }
-        #endregion
 
-        #region Control message source
-
-        ControlMessage ISource<ControlMessage>.Take(CancellationToken t)
-        {
-            return _controlQueue.Take(t);
-        }
-
-        Task ISource<ControlMessage>.Flush()
-        {
-            _controlQueue.CompleteAdding();
-            _controlQueue.Dispose();
-            _controlQueue = new BlockingCollection<ControlMessage>(1 << 12);
-            return Task.CompletedTask;
-        }
-        #endregion
-
-        public void Receive(IMessage message, IEndpointConfiguration origin, int shardId)
+        public void Receive(TMessage message, IEndpointConfiguration origin, CancellationToken t)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
-
-            // block message if not receiving data and is data message
-            var typeFlag = origin.IsControl ? ReceptionFlags.Control : ReceptionFlags.Data;
-            var shouldBuffer = _receptionFlags.HasFlag(ReceptionFlags.Buffer);
-            if (!_receptionFlags.HasFlag(typeFlag) && shouldBuffer)
-            {
-                AddToInputBuffer(message);
-                return;
-            } 
-            if (!shouldBuffer && _inputBuffer.Any()) // flush blocked data input if receiving messages and there is any queued input
-            {
-                FlushInputBuffer();
-            }
-            SafeAddToInputQueue(message);
-        }
-
-        public void Flush()
-        {
-            //invoke after consumer is killed
-            //assumption that producers keep running
-            //may need to build in restart functionality in endpoints
-            SetFlags(ReceptionFlags.Control);
+            
+            _msgQueue.Add(message, t);
         }
 
         public void SetFlags(ReceptionFlags mode)
@@ -105,48 +65,36 @@ namespace BlackSP.Core.Sources
             return _receptionFlags;
         }
 
-        /// <summary>
-        /// Utility method that checks received message types to ensure early failure if an unexpected type is received
-        /// </summary>
-        /// <param name="message"></param>
-        private void SafeAddToInputQueue(IMessage message)
+        #region dispose pattern
+        private void Dispose(bool disposing)
         {
-            if (message.IsControl)
+            if (!disposedValue)
             {
-                _controlQueue.Add(message as ControlMessage ?? throw new Exception($"Unexpected control message type: {message.GetType()}"));
-            }
-            else
-            {
-                _dataQueue.Add(message as DataMessage ?? throw new Exception($"Unexpected data message type: {message.GetType()}"));
-            }
-        }
-
-        /// <summary>
-        /// Utility method for adding data to the blocked data queue in a thread safe manner
-        /// </summary>
-        /// <param name="message"></param>
-        private void AddToInputBuffer(IMessage message)
-        {
-            lock (lockObj)
-            {
-                _inputBuffer.Add(message);
-            }
-        }
-
-        /// <summary>
-        /// Utility method to flush the blocked data queue into the inputQueue in a thread safe manner
-        /// </summary>
-        private void FlushInputBuffer()
-        {
-            lock (lockObj)
-            {
-                _inputBuffer.CompleteAdding();
-                foreach (var blockedInput in _inputBuffer.GetConsumingEnumerable())
+                if (disposing)
                 {
-                    SafeAddToInputQueue(blockedInput);
+                    // TODO: dispose managed state (managed objects)
+                    _msgQueue.Dispose();
                 }
-                _inputBuffer = new BlockingCollection<IMessage>(1 << 12);
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
             }
         }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~ReceiverMessageSource()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

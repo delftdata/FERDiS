@@ -1,5 +1,4 @@
-﻿using BlackSP.Core.Models.Payloads;
-using BlackSP.Kernel.Models;
+﻿using BlackSP.Kernel.Models;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
@@ -12,27 +11,24 @@ namespace BlackSP.Core.Models
     {
         public override bool IsControl => false;
 
-        public override int PartitionKey { get
-            {
-                if(this.TryGetPayload<EventPayload>(out var payload))
-                {
-                    return payload.Event.GetPartitionKey();
-                }
-                throw new InvalidOperationException("Missing event payload, cannot get partition key");
-            }
-        }
-
         [ProtoMember(1)]
         public override IDictionary<string, MessagePayloadBase> MetaData { get; }
+
+        [ProtoMember(2)]
+        public override int PartitionKey { get; }
+
+        public IEnumerable<MessagePayloadBase> Payloads => MetaData.Values;
 
         public DataMessage()
         {
             MetaData = new Dictionary<string, MessagePayloadBase>();
+            PartitionKey = 0;
         }
 
-        public DataMessage(IDictionary<string, MessagePayloadBase> metaData)
+        public DataMessage(IDictionary<string, MessagePayloadBase> metaData, int partitionKey)
         {
             MetaData = new Dictionary<string, MessagePayloadBase>(metaData);
+            PartitionKey = partitionKey;
         }
     }
 }

@@ -7,6 +7,7 @@ using BlackSP.Infrastructure.Extensions;
 using BlackSP.Kernel;
 using Serilog.Events;
 using System;
+using BlackSP.Infrastructure.Layers.Control;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -27,24 +28,15 @@ namespace BlackSP.Infrastructure.Modules
 
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();
-
-            //control + data collector & expose as source(s)
-            builder.UseReceiverMessageSource();
-
             builder.UseStatusMonitors();
 
             //control processor
-            builder.RegisterType<ControlMessageProcessor>().SingleInstance();
-            builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().SingleInstance();
-            builder.AddControlMiddlewaresForWorker();
+            builder.UseControlLayer();
+            builder.AddControlLayerMessageHandlersForWorker();
 
             //data processor
-            builder.RegisterType<MiddlewareInvocationPipeline<DataMessage>>().As<IPipeline<DataMessage>>().SingleInstance();
-
-            //control + data dispatcher
-            builder.UseWorkerDispatcher();
-            //TODO: middlewares
-            builder.AddOperatorMiddlewareForWorker<TShell, TOperator>();
+            builder.UseDataLayer();
+            builder.AddDataLayerMessageHandlersForWorker<TShell, TOperator>();
 
             base.Load(builder);
         }

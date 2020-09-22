@@ -1,16 +1,10 @@
 ﻿using Autofac;
 using BlackSP.Core.Models;
-using BlackSP.Kernel.Models;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Operators;
-using BlackSP.Core.Handlers;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using BlackSP.Core.Processors;
-using BlackSP.Core;
-using BlackSP.Infrastructure.Operators;
-using BlackSP.Infrastructure.Checkpointing;
+using BlackSP.Infrastructure.Layers.Data;
+using BlackSP.Infrastructure.Layers.Control.Handlers;
+using BlackSP.Infrastructure.Layers.Data.Handlers;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -18,7 +12,7 @@ namespace BlackSP.Infrastructure.Extensions
     {
         
 
-        public static ContainerBuilder AddControlMiddlewaresForCoordinator(this ContainerBuilder builder)
+        public static ContainerBuilder AddControlLayerMessageHandlersForCoordinator(this ContainerBuilder builder)
         {
             //TODO: register coordinator control middlewares in order
             builder.RegisterType<WorkerResponseHandler>().AsImplementedInterfaces();
@@ -27,12 +21,9 @@ namespace BlackSP.Infrastructure.Extensions
             return builder;
         }
         
-        public static ContainerBuilder AddControlMiddlewaresForWorker(this ContainerBuilder builder)
+        public static ContainerBuilder AddControlLayerMessageHandlersForWorker(this ContainerBuilder builder)
         {
-            //TODO: register worker control middlewares in order
-            builder.RegisterType<WorkerRequestHandler>().As<IHandler<ControlMessage>>();
             builder.RegisterType<CheckpointRestoreRequestHandler>().As<IHandler<ControlMessage>>();
-
             //important control middleware: controls the subprocess that processes/generates data messages
             builder.RegisterType<WorkerRequestHandler>().As<IHandler<ControlMessage>>();
             builder.RegisterType<DataMessageProcessor>().AsSelf();//dependency of DataProcessControllerMiddleware
@@ -40,7 +31,7 @@ namespace BlackSP.Infrastructure.Extensions
             return builder;
         }
 
-        public static ContainerBuilder AddOperatorMiddlewareForWorker<TShell, TOperator>(this ContainerBuilder builder)
+        public static ContainerBuilder AddDataLayerMessageHandlersForWorker<TShell, TOperator>(this ContainerBuilder builder)
         {
             builder.RegisterType<TShell>().As<IOperatorShell>();
             builder.RegisterType<TOperator>().AsImplementedInterfaces();

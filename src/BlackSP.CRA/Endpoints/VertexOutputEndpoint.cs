@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Endpoints;
+using BlackSP.Infrastructure.Layers.Common;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
@@ -13,14 +14,16 @@ namespace BlackSP.CRA.Endpoints
 {
     public class VertexOutputEndpoint : IAsyncShardedVertexOutputEndpoint
     {
-        public delegate VertexOutputEndpoint Factory(IOutputEndpoint outputEndpoint);
+        public delegate VertexOutputEndpoint Factory(IEndpointConfiguration config);
 
         private readonly IOutputEndpoint _bspOutputEndpoint;
         private readonly ILogger _logger;
 
-        public VertexOutputEndpoint(IOutputEndpoint outputEndpoint, ILogger logger)
+        public VertexOutputEndpoint(IEndpointConfiguration config, EndpointFactory endpointFactory, ILogger logger)
         {
-            _bspOutputEndpoint = outputEndpoint ?? throw new ArgumentNullException(nameof(outputEndpoint));
+            _ = config ?? throw new ArgumentNullException(nameof(config));
+            _ = endpointFactory ?? throw new ArgumentNullException(nameof(endpointFactory));
+            _bspOutputEndpoint = endpointFactory.ConstructOutputEndpoint(config);
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 

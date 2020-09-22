@@ -17,25 +17,26 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Endpoints
 {
-    public class TimeoutInputEndpoint : IInputEndpoint, IDisposable
+    public class TimeoutInputEndpoint<TMessage> : IInputEndpoint, IDisposable
+        where TMessage : IMessage
     {
         /// <summary>
         /// Autofac delegate factory
         /// </summary>
         /// <param name="endpointName"></param>
         /// <returns></returns>
-        public delegate TimeoutInputEndpoint Factory(string endpointName);
+        public delegate TimeoutInputEndpoint<TMessage> Factory(string endpointName);
 
-        private readonly IObjectSerializer<IMessage> _serializer;
-        private readonly IReceiver _receiver;
+        private readonly IObjectSerializer _serializer;
+        private readonly IReceiver<TMessage> _receiver;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
 
         public TimeoutInputEndpoint(string endpointName,
                              IVertexConfiguration vertexConfig,
-                             IObjectSerializer<IMessage> serializer,
-                             IReceiver receiver,
+                             IObjectSerializer serializer,
+                             IReceiver<TMessage> receiver,
                              ConnectionMonitor connectionMonitor,
                              ILogger logger)
         {
@@ -137,12 +138,12 @@ namespace BlackSP.Core.Endpoints
         {
             foreach (var bytes in inputqueue.GetConsumingEnumerable(t))
             {
-                IMessage message = await _serializer.DeserializeAsync(bytes, t).ConfigureAwait(false);
+                TMessage message = await _serializer.DeserializeAsync<TMessage>(bytes, t).ConfigureAwait(false);
                 if (message == null)
                 {
                     throw new Exception("unexpected null message from deserializer");//TODO: custom exception?
                 }
-                _receiver.Receive(message, _endpointConfig, shardId);
+                _receiver.Receive(message, _endpointConfig, t);
             }
         }
 

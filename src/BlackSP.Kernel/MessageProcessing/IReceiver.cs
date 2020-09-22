@@ -28,7 +28,7 @@ namespace BlackSP.Kernel
         Buffer = 1 << 2
     }
 
-    public interface IReceiver
+    public interface IReceiver<TMessage>
     {
         /// <summary>
         /// Drop a new message in the receiver
@@ -36,7 +36,7 @@ namespace BlackSP.Kernel
         /// <param name="message"></param>
         /// <param name="origin"></param>
         /// <param name="shardId"></param>
-        void Receive(IMessage message, IEndpointConfiguration origin, int shardId);
+        void Receive(TMessage message, IEndpointConfiguration origin, CancellationToken t);
 
         /// <summary>
         /// Set the receiver flags

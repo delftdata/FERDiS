@@ -1,24 +1,20 @@
 ﻿using BlackSP.Core.Models;
-using BlackSP.Kernel;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Operators;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using BlackSP.Core.Models.Payloads;
+using BlackSP.Infrastructure.Layers.Data.Payloads;
 
-namespace BlackSP.Infrastructure.Operators
+namespace BlackSP.Infrastructure.Layers.Data.Sources
 {
-    public class SourceOperatorDataSource<TEvent> : ISource<DataMessage>
+    public class SourceOperatorEventSource<TEvent> : ISource<DataMessage>
         where TEvent : class, IEvent
     {
         private readonly ISourceOperator<TEvent> _source;
         
-        public SourceOperatorDataSource(ISourceOperator<TEvent> source)
+        public SourceOperatorEventSource(ISourceOperator<TEvent> source)
         {
             _source = source ?? throw new ArgumentNullException(nameof(source));
         }

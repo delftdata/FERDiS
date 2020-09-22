@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Checkpointing.Core
+namespace BlackSP.Checkpointing.Models
 {
     [Serializable]
     public class MetaData

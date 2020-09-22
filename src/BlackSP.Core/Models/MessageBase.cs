@@ -14,7 +14,9 @@ namespace BlackSP.Core.Models
 
         public abstract IDictionary<string, MessagePayloadBase> MetaData { get; }
 
-        public bool TryGetPayload<TPayload>(out TPayload payload) where TPayload : MessagePayloadBase
+        public IEnumerable<MessagePayloadBase> Payloads => MetaData.Values;
+
+        public bool TryExtractPayload<TPayload>(out TPayload payload) where TPayload : MessagePayloadBase
         {
             var metadataKey = typeof(TPayload).GetProperty(nameof(MessagePayloadBase.MetaDataKey))?.GetValue(null) as string ?? null;
             if (string.IsNullOrEmpty(metadataKey))
@@ -24,7 +26,13 @@ namespace BlackSP.Core.Models
 
             MetaData.TryGetValue(metadataKey, out MessagePayloadBase payloadBase);
             payload = payloadBase as TPayload;
-            return payload != null;
+            
+            bool success;
+            if (success = payload != null)
+            {
+                MetaData.Remove(metadataKey);
+            }
+            return success;
         }
 
         public void AddPayload<TPayload>(TPayload payload) where TPayload : MessagePayloadBase

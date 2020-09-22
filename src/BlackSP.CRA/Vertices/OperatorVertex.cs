@@ -1,7 +1,5 @@
 ﻿using Autofac;
-using BlackSP.Core.Processors;
 using BlackSP.Core.Endpoints;
-using BlackSP.Core.Models;
 using BlackSP.CRA.Endpoints;
 using BlackSP.Infrastructure;
 using BlackSP.Infrastructure.Extensions;
@@ -11,6 +9,10 @@ using Serilog;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using BlackSP.Infrastructure.Layers.Control;
+using BlackSP.Core.Models;
+using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Models;
 
 namespace BlackSP.CRA.Vertices
 {
@@ -58,7 +60,6 @@ namespace BlackSP.CRA.Vertices
         private void InitializeIoC(IHostConfiguration configuration)
         {
             var container = new ContainerBuilder(); 
-            //TODO: BlackSP Setup (with modules)
             container.RegisterType<VertexInputEndpoint>().AsImplementedInterfaces().AsSelf();
             container.RegisterType<VertexOutputEndpoint>().AsImplementedInterfaces().AsSelf();
             container.ConfigureVertexHost(configuration); //configure vertexhost
@@ -73,24 +74,20 @@ namespace BlackSP.CRA.Vertices
         /// <param name="configuration"></param>
         private void CreateEndpoints(IHostConfiguration configuration)
         {
-            var inputEndpointFactory = _vertexLifetimeScope.Resolve<InputEndpoint.Factory>();
             var vertexInputEndpointFactory = _vertexLifetimeScope.Resolve<VertexInputEndpoint.Factory>();
             foreach (var endpointConfig in configuration.VertexConfiguration.InputEndpoints)
             {
-                var inputEndpoint = inputEndpointFactory.Invoke(endpointConfig.LocalEndpointName);
 #pragma warning disable CA2000 // Dispose objects before losing scope
-                AddAsyncInputEndpoint(endpointConfig.LocalEndpointName, vertexInputEndpointFactory.Invoke(inputEndpoint));
+                AddAsyncInputEndpoint(endpointConfig.LocalEndpointName, vertexInputEndpointFactory.Invoke(endpointConfig));
 #pragma warning restore CA2000 // Dispose objects before losing scope
             }
 
-            var outputEndpointFactory = _vertexLifetimeScope.Resolve<OutputEndpoint.Factory>();
             var vertexOutputEndpointFactory = _vertexLifetimeScope.Resolve<VertexOutputEndpoint.Factory>();
 
             foreach (var endpointConfig in configuration.VertexConfiguration.OutputEndpoints)
             {
-                var outputEndpoint = outputEndpointFactory.Invoke(endpointConfig.LocalEndpointName);
 #pragma warning disable CA2000 // Dispose objects before losing scope
-                AddAsyncOutputEndpoint(endpointConfig.LocalEndpointName, vertexOutputEndpointFactory.Invoke(outputEndpoint));
+                AddAsyncOutputEndpoint(endpointConfig.LocalEndpointName, vertexOutputEndpointFactory.Invoke(endpointConfig));
 #pragma warning restore CA2000 // Dispose objects before losing scope
             }
         }

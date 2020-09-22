@@ -1,6 +1,5 @@
 ﻿using BlackSP.Core.Processors;
 using BlackSP.Core.Models;
-using BlackSP.Core.Models.Payloads;
 using BlackSP.Core.Monitors;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
@@ -13,13 +12,16 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Core.Extensions;
+using BlackSP.Core.Handlers;
+using BlackSP.Infrastructure.Layers.Data;
+using BlackSP.Infrastructure.Layers.Control.Payloads;
 
-namespace BlackSP.Core.Handlers
+namespace BlackSP.Infrastructure.Layers.Control.Handlers
 {
     /// <summary>
     /// ControlMessage handler dedicated to handling requests on the worker side
     /// </summary>
-    public class WorkerRequestHandler : IHandler<ControlMessage>, IDisposable
+    public class WorkerRequestHandler : ForwardingPayloadHandlerBase<ControlMessage, WorkerRequestPayload>, IDisposable
     {
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly DataMessageProcessor _processor;
@@ -46,13 +48,9 @@ namespace BlackSP.Core.Handlers
             _connectionMonitor.OnConnectionChange += ConnectionMonitor_OnConnectionChange;
         }
 
-        public async Task<IEnumerable<ControlMessage>> Handle(ControlMessage message)
+        protected override async Task<IEnumerable<ControlMessage>> Handle(WorkerRequestPayload payload)
         {
-            _ = message ?? throw new ArgumentNullException(nameof(message));
-            if (!message.TryGetPayload<WorkerRequestPayload>(out var payload))
-            {
-                return new List<ControlMessage>() { message }.AsEnumerable();
-            }
+            _ = payload ?? throw new ArgumentNullException(nameof(payload));
 
             await PerformRequestedAction(payload.RequestType).ConfigureAwait(false);
 

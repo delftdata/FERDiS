@@ -15,12 +15,13 @@ using System.Threading.Tasks;
 namespace BlackSP.Core.Dispatchers
 {
     /// <summary>
-    /// Can dispatch any type of IMessage utilizing a provided IPartitioner
+    /// Dispatcher capable of dispatching any implementation of IMessage. Does so by utilizing a provided IPartitioner.
     /// </summary>
-    public class PartitioningMessageDispatcher : IDispatcher<IMessage>, IDispatcher<DataMessage>, IDispatcher<ControlMessage>
+    public class PartitioningMessageDispatcher<TMessage> : IDispatcher<TMessage>
+        where TMessage : IMessage
     {
         private readonly IVertexConfiguration _vertexConfiguration;
-        private readonly IObjectSerializer<IMessage> _serializer;
+        private readonly IObjectSerializer _serializer;
         private readonly IPartitioner<IMessage> _partitioner;
 
         private readonly IDictionary<string, BlockingCollection<byte[]>> _outputQueues;
@@ -29,7 +30,7 @@ namespace BlackSP.Core.Dispatchers
         private DispatchFlags _dispatchFlags;
 
         public PartitioningMessageDispatcher(IVertexConfiguration vertexConfiguration,
-                                 IObjectSerializer<IMessage> serializer,
+                                 IObjectSerializer serializer,
                                  IPartitioner<IMessage> partitioner)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
@@ -60,7 +61,7 @@ namespace BlackSP.Core.Dispatchers
             return _outputQueues.Get(endpointKey);
         }
 
-        public async Task Dispatch(IMessage message, CancellationToken t)
+        public async Task Dispatch(TMessage message, CancellationToken t)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
 
@@ -72,12 +73,6 @@ namespace BlackSP.Core.Dispatchers
                 QueueForDispatch(targetConnectionKey, bytes, message.IsControl, t);
             }
         }
-
-        public async Task Dispatch(DataMessage message, CancellationToken t) 
-            => await Dispatch((IMessage)message, t).ConfigureAwait(false);
-
-        public async Task Dispatch(ControlMessage message, CancellationToken t)
-            => await Dispatch((IMessage)message, t).ConfigureAwait(false);
 
         private void QueueForDispatch(string targetConnectionKey, byte[] bytes, bool isControl, CancellationToken t)
         {

@@ -105,7 +105,9 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
 
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
             var recoveryLine = calculator.CalculateRecoveryLine(true, instance3);
-            Assert.AreEqual(recoveryLine.AffectedWorkers.Count(), instanceCount);
+
+            //expect inst 1 and 2 affected, so 2 total
+            Assert.AreEqual(2, recoveryLine.AffectedWorkers.Count());
             //instance 1 and 2 remain unaffected due to its runtime state still being valid
             Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance1]);
             Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance2]);

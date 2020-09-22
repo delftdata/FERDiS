@@ -1,7 +1,8 @@
 ﻿using BlackSP.Core;
 using BlackSP.Core.Extensions;
+using BlackSP.Core.Handlers;
 using BlackSP.Core.Models;
-using BlackSP.Core.Models.Payloads;
+using BlackSP.Infrastructure.Layers.Control.Payloads;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
@@ -12,9 +13,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Infrastructure.Checkpointing
+namespace BlackSP.Infrastructure.Layers.Control.Handlers
 {
-    public class CheckpointRestoreRequestHandler : IHandler<ControlMessage>
+    public class CheckpointRestoreRequestHandler : ForwardingPayloadHandlerBase<ControlMessage, CheckpointRestoreRequestPayload>
     {
         private readonly ICheckpointService _checkpointService;
         private readonly IVertexConfiguration _vertexConfiguration;
@@ -27,26 +28,22 @@ namespace BlackSP.Infrastructure.Checkpointing
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<IEnumerable<ControlMessage>> Handle(ControlMessage message)
+        protected override async Task<IEnumerable<ControlMessage>> Handle(CheckpointRestoreRequestPayload payload)
         {
-            _ = message ?? throw new ArgumentNullException(nameof(message));
-
-            if (!message.TryGetPayload<CheckpointRestoreRequestPayload>(out var payload))
-            {   //payload not found --> forward message
-                return message.Yield();
-            }
-
+            _ = payload ?? throw new ArgumentNullException(nameof(payload));
+            
             Guid checkpointId = payload.CheckpointId;
             _logger.Information($"{_vertexConfiguration.InstanceName} - Restoring checkpoint {checkpointId}");
             await _checkpointService.RestoreCheckpoint(checkpointId).ConfigureAwait(false);
             _logger.Information($"{_vertexConfiguration.InstanceName} - Restored checkpoint {checkpointId}");
 
             var msg = new ControlMessage();
-            msg.AddPayload(new CheckpointRestoreCompletionPayload() { 
-                InstanceName = _vertexConfiguration.InstanceName, 
-                CheckpointId = checkpointId 
+            msg.AddPayload(new CheckpointRestoreCompletionPayload()
+            {
+                InstanceName = _vertexConfiguration.InstanceName,
+                CheckpointId = checkpointId
             });
-            return new List<ControlMessage>() { msg }.AsEnumerable();
+            return msg.Yield();
         }
     }
 }

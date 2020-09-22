@@ -1,4 +1,5 @@
 ﻿using BlackSP.Checkpointing.Core;
+using BlackSP.Checkpointing.Models;
 using BlackSP.Checkpointing.Persistence;
 using BlackSP.Checkpointing.UnitTests.Models;
 using BlackSP.Kernel.Checkpointing;

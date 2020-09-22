@@ -1,11 +1,12 @@
 ﻿using BlackSP.Core.Models;
+using BlackSP.Core.Processors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.Processors
+namespace BlackSP.Infrastructure.Layers.Data
 {
     /// <summary>
     /// Controls the message passing between underlying components<br/>

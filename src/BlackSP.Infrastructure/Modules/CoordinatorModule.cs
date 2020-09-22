@@ -1,18 +1,12 @@
 ﻿using Autofac;
-using BlackSP.Core;
-using BlackSP.Core.Processors;
-using BlackSP.Core.Sources;
-using BlackSP.Core.Handlers;
 using BlackSP.Core.Models;
 using BlackSP.Core.Pipelines;
 using BlackSP.Infrastructure.Extensions;
-using BlackSP.Infrastructure.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Serilog.Events;
+using BlackSP.Infrastructure.Layers.Control;
+using BlackSP.Infrastructure.Layers.Control.Sources;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -32,24 +26,14 @@ namespace BlackSP.Infrastructure.Modules
 
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();
-
-            //sources (control only)
-            builder.RegisterType<WorkerRequestSource>().As<ISource<ControlMessage>>();
-            builder.UseReceiverMessageSource(false);
-
             builder.UseStatusMonitors();
             builder.UseStateManagers();
-
-            //processor (control only)
-            builder.RegisterType<ControlMessageProcessor>().SingleInstance();
-            builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().SingleInstance();
-
-            //middlewares (control only - handles worker responses)
-            builder.AddControlMiddlewaresForCoordinator();
-
-            //dispatcher (control only)
-            builder.UseCoordinatorDispatcher();
-            //TODO: middlewares ??
+            
+            //control processor
+            builder.UseControlLayer();
+            //add another ControlMessage source
+            builder.RegisterType<WorkerRequestSource>().As<ISource<ControlMessage>>();
+            builder.AddControlLayerMessageHandlersForCoordinator();
 
             base.Load(builder);
         }

@@ -30,4 +30,8 @@
     <ProjectReference Include="..\BlackSP.OperatorShells\BlackSP.OperatorShells.csproj" />
     <ProjectReference Include="..\BlackSP.Serialization\BlackSP.Serialization.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Operators\" />
+  </ItemGroup>
 </Project>

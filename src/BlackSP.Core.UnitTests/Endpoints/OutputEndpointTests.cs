@@ -21,7 +21,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
     public class OutputEndpointTests
     {
         ICollection<IEvent> _testEvents;
-        OutputEndpoint _testEndpoint;
+        OutputEndpoint<IMessage> _testEndpoint;
         IStreamSerializer _serializer;
         CancellationTokenSource _endpointCtSource;
         CancellationTokenSource _operatorCtSource;
@@ -110,7 +110,6 @@ namespace BlackSP.Core.UnitTests.Endpoints
             //_testEndpoint.Enqueue(_testEvents, OutputMode.Broadcast);
             //_testEndpoint.Enqueue(_testEvents.ElementAt(1), OutputMode.Broadcast);
 
-            await Task.Delay(50); //allow threads to work
 
             foreach(var shardId in fakeShardIds)
             {
@@ -133,28 +132,6 @@ namespace BlackSP.Core.UnitTests.Endpoints
                 await Task.WhenAll(threads);
             }
             catch (OperationCanceledException) { };
-        }
-
-        [Test]
-        public void Enqueue_ShouldThrowOnNull()
-        {
-            IEvent nullEvent = null;
-            //Assert.Throws<ArgumentNullException>(() => _testEndpoint.Enqueue(nullEvent, OutputMode.Broadcast));
-        }
-
-        [Test]
-        public void Enqueue_Overload_ShouldThrowOnNull()
-        {
-            IEnumerable<IEvent> nullEnumerable = null;
-            //Assert.Throws<ArgumentNullException>(() => _testEndpoint.Enqueue(nullEnumerable, OutputMode.Broadcast));
-        }
-
-        [Test]
-        public void RegisterWithSameShardIdShouldReturnFalse()
-        {
-            //Assert.IsTrue(_testEndpoint.RegisterRemoteShard(0));
-            //Assert.IsTrue(_testEndpoint.RegisterRemoteShard(1));
-            //Assert.IsFalse(_testEndpoint.RegisterRemoteShard(0));
         }
 
         [TearDown]

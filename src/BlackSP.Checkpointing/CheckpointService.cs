@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Serilog;
 using System.Collections.Immutable;
 using BlackSP.Kernel.Models;
+using BlackSP.Checkpointing.Models;
 
 namespace BlackSP.Checkpointing
 {

@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Checkpointing.Core
+namespace BlackSP.Checkpointing.Models
 {
     [Serializable]
     public class ObjectSnapshot

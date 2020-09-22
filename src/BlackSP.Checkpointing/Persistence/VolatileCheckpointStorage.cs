@@ -1,4 +1,5 @@
 ﻿using BlackSP.Checkpointing.Core;
+using BlackSP.Checkpointing.Models;
 using BlackSP.Serialization.Extensions;
 using System;
 using System.Collections.Generic;

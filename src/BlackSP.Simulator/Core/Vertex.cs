@@ -11,6 +11,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Kernel.Checkpointing;
+using BlackSP.Infrastructure.Layers.Control;
+using BlackSP.Kernel.Models;
+using BlackSP.Infrastructure.Layers.Common;
 
 namespace BlackSP.Simulator.Core
 {
@@ -53,19 +56,17 @@ namespace BlackSP.Simulator.Core
                 //Note: let the vertex start up before creating endpoints (vertex needs to detect endpoint connection)
                 await Task.Delay(5000).ConfigureAwait(false);
 
-                var inputFactory = dependencyScope.Resolve<InputEndpoint.Factory>();
-                var outputFactory = dependencyScope.Resolve<OutputEndpoint.Factory>();
-                
+                var endpointFactory = dependencyScope.Resolve<EndpointFactory>();
                 foreach (var endpointConfig in hostConfig.VertexConfiguration.InputEndpoints)
                 {
-                    var endpoint = new InputEndpointHost(inputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable, dependencyScope.Resolve<ILogger>());
+                    var endpoint = new InputEndpointHost(endpointFactory.ConstructInputEndpoint(endpointConfig), _connectionTable, dependencyScope.Resolve<ILogger>());
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
                 logger.Debug($"Input endpoints created");
 
                 foreach (var endpointConfig in hostConfig.VertexConfiguration.OutputEndpoints)
                 {
-                    var endpoint = new OutputEndpointHost(outputFactory.Invoke(endpointConfig.LocalEndpointName), _connectionTable, dependencyScope.Resolve<ILogger>());
+                    var endpoint = new OutputEndpointHost(endpointFactory.ConstructOutputEndpoint(endpointConfig), _connectionTable, dependencyScope.Resolve<ILogger>());
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
                 logger.Debug($"Output endpoints created");
@@ -74,7 +75,6 @@ namespace BlackSP.Simulator.Core
                 await exitedThread.ConfigureAwait(false);
                 t.ThrowIfCancellationRequested();
             }
-            catch(OperationCanceledException) { throw; }
             finally
             {
                 logger.Debug($"Vertex has shut down");

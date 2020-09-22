@@ -1,7 +1,4 @@
 ﻿using Autofac;
-using BlackSP.Core;
-using BlackSP.Core.Processors;
-using BlackSP.Core.Sources;
 using BlackSP.Core.Handlers;
 using BlackSP.Core.Models;
 using BlackSP.Core.Pipelines;
@@ -10,9 +7,9 @@ using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
-using Serilog.Events;
 using System;
-using BlackSP.Infrastructure.Operators;
+using BlackSP.Infrastructure.Layers.Control;
+using BlackSP.Infrastructure.Layers.Data.Sources;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -34,33 +31,21 @@ namespace BlackSP.Infrastructure.Modules
 
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();
-
-            //receiver only as control source
-            builder.UseReceiverMessageSource(false);
-            
             builder.UseStatusMonitors();
-            
-            //data source (local source operator)
-            builder.RegisterType<TOperator>().AsImplementedInterfaces().SingleInstance();
-            builder.RegisterType<TShell>().As<IOperatorShell>().SingleInstance();
-            builder.RegisterType<SourceOperatorDataSource<TEvent>>().As<ISource<DataMessage>>().SingleInstance();
-
+           
             //control processor
-            builder.RegisterType<ControlMessageProcessor>().SingleInstance();
-            builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().SingleInstance();
-            builder.AddControlMiddlewaresForWorker();
+            builder.UseControlLayer();
+            builder.AddControlLayerMessageHandlersForWorker();
 
             //data processor
-            builder.RegisterType<MiddlewareInvocationPipeline<DataMessage>>().As<IPipeline<DataMessage>>().SingleInstance();
+            builder.UseDataLayer(false);
+            //add alternative data source (local source operator)
+            builder.RegisterType<TOperator>().AsImplementedInterfaces().SingleInstance();
+            builder.RegisterType<TShell>().As<IOperatorShell>().SingleInstance();
+            builder.RegisterType<SourceOperatorEventSource<TEvent>>().As<ISource<DataMessage>>().SingleInstance();
 
             //middlewares
             builder.RegisterType<NoopMessageHandler<DataMessage>>().AsImplementedInterfaces();
-            //TODO: insert middlewares
-
-
-            //control + data dispatcher
-            builder.UseWorkerDispatcher();            
-            //TODO: middlewares?
 
             base.Load(builder);
         }

@@ -21,54 +21,12 @@ using BlackSP.Checkpointing.Core;
 using BlackSP.Checkpointing.Persistence;
 using BlackSP.Checkpointing;
 using BlackSP.Core.Coordination;
+using BlackSP.Infrastructure.Layers.Common;
 
 namespace BlackSP.Infrastructure.Extensions
 {
     public static class AutofacVertexExtensions
     {
-
-        /// <summary>
-        /// Configure types to use network receiver as one or more message sources.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="useAsDataSource"></param>
-        /// <returns></returns>
-        public static ContainerBuilder UseReceiverMessageSource(this ContainerBuilder builder, bool useAsDataSource = true)
-        {
-            var exposedTypes = new List<Type>() { typeof(IReceiver), typeof(ISource<ControlMessage>) };
-            if (useAsDataSource)
-            {
-                exposedTypes.Add(typeof(ISource<DataMessage>));
-            }
-            builder.RegisterType<ReceiverMessageSource>().As(exposedTypes.ToArray()).SingleInstance();
-            return builder;
-        }
-
-        /// <summary>
-        /// Configure types for dispatching messages from a worker instance.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        public static ContainerBuilder UseWorkerDispatcher(this ContainerBuilder builder)
-        {
-            builder.RegisterType<PartitioningMessageDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>, IDispatcher<DataMessage>>().SingleInstance();
-            builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer<IMessage>>();
-            builder.RegisterType<MessageHashPartitioner>().As<IPartitioner<IMessage>>();
-
-            return builder;
-        }
-
-        /// <summary>
-        /// Configure types for dispatching messages from a coordinator instance
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        public static ContainerBuilder UseCoordinatorDispatcher(this ContainerBuilder builder)
-        {
-            builder.RegisterType<ControlMessageDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>>().SingleInstance();
-            builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer<IMessage>>();
-            return builder;
-        }
 
         /// <summary>
         /// Configure streaming input and output endpoint types
@@ -77,8 +35,9 @@ namespace BlackSP.Infrastructure.Extensions
         /// <returns></returns>
         public static ContainerBuilder UseStreamingEndpoints(this ContainerBuilder builder)
         {
-            builder.RegisterType<OutputEndpoint>().AsImplementedInterfaces().AsSelf();
-            builder.RegisterType<InputEndpoint>().AsImplementedInterfaces().AsSelf();
+            builder.RegisterGeneric(typeof(OutputEndpoint<>)).AsSelf();
+            builder.RegisterGeneric(typeof(InputEndpoint<>)).AsSelf();
+            builder.RegisterType<EndpointFactory>().AsSelf();
             return builder;
         }
 

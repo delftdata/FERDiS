@@ -1,4 +1,5 @@
 ﻿using BlackSP.Checkpointing.Core;
+using BlackSP.Checkpointing.Models;
 using BlackSP.Kernel.Models;
 using Moq;
 using System;

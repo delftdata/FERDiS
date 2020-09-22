@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.Models.Payloads
+namespace BlackSP.Infrastructure.Layers.Control.Payloads
 {
     [ProtoContract]
     public class CheckpointRestoreRequestPayload : MessagePayloadBase
