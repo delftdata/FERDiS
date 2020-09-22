@@ -30,7 +30,7 @@ namespace BlackSP.Infrastructure.Extensions
             builder.RegisterType<ReceiverMessageSource<ControlMessage>>().As<IReceiver<ControlMessage>, ISource<ControlMessage>>().InstancePerLifetimeScope();
             
             //dispatcher
-            builder.RegisterType<ControlMessageDispatcher>().As<IDispatcher<IMessage>, IDispatcher<ControlMessage>>().SingleInstance();
+            builder.RegisterType<ControlEndpointMessageDispatcher<ControlMessage>>().As<IDispatcher<ControlMessage>>().SingleInstance();
             builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer>();
 
             return builder;

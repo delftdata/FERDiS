@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.Models;
+﻿using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -21,5 +22,10 @@ namespace BlackSP.Kernel.MessageProcessing
         /// <param name="t"></param>
         /// <returns></returns>
         T Take(CancellationToken t);
-    }
+
+        /// <summary>
+        /// Reference information on the last object returned by the Take(..) method.
+        /// </summary>
+        (IEndpointConfiguration, int) MessageOrigin { get; }
+}
 }

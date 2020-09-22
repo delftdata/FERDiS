@@ -21,7 +21,8 @@ namespace BlackSP.Core.Handlers
     {
 
         /// <summary>
-        /// Holds a reference to the message associated with the payload currently being processed
+        /// Holds a reference to the message associated with the payload currently being processed,
+        /// It is recommended not to yield empty enumerables but instead this message.
         /// </summary>
         protected TMessage AssociatedMessage { get; private set; }
 

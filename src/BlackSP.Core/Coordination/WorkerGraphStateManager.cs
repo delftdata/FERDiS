@@ -5,6 +5,7 @@ using Serilog;
 using Stateless;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -180,8 +181,31 @@ namespace BlackSP.Core.Coordination
             var failedInstances = _workerStateManagers.Values.Where(sm => sm.CurrentState == WorkerState.Faulted).Select(sm => sm.InstanceName);
             var t = Task.Run(async () =>
             {
-                _preparedRecoveryLine = await _checkpointService.CalculateRecoveryLine(failedInstances).ConfigureAwait(false) 
+                var stopwatch = new Stopwatch();
+                try
+                {
+                    _logger.Information("Recovery line preparation started");
+                    stopwatch.Start();
+                    _preparedRecoveryLine = await _checkpointService.CalculateRecoveryLine(failedInstances).ConfigureAwait(false)
                     ?? throw new Exception("Recovery line calculation yielded null, cannot continue");
+                    stopwatch.Stop();
+                    _logger.Information($"Recovery line preparation completed successfully in {stopwatch.ElapsedMilliseconds}ms");
+                }
+                catch (Exception e)
+                {
+                    _logger.Fatal(e, $"Recovery line preparation failed with exception, halting all workers");
+                    foreach(var worker in _workerStateManagers.Values)
+                    {
+                        //halt all workers, we cannot continue with a failed instance and no recovery line
+                        worker.FireTrigger(WorkerStateTrigger.DataProcessorHalt);
+                    }
+                    throw;
+                }
+                finally
+                {
+                    stopwatch.Stop();
+                }
+
                 var workersToHalt = _workerStateManagers.Where(kv => _preparedRecoveryLine.AffectedWorkers.Contains(kv.Key))
                                     .Where(kv => kv.Value.CurrentState == WorkerState.Running)
                                     .Select(kv => kv.Value);

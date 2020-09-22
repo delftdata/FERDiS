@@ -1,10 +1,11 @@
-﻿using BlackSP.Kernel.Models;
+﻿using BlackSP.Core.Models;
+using BlackSP.Kernel.Models;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Core.Models
+namespace BlackSP.Infrastructure.Layers.Control
 {
     [ProtoContract]
     public sealed class ControlMessage : MessageBase

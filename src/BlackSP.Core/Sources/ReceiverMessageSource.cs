@@ -14,45 +14,86 @@ using System.Threading.Tasks;
 namespace BlackSP.Core.Sources
 {
     /// <summary>
-    /// Receives input from any source. Exposes received messages through the IMessageSource interface.<br/>
+    /// Receives input from any source. Exposes received messages through the ISource interface.<br/>
     /// Sorts and orders input based on message types to be consumed one-by-one.
     /// </summary>
     public sealed class ReceiverMessageSource<TMessage> : IReceiver<TMessage>, ISource<TMessage>, IDisposable
         where TMessage : IMessage
     {
-        private BlockingCollection<TMessage> _msgQueue;
+        public (IEndpointConfiguration, int) MessageOrigin { get; private set; }
+
+        private readonly IVertexConfiguration _vertexConfiguration;
+
+        private IDictionary<string, (IEndpointConfiguration, int)> _originDictionary;
+        private IDictionary<string, BlockingCollection<TMessage>> _msgQueues;
+        private List<string> _blockedConnections;
+
         private ReceptionFlags _receptionFlags;
+        private object lockObj;
         private bool disposedValue;
 
-        public ReceiverMessageSource()
+        public ReceiverMessageSource(IVertexConfiguration vertexConfiguration)
         {
-            _msgQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+            _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
+            
+            _msgQueues = new Dictionary<string, BlockingCollection<TMessage>>();
+            _originDictionary = new Dictionary<string, (IEndpointConfiguration, int)>();
+            InitialiseDataStructures();
+            _blockedConnections = new List<string>();
             _receptionFlags = ReceptionFlags.Control | ReceptionFlags.Data; //TODO: even set flags on constuct?
+            lockObj = new object();
         }
 
         public TMessage Take(CancellationToken t)
         {
-            while(_msgQueue.IsAddingCompleted)
+            TMessage message = default;
+            var activeQueues = _msgQueues.Where(kv => !_blockedConnections.Contains(kv.Key)).Select(kv => kv.Value).ToArray();
+            var takenIndex = BlockingCollection<TMessage>.TakeFromAny(activeQueues, out message, t);
+            var connectionKey = _msgQueues.Keys.ElementAt(takenIndex);
+            MessageOrigin = _originDictionary[connectionKey];
+            return message;
+        }
+
+        public BlockingCollection<TMessage> GetReceptionQueue(IEndpointConfiguration origin, int shardId)
+        {
+            _ = origin ?? throw new ArgumentNullException(nameof(origin));
+            var connectionKey = origin.GetConnectionKey(shardId);
+            lock (lockObj)
             {
-                Task.Delay(10, t).Wait();
+                return _msgQueues[connectionKey];
             }
-            return _msgQueue.Take(t);
         }
 
         public Task Flush()
         {
-            _msgQueue.CompleteAdding();
-            _msgQueue.Dispose();
-            _msgQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+            lock (lockObj)
+            {
+                foreach(var oldQueue in _msgQueues.Values)
+                {
+                    oldQueue.CompleteAdding();
+                    oldQueue.Dispose();
+                }
+                InitialiseDataStructures();
+            }
             return Task.CompletedTask;
         }
 
-        public void Receive(TMessage message, IEndpointConfiguration origin, CancellationToken t)
+        public void Block(IEndpointConfiguration origin, int shardId)
         {
-            _ = message ?? throw new ArgumentNullException(nameof(message));
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
-            
-            _msgQueue.Add(message, t);
+            var connectionKey = origin.GetConnectionKey(shardId);
+            //TODO: invalid operation exception
+            _blockedConnections.Add(connectionKey);
+        }
+
+        public void Unblock(IEndpointConfiguration origin, int shardId)
+        {
+            _ = origin ?? throw new ArgumentNullException(nameof(origin));
+            var connectionKey = origin.GetConnectionKey(shardId);
+            if(!_blockedConnections.Remove(connectionKey))
+            {
+                throw new InvalidOperationException("Cannot unblock a connection that is not blocked");
+            }
         }
 
         public void SetFlags(ReceptionFlags mode)
@@ -65,6 +106,20 @@ namespace BlackSP.Core.Sources
             return _receptionFlags;
         }
 
+        private void InitialiseDataStructures()
+        {
+            foreach (var config in _vertexConfiguration.InputEndpoints)
+            {
+                for (int i = 0; i < config.RemoteInstanceNames.Count(); i++)
+                {
+                    int shardId = i;
+                    var connectionKey = config.GetConnectionKey(shardId);
+                    _msgQueues[connectionKey] = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+                    _originDictionary[connectionKey] = (config, shardId);
+                }
+            }
+        }
+
         #region dispose pattern
         private void Dispose(bool disposing)
         {
@@ -73,7 +128,10 @@ namespace BlackSP.Core.Sources
                 if (disposing)
                 {
                     // TODO: dispose managed state (managed objects)
-                    _msgQueue.Dispose();
+                    foreach(var queue in _msgQueues.Values)
+                    {
+                        queue.Dispose();
+                    }
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
@@ -95,6 +153,7 @@ namespace BlackSP.Core.Sources
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+
         #endregion
     }
 }

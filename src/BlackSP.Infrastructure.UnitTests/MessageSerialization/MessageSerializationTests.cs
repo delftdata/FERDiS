@@ -1,5 +1,7 @@
 ﻿using BlackSP.Core.Models;
-using BlackSP.Core.UnitTests.Events;
+using BlackSP.Infrastructure.Layers.Control;
+using BlackSP.Infrastructure.Layers.Data;
+using BlackSP.Infrastructure.UnitTests.Events;
 using BlackSP.Kernel.Models;
 using BlackSP.Serialization;
 using Microsoft.IO;
@@ -9,7 +11,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.UnitTests.MessageSerialization
+namespace BlackSP.Infrastructure.UnitTests.MessageSerialization
 {
 
     [ProtoContract]

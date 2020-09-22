@@ -31,12 +31,25 @@ namespace BlackSP.Kernel
     public interface IReceiver<TMessage>
     {
         /// <summary>
-        /// Drop a new message in the receiver
+        /// Get a receptionqueue that is associated with this receiver. This queue should only be filled.
+        /// References are adviced not to be kept as the collection itself may internally be overwritten.
         /// </summary>
         /// <param name="message"></param>
         /// <param name="origin"></param>
         /// <param name="shardId"></param>
-        void Receive(TMessage message, IEndpointConfiguration origin, CancellationToken t);
+        BlockingCollection<TMessage> GetReceptionQueue(IEndpointConfiguration origin, int shardId);
+
+        /// <summary>
+        /// Block incoming messages from specified origin
+        /// </summary>
+        /// <param name="origin"></param>
+        void Block(IEndpointConfiguration origin, int shardId);
+
+        /// <summary>
+        /// Unblock specified origin
+        /// </summary>
+        /// <param name="origin"></param>
+        void Unblock(IEndpointConfiguration origin, int shardId);
 
         /// <summary>
         /// Set the receiver flags

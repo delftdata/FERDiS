@@ -15,10 +15,11 @@ using System.Threading.Tasks;
 namespace BlackSP.Core.Dispatchers
 {
     /// <summary>
-    /// Special dispatcher for coordinator instances. <br/>
-    /// Can target specific Workers through partitionkey as instanceName's hashcode OR broadcast by leaving partitionkey 0.
+    /// Special dispatcher that only targets control endpoints. <br/>
+    /// Can target specific Workers by setting partitionkey as instanceName's hashcode OR broadcast by leaving partitionkey 0.
     /// </summary>
-    public class ControlMessageDispatcher : IDispatcher<ControlMessage>, IDispatcher<IMessage>
+    public class ControlEndpointMessageDispatcher<TMessage> : IDispatcher<TMessage>
+        where TMessage : IMessage
     {
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IObjectSerializer _serializer;
@@ -27,7 +28,7 @@ namespace BlackSP.Core.Dispatchers
 
         private DispatchFlags _dispatchFlags;
 
-        public ControlMessageDispatcher(IVertexConfiguration vertexConfiguration, IObjectSerializer serializer)
+        public ControlEndpointMessageDispatcher(IVertexConfiguration vertexConfiguration, IObjectSerializer serializer)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -59,7 +60,7 @@ namespace BlackSP.Core.Dispatchers
             return _outputQueues.Get(endpointKey);
         }
 
-        public async Task Dispatch(ControlMessage message, CancellationToken t)
+        public async Task Dispatch(TMessage message, CancellationToken t)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
 
@@ -74,33 +75,27 @@ namespace BlackSP.Core.Dispatchers
                 QueueForDispatch(targetConnectionKey, bytes, t);
             }
         }
-
-        public Task Dispatch(IMessage message, CancellationToken t)
-        {
-            throw new NotSupportedException($"Only GetDispatchQueue is supported through IDispatcher<IMessage> interface in {this.GetType()}");
-        }
         
         private void QueueForDispatch(string targetConnectionKey, byte[] bytes, CancellationToken t)
         {
             var shouldDispatchMessage = _dispatchFlags.HasFlag(DispatchFlags.Control);
-
-            var outputQueue = _outputQueues.Get(targetConnectionKey);
             if (shouldDispatchMessage)
             {
-                outputQueue.Add(bytes, t);
+                _outputQueues
+                    .Get(targetConnectionKey)
+                    .Add(bytes, t);
             } 
         }
 
         private void InitializeQueues()
         {
-            foreach (var endpointConfig in _vertexConfiguration.OutputEndpoints)
+            foreach (var endpointConfig in _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl))
             {
                 var shardCount = endpointConfig.RemoteInstanceNames.Count();
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
                     var endpointKey = endpointConfig.GetConnectionKey(shardId);
-                    _outputQueues.Add(endpointKey, new BlockingCollection<byte[]>(1 << 12));//CAPACITY ??
-                    //TODO: determine proper capacity
+                    _outputQueues.Add(endpointKey, new BlockingCollection<byte[]>(Constants.DefaultThreadBoundaryQueueSize));
                 }
             }
         }

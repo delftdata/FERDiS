@@ -186,7 +186,7 @@ namespace BlackSP.Core.Coordination
             }
             catch (InvalidOperationException e)
             {
-                _logger.Debug(e, $"Invalid worker state transition using trigger {trigger}");
+                _logger.Debug(e, $"Invalid state transition in worker {InstanceName} caused by trigger {trigger} in state {CurrentState}");
                 throw;
             }
         }
