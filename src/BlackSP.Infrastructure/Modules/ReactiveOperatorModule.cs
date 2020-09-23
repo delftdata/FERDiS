@@ -36,7 +36,7 @@ namespace BlackSP.Infrastructure.Modules
 
             //data processor
             builder.UseDataLayer();
-            builder.AddDataLayerMessageHandlersForWorker<TShell, TOperator>();
+            builder.AddDataLayerMessageHandlersForWorker<TShell, TOperator>(_configuration.CheckpointingConfiguration.CoordinationMode);
 
             base.Load(builder);
         }

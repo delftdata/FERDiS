@@ -46,7 +46,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.RegisterType<SourceOperatorEventSource<TEvent>>().As<ISource<DataMessage>>().SingleInstance();
 
             //middlewares
-            builder.AddDataLayerMessageHandlersForSource();
+            builder.AddDataLayerMessageHandlersForSource(_configuration.CheckpointingConfiguration.CoordinationMode);
 
             base.Load(builder);
         }

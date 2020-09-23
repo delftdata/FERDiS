@@ -6,6 +6,7 @@ using BlackSP.Infrastructure.Layers.Data;
 using BlackSP.Infrastructure.Layers.Control.Handlers;
 using BlackSP.Infrastructure.Layers.Data.Handlers;
 using BlackSP.Infrastructure.Layers.Control;
+using BlackSP.Checkpointing;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -33,13 +34,24 @@ namespace BlackSP.Infrastructure.Extensions
             return builder;
         }
 
-        public static ContainerBuilder AddDataLayerMessageHandlersForWorker<TShell, TOperator>(this ContainerBuilder builder)
+        public static ContainerBuilder AddDataLayerMessageHandlersForWorker<TShell, TOperator>(this ContainerBuilder builder, CheckpointCoordinationMode cpMode)
         {
             //pre operator handlers
             builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>();
 
-            //builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
-            builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+            switch(cpMode)
+            {
+                case CheckpointCoordinationMode.Uncoordinated:
+                    builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+                    break;
+                case CheckpointCoordinationMode.Coordinated:
+                    builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+                    break;
+                case CheckpointCoordinationMode.CommunicationInduced:
+                    //TODO: register handler for cic
+                    break;
+
+            }
 
             //operator handler
             builder.RegisterType<TShell>().As<IOperatorShell>();
@@ -53,10 +65,21 @@ namespace BlackSP.Infrastructure.Extensions
             return builder;
         }
 
-        public static ContainerBuilder AddDataLayerMessageHandlersForSource(this ContainerBuilder builder)
+        public static ContainerBuilder AddDataLayerMessageHandlersForSource(this ContainerBuilder builder, CheckpointCoordinationMode cpMode)
         {
-            //builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
-            builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+            switch (cpMode)
+            {
+                case CheckpointCoordinationMode.Uncoordinated:
+                    builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+                    break;
+                case CheckpointCoordinationMode.Coordinated:
+                    builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+                    break;
+                case CheckpointCoordinationMode.CommunicationInduced:
+                    //TODO: register handler for cic
+                    break;
+
+            }
 
 
             builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>();
