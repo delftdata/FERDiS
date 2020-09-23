@@ -29,15 +29,37 @@ namespace BlackSP.Infrastructure.Extensions
             builder.RegisterType<WorkerRequestHandler>().As<IHandler<ControlMessage>>();
             builder.RegisterType<DataMessageProcessor>().AsSelf();//dependency of DataProcessControllerMiddleware
 
+            builder.RegisterType<DataLayerBarrierInjectionHandler>().As<IHandler<ControlMessage>>();
             return builder;
         }
 
         public static ContainerBuilder AddDataLayerMessageHandlersForWorker<TShell, TOperator>(this ContainerBuilder builder)
         {
+            //pre operator handlers
+            builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>();
+
+            //builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+            builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+
+            //operator handler
             builder.RegisterType<TShell>().As<IOperatorShell>();
             builder.RegisterType<TOperator>().AsImplementedInterfaces();
             builder.RegisterType<OperatorEventHandler>().As<IHandler<DataMessage>>();
 
+            //post operator handlers
+            builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>();
+
+
+            return builder;
+        }
+
+        public static ContainerBuilder AddDataLayerMessageHandlersForSource(this ContainerBuilder builder)
+        {
+            //builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+            builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+
+
+            builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>();
             return builder;
         }
     }

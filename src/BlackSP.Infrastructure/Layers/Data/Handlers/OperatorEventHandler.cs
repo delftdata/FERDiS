@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
 {
+    /// <summary>
+    /// Hands incoming events to the locally registered operator, only forwards resulting events as new messages
+    /// </summary>
     public class OperatorEventHandler : ForwardingPayloadHandlerBase<DataMessage, EventPayload>
     {
 
@@ -27,8 +30,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 var res = new DataMessage(AssociatedMessage.MetaData, ev.GetPartitionKey());
                 res.AddPayload(new EventPayload { Event = ev });
                 return res;
-            }).ToList();
-
+            }).ToList(); // remove materialisation?
             return Task.FromResult(result);
         }
     }

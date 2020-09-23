@@ -8,7 +8,8 @@ namespace BlackSP.Kernel.Models
     {
         bool IsControl { get; }
 
-        int PartitionKey { get; }
+
+        int? PartitionKey { get; }
 
         IEnumerable<MessagePayloadBase> Payloads { get; }
 

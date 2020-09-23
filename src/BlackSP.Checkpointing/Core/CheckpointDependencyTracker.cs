@@ -14,9 +14,12 @@ namespace BlackSP.Checkpointing.Core
         
         private IDictionary<string, Guid> dependencies;
 
+        private IDictionary<string, Guid> previousDependencies;
+
         public CheckpointDependencyTracker() 
         {
             dependencies = new Dictionary<string, Guid>();
+            previousDependencies = new Dictionary<string, Guid>();
         }
 
         /// <summary>
@@ -26,12 +29,28 @@ namespace BlackSP.Checkpointing.Core
         /// <param name="checkpointId"></param>
         public void UpdateDependency(string origin, Guid checkpointId)
         {
+            if(dependencies.ContainsKey(origin))
+            {
+                previousDependencies[origin] = dependencies[origin];
+            }
             dependencies[origin] = checkpointId;
         }
 
         public void OverwriteDependencies(IDictionary<string, Guid> newDependencies)
         {
             dependencies = newDependencies ?? throw new ArgumentNullException(nameof(newDependencies));
+        }
+
+        public Guid GetPreviousDependency(string origin)
+        {
+            if (previousDependencies.ContainsKey(origin))
+            {
+                return previousDependencies[origin];
+            } 
+            else
+            {
+                return Guid.Empty;
+            }
         }
     }
 }

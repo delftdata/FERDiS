@@ -44,9 +44,19 @@ namespace BlackSP.Checkpointing
         }
 
         ///<inheritdoc/>
-        public void UpdateCheckpointDependency(string origin, Guid checkpointId)
+        public void UpdateCheckpointDependency(string originInstanceName, Guid checkpointId)
         {
-            _dpTracker.UpdateDependency(origin, checkpointId);
+            _dpTracker.UpdateDependency(originInstanceName, checkpointId);
+        }
+
+        public Guid GetLatestCheckpointId(string currentInstanceName)
+        {
+            return _dpTracker.Dependencies[currentInstanceName];
+        }
+
+        public Guid GetSecondLastCheckpointId(string currentInstanceName)
+        {
+            return _dpTracker.GetPreviousDependency(currentInstanceName);
         }
 
         ///<inheritdoc/>
@@ -94,15 +104,21 @@ namespace BlackSP.Checkpointing
         public async Task TakeInitialCheckpointIfNotExists(string currentInstanceName)
         {
             var allCheckpointMetadatas = await _storage.GetAllMetaData().ConfigureAwait(false);
-            if(allCheckpointMetadatas.Any(m => m.InstanceName == currentInstanceName && !m.Dependencies.ContainsKey(currentInstanceName)))
+            //there is a checkpoint taken by this instance, without any dependencies on its own older checkpoints so it must be the initial one
+            var allCheckpointsByInstance = allCheckpointMetadatas.Where(m => m.InstanceName == currentInstanceName);
+            var firstCheckpoint = allCheckpointsByInstance.FirstOrDefault(m => !m.Dependencies.ContainsKey(currentInstanceName));
+            if (firstCheckpoint != null)
             {
-                //there is a checkpoint taken by this instance, without any dependencies on its own older checkpoints so it must be the initial one
                 _logger.Information($"Skipping initial checkpoint, it already exists");
+                var lastCheckpoint = allCheckpointMetadatas.OrderBy(m => m.CreatedAtUtc).Last();
+                _dpTracker.OverwriteDependencies(lastCheckpoint.Dependencies); //ensure next checkpoint inherits dependencies from latest checkpoint
+                _dpTracker.UpdateDependency(currentInstanceName, lastCheckpoint.Id);
                 return;
             }
-            _logger.Information($"Taking checkpoint of initial state");
+            
             try
             {
+                _logger.Information($"Taking checkpoint of initial state");
                 await TakeCheckpoint(currentInstanceName).ConfigureAwait(false);
                 _logger.Information($"Initial checkpoint successfully taken");
             } 
@@ -111,7 +127,11 @@ namespace BlackSP.Checkpointing
                 _logger.Warning("Failed to take initial checkpoint, rethrowing exception");
                 throw;
             }
-            
+        }
+
+        public Guid GetLastCheckpointId(string currentInstanceName)
+        {
+            return _dpTracker.Dependencies[currentInstanceName];
         }
 
         ///<inheritdoc/>
@@ -121,6 +141,7 @@ namespace BlackSP.Checkpointing
                 ?? throw new CheckpointRestorationException($"Checkpoint storage returned null for checkpoint ID: {checkpointId}");
             _register.RestoreCheckpoint(checkpoint);
             _dpTracker.OverwriteDependencies(checkpoint.MetaData.Dependencies);
+            //TODO: delete all checkpoints after (and/or before?) current checkpoint
         }
 
     }

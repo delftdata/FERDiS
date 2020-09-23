@@ -44,14 +44,15 @@ namespace BlackSP.Core.Sources
             lockObj = new object();
         }
 
-        public TMessage Take(CancellationToken t)
+        public Task<TMessage> Take(CancellationToken t)
         {
             TMessage message = default;
-            var activeQueues = _msgQueues.Where(kv => !_blockedConnections.Contains(kv.Key)).Select(kv => kv.Value).ToArray();
+            var activeQueuePairs = _msgQueues.Where(kv => !_blockedConnections.Contains(kv.Key));
+            var activeQueues = activeQueuePairs.Select(kv => kv.Value).ToArray();
             var takenIndex = BlockingCollection<TMessage>.TakeFromAny(activeQueues, out message, t);
-            var connectionKey = _msgQueues.Keys.ElementAt(takenIndex);
+            var connectionKey = activeQueuePairs.Select(pair => pair.Key).ElementAt(takenIndex);
             MessageOrigin = _originDictionary[connectionKey];
-            return message;
+            return Task.FromResult(message);
         }
 
         public BlockingCollection<TMessage> GetReceptionQueue(IEndpointConfiguration origin, int shardId)

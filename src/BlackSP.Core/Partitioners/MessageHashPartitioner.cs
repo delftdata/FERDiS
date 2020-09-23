@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel;
+﻿using BlackSP.Core.Extensions;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Concurrent;
@@ -26,8 +27,19 @@ namespace BlackSP.Core.Partitioners
             var targetEndpoints = _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl == message.IsControl);
             foreach(var endpoint in targetEndpoints)
             {
-                var targetShard = Math.Abs(message.PartitionKey) % endpoint.RemoteInstanceNames.Count();
-                yield return endpoint.GetConnectionKey(targetShard);
+                if(message.PartitionKey.HasValue)
+                {   //got partitionkey, so do partitioning
+                    var targetShard = Math.Abs(message.PartitionKey.Value) % endpoint.RemoteInstanceNames.Count();
+                    yield return endpoint.GetConnectionKey(targetShard);
+                } 
+                else
+                {   //got no partitionkey, so do broadcast
+                    foreach(var connectionKey in endpoint.GetAllConnectionKeys())
+                    {
+                        yield return connectionKey;
+                    }
+                }
+                
             }
         }
     }

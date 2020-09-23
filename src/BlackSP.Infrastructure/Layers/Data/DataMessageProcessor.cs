@@ -2,6 +2,7 @@
 using BlackSP.Core.Processors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -17,10 +18,10 @@ namespace BlackSP.Infrastructure.Layers.Data
         public DataMessageProcessor(
             ISource<DataMessage> source,
             IPipeline<DataMessage> pipeline,
-            IDispatcher<DataMessage> dispatcher) : base(source, pipeline, dispatcher)
+            IDispatcher<DataMessage> dispatcher,
+            ILogger logger) : base(source, pipeline, dispatcher, logger)
         {
         }
-
 
     }
 }

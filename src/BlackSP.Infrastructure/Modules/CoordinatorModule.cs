@@ -31,8 +31,9 @@ namespace BlackSP.Infrastructure.Modules
             
             //control processor
             builder.UseControlLayer();
-            //add another ControlMessage source
+            //add more ControlMessage sources
             builder.RegisterType<WorkerRequestSource>().As<ISource<ControlMessage>>();
+            builder.RegisterType<CoordinatedCheckpointingInitiationSource>().As<ISource<ControlMessage>>();
             builder.AddControlLayerMessageHandlersForCoordinator();
 
             base.Load(builder);

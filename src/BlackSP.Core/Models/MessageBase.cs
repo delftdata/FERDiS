@@ -10,7 +10,7 @@ namespace BlackSP.Core.Models
     {
         public abstract bool IsControl { get; }
 
-        public abstract int PartitionKey { get; }
+        public abstract int? PartitionKey { get; }
 
         public abstract IDictionary<string, MessagePayloadBase> MetaData { get; }
 

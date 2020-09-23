@@ -13,14 +13,14 @@ namespace BlackSP.Infrastructure.Layers.Control
         public override bool IsControl => true;
 
         [ProtoMember(1)]
-        public override int PartitionKey { get; }
+        public override int? PartitionKey { get; }
 
         [ProtoMember(2)]
         public override IDictionary<string, MessagePayloadBase> MetaData { get; }
 
         public ControlMessage()
         {
-            PartitionKey = default;
+            PartitionKey = null;
             MetaData = new Dictionary<string, MessagePayloadBase>();
         }
 
@@ -30,7 +30,7 @@ namespace BlackSP.Infrastructure.Layers.Control
             MetaData = new Dictionary<string, MessagePayloadBase>();
         }
 
-        public ControlMessage(IDictionary<string, MessagePayloadBase> metaData, int partitionKey = default)
+        public ControlMessage(IDictionary<string, MessagePayloadBase> metaData, int? partitionKey = null)
         {
             PartitionKey = partitionKey;
             MetaData = new Dictionary<string, MessagePayloadBase>(metaData);

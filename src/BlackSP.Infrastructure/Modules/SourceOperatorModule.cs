@@ -46,7 +46,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.RegisterType<SourceOperatorEventSource<TEvent>>().As<ISource<DataMessage>>().SingleInstance();
 
             //middlewares
-            builder.RegisterType<NoopMessageHandler<DataMessage>>().AsImplementedInterfaces();
+            builder.AddDataLayerMessageHandlersForSource();
 
             base.Load(builder);
         }

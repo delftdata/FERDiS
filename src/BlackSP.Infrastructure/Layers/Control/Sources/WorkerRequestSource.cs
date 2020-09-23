@@ -4,6 +4,7 @@ using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
 using BlackSP.Core.Monitors;
 using BlackSP.Infrastructure.Layers.Control.Payloads;
+using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using Serilog;
@@ -19,6 +20,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
     /// </summary>
     public class WorkerRequestSource : ISource<ControlMessage>, IDisposable
     {
+
+        public (IEndpointConfiguration, int) MessageOrigin => (null, 0); //origin is local so no information to share
+
 
         private readonly WorkerGraphStateManager _graphManager;
         private readonly IVertexConfiguration _vertexConfiguration;
@@ -47,16 +51,17 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             _graphManager.ListenTo(connectionMonitor);
         }
 
-        public ControlMessage Take(CancellationToken t)
+        public Task<ControlMessage> Take(CancellationToken t)
         {
             var timeSinceLastHeartbeat = DateTime.Now - lastHeartBeat;
             var timeTillNextHeartbeat = timeSinceLastHeartbeat > heartbeatInterval ? TimeSpan.Zero : heartbeatInterval - timeSinceLastHeartbeat;
             var timeoutSource = new CancellationTokenSource(timeTillNextHeartbeat);
             var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
 
+            ControlMessage message;
             try
             {
-                return messages.Take(linkedSource.Token);
+                message = messages.Take(linkedSource.Token);
             }
             catch (OperationCanceledException)
             {
@@ -64,19 +69,20 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
                 var msg = new ControlMessage(); //no new status-change message.. fall back to heartbeat request (note: no partitionkey as we want to broadcast this)
                 msg.AddPayload(new WorkerRequestPayload { RequestType = WorkerRequestType.Status });
                 lastHeartBeat = DateTime.Now;
-                return msg;
+                message = msg;
             }
             finally
             {
                 timeoutSource.Dispose();
                 linkedSource.Dispose();
             }
+            return Task.FromResult(message);
         }
 
         public Task Flush()
         {
             messages.CompleteAdding();
-            messages = new BlockingCollection<ControlMessage>(1 << 12);
+            messages = new BlockingCollection<ControlMessage>(Constants.DefaultThreadBoundaryQueueSize);
             return Task.CompletedTask; //nothing to flush here
         }
 

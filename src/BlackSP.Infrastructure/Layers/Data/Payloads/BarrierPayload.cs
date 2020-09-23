@@ -9,5 +9,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Payloads
     [ProtoContract]
     public class BarrierPayload : MessagePayloadBase
     {
+        public static new string MetaDataKey => "data:barrier";
+
     }
 }

@@ -73,7 +73,7 @@ namespace BlackSP.Core.Processors
                 while (!t.IsCancellationRequested)
                 {
                     //take a message from the source
-                    var message = source.Take(t) ?? throw new Exception($"Received null from {source.GetType()}.Take");
+                    var message = await source.Take(t).ConfigureAwait(false) ?? throw new Exception($"Received null from {source.GetType()}.Take");
                     await ProcessMessageInCriticalSection(message, dispatchQueue, t).ConfigureAwait(false);
                 }
             }

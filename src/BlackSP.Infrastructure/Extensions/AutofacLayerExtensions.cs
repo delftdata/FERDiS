@@ -20,7 +20,7 @@ namespace BlackSP.Infrastructure.Extensions
     public static class AutofacLayerExtensions
     {
 
-        public static ContainerBuilder UseControlLayer(this ContainerBuilder builder, bool isCoordinator = false)
+        public static ContainerBuilder UseControlLayer(this ContainerBuilder builder)
         {
             //processor
             builder.RegisterType<ControlMessageProcessor>().InstancePerLifetimeScope();
@@ -30,7 +30,7 @@ namespace BlackSP.Infrastructure.Extensions
             builder.RegisterType<ReceiverMessageSource<ControlMessage>>().As<IReceiver<ControlMessage>, ISource<ControlMessage>>().InstancePerLifetimeScope();
             
             //dispatcher
-            builder.RegisterType<ControlEndpointMessageDispatcher<ControlMessage>>().As<IDispatcher<ControlMessage>>().SingleInstance();
+            builder.RegisterType<TargetingMessageDispatcher<ControlMessage>>().As<IDispatcher<ControlMessage>>().SingleInstance();
             builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer>();
 
             return builder;

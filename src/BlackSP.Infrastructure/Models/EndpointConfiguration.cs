@@ -25,7 +25,7 @@ namespace BlackSP.Infrastructure.Models
             //TODO: consider using remote instanceName as key?
             if(shardId < RemoteInstanceNames.Count() && shardId > -1)
             {
-                return $"{RemoteVertexName}{RemoteEndpointName}{shardId}";
+                return $"{RemoteInstanceNames.ElementAt(shardId)}{RemoteVertexName}{RemoteEndpointName}{shardId}";
             }
             throw new ArgumentException($"invalid value: {shardId}", nameof(shardId));
         }

@@ -9,7 +9,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Payloads
     [ProtoContract]
     public class WorkerResponsePayload : MessagePayloadBase
     {
-        public static new string MetaDataKey => "worker:response";
+        public static new string MetaDataKey => "control:workerresponse";
 
         [ProtoMember(1)]
         public string OriginInstanceName { get; set; }

@@ -15,10 +15,11 @@ using System.Threading.Tasks;
 namespace BlackSP.Core.Dispatchers
 {
     /// <summary>
-    /// Special dispatcher that only targets control endpoints. <br/>
-    /// Can target specific Workers by setting partitionkey as instanceName's hashcode OR broadcast by leaving partitionkey 0.
+    /// Special dispatcher that can:<br/>
+    /// a. target specific workers by setting partitionkey as instanceName's hashcode
+    /// b. broadcast by leaving partitionkey 0.
     /// </summary>
-    public class ControlEndpointMessageDispatcher<TMessage> : IDispatcher<TMessage>
+    public class TargetingMessageDispatcher<TMessage> : IDispatcher<TMessage>
         where TMessage : IMessage
     {
         private readonly IVertexConfiguration _vertexConfiguration;
@@ -28,7 +29,7 @@ namespace BlackSP.Core.Dispatchers
 
         private DispatchFlags _dispatchFlags;
 
-        public ControlEndpointMessageDispatcher(IVertexConfiguration vertexConfiguration, IObjectSerializer serializer)
+        public TargetingMessageDispatcher(IVertexConfiguration vertexConfiguration, IObjectSerializer serializer)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -66,9 +67,9 @@ namespace BlackSP.Core.Dispatchers
 
             byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(false);
 
-            IEnumerable<string> targetConnectionKeys = message.PartitionKey == default
-                ? _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl).SelectMany(e => e.GetAllConnectionKeys())
-                : _vertexConfiguration.GetConnectionKeyByPartitionKey(message.PartitionKey).Yield();
+            IEnumerable<string> targetConnectionKeys = !message.PartitionKey.HasValue
+                ? _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl == message.IsControl).SelectMany(e => e.GetAllConnectionKeys())
+                : _vertexConfiguration.GetConnectionKeyByPartitionKey(message.PartitionKey.Value).Yield();
 
             foreach(var targetConnectionKey in targetConnectionKeys)
             {

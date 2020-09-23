@@ -16,17 +16,21 @@ namespace BlackSP.Infrastructure.Layers.Data
         public override IDictionary<string, MessagePayloadBase> MetaData { get; }
 
         [ProtoMember(2)]
-        public override int PartitionKey { get; }
-
-        public IEnumerable<MessagePayloadBase> Payloads => MetaData.Values;
+        public override int? PartitionKey { get; }
 
         public DataMessage()
         {
             MetaData = new Dictionary<string, MessagePayloadBase>();
-            PartitionKey = 0;
+            PartitionKey = null;
         }
 
-        public DataMessage(IDictionary<string, MessagePayloadBase> metaData, int partitionKey)
+        public DataMessage(int? partitionKey)
+        {
+            MetaData = new Dictionary<string, MessagePayloadBase>();
+            PartitionKey = partitionKey;
+        }
+
+        public DataMessage(IDictionary<string, MessagePayloadBase> metaData, int? partitionKey)
         {
             MetaData = new Dictionary<string, MessagePayloadBase>(metaData);
             PartitionKey = partitionKey;

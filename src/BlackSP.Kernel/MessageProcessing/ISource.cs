@@ -21,7 +21,7 @@ namespace BlackSP.Kernel.MessageProcessing
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        T Take(CancellationToken t);
+        Task<T> Take(CancellationToken t);
 
         /// <summary>
         /// Reference information on the last object returned by the Take(..) method.

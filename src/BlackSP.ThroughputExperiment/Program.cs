@@ -18,12 +18,12 @@ namespace BlackSP.ThroughputExperiment
             var logTargets = LogTargetFlags.Console;
             logTargets = logTargets | (useSimulator ? LogTargetFlags.File : LogTargetFlags.AzureBlob);
             
-            var logLevel = LogEventLevel.Verbose;
+            var logLevel = LogEventLevel.Debug;
 
             var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
             var app = await appBuilder
                 .ConfigureLogging(new LogConfiguration(logTargets, logLevel))
-                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Coordinated, true))
+                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Coordinated, false))
                 .ConfigureOperators(ConfigureOperatorGraph)
                 .Build();
 
@@ -32,10 +32,10 @@ namespace BlackSP.ThroughputExperiment
 
         static void ConfigureOperatorGraph(IOperatorVertexGraphBuilder graph)
         {
-            var source = graph.AddSource<SampleSourceOperator, SampleEvent>(1);
+            var source = graph.AddSource<SampleSourceOperator, SampleEvent>(4);
             //var filter = graph.AddFilter<SampleFilterOperator, SampleEvent>(1);
             //var mapper = graph.AddMap<SampleMapOperator, SampleEvent, SampleEvent>(1);
-            var aggregate = graph.AddAggregate<SampleAggregateOperator, SampleEvent, SampleEvent2>(1);
+            var aggregate = graph.AddAggregate<SampleAggregateOperator, SampleEvent, SampleEvent2>(2);
             var sink = graph.AddSink<SampleSinkOperator, SampleEvent2>(1);
 
             source.Append(aggregate);

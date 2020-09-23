@@ -12,5 +12,6 @@ namespace BlackSP.Infrastructure.Layers.Data.Payloads
     [ProtoContract]
     public class CICPayload : MessagePayloadBase
     {
+        public static new string MetaDataKey => "data:cic";
     }
 }

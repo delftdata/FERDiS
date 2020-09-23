@@ -44,7 +44,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         }
 
         [Test]
-        public async Task FilterOperator_DistinctUsesLocalStateToFilterDuplicates()
+        public void FilterOperator_DistinctUsesLocalStateToFilterDuplicates()
         {
             var results = new List<IEvent>();
             foreach (var e in _testEvents)

@@ -22,7 +22,7 @@ namespace BlackSP.Core.Dispatchers
     {
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IObjectSerializer _serializer;
-        private readonly IPartitioner<TMessage> _partitioner;
+        private readonly IPartitioner<IMessage> _partitioner;
 
         private readonly IDictionary<string, BlockingCollection<byte[]>> _outputQueues;
         private readonly IDictionary<string, ICollection<byte[]>> _outputBuffers;
@@ -31,7 +31,7 @@ namespace BlackSP.Core.Dispatchers
 
         public PartitioningMessageDispatcher(IVertexConfiguration vertexConfiguration,
                                  IObjectSerializer serializer,
-                                 IPartitioner<TMessage> partitioner)
+                                 IPartitioner<IMessage> partitioner)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -66,7 +66,6 @@ namespace BlackSP.Core.Dispatchers
             _ = message ?? throw new ArgumentNullException(nameof(message));
 
             byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(false);
-
 
             foreach(var targetConnectionKey in _partitioner.Partition(message))
             {

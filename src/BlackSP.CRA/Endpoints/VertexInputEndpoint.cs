@@ -45,7 +45,7 @@ namespace BlackSP.CRA.Endpoints
             token.ThrowIfCancellationRequested();
         }
 
-        public async Task FromStreamAsync(Stream stream, string otherVertex, string otherEndpoint, CancellationToken token)
+        public Task FromStreamAsync(Stream stream, string otherVertex, string otherEndpoint, CancellationToken token)
         {
             throw new NotSupportedException("Wrong FromStreamAsync invoked");
         }

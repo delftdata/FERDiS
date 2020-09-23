@@ -105,7 +105,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         }
 
         [Test]
-        public async Task FilterOperator_ShouldNotJoinWithEventsOutOfWindow()
+        public void FilterOperator_ShouldNotJoinWithEventsOutOfWindow()
         {
             var output = new List<IEvent>();
             IList<IEvent> events = new List<IEvent>();

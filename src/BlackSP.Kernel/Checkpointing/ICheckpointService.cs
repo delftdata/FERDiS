@@ -37,6 +37,20 @@ namespace BlackSP.Kernel.Checkpointing
         Task TakeInitialCheckpointIfNotExists(string currentInstanceName);
 
         /// <summary>
+        /// Gets the most recently taken checkpoint's id
+        /// </summary>
+        /// <param name="currentInstanceName"></param>
+        /// <returns></returns>
+        Guid GetLastCheckpointId(string currentInstanceName);
+
+        /// <summary>
+        /// Gets the second most recently taken checkpoint's id
+        /// </summary>
+        /// <param name="currentInstanceName"></param>
+        /// <returns></returns>
+        Guid GetSecondLastCheckpointId(string currentInstanceName);
+
+        /// <summary>
         /// Restore a checkpoint, fails when there is a discrepancy between the objects registered and the objects in the checkpoint
         /// </summary>
         /// <param name="checkpointBytes"></param>
