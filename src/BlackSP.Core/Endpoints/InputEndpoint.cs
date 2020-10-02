@@ -1,4 +1,5 @@
-﻿using BlackSP.Core.Monitors;
+﻿using BlackSP.Core.Extensions;
+using BlackSP.Core.Monitors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
@@ -55,32 +56,39 @@ namespace BlackSP.Core.Endpoints
         /// </summary>
         /// <param name="s"></param>
         /// <param name="t"></param>
-        public async Task Ingress(Stream s, string remoteEndpointName, int remoteShardId, CancellationToken t)
+        public async Task Ingress(Stream s, string remoteEndpointName, int remoteShardId, CancellationToken callerToken)
         {
             if(_endpointConfig.RemoteEndpointName != remoteEndpointName)
             {
                 throw new Exception($"Invalid IEndpointConfig, expected remote endpointname: {_endpointConfig.RemoteEndpointName} but was: {remoteEndpointName}");
             }
-            BlockingCollection<byte[]> passthroughQueue = new BlockingCollection<byte[]>(1 << 12);
 
+            using CancellationTokenSource exceptionSource = new CancellationTokenSource();
+            using CancellationTokenSource callerOrExceptionSource = CancellationTokenSource.CreateLinkedTokenSource(callerToken, exceptionSource.Token);
+            BlockingCollection<byte[]> passthroughQueue = new BlockingCollection<byte[]>(Constants.DefaultThreadBoundaryQueueSize);
             try
             {
-                t.ThrowIfCancellationRequested();
-                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName} starting read & deserialize threads. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
+                callerOrExceptionSource.Token.ThrowIfCancellationRequested();
+                _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName} starting read & deserialize threads. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
-                var readerThread = Task.Run(() => ReadMessagesFromStream(s, passthroughQueue, t));
-                var deserializerThread = Task.Run(() => DeserializeToReceiver(passthroughQueue, remoteShardId, t));
+
+                var pipe = s.UsePipe(cancellationToken: callerOrExceptionSource.Token);
+                using PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
+                using PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for flush requests
+                var readerThread = Task.Run(() => ReadMessagesFromStream(streamReader, passthroughQueue, callerOrExceptionSource.Token));
+                var deserializerThread = Task.Run(() => DeserializeToReceiver(streamWriter, passthroughQueue, remoteShardId, callerOrExceptionSource.Token));
                 var exitedTask = await Task.WhenAny(deserializerThread, readerThread).ConfigureAwait(false);
                 await exitedTask.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
             }
-            catch (OperationCanceledException) when (t.IsCancellationRequested)
+            catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
             {
-                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName} is handling cancellation request from caller side");
+                _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName} is handling cancellation request from caller side");
                 throw;
             }
             catch (Exception e)
             {
                 _logger.Warning(e, $"Input endpoint {_endpointConfig.LocalEndpointName} read & deserialize threads ran into an exception. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId)}\"");
+                exceptionSource.Cancel();
                 throw;
             }
             finally
@@ -90,11 +98,8 @@ namespace BlackSP.Core.Endpoints
             }
         }
 
-        private async Task ReadMessagesFromStream(Stream s, BlockingCollection<byte[]> passthroughQueue, CancellationToken t)
+        private async Task ReadMessagesFromStream(PipeStreamReader streamReader, BlockingCollection<byte[]> passthroughQueue, CancellationToken t)
         {
-            var pipe = s.UsePipe(cancellationToken: t);
-            using PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
-            
             while (!t.IsCancellationRequested)
             {
                 var msg = await streamReader.ReadNextMessage(t).ConfigureAwait(false); 
@@ -103,17 +108,57 @@ namespace BlackSP.Core.Endpoints
             t.ThrowIfCancellationRequested();
         }
 
-        private async Task DeserializeToReceiver(BlockingCollection<byte[]> inputqueue, int shardId, CancellationToken t)
+        private async Task DeserializeToReceiver(PipeStreamWriter writer, BlockingCollection<byte[]> passthroughQueue, int shardId, CancellationToken t)
         {
-            foreach(var bytes in inputqueue.GetConsumingEnumerable(t))
+            var receptionQueue = _receiver.GetReceptionQueue(_endpointConfig, shardId);
+            var processingFlush = false;
+
+            //await writer.WriteMessage(MagicMessageExtensions.ConstructFlushMessage(), t).ConfigureAwait(false);
+
+            //bool first = true;
+            while(!t.IsCancellationRequested)
             {
-                TMessage message = await _serializer.DeserializeAsync<TMessage>(bytes, t).ConfigureAwait(false);
-                if(message == null)
+                var didTake = passthroughQueue.TryTake(out var bytes, 1000);
+                if (receptionQueue.IsFlushing && !processingFlush)
                 {
-                    throw new Exception("unexpected null message from deserializer");//TODO: custom exception?
+                    _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName} started flushing");//TODO: make debug level
+                    await writer.WriteMessage(MagicMessageExtensions.ConstructFlushMessage(), t).ConfigureAwait(false);
+                    //await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
+                    processingFlush = true;
+                    //first = false;
+                    _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName} sent flush message upstream");//TODO: make debug level
                 }
-                _receiver.GetReceptionQueue(_endpointConfig, shardId).Add(message, t);
+                if (!didTake)
+                {
+                    continue;
+                }
+                if (bytes.IsFlushMessage()) //flush message arrived from network is reply stating that flushing completed
+                {
+                    _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName} received flush message response");//TODO: make debug level
+                    if (processingFlush)
+                    {
+                        await receptionQueue.EndFlush().ConfigureAwait(false);
+                        processingFlush = false;
+                        _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName} successfully flushed");//TODO: make debug level
+                    }
+                    else
+                    {
+                        _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} received a flush message while not flushing..");
+                    }
+                }
+                else if (!processingFlush)
+                {
+                    //actual deserialization and adding to reception queue..
+                    TMessage message = await _serializer.DeserializeAsync<TMessage>(bytes, t).ConfigureAwait(false)
+                        ?? throw new Exception("unexpected null message from deserializer");//TODO: custom exception?
+                    receptionQueue.Add(message, t);
+                }
+                else
+                {
+                    _logger.Warning("discarded message");
+                }
             }
+
         }
 
         #region IDisposable Support

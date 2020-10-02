@@ -58,7 +58,7 @@ namespace BlackSP.Core.UnitTests.Coordination
             foreach (var workerManager in manager.GetAllWorkerStateManagers())
             {
                 Assert.AreEqual(WorkerGraphStateManager.State.Idle, manager.CurrentState); //validate graph remains in the idle state while not all workers have connected
-                workerManager.FireTrigger(WorkerStateTrigger.NetworkConnected);
+                workerManager.FireTrigger(WorkerStateTrigger.Startup);
             }
             Assert.AreEqual(WorkerGraphStateManager.State.Running, manager.CurrentState);
             
@@ -76,10 +76,11 @@ namespace BlackSP.Core.UnitTests.Coordination
             }
             foreach (var workerManager in manager.GetAllWorkerStateManagers())
             {
-                workerManager.FireTrigger(WorkerStateTrigger.NetworkConnected);
+                workerManager.FireTrigger(WorkerStateTrigger.Startup);
             }
 
-            manager.GetAllWorkerStateManagers().First().FireTrigger(WorkerStateTrigger.Failure); //fail the first instance
+            var failingInstance = manager.GetAllWorkerStateManagers().First();
+            failingInstance.FireTrigger(WorkerStateTrigger.Failure); //fail the first instance
             Assert.AreEqual(WorkerGraphStateManager.State.Faulted, manager.CurrentState);
 
             Assert.AreEqual(instanceNames.Count() - 1, workerstateChanges.Count);
@@ -99,11 +100,16 @@ namespace BlackSP.Core.UnitTests.Coordination
             }
             foreach (var workerManager in manager.GetAllWorkerStateManagers())
             {
-                workerManager.FireTrigger(WorkerStateTrigger.NetworkConnected);
+                workerManager.FireTrigger(WorkerStateTrigger.Startup);
             }
             var failingWorker = manager.GetAllWorkerStateManagers().First();
             failingWorker.FireTrigger(WorkerStateTrigger.Failure); //fail the first instance
-            failingWorker.FireTrigger(WorkerStateTrigger.NetworkConnected); //make it reconnect
+            failingWorker.FireTrigger(WorkerStateTrigger.Startup); //make it reconnect
+
+            foreach (var workerManager in manager.GetAllWorkerStateManagers().Where(man => man.CurrentState == WorkerState.Halting))
+            {   //complete halting the halting instances
+                workerManager.FireTrigger(WorkerStateTrigger.DataProcessorHaltCompleted);
+            }
 
             Assert.AreEqual(WorkerGraphStateManager.State.Restoring, manager.CurrentState);
 
@@ -122,13 +128,18 @@ namespace BlackSP.Core.UnitTests.Coordination
             }
             foreach (var workerManager in manager.GetAllWorkerStateManagers())
             {
-                workerManager.FireTrigger(WorkerStateTrigger.NetworkConnected);
+                workerManager.FireTrigger(WorkerStateTrigger.Startup);
             }
             var failingWorker = manager.GetAllWorkerStateManagers().First();
             failingWorker.FireTrigger(WorkerStateTrigger.Failure); //fail the first instance
-            failingWorker.FireTrigger(WorkerStateTrigger.NetworkConnected); //make it reconnect
+            failingWorker.FireTrigger(WorkerStateTrigger.Startup); //make it reconnect
 
-            foreach(var recoveringInstanceManager in workerstateChanges.Where(kv => kv.Value == WorkerState.Recovering)
+            foreach (var workerManager in manager.GetAllWorkerStateManagers().Where(man => man.CurrentState == WorkerState.Halting))
+            {   //complete halting the halting instances
+                workerManager.FireTrigger(WorkerStateTrigger.DataProcessorHaltCompleted);
+            }
+
+            foreach (var recoveringInstanceManager in workerstateChanges.Where(kv => kv.Value == WorkerState.Recovering)
                 .Select(kv => manager.GetAllWorkerStateManagers().First(m => m.InstanceName == kv.Key))
                 .ToList())
             {
@@ -148,13 +159,13 @@ namespace BlackSP.Core.UnitTests.Coordination
             }
             foreach (var workerManager in manager.GetAllWorkerStateManagers())
             {
-                workerManager.FireTrigger(WorkerStateTrigger.NetworkConnected);
+                workerManager.FireTrigger(WorkerStateTrigger.Startup);
             }
 
             manager.GetAllWorkerStateManagers().First().FireTrigger(WorkerStateTrigger.Failure); //fail the first instance
             Assert.AreEqual(WorkerGraphStateManager.State.Faulted, manager.CurrentState);
             Assert.AreEqual("instance1", workerstateChanges.First(kv => kv.Value == WorkerState.Faulted).Key);
-            Assert.AreEqual("instance2", workerstateChanges.First(kv => kv.Value == WorkerState.Halted).Key);
+            Assert.AreEqual("instance2", workerstateChanges.First(kv => kv.Value == WorkerState.Halting).Key);
             Assert.AreEqual("instance3", workerstateChanges.First(kv => kv.Value == WorkerState.Running).Key);
 
             manager.GetAllWorkerStateManagers().Skip(1).First().FireTrigger(WorkerStateTrigger.Failure); //fail the second instance

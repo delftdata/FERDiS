@@ -4,6 +4,7 @@ using BlackSP.Kernel;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -25,7 +26,8 @@ namespace BlackSP.Infrastructure.Layers.Control
             IVertexConfiguration vertexConfiguration,
             IEnumerable<ISource<ControlMessage>> sources,
             IPipeline<ControlMessage> pipeline,
-            IDispatcher<ControlMessage> dispatcher) : base(sources, pipeline, dispatcher) 
+            IDispatcher<ControlMessage> dispatcher,
+            ILogger logger) : base(sources, pipeline, dispatcher, logger) 
         {
             _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));

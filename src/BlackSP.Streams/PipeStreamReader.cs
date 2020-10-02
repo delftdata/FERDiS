@@ -47,7 +47,7 @@ namespace BlackSP.Streams
                 {
                     _buffer = _buffer.Slice(readPosition);
                     var bytes = msgbodySequence.ToArray();
-                    await AdvanceReader(t).ConfigureAwait(false);
+                    //await AdvanceReader(t).ConfigureAwait(false);
                     return bytes;
                 } 
                 else
@@ -59,11 +59,11 @@ namespace BlackSP.Streams
             throw null;//so the compiler knows we always throw here
         }
 
-        private async Task AdvanceReader(CancellationToken t)
+        public async Task AdvanceReader(CancellationToken t)
         {
             if (_didRead)
             {
-                _reader.AdvanceTo(_buffer.Start);
+                _reader.AdvanceTo(_buffer.Start, _buffer.End);
             }
             _lastRead = await _reader.ReadAsync(t).ConfigureAwait(false);
             _buffer = _lastRead.Buffer;

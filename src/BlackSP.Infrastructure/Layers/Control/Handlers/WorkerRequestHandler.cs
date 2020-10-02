@@ -15,6 +15,8 @@ using BlackSP.Core.Extensions;
 using BlackSP.Core.Handlers;
 using BlackSP.Infrastructure.Layers.Data;
 using BlackSP.Infrastructure.Layers.Control.Payloads;
+using BlackSP.Kernel;
+using System.Diagnostics;
 
 namespace BlackSP.Infrastructure.Layers.Control.Handlers
 {
@@ -26,6 +28,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly DataMessageProcessor _processor;
         private readonly ConnectionMonitor _connectionMonitor;
+        private readonly ISource<DataMessage> _dataSource;
         private readonly ILogger _logger;
 
         private CancellationTokenSource _ctSource;
@@ -36,11 +39,13 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
         public WorkerRequestHandler(DataMessageProcessor processor,
                                     ConnectionMonitor connectionMonitor,
+                                    ISource<DataMessage> source,
                                     IVertexConfiguration vertexConfiguration,  
                                     ILogger logger)
         {            
             _processor = processor ?? throw new ArgumentNullException(nameof(processor));
             _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
+            _dataSource = source ?? throw new ArgumentNullException(nameof(source));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -52,7 +57,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
 
-            await PerformRequestedAction(payload.RequestType).ConfigureAwait(false);
+            await PerformRequestedAction(payload).ConfigureAwait(false);
 
             var response = new ControlMessage();
             response.AddPayload(new WorkerResponsePayload()
@@ -66,8 +71,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             return response.Yield();
         }
 
-        private async Task PerformRequestedAction(WorkerRequestType requestType)
+        private async Task PerformRequestedAction(WorkerRequestPayload payload)
         {
+            var requestType = payload.RequestType;
             try
             {
                 Task action = null;
@@ -81,16 +87,16 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                         action = StartDataProcess();
                         break;
                     case WorkerRequestType.StopProcessing:
-                        action = StopDataProcess();
+                        action = StopDataProcess(payload.UpstreamHaltingInstances);
                         break;
                     default:
-                        throw new InvalidOperationException($"Worker received instruction \"{requestType}\" which is not implemented in {this.GetType()}");
+                        throw new InvalidOperationException($"Received worker request \"{requestType}\" which is not implemented in {this.GetType()}");
                 }
                 await action.ConfigureAwait(false);
             }
             catch (Exception e)
             {
-                _logger.Warning(e, $"Exception in {this.GetType()} while handling request of type \"{requestType}\"");
+                _logger.Fatal(e, $"Exception in {this.GetType()} while handling request of type \"{requestType}\"");
                 throw;
             }
         }
@@ -107,25 +113,33 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             {
                 _ctSource = new CancellationTokenSource();
                 _activeThread = _processor.StartProcess(_ctSource.Token);
-                _logger.Information($"Data processor was started");
+                _logger.Information($"Data processor started by coordinator instruction");
             }
             else
             {
-                _logger.Information($"Data processor already started, cannot start again");
+                _logger.Warning($"Data processor already started, cannot start again");
             }
             return Task.CompletedTask;
         }
 
-        private async Task StopDataProcess()
+        private async Task StopDataProcess(IEnumerable<string> upstreamHaltedInstances)
         {
             if (_activeThread != null)
             {
+                var sw = new Stopwatch();
+                
+                _logger.Fatal($"Data processor stop instruction received by coordinator"); //TODO: make debug level
+                sw.Start();
                 await CancelProcessingAndResetLocally().ConfigureAwait(false);
-                _logger.Information($"Data processor was stopped");
+                _logger.Fatal($"Data processor was successfully stopped in {sw.ElapsedMilliseconds}ms, proceeding with network flush with upstream halting instances"); //TODO: make debug level
+                sw.Restart();
+                await _dataSource.Flush(upstreamHaltedInstances ?? Enumerable.Empty<string>()).ConfigureAwait(false);
+                _logger.Fatal($"Network flush completed in {sw.ElapsedMilliseconds}ms, halt request completed successfully"); //TODO: make debug level
+                sw.Stop();
             }
             else
             {
-                _logger.Information($"Data layer already stopped, cannot stop again");
+                _logger.Warning($"Data processor already stopped, cannot stop again");
             }
         }
 

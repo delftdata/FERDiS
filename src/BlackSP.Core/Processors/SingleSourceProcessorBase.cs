@@ -53,21 +53,26 @@ namespace BlackSP.Core.Processors
         /// </summary>
         public async Task StartProcess(CancellationToken t)
         {
-            var dispatchQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+            var passthroughQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
             var exitSource = new CancellationTokenSource();
             var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, exitSource.Token);
             try
             {
                 
-                var deliveryThread = Task.Run(() => ProcessFromSource(dispatchQueue, linkedSource.Token));
-                var dispatchThread = Task.Run(() => DispatchResults(dispatchQueue, linkedSource.Token));
+                var deliveryThread = Task.Run(() => ProcessFromSource(passthroughQueue, linkedSource.Token));
+                var dispatchThread = Task.Run(() => DispatchResults(passthroughQueue, linkedSource.Token));
+                // U fooken w0t m8?!
                 var exitedTask = await Task.WhenAny(deliveryThread, dispatchThread).ConfigureAwait(false);
                 exitSource.Cancel();
                 await Task.WhenAll(deliveryThread, dispatchThread).ConfigureAwait(false);
                 await exitedTask.ConfigureAwait(false);
                 t.ThrowIfCancellationRequested();
             }
-            catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
+            catch (OperationCanceledException) {
+                /*silence cancellation request exceptions*/
+                _logger.Information("Processor exited due to cancellation request");
+                throw;
+            }
             catch (Exception e)
             {
                 _logger.Fatal(e, "Processor encountered exception");
@@ -76,13 +81,13 @@ namespace BlackSP.Core.Processors
             finally
             {
                 _logger.Information("Processor shutting down");
-                dispatchQueue.Dispose();
+                passthroughQueue.Dispose();
                 exitSource.Dispose();
                 linkedSource.Dispose();
             }
         }
 
-        private async Task ProcessFromSource(BlockingCollection<TMessage> dispatchQueue, CancellationToken t) {
+        private async Task ProcessFromSource(BlockingCollection<TMessage> passthroughQueue, CancellationToken t) {
             try
             {
                 while (!t.IsCancellationRequested)
@@ -100,28 +105,30 @@ namespace BlackSP.Core.Processors
                     var results = await _pipeline.Process(message).ConfigureAwait(false);
                     foreach (var msg in results)
                     {
-                        dispatchQueue.Add(msg, t);
+                        passthroughQueue.Add(msg, t);
                     }
                 }
             }
-            catch (OperationCanceledException) { /*silence cancellation request exceptions*/ } 
             finally
             {
-                dispatchQueue.CompleteAdding();
+                //note: not starting flushing on source as this is requested by a checkpoint restore request
+                passthroughQueue.CompleteAdding();
             }
         }
 
-        private async Task DispatchResults(BlockingCollection<TMessage> dispatchQueue, CancellationToken t)
+        private async Task DispatchResults(BlockingCollection<TMessage> passthroughQueue, CancellationToken t)
         {
             try
             {
-                _dispatcher.SetFlags(DispatchFlags.Control | DispatchFlags.Data);
-                foreach (var message in dispatchQueue.GetConsumingEnumerable(t))
+                foreach (var message in passthroughQueue.GetConsumingEnumerable(t))
                 {
                     await _dispatcher.Dispatch(message, t).ConfigureAwait(false);
                 }
             }
-            catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
+            finally
+            {
+                await Task.WhenAll(_dispatcher.BeginFlush(), _dispatcher.EndFlush()).ConfigureAwait(false);
+            }
         }
 
     }

@@ -12,7 +12,10 @@ namespace BlackSP.Infrastructure.Layers.Control.Payloads
         public static new string MetaDataKey => "control:workerrequest";
         
         [ProtoMember(1)]
-        public WorkerRequestType RequestType { get; set; } 
+        public WorkerRequestType RequestType { get; set; }
+
+        [ProtoMember(2)]
+        public IEnumerable<string> UpstreamHaltingInstances { get; set; }
     }
 
     public enum WorkerRequestType

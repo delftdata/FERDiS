@@ -1,4 +1,5 @@
 ﻿using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Concurrent;
@@ -10,26 +11,9 @@ using System.Threading.Tasks;
 namespace BlackSP.Kernel
 {
 
-    public enum DispatchFlags
-    {
-        None = 0,
-        /// <summary>
-        /// Flag indicating wether data messages are expected to be dispatched
-        /// </summary>
-        Data = 1 << 0,
-        /// <summary>
-        /// Flag indicating wether control messages are expected to be dispatched
-        /// </summary>
-        Control = 1 << 1,
-        /// <summary>
-        /// Flag indicating wether non-dispatched message types are expected to be buffered for later dispatching
-        /// </summary>
-        Buffer = 1 << 2,
-    }
-
     /// <summary>
     /// Core element responsible for dispatching messages to their respective output channels<br/>
-    /// Responsible for serialization and partitioning
+    /// Responsible for serialization and optionally partitioning
     /// </summary>
     public interface IDispatcher<T>
     {
@@ -45,18 +29,18 @@ namespace BlackSP.Kernel
         /// <param name="endpointName"></param>
         /// <param name="shardId"></param>
         /// <returns></returns>
-        BlockingCollection<byte[]> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId);
+        IFlushableQueue<byte[]> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId);
 
         /// <summary>
-        /// Get the dispatcher flags
+        /// Begins flushing process in the dispatcher
         /// </summary>
         /// <returns></returns>
-        DispatchFlags GetFlags();
+        Task BeginFlush();
 
         /// <summary>
-        /// Set the dispatcher flags
+        /// Ends flushing process in the dispatcher
         /// </summary>
-        /// <param name="flags"></param>
-        void SetFlags(DispatchFlags flags);
+        /// <returns></returns>
+        Task EndFlush();
     }
 }

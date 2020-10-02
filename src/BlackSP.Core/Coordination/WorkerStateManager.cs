@@ -16,7 +16,7 @@ namespace BlackSP.Core.Coordination
         /// <summary>
         /// The worker is ready to start processing data, but is not doing so
         /// </summary>
-        Halted,
+        Halting, Halted,
         /// <summary>
         /// The worker is processing data
         /// </summary>
@@ -34,10 +34,10 @@ namespace BlackSP.Core.Coordination
     public enum WorkerStateTrigger
     {
         Failure,
-        NetworkConnected,
-        NetworkDisconnected,
+        Startup,
         DataProcessorStart,
         DataProcessorHalt,
+        DataProcessorHaltCompleted,
         CheckpointRestoreStart,
         CheckpointRestoreCompleted
     }
@@ -94,25 +94,29 @@ namespace BlackSP.Core.Coordination
         private StateMachine<WorkerState, WorkerStateTrigger> ConfigureStateMachine(StateMachine<WorkerState, WorkerStateTrigger> machine)
         {
             machine.Configure(WorkerState.Offline)
-                .Permit(WorkerStateTrigger.NetworkConnected, WorkerState.Halted);
+                .Permit(WorkerStateTrigger.Startup, WorkerState.Halted);
+
+            machine.Configure(WorkerState.Halting)
+                .OnEntryFrom(WorkerStateTrigger.DataProcessorHalt, OnHaltDataProcessor, "Processor actively requested to halt")
+                .Permit(WorkerStateTrigger.DataProcessorHaltCompleted, WorkerState.Halted)
+                .Permit(WorkerStateTrigger.Failure, WorkerState.Faulted);
 
             machine.Configure(WorkerState.Halted)
-                .OnEntryFrom(WorkerStateTrigger.DataProcessorHalt, OnHaltDataProcessor, "Processor actively requested to halt")
-                .OnEntryFrom(WorkerStateTrigger.NetworkDisconnected, OnHaltDataProcessor, "Worker has network disconnect, halt processor")
+                //.OnEntryFrom(WorkerStateTrigger.NetworkDisconnected, OnHaltDataProcessor, "Worker has network disconnect, halt processor")
                 .Permit(WorkerStateTrigger.DataProcessorStart, WorkerState.Running)
                 .PermitIf(_checkpointRestoreInitiationTrigger, WorkerState.Recovering, EnsureValidCheckpointId, "Checkpoint validity guard")
-                .Permit(WorkerStateTrigger.Failure, WorkerState.Faulted)
-                .Ignore(WorkerStateTrigger.DataProcessorHalt)
-                .Ignore(WorkerStateTrigger.NetworkConnected)
-                .Ignore(WorkerStateTrigger.NetworkDisconnected); //TODO: consider if this trigger is ignorable here or should yield Failed state
+                .Permit(WorkerStateTrigger.Failure, WorkerState.Faulted);
+                //.Ignore(WorkerStateTrigger.DataProcessorHalt)
+                //.Ignore(WorkerStateTrigger.NetworkConnected)
+                //.Ignore(WorkerStateTrigger.NetworkDisconnected); //TODO: consider if this trigger is ignorable here or should yield Failed state
 
             machine.Configure(WorkerState.Running)
                 .OnEntry(OnStartDataProcessor)
-                .Permit(WorkerStateTrigger.NetworkDisconnected, WorkerState.Halted)
-                .Permit(WorkerStateTrigger.DataProcessorHalt, WorkerState.Halted)
+                //.Permit(WorkerStateTrigger.NetworkDisconnected, WorkerState.Halted)
+                .Permit(WorkerStateTrigger.DataProcessorHalt, WorkerState.Halting)
                 .Permit(WorkerStateTrigger.Failure, WorkerState.Faulted)
                 .Ignore(WorkerStateTrigger.DataProcessorStart)
-                .Ignore(WorkerStateTrigger.NetworkConnected);
+                .Ignore(WorkerStateTrigger.Startup);
 
             machine.Configure(WorkerState.Recovering)
                 .OnEntryFrom(_checkpointRestoreInitiationTrigger, OnStartCheckpointRestore)
@@ -123,7 +127,7 @@ namespace BlackSP.Core.Coordination
                 .Permit(WorkerStateTrigger.Failure, WorkerState.Faulted);
 
             machine.Configure(WorkerState.Faulted)
-                .Permit(WorkerStateTrigger.NetworkConnected, WorkerState.Halted);
+                .Permit(WorkerStateTrigger.Startup, WorkerState.Halted);
 
             return machine;
         }

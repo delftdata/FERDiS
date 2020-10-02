@@ -1,7 +1,9 @@
-﻿using BlackSP.Core.Models;
+﻿using BlackSP.Core.Extensions;
+using BlackSP.Core.Models;
 using BlackSP.Core.Monitors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Streams;
 using Nerdbank.Streams;
@@ -61,26 +63,32 @@ namespace BlackSP.Core.Endpoints
         public async Task Egress(Stream outputStream, string remoteEndpointName, int remoteShardId, CancellationToken callerToken)
         {
             _ = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
-
+            using CancellationTokenSource exceptionSource = new CancellationTokenSource();
+            using CancellationTokenSource callerOrExceptionSource = CancellationTokenSource.CreateLinkedTokenSource(callerToken, exceptionSource.Token);
             string targetInstanceName = _endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId);
-            _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} starting output stream writer. Writing to vertex {_endpointConfig.RemoteVertexName} on instance {targetInstanceName} on endpoint {remoteEndpointName}");
-
-            var pipe = outputStream.UsePipe(cancellationToken: callerToken);
-            using PipeStreamWriter writer = new PipeStreamWriter(pipe.Output, _endpointConfig.IsControl);            
+            _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} starting output stream writer. Writing to vertex {_endpointConfig.RemoteVertexName} on instance {targetInstanceName} on endpoint {remoteEndpointName}");      
             try
             {
-                _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
                 var msgQueue = _dispatcher.GetDispatchQueue(_endpointConfig, remoteShardId);
-                await StartWritingOutput(writer, msgQueue, callerToken).ConfigureAwait(false);
+                var pipe = outputStream.UsePipe(cancellationToken: callerOrExceptionSource.Token);
+                using PipeStreamWriter writer = new PipeStreamWriter(pipe.Output, _endpointConfig.IsControl);
+                using PipeStreamReader reader = new PipeStreamReader(pipe.Input);
+                
+                _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
+                var writingThread = Task.Run(() => StartWritingOutput(writer, msgQueue, callerOrExceptionSource.Token));
+                var readingThread = Task.Run(() => StartFlushRequestListener(reader, msgQueue, callerOrExceptionSource.Token));
+                var exitedThread = await Task.WhenAny(writingThread, readingThread).ConfigureAwait(false);
+                await exitedThread.ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
             {
-                _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} is handling cancellation request from caller side");
+                _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} is handling cancellation request from caller side");
                 throw;
             }
             catch (Exception e)
             {
                 _logger.Warning(e, $"Output endpoint {_endpointConfig.LocalEndpointName} output stream writer ran into an exception. Writing to vertex {_endpointConfig.RemoteVertexName} on instance {targetInstanceName} on endpoint {remoteEndpointName}");
+                exceptionSource.Cancel();
                 throw;
             }
             finally
@@ -90,20 +98,53 @@ namespace BlackSP.Core.Endpoints
         }
 
         /// <summary>
-        /// Starts writing output from provided msgQueue, inserts ping messages on the channel for keepalive-check purposes.
+        /// Starts writing output from provided msgQueue
         /// </summary>
         /// <param name="writer"></param>
         /// <param name="msgQueue"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        private async Task StartWritingOutput(PipeStreamWriter writer, BlockingCollection<byte[]> msgQueue, CancellationToken t)
+        private async Task StartWritingOutput(PipeStreamWriter writer, IFlushableQueue<byte[]> dispatchQueue, CancellationToken t)
         {
-            while(!t.IsCancellationRequested)
+            while (!t.IsCancellationRequested)
             {
-                Task action = msgQueue.TryTake(out var msg, 1000, t) 
-                    ? writer.WriteMessage(msg, t) 
-                    : writer.FlushAndRefreshBuffer(t: t);
-                await action.ConfigureAwait(false);
+                if(dispatchQueue.TryTake(out var msg, 1000, t))
+                {
+                    await writer.WriteMessage(msg, t).ConfigureAwait(false);
+                    if (msg.IsFlushMessage())
+                    {
+                        _logger.Fatal($"Output endpoint {_endpointConfig.LocalEndpointName} sent back flush message");
+                        await dispatchQueue.EndFlush().ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
+                }
+                
+            }
+            t.ThrowIfCancellationRequested();
+        }
+
+        private async Task StartFlushRequestListener(PipeStreamReader reader, IFlushableQueue<byte[]> dispatchQueue, CancellationToken t)
+        {
+            //await reader.AdvanceReader(t).ConfigureAwait(false);
+            while (!t.IsCancellationRequested)
+            {
+                t.ThrowIfCancellationRequested();
+                _logger.Fatal($"Output endpoint {_endpointConfig.LocalEndpointName} flush listener waiting for next message");
+                var message = await reader.ReadNextMessage(t).ConfigureAwait(false);
+                _logger.Fatal($"Output endpoint {_endpointConfig.LocalEndpointName} flush listener received next message");
+                if (message?.IsFlushMessage() ?? false)
+                {
+                    _logger.Fatal($"Output endpoint {_endpointConfig.LocalEndpointName} beginning flushing dispatch queue");
+                    await dispatchQueue.BeginFlush(message).ConfigureAwait(false); //note: last message to be dispatched is flush message
+                } 
+                else
+                {
+                    _logger.Fatal($"Output endpoint {_endpointConfig.LocalEndpointName} received invalid instruction on flush listener");
+                    throw new InvalidOperationException($"FlushRequestListener expected flush message but received: {message}");
+                }
             }
             t.ThrowIfCancellationRequested();
         }

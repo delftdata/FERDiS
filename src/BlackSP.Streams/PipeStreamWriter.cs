@@ -66,7 +66,7 @@ namespace BlackSP.Streams
             writtenBytes += bytesToWrite;
             if (alwaysFlush)
             {
-                await FlushAndRefreshBuffer(t: t);
+                await FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
             }
 
             return writtenBytes;
@@ -87,7 +87,7 @@ namespace BlackSP.Streams
                 return;
             }
             //the writebuffer is about to overflow, flush first
-            await FlushAndRefreshBuffer(bytesToWrite, t);
+            await FlushAndRefreshBuffer(bytesToWrite, t).ConfigureAwait(false);
         }
 
         protected virtual void Dispose(bool disposing)

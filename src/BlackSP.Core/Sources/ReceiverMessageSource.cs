@@ -1,8 +1,10 @@
-﻿using BlackSP.Core.Models;
+﻿using BlackSP.Core.Extensions;
+using BlackSP.Core.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -23,24 +25,22 @@ namespace BlackSP.Core.Sources
         public (IEndpointConfiguration, int) MessageOrigin { get; private set; }
 
         private readonly IVertexConfiguration _vertexConfiguration;
-
+        private readonly ILogger _logger;
         private IDictionary<string, (IEndpointConfiguration, int)> _originDictionary;
-        private IDictionary<string, BlockingCollection<TMessage>> _msgQueues;
+        private IDictionary<string, BlockingFlushableQueue<TMessage>> _msgQueues;
         private List<string> _blockedConnections;
 
-        private ReceptionFlags _receptionFlags;
-        private object lockObj;
+        private readonly object lockObj;
         private bool disposedValue;
 
-        public ReceiverMessageSource(IVertexConfiguration vertexConfiguration)
+        public ReceiverMessageSource(IVertexConfiguration vertexConfiguration, ILogger logger)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
-            
-            _msgQueues = new Dictionary<string, BlockingCollection<TMessage>>();
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _msgQueues = new Dictionary<string, BlockingFlushableQueue<TMessage>>();
             _originDictionary = new Dictionary<string, (IEndpointConfiguration, int)>();
             InitialiseDataStructures();
             _blockedConnections = new List<string>();
-            _receptionFlags = ReceptionFlags.Control | ReceptionFlags.Data; //TODO: even set flags on constuct?
             lockObj = new object();
         }
 
@@ -48,14 +48,14 @@ namespace BlackSP.Core.Sources
         {
             TMessage message = default;
             var activeQueuePairs = _msgQueues.Where(kv => !_blockedConnections.Contains(kv.Key));
-            var activeQueues = activeQueuePairs.Select(kv => kv.Value).ToArray();
+            var activeQueues = activeQueuePairs.Select(kv => kv.Value.UnderlyingCollection).ToArray();
             var takenIndex = BlockingCollection<TMessage>.TakeFromAny(activeQueues, out message, t);
             var connectionKey = activeQueuePairs.Select(pair => pair.Key).ElementAt(takenIndex);
             MessageOrigin = _originDictionary[connectionKey];
             return Task.FromResult(message);
         }
 
-        public BlockingCollection<TMessage> GetReceptionQueue(IEndpointConfiguration origin, int shardId)
+        public IFlushableQueue<TMessage> GetReceptionQueue(IEndpointConfiguration origin, int shardId)
         {
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
             var connectionKey = origin.GetConnectionKey(shardId);
@@ -65,25 +65,30 @@ namespace BlackSP.Core.Sources
             }
         }
 
-        public Task Flush()
+        public async Task Flush(IEnumerable<string> instanceNamesToFlush)
         {
-            lock (lockObj)
+            _ = instanceNamesToFlush ?? throw new ArgumentNullException(nameof(instanceNamesToFlush));
+            List<Task> flushes = new List<Task>();
+            foreach(var (endpoint, shardId) in _originDictionary.Values)
             {
-                foreach(var oldQueue in _msgQueues.Values)
+                if(instanceNamesToFlush.Contains(endpoint.RemoteInstanceNames.ElementAt(shardId)))
                 {
-                    oldQueue.CompleteAdding();
-                    oldQueue.Dispose();
+                    flushes.Add(_msgQueues[endpoint.GetConnectionKey(shardId)].BeginFlush());
                 }
-                InitialiseDataStructures();
             }
-            return Task.CompletedTask;
+            _logger.Debug($"Started flushing {flushes.Count}/{instanceNamesToFlush.Count()} input endpoints");
+            await Task.WhenAll(flushes).ConfigureAwait(false);
+            _logger.Debug($"Completed flushing {flushes.Count}/{instanceNamesToFlush.Count()} input endpoints");
         }
 
         public void Block(IEndpointConfiguration origin, int shardId)
         {
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
             var connectionKey = origin.GetConnectionKey(shardId);
-            //TODO: invalid operation exception
+            if (_blockedConnections.Contains(connectionKey))
+            {
+                throw new InvalidOperationException("Cannot block a connection that is already blocked");
+            }
             _blockedConnections.Add(connectionKey);
         }
 
@@ -97,16 +102,6 @@ namespace BlackSP.Core.Sources
             }
         }
 
-        public void SetFlags(ReceptionFlags mode)
-        {
-            _receptionFlags = mode;
-        }
-
-        public ReceptionFlags GetFlags()
-        {
-            return _receptionFlags;
-        }
-
         private void InitialiseDataStructures()
         {
             foreach (var config in _vertexConfiguration.InputEndpoints)
@@ -115,7 +110,7 @@ namespace BlackSP.Core.Sources
                 {
                     int shardId = i;
                     var connectionKey = config.GetConnectionKey(shardId);
-                    _msgQueues[connectionKey] = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+                    _msgQueues[connectionKey] = new BlockingFlushableQueue<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
                     _originDictionary[connectionKey] = (config, shardId);
                 }
             }

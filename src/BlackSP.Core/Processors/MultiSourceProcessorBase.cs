@@ -3,6 +3,7 @@ using BlackSP.Core.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,13 +20,15 @@ namespace BlackSP.Core.Processors
         private readonly IEnumerable<ISource<TMessage>> _sources;
         private readonly IPipeline<TMessage> _pipeline;
         private readonly IDispatcher<TMessage> _dispatcher;
+        private readonly ILogger _logger;
         private readonly SemaphoreSlim _csSemaphore;
         private bool disposed;
 
         public MultiSourceProcessorBase(
             IEnumerable<ISource<TMessage>> sources,
             IPipeline<TMessage> pipeline,
-            IDispatcher<TMessage> dispatcher)
+            IDispatcher<TMessage> dispatcher,
+            ILogger logger)
         {
             _sources = sources ?? throw new ArgumentNullException(nameof(sources));
             if(!_sources.Any())
@@ -34,8 +37,8 @@ namespace BlackSP.Core.Processors
             }
             _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _csSemaphore = new SemaphoreSlim(1, 1);
-
             disposed = false;
         }
 
@@ -61,9 +64,20 @@ namespace BlackSP.Core.Processors
         {
             foreach (var source in _sources)
             {
-               yield return Task.Run(() => ProcessFromSource(source, dispatchQueue, t));
+               yield return Task.Run(() => ProcessFromSource(source, dispatchQueue, t)).ContinueWith(LogException, TaskScheduler.Current);
             }
-            yield return Task.Run(() => DispatchResults(dispatchQueue, t));
+            yield return Task.Run(() => DispatchResults(dispatchQueue, t)).ContinueWith(LogException, TaskScheduler.Current);
+        }
+
+        private void LogException(Task t)
+        {
+            if(t.IsFaulted)
+            {
+                _logger.Fatal(t.Exception, "MultiSourceProcessor encountered exception, exiting");
+            } else
+            {
+                _logger.Fatal($"Thread exited");
+            }
         }
 
         private async Task ProcessFromSource(ISource<TMessage> source, BlockingCollection<TMessage> dispatchQueue, CancellationToken t)
@@ -101,7 +115,7 @@ namespace BlackSP.Core.Processors
         {
             try
             {
-                _dispatcher.SetFlags(DispatchFlags.Control);
+                
                 foreach (var message in dispatchQueue.GetConsumingEnumerable(t))
                 {
                     await _dispatcher.Dispatch(message, t).ConfigureAwait(false);
@@ -110,7 +124,8 @@ namespace BlackSP.Core.Processors
             catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
             finally
             {
-                _dispatcher.SetFlags(DispatchFlags.None);
+                await _dispatcher.EndFlush().ConfigureAwait(false);
+                await _dispatcher.BeginFlush().ConfigureAwait(false);
             }
         }
 

@@ -151,8 +151,8 @@ namespace BlackSP.Checkpointing.Core
             {
                 var depInstanceName = pair.Key;
                 var depCheckpointId = pair.Value;
-                var dependencyMeta = _allCheckpointMetaData.First(m => m.Id == depCheckpointId);
-                if (IsAnyReachable(dependencyMeta, otherCandidates))
+                var dependencyMeta = _allCheckpointMetaData.FirstOrDefault(m => m.Id == depCheckpointId);
+                if (dependencyMeta != null && IsAnyReachable(dependencyMeta, otherCandidates))
                 {
                     return true;
                 }

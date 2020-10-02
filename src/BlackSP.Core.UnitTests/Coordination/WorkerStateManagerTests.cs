@@ -33,14 +33,14 @@ namespace BlackSP.Core.UnitTests.Coordination
         [Test]
         public void ConnectionAfterStartYieldsHaltedState()
         {
-            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.Startup);
             Assert.AreEqual(stateMachine.CurrentState, WorkerState.Halted);
         }
 
         [Test]
         public void FailureAfterHaltedYieldsFaulted()
         {
-            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.Startup);
             bool stateChangeFired = false;
             stateMachine.OnStateChangeNotificationRequired += (name, state) => stateChangeFired = true;
             stateMachine.FireTrigger(WorkerStateTrigger.Failure);
@@ -53,7 +53,7 @@ namespace BlackSP.Core.UnitTests.Coordination
         {
             WorkerState eventState = WorkerState.Offline;
             stateMachine.OnStateChangeNotificationRequired += (name, state) => eventState = state;
-            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.Startup);
             stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorStart);
             Assert.AreEqual(stateMachine.CurrentState, WorkerState.Running);
             Assert.AreEqual(eventState, WorkerState.Running);
@@ -62,10 +62,10 @@ namespace BlackSP.Core.UnitTests.Coordination
         [Test]
         public void InvalidTriggerYieldsNoStateChange()
         {
-            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.Startup);
             stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorStart);
             var preInvalidTriggerState = stateMachine.CurrentState;
-            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.Startup);
             Assert.AreEqual(stateMachine.CurrentState, preInvalidTriggerState);
         }
 
@@ -74,7 +74,7 @@ namespace BlackSP.Core.UnitTests.Coordination
         {
             var fakeCpId = Guid.NewGuid();
 
-            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.Startup);
             stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorStart);
             Assert.AreEqual(stateMachine.CurrentState, WorkerState.Running);
 
@@ -82,8 +82,12 @@ namespace BlackSP.Core.UnitTests.Coordination
             Assert.Throws<InvalidOperationException>(() => stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId));
             Assert.AreEqual(stateMachine.CurrentState, WorkerState.Running);
             
-            //halt & trigger restore
+            //cannot restore while halting
             stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorHalt);
+            Assert.Throws<InvalidOperationException>(() => stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId));
+
+            //complete halting and start restore
+            stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorHaltCompleted);
             stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId);
             Assert.AreEqual(stateMachine.CurrentState, WorkerState.Recovering);
 
@@ -96,7 +100,7 @@ namespace BlackSP.Core.UnitTests.Coordination
         {
             stateMachine.OnStateChangeNotificationRequired += (a, b) => Console.WriteLine($"{a} - {b}");
 
-            stateMachine.FireTrigger(WorkerStateTrigger.NetworkConnected);
+            stateMachine.FireTrigger(WorkerStateTrigger.Startup);
 
             var fakeCpId = Guid.NewGuid();
             stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId);

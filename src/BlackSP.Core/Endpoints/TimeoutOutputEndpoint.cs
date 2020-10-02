@@ -3,6 +3,7 @@ using BlackSP.Core.Models;
 using BlackSP.Core.Monitors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Streams;
 using Nerdbank.Streams;
@@ -109,7 +110,7 @@ namespace BlackSP.Core.Endpoints
         /// <param name="msgQueue"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        private async Task StartWritingOutputWithKeepAlive(PipeStreamWriter writer, BlockingCollection<byte[]> msgQueue, int pingFrequencySeconds, CancellationToken t)
+        private async Task StartWritingOutputWithKeepAlive(PipeStreamWriter writer, IFlushableQueue<byte[]> msgQueue, int pingFrequencySeconds, CancellationToken t)
         {
             var lastPingOffset = DateTimeOffset.Now.AddSeconds(-pingFrequencySeconds);
             while (!t.IsCancellationRequested)
@@ -124,7 +125,7 @@ namespace BlackSP.Core.Endpoints
                 if (msTillNextPing == 0 || !msgQueue.TryTake(out message, msTillNextPing, t))
                 {   //either there are no more miliseconds to wait for the next ping --> (time for another ping)
                     //or we couldnt fetch a message from the queue before those milliseconds passed --> (time for another ping)
-                    message = KeepAliveExtensions.ConstructKeepAliveMessage();
+                    message = MagicMessageExtensions.ConstructKeepAliveMessage();
                     lastPingOffset = DateTimeOffset.Now;
                     _logger.Verbose($"PING prepared on output endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
                 }

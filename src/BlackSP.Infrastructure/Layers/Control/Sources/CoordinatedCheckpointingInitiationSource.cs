@@ -52,9 +52,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             }
         }
 
-        public Task Flush()
+        public Task Flush(IEnumerable<string> upstreamInstancesToFlush)
         {
-            return Task.CompletedTask; //nothing to flush here
+            return Task.CompletedTask;
         }
 
         public Task<ControlMessage> Take(CancellationToken t)
@@ -120,5 +120,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+
+        
     }
 }

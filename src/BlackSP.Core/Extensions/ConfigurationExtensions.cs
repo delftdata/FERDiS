@@ -38,6 +38,21 @@ namespace BlackSP.Core.Extensions
             return downstreamInstances;
         }
 
+        /// <summary>
+        /// Returns an enumerable of instancenames that lie downstream of the given instance with supplied name.<br/>
+        /// Note that this includes direct upstream instances only
+        /// </summary>
+        /// <param name="config"></param>
+        /// <param name="instanceName"></param>
+        /// <returns></returns>
+        public static IEnumerable<string> GetAllInstancesUpstreamOf(this IVertexGraphConfiguration graphConfig, string instanceName)
+        {
+            _ = graphConfig ?? throw new ArgumentNullException(nameof(graphConfig));
+
+            var parents = graphConfig.InstanceConnections.Where(t => t.Item2 == instanceName).Select(t => t.Item1);
+            return parents;
+        }
+
         public static IEnumerable<string> GetAllConnectionKeys(this IEndpointConfiguration endpointConfig)
         {
             _ = endpointConfig ?? throw new ArgumentNullException(nameof(endpointConfig));

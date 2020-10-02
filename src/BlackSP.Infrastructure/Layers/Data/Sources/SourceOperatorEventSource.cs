@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Infrastructure.Layers.Data.Payloads;
 using BlackSP.Kernel.Endpoints;
+using System.Collections.Generic;
 
 namespace BlackSP.Infrastructure.Layers.Data.Sources
 {
@@ -23,9 +24,8 @@ namespace BlackSP.Infrastructure.Layers.Data.Sources
             _source = source ?? throw new ArgumentNullException(nameof(source));
         }
 
-        public Task Flush()
+        public Task Flush(IEnumerable<string> upstreamInstancesToFlush)
         {
-            //There is nothing to flush
             return Task.CompletedTask;
         }
 

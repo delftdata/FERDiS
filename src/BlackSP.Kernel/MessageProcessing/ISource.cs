@@ -10,11 +10,7 @@ namespace BlackSP.Kernel.MessageProcessing
 {
     public interface ISource<T>
     {
-        /// <summary>
-        /// Flush the underlying message source
-        /// </summary>
-        /// <returns></returns>
-        Task Flush();
+        
 
         /// <summary>
         /// Take the next element from the source
@@ -27,5 +23,12 @@ namespace BlackSP.Kernel.MessageProcessing
         /// Reference information on the last object returned by the Take(..) method.
         /// </summary>
         (IEndpointConfiguration, int) MessageOrigin { get; }
-}
+        
+        /// <summary>
+        /// Begin flushing the message source
+        /// </summary>
+        /// <returns></returns>
+        Task Flush(IEnumerable<string> upstreamInstancesToFlush);
+
+    }
 }

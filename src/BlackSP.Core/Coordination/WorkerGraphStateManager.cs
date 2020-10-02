@@ -128,7 +128,7 @@ namespace BlackSP.Core.Coordination
             }
             var changedInstanceName = changedConnection.Endpoint.RemoteInstanceNames.ElementAt(changedConnection.ShardId);
             var workerManager = this.GetWorkerStateManager(changedInstanceName);
-            workerManager.FireTrigger(isConnected ? WorkerStateTrigger.NetworkConnected : WorkerStateTrigger.Failure); //Note: if we lose connection to the worker we assume it failed
+            workerManager.FireTrigger(isConnected ? WorkerStateTrigger.Startup : WorkerStateTrigger.Failure); //Note: if we lose connection to the worker we assume it failed
         }
 
         private void InitializeGraphStateMachine()
@@ -187,7 +187,7 @@ namespace BlackSP.Core.Coordination
                     _logger.Information("Recovery line preparation started");
                     stopwatch.Start();
                     _preparedRecoveryLine = await _checkpointService.CalculateRecoveryLine(failedInstances).ConfigureAwait(false)
-                    ?? throw new Exception("Recovery line calculation yielded null, cannot continue");
+                        ?? throw new Exception("Recovery line calculation yielded null, cannot continue");
                     stopwatch.Stop();
                     _logger.Information($"Recovery line preparation completed successfully in {stopwatch.ElapsedMilliseconds}ms");
                 }
@@ -206,15 +206,18 @@ namespace BlackSP.Core.Coordination
                     stopwatch.Stop();
                 }
 
-                var workersToHalt = _workerStateManagers.Where(kv => _preparedRecoveryLine.AffectedWorkers.Contains(kv.Key))
-                                    .Where(kv => kv.Value.CurrentState == WorkerState.Running)
-                                    .Select(kv => kv.Value);
+                var workersToHalt = _preparedRecoveryLine != null 
+                    ? _workerStateManagers.Where(kv => _preparedRecoveryLine.AffectedWorkers.Contains(kv.Key))
+                        .Where(kv => kv.Value.CurrentState == WorkerState.Running)
+                        .Select(kv => kv.Value).ToArray()
+                    : Enumerable.Empty<WorkerStateManager>();
 
                 foreach (var statemachine in workersToHalt)
                 {
                     statemachine.FireTrigger(WorkerStateTrigger.DataProcessorHalt);
                 }
-            });
+                _logger.Verbose($"Fired DataProcessorHalt trigger on {workersToHalt.Count()} instances: {String.Join(", ", workersToHalt.Select(m => m.InstanceName))}");
+            }).ContinueWith(LogException, TaskScheduler.Current);
             t.Wait(); //wait for async operation to complete before returning
         }
 
@@ -260,5 +263,13 @@ namespace BlackSP.Core.Coordination
         }
 
         #endregion
+
+        private void LogException(Task t)
+        {
+            if (t.IsFaulted)
+            {
+                _logger.Fatal(t.Exception, $"{this.GetType()} threw unhandled exception");
+            }
+        }
     }
 }

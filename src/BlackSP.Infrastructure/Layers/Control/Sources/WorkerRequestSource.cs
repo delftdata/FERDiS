@@ -10,6 +10,8 @@ using BlackSP.Kernel.Models;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,6 +28,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
 
         private readonly WorkerGraphStateManager _graphManager;
         private readonly IVertexConfiguration _vertexConfiguration;
+        private readonly IVertexGraphConfiguration _graphConfiguration;
         private readonly ILogger _logger;
 
         /// <summary>
@@ -37,10 +40,15 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         private TimeSpan heartbeatInterval;
         private bool disposedValue;
 
-        public WorkerRequestSource(WorkerGraphStateManager graphManager, ConnectionMonitor connectionMonitor, IVertexConfiguration vertexConfiguration, ILogger logger)
+        public WorkerRequestSource(WorkerGraphStateManager graphManager, 
+            ConnectionMonitor connectionMonitor, 
+            IVertexConfiguration vertexConfiguration, 
+            IVertexGraphConfiguration graphConfiguration,
+            ILogger logger)
         {
             _graphManager = graphManager ?? throw new ArgumentNullException(nameof(graphManager));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
+            _graphConfiguration = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             messages = new BlockingCollection<ControlMessage>(1 << 12);
@@ -79,7 +87,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             return Task.FromResult(message);
         }
 
-        public Task Flush()
+        public Task Flush(IEnumerable<string> upstreamInstancesToFlush)
         {
             messages.CompleteAdding();
             messages = new BlockingCollection<ControlMessage>(Constants.DefaultThreadBoundaryQueueSize);
@@ -103,8 +111,18 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
                 case WorkerState.Running:
                     msg.AddPayload(new WorkerRequestPayload { RequestType = WorkerRequestType.StartProcessing });
                     break;
-                case WorkerState.Halted:
-                    msg.AddPayload(new WorkerRequestPayload { RequestType = WorkerRequestType.StopProcessing });
+                case WorkerState.Halting:
+                    var upstreamWorkersThatAreHalted = _graphConfiguration.GetAllInstancesUpstreamOf(affectedInstanceName)
+                        .Where(name => name != _vertexConfiguration.InstanceName)
+                        .Select(name => (name, _graphManager.GetWorkerStateManager(name).CurrentState))
+                        .Where(pair => pair.CurrentState == WorkerState.Halting || pair.CurrentState == WorkerState.Halted)//no need to include faulted instances
+                        .Select(pair => pair.name)
+                        .ToArray();
+
+                    msg.AddPayload(new WorkerRequestPayload { 
+                        RequestType = WorkerRequestType.StopProcessing,
+                        UpstreamHaltingInstances = upstreamWorkersThatAreHalted
+                    });
                     break;
                 case WorkerState.Recovering:
                     var targetCheckpointId = _graphManager.GetWorkerStateManager(affectedInstanceName).RestoringCheckpointId;

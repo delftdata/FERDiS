@@ -30,8 +30,10 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                     //TODO: consider what to do if the worker lost connection to some neighbours
                     break;
                 case WorkerRequestType.StartProcessing:
+                    //started, nice
+                    break;
                 case WorkerRequestType.StopProcessing:
-                    //operation was successfull, no need for action
+                    _stateManager.GetWorkerStateManager(payload.OriginInstanceName).FireTrigger(WorkerStateTrigger.DataProcessorHaltCompleted);
                     break;
                 default:
                     throw new InvalidOperationException($"Received response to worker request of type {payload.OriginalRequestType}, which is not implemented in type {this.GetType()}");

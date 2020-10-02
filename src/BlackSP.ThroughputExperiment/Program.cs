@@ -32,10 +32,10 @@ namespace BlackSP.ThroughputExperiment
 
         static void ConfigureOperatorGraph(IOperatorVertexGraphBuilder graph)
         {
-            var source = graph.AddSource<SampleSourceOperator, SampleEvent>(4);
+            var source = graph.AddSource<SampleSourceOperator, SampleEvent>(1);
             //var filter = graph.AddFilter<SampleFilterOperator, SampleEvent>(1);
             //var mapper = graph.AddMap<SampleMapOperator, SampleEvent, SampleEvent>(1);
-            var aggregate = graph.AddAggregate<SampleAggregateOperator, SampleEvent, SampleEvent2>(2);
+            var aggregate = graph.AddAggregate<SampleAggregateOperator, SampleEvent, SampleEvent2>(1);
             var sink = graph.AddSink<SampleSinkOperator, SampleEvent2>(1);
 
             source.Append(aggregate);
