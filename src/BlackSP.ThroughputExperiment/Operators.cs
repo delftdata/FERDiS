@@ -16,7 +16,7 @@ namespace BlackSP.ThroughputExperiment
     static class Constants
     {
         public static int TotalEventsToSent = 1 * 10 * 1000000;
-        public static int EventsBeforeProgressLog = 1 * 1;
+        public static int EventsBeforeProgressLog = 1 * 10000;
     }
 
     class SampleSourceOperator : ISourceOperator<SampleEvent>
@@ -44,14 +44,12 @@ namespace BlackSP.ThroughputExperiment
         }
     }
 
-    class SampleSinkOperator : ISinkOperator<SampleEvent2>
+    class SampleSinkOperator : ISinkOperator<SampleEvent>
     {
         private readonly ILogger _logger;
 
         [Checkpointable]
         private int totalEventCount = 0;
-
-        public int WindowCount;
 
         public int EventCount;
 
@@ -65,11 +63,10 @@ namespace BlackSP.ThroughputExperiment
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            WindowCount = 0;
             EventCount = 0;
             TotalLatencyMs = 0;
         }
-        public Task Sink(SampleEvent2 @event)
+        public Task Sink(SampleEvent @event)
         {
             if (isfirst)
             {
@@ -78,9 +75,8 @@ namespace BlackSP.ThroughputExperiment
                 EventCount = 0;
                 TotalLatencyMs = 0;
             }
-            WindowCount++;
-            EventCount += @event.EventCount;
-            totalEventCount += @event.EventCount;
+            EventCount++;
+            totalEventCount++;
             var latency = DateTime.Now - @event.EventTime;
             TotalLatencyMs += latency.TotalMilliseconds;
             
@@ -94,7 +90,7 @@ namespace BlackSP.ThroughputExperiment
                 //latency
                 
                 //- avg (total latency / counter)
-                var avgLatencyMs = TotalLatencyMs / WindowCount;
+                var avgLatencyMs = TotalLatencyMs / totalEventCount;
                 //- min?
                 //- max?
                 _logger.Information($"Sink stats - time: {runningTimeSeconds:0.00}s - events: {totalEventCount} - throughput: {avgThroughputPerSec:0.00} e/s - latency: {avgLatencyMs:0}ms");

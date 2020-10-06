@@ -61,7 +61,7 @@ namespace BlackSP.Core.Endpoints
         public async Task Egress(Stream outputStream, string remoteEndpointName, int remoteShardId, CancellationToken callerToken)
         {
             _ = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
-            string targetInstanceName = _endpointConfig.RemoteInstanceNames.ElementAt(remoteShardId);
+            string targetInstanceName = _endpointConfig.GetRemoteInstanceName(remoteShardId);
 
             using CancellationTokenSource exceptionSource = new CancellationTokenSource();
             using CancellationTokenSource callerOrExceptionSource = CancellationTokenSource.CreateLinkedTokenSource(exceptionSource.Token, callerToken);

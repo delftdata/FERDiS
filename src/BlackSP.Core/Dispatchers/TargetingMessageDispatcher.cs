@@ -79,7 +79,8 @@ namespace BlackSP.Core.Dispatchers
 
         public async Task Flush()
         {
-            await Task.WhenAll(_outputQueues.Values.Select(q => q.Flush())).ConfigureAwait(false);
+            throw new NotSupportedException($"{GetType()} does not support flushing");
+            //await Task.WhenAll(_outputQueues.Where(q => _ori).Values.Select(q => q.BeginFlush())).ConfigureAwait(false);
         }
 
     }

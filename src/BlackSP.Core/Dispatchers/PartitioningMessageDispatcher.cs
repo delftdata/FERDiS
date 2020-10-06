@@ -5,6 +5,7 @@ using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -24,19 +25,22 @@ namespace BlackSP.Core.Dispatchers
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IObjectSerializer _serializer;
         private readonly IPartitioner<IMessage> _partitioner;
+        private readonly ILogger _logger;
 
         private readonly IDictionary<string, IFlushableQueue<byte[]>> _outputQueues;
-
+        private readonly IDictionary<string, (IEndpointConfiguration, int)> _originDict;
         public PartitioningMessageDispatcher(IVertexConfiguration vertexConfiguration,
                                  IObjectSerializer serializer,
-                                 IPartitioner<IMessage> partitioner)
+                                 IPartitioner<IMessage> partitioner,
+                                 ILogger logger)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _partitioner = partitioner ?? throw new ArgumentNullException(nameof(serializer));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _outputQueues = new Dictionary<string, IFlushableQueue<byte[]>>();
-
+            _originDict = new Dictionary<string, (IEndpointConfiguration, int)>();
             InitializeQueues();
         }
         
@@ -79,13 +83,19 @@ namespace BlackSP.Core.Dispatchers
                 {
                     var connectionKey = endpointConfig.GetConnectionKey(shardId);
                     _outputQueues.Add(connectionKey, new BlockingFlushableQueue<byte[]>(Constants.DefaultThreadBoundaryQueueSize));
+                    _originDict.Add(connectionKey, (endpointConfig, shardId));
                 }
             }
         }
 
         public async Task Flush()
         {
-            await Task.WhenAll(_outputQueues.Values.Select(q => q.Flush())).ConfigureAwait(false);
+            //TODO: make decision which queues to flush, currently hardcoded to non-control queues only.
+            var flushes = _outputQueues.Where(pair => !_originDict[pair.Key].Item1.IsControl).Select(q => q.Value.BeginFlush()).ToList();
+            _logger.Fatal($"Dispatcher flushing {flushes.Count}/{_outputQueues.Count} queues");//TODO: change to debug/verbose
+            await Task.WhenAll(flushes).ConfigureAwait(false);
+            _logger.Fatal($"Dispatcher flushed {flushes.Count}/{_outputQueues.Count} queues");//TODO: change to debug/verbose
+
         }
     }
 }

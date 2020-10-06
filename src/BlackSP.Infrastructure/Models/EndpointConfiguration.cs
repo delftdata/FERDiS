@@ -29,5 +29,10 @@ namespace BlackSP.Infrastructure.Models
             }
             throw new ArgumentException($"invalid value: {shardId}", nameof(shardId));
         }
+
+        public string GetRemoteInstanceName(int shardId)
+        {
+            return RemoteInstanceNames.ElementAt(shardId);
+        }
     }
 }

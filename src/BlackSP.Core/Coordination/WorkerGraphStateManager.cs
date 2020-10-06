@@ -126,7 +126,7 @@ namespace BlackSP.Core.Coordination
             {
                 return; //we will get two reports, one from upstream, one from downstream, selectively ignore downstream to not handle duplicates.
             }
-            var changedInstanceName = changedConnection.Endpoint.RemoteInstanceNames.ElementAt(changedConnection.ShardId);
+            var changedInstanceName = changedConnection.Endpoint.GetRemoteInstanceName(changedConnection.ShardId);
             var workerManager = this.GetWorkerStateManager(changedInstanceName);
             workerManager.FireTrigger(isConnected ? WorkerStateTrigger.Startup : WorkerStateTrigger.Failure); //Note: if we lose connection to the worker we assume it failed
         }

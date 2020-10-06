@@ -68,17 +68,22 @@ namespace BlackSP.Core.Sources
         public async Task Flush(IEnumerable<string> instanceNamesToFlush)
         {
             _ = instanceNamesToFlush ?? throw new ArgumentNullException(nameof(instanceNamesToFlush));
-            List<Task> flushes = new List<Task>();
+            var flushes = new List<Task>();
             foreach(var (endpoint, shardId) in _originDictionary.Values)
             {
-                if(instanceNamesToFlush.Contains(endpoint.RemoteInstanceNames.ElementAt(shardId)))
+                if(instanceNamesToFlush.Contains(endpoint.GetRemoteInstanceName(shardId)))
                 {
                     flushes.Add(_msgQueues[endpoint.GetConnectionKey(shardId)].BeginFlush());
                 }
             }
-            _logger.Debug($"Started flushing {flushes.Count}/{instanceNamesToFlush.Count()} input endpoints");
+            if(flushes.Count != instanceNamesToFlush.Count())
+            {
+                throw new ArgumentException("Invalid instanceName in enumerable", nameof(instanceNamesToFlush));
+            }
+
+            _logger.Debug($"Receiver flushing {flushes.Count}/{_originDictionary.Count} queues");
             await Task.WhenAll(flushes).ConfigureAwait(false);
-            _logger.Debug($"Completed flushing {flushes.Count}/{instanceNamesToFlush.Count()} input endpoints");
+            _logger.Debug($"Receiver flushed {flushes.Count}/{_originDictionary.Count} queues");
         }
 
         public void Block(IEndpointConfiguration origin, int shardId)

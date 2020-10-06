@@ -39,5 +39,12 @@ namespace BlackSP.Kernel.Endpoints
         /// <returns></returns>
         string GetConnectionKey(int shardId);
 
+        /// <summary>
+        /// Utility method to get the remote instance name on a particular shardId
+        /// </summary>
+        /// <param name="shardId"></param>
+        /// <returns></returns>
+        string GetRemoteInstanceName(int shardId);
+
     }
 }

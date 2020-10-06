@@ -99,7 +99,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             if (_blockedConnectionKeys.Contains(connectionKey))
             {
                 _logger.Debug($"Duplicate connectionKey encountered: {connectionKey}");
-                throw new InvalidOperationException($"Received two barriers from one connection - {endpoint.RemoteVertexName} at {endpoint.RemoteInstanceNames.ElementAt(shardId)} shard {shardId}");
+                throw new InvalidOperationException($"Received two barriers from one connection - {endpoint.RemoteVertexName} at {endpoint.GetRemoteInstanceName(shardId)} shard {shardId}");
             }
             _logger.Debug($"Received barrier payload, proceeding to block connection to vertex {endpoint.RemoteVertexName} shard {shardId}");
             _messageReceiver.Block(endpoint, shardId);

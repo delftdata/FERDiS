@@ -34,7 +34,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
             var (endpoint, shardId) = _messageSource.MessageOrigin;
             _ = endpoint ?? throw new InvalidOperationException("Message source returned null endpoint origin");
-            _checkpointService.UpdateCheckpointDependency(endpoint.RemoteInstanceNames.ElementAt(shardId), payload.CheckpointId);
+            _checkpointService.UpdateCheckpointDependency(endpoint.GetRemoteInstanceName(shardId), payload.CheckpointId);
             return Task.FromResult(AssociatedMessage.Yield());
         }
     }

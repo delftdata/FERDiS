@@ -122,10 +122,6 @@ namespace BlackSP.Core.Processors
                 }
             }
             catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
-            finally
-            {
-                await _dispatcher.Flush().ConfigureAwait(false);
-            }
         }
 
         #region dispose support

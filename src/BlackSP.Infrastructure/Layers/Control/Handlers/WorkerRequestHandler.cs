@@ -28,7 +28,6 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly DataMessageProcessor _processor;
         private readonly ConnectionMonitor _connectionMonitor;
-        private readonly ISource<DataMessage> _dataSource;
         private readonly ILogger _logger;
 
         private CancellationTokenSource _ctSource;
@@ -39,13 +38,11 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
         public WorkerRequestHandler(DataMessageProcessor processor,
                                     ConnectionMonitor connectionMonitor,
-                                    ISource<DataMessage> source,
                                     IVertexConfiguration vertexConfiguration,  
                                     ILogger logger)
         {            
             _processor = processor ?? throw new ArgumentNullException(nameof(processor));
             _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
-            _dataSource = source ?? throw new ArgumentNullException(nameof(source));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -128,14 +125,13 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             {
                 var sw = new Stopwatch();
                 
-                _logger.Fatal($"Data processor stop instruction received by coordinator"); //TODO: make debug level
+                _logger.Fatal($"Data processor halt instruction received by coordinator"); //TODO: make debug level
                 sw.Start();
-                await CancelProcessingAndResetLocally().ConfigureAwait(false);
-                _logger.Fatal($"Data processor was successfully stopped in {sw.ElapsedMilliseconds}ms, proceeding with network flush with upstream halting instances"); //TODO: make debug level
-                sw.Restart();
-                await _dataSource.Flush(upstreamHaltedInstances ?? Enumerable.Empty<string>()).ConfigureAwait(false);
-                _logger.Fatal($"Network flush completed in {sw.ElapsedMilliseconds}ms, halt request completed successfully"); //TODO: make debug level
+                var processorHaltTask = CancelProcessingAndResetLocally();
+                var networkFlushTask = _processor.Flush(upstreamHaltedInstances ?? Enumerable.Empty<string>());
+                await Task.WhenAll(processorHaltTask, networkFlushTask).ConfigureAwait(false);
                 sw.Stop();
+                _logger.Fatal($"Data processor halt & network flush successfull in {sw.ElapsedMilliseconds}ms, proceeding with network flush with upstream halting instances"); //TODO: make debug level
             }
             else
             {

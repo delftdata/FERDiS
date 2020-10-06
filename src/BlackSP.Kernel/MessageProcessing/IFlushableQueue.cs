@@ -9,27 +9,15 @@ namespace BlackSP.Kernel.MessageProcessing
     public interface IFlushableQueue<T>
     {
         /// <summary>
-        /// Indicates if the queue is currently flushing
+        /// Throw exception if flushing has started
         /// </summary>
-        bool IsFlushing { get; }
-
-        /// <summary>
-        /// Performs a synchronous flush that basically resets the queue
-        /// </summary>
-        /// <returns></returns>
-        Task Flush();
+        void ThrowIfFlushingStarted();
 
         /// <summary>
         /// Begins flushing the queue
         /// </summary>
         /// <returns></returns>
         Task BeginFlush();
-
-        /// <summary>
-        /// Begins flushing the queue but inserts a final target first
-        /// </summary>
-        /// <returns></returns>
-        Task BeginFlush(T target);
 
         /// <summary>
         /// Ends flushing the queue
