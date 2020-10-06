@@ -32,15 +32,9 @@ namespace BlackSP.Kernel
         IFlushableQueue<byte[]> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId);
 
         /// <summary>
-        /// Begins flushing process in the dispatcher
+        /// Empty all dispatch queues
         /// </summary>
         /// <returns></returns>
-        Task BeginFlush();
-
-        /// <summary>
-        /// Ends flushing process in the dispatcher
-        /// </summary>
-        /// <returns></returns>
-        Task EndFlush();
+        Task Flush();
     }
 }

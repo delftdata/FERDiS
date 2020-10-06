@@ -83,14 +83,9 @@ namespace BlackSP.Core.Dispatchers
             }
         }
 
-        public async Task BeginFlush()
+        public async Task Flush()
         {
-            await Task.WhenAll(_outputQueues.Values.Select(q => q.BeginFlush())).ConfigureAwait(false);
-        }
-
-        public async Task EndFlush()
-        {
-            await Task.WhenAll(_outputQueues.Values.Where(q => q.IsFlushing).Select(q => q.EndFlush())).ConfigureAwait(false);
+            await Task.WhenAll(_outputQueues.Values.Select(q => q.Flush())).ConfigureAwait(false);
         }
     }
 }

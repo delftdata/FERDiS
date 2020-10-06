@@ -127,7 +127,7 @@ namespace BlackSP.Core.Processors
             }
             finally
             {
-                await Task.WhenAll(_dispatcher.BeginFlush(), _dispatcher.EndFlush()).ConfigureAwait(false);
+                await _dispatcher.Flush().ConfigureAwait(false);
             }
         }
 

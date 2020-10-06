@@ -124,8 +124,7 @@ namespace BlackSP.Core.Processors
             catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
             finally
             {
-                await _dispatcher.EndFlush().ConfigureAwait(false);
-                await _dispatcher.BeginFlush().ConfigureAwait(false);
+                await _dispatcher.Flush().ConfigureAwait(false);
             }
         }
 
