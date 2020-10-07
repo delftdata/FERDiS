@@ -35,9 +35,10 @@ namespace BlackSP.WordCount.Operators
             {
                 _wordCountMap.Add(@event.Word, @event.Count);
             }
-            string wordCountMapPrintable = string.Join(";", _wordCountMap.Select(x => x.Key + "=" + x.Value).ToArray());
 
+            string wordCountMapPrintable = string.Join("; ", _wordCountMap.OrderBy(p => p.Key).Select(x => x.Key + "=" + x.Value).ToArray());
             _logger.Information($"WordCount: {wordCountMapPrintable}");
+
             return Task.CompletedTask;
         }
     }

@@ -104,6 +104,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
 
         private void WorkerStateManager_OnStateChangeNotificationRequired(string affectedInstanceName, WorkerState newState)
         {
+            Task.Delay(1000).Wait(); // Nasty hack to guarantee to some degree that no other triggers are still changing manager states
             int partitionKey = _vertexConfiguration.GetPartitionKeyForInstanceName(affectedInstanceName);
             var msg = new ControlMessage(partitionKey);
             switch (newState)

@@ -9,13 +9,12 @@ namespace BlackSP.WordCount.Events
     [ProtoContract]
     public class SentenceEvent : IEvent
     {
-        [ProtoMember(1)]
-        public string Key { get; set; }
+        public string Key => Sentence;
 
-        [ProtoMember(2)]
+        [ProtoMember(1)]
         public DateTime EventTime { get; set; }
 
-        [ProtoMember(3)]
+        [ProtoMember(2)]
         public string Sentence { get; set; }
 
         public SentenceEvent() { }

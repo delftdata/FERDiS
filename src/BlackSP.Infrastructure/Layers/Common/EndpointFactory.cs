@@ -26,7 +26,7 @@ namespace BlackSP.Infrastructure.Layers.Common
 
             if(config.IsControl)
             {
-                return _scope.Resolve<InputEndpoint<ControlMessage>.Factory>().Invoke(config.LocalEndpointName);
+                return _scope.Resolve<TimeoutInputEndpoint<ControlMessage>.Factory>().Invoke(config.LocalEndpointName);
             } 
             else
             {
@@ -40,7 +40,7 @@ namespace BlackSP.Infrastructure.Layers.Common
 
             if (config.IsControl)
             {
-                return _scope.Resolve<OutputEndpoint<ControlMessage>.Factory>().Invoke(config.LocalEndpointName);
+                return _scope.Resolve<TimeoutOutputEndpoint<ControlMessage>.Factory>().Invoke(config.LocalEndpointName);
             }
             else
             {

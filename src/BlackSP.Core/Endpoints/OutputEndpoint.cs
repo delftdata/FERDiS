@@ -66,7 +66,7 @@ namespace BlackSP.Core.Endpoints
             using CancellationTokenSource exceptionSource = new CancellationTokenSource();
             using CancellationTokenSource callerOrExceptionSource = CancellationTokenSource.CreateLinkedTokenSource(callerToken, exceptionSource.Token);
             string targetInstanceName = _endpointConfig.GetRemoteInstanceName(remoteShardId);
-            _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} starting output stream writer. Writing to vertex {_endpointConfig.RemoteVertexName} on instance {targetInstanceName} on endpoint {remoteEndpointName}");      
+            _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} starting output stream writer. Writing to vertex {_endpointConfig.RemoteVertexName} on instance {targetInstanceName} on endpoint {remoteEndpointName}");      
             try
             {
                 var pipe = outputStream.UsePipe(cancellationToken: callerOrExceptionSource.Token);
@@ -81,7 +81,7 @@ namespace BlackSP.Core.Endpoints
             }
             catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
             {
-                _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} is handling cancellation request from caller side");
+                _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} to {_endpointConfig.GetRemoteInstanceName(remoteShardId)} is handling cancellation request from caller side");
                 throw;
             }
             catch (Exception e)
@@ -136,7 +136,7 @@ namespace BlackSP.Core.Endpoints
                     _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     await dispatchQueue.EndFlush().ConfigureAwait(false);
                     dispatchQueue.Add(message, t); //after flush the dispatchqueue is empty, add the flush message to signal completion downstream
-                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} flush listener ended dispatcher queue flush, flush message sent back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} ended dispatcher queue flush, flush message sent back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     queueAccess.Release();
                 }
                 else

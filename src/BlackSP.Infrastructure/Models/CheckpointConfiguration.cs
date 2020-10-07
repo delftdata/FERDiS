@@ -12,10 +12,13 @@ namespace BlackSP.Infrastructure.Models
 
         public CheckpointCoordinationMode CoordinationMode { get; set; }
 
-        public CheckpointConfiguration(CheckpointCoordinationMode mode, bool allowReusingState)
+        public int CheckpointIntervalSeconds { get; set; }
+
+        public CheckpointConfiguration(CheckpointCoordinationMode mode, bool allowReusingState, int checkpointIntervalSeconds)
         {
             CoordinationMode = mode;
             AllowReusingState = allowReusingState;
+            CheckpointIntervalSeconds = checkpointIntervalSeconds;
         }
     }
 }

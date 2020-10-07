@@ -28,5 +28,9 @@ namespace BlackSP.Checkpointing
         /// </summary>
         CheckpointCoordinationMode CoordinationMode { get; }
 
+        /// <summary>
+        /// Interval at which checkpoints are taken, may have different meaning according to configured CoordinationMode
+        /// </summary>
+        int CheckpointIntervalSeconds { get; }
     }
 }

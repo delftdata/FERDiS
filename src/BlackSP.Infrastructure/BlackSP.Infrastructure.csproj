@@ -12,6 +12,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Operators\**" />
+    <EmbeddedResource Remove="Operators\**" />
+    <None Remove="Operators\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Autofac" Version="5.1.2" />
     <PackageReference Include="AutofacSerilogIntegration" Version="3.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
@@ -29,9 +35,5 @@
     <ProjectReference Include="..\BlackSP.Kernel\BlackSP.Kernel.csproj" />
     <ProjectReference Include="..\BlackSP.OperatorShells\BlackSP.OperatorShells.csproj" />
     <ProjectReference Include="..\BlackSP.Serialization\BlackSP.Serialization.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Operators\" />
   </ItemGroup>
 </Project>

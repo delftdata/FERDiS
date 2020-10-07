@@ -16,15 +16,13 @@ namespace BlackSP.WordCount
         {
             var useSimulator = true;
 
-            var logTargets = LogTargetFlags.Console;
-            logTargets = logTargets | (useSimulator ? LogTargetFlags.File : LogTargetFlags.AzureBlob);
-
-            var logLevel = LogEventLevel.Verbose;
+            var logTargets = LogTargetFlags.Console | (useSimulator ? LogTargetFlags.File : LogTargetFlags.AzureBlob);
+            var logLevel = LogEventLevel.Information;
 
             var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
             var app = await appBuilder
                 .ConfigureLogging(new LogConfiguration(logTargets, logLevel))
-                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Coordinated, false))
+                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Coordinated, false, 30))
                 .ConfigureOperators(ConfigureOperatorGraph)
                 .Build();
 
@@ -35,7 +33,7 @@ namespace BlackSP.WordCount
         {
             var source = graph.AddSource<SentenceGeneratorSource, SentenceEvent>(1);
             var mapper = graph.AddMap<SentenceToWordMapper, SentenceEvent, WordEvent>(2);
-            var reducer = graph.AddAggregate<WordCountAggregator, WordEvent, WordEvent>(2);
+            var reducer = graph.AddAggregate<WordCountAggregator, WordEvent, WordEvent>(3);
             var sink = graph.AddSink<WordCountLoggerSink, WordEvent>(1);
 
             source.Append(mapper);

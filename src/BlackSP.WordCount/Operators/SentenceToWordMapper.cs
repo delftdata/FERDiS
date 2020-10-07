@@ -11,7 +11,7 @@ namespace BlackSP.WordCount.Operators
     {
         public IEnumerable<WordEvent> Map(SentenceEvent @event)
         {
-            return @event.Sentence.Split(" ").Select(word => new WordEvent { EventTime = @event.EventTime, Word = word });
+            return @event.Sentence.Split(" ").Select(word => new WordEvent { EventTime = @event.EventTime, Word = word, Count = 1 });
         }
     }
 }

@@ -19,23 +19,23 @@ using System.Threading.Tasks;
 namespace BlackSP.Core.Endpoints
 {
 
-    public class TimeoutOutputEndpoint : IOutputEndpoint
+    public class TimeoutOutputEndpoint<TMessage> : IOutputEndpoint
     {
         /// <summary>
         /// Autofac delegate factory
         /// </summary>
         /// <param name="endpointName"></param>
         /// <returns></returns>
-        public delegate TimeoutOutputEndpoint Factory(string endpointName);
+        public delegate TimeoutOutputEndpoint<TMessage> Factory(string endpointName);
 
-        private readonly IDispatcher<IMessage> _dispatcher;
+        private readonly IDispatcher<TMessage> _dispatcher;
         private readonly IVertexConfiguration _vertexConfig;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
 
         public TimeoutOutputEndpoint(string endpointName,
-            IDispatcher<IMessage> dispatcher,
+            IDispatcher<TMessage> dispatcher,
             IVertexConfiguration vertexConfiguration,
             ConnectionMonitor connectionMonitor,
             ILogger logger)

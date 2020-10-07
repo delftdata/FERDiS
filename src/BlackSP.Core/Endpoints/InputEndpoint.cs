@@ -71,7 +71,7 @@ namespace BlackSP.Core.Endpoints
             try
             {
                 callerOrExceptionSource.Token.ThrowIfCancellationRequested();
-                _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} starting read & deserialize threads. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.GetRemoteInstanceName(remoteShardId)}\"");
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} starting read & deserialize threads. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.GetRemoteInstanceName(remoteShardId)}\"");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
 
                 var pipe = s.UsePipe(cancellationToken: callerOrExceptionSource.Token);
@@ -84,7 +84,7 @@ namespace BlackSP.Core.Endpoints
             }
             catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
             {
-                _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} is handling cancellation request from caller side");
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} is handling cancellation request from caller side");
                 throw;
             }
             catch (Exception e)
@@ -110,7 +110,7 @@ namespace BlackSP.Core.Endpoints
                 {
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
                     await receptionQueue.EndFlush().ConfigureAwait(false);
-                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} successfully ended flushing");
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} resuming reading from network");
                 }
                 passthroughQueue.Add(msg, t);
             }
@@ -135,7 +135,7 @@ namespace BlackSP.Core.Endpoints
                 }
                 catch (FlushInProgressException)
                 {
-                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} started flushing");
+                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} started flushing");
                     await writer.WriteMessage(MagicMessageExtensions.ConstructFlushMessage(), t).ConfigureAwait(false);
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent flush message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");//TODO: make debug level
                     byte[] msg = null;

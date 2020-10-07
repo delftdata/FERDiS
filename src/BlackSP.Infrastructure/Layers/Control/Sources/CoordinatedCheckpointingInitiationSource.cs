@@ -1,4 +1,5 @@
-﻿using BlackSP.Core;
+﻿using BlackSP.Checkpointing;
+using BlackSP.Core;
 using BlackSP.Core.Coordination;
 using BlackSP.Core.Extensions;
 using BlackSP.Infrastructure.Layers.Data.Payloads;
@@ -26,7 +27,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         private readonly WorkerGraphStateManager _graphStateManager;
         private readonly IVertexGraphConfiguration _graphConfiguration;
         private readonly IVertexConfiguration _vertexConfiguration;
+        private readonly ICheckpointConfiguration _checkpointConfiguration;
         private readonly ILogger _logger;
+
         private readonly TimeSpan _globalCheckpointInterval;
         private readonly Timer _globalCheckpointTimer;
         private readonly BlockingCollection<ControlMessage> _messages;
@@ -38,14 +41,16 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         public CoordinatedCheckpointingInitiationSource(WorkerGraphStateManager graphStateManager,
             IVertexGraphConfiguration graphConfiguration,
             IVertexConfiguration vertexConfiguration,
+            ICheckpointConfiguration checkpointConfiguration,
             ILogger logger)
         {
             _graphStateManager = graphStateManager ?? throw new ArgumentNullException(nameof(graphStateManager));
             _graphConfiguration = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
+            _checkpointConfiguration = checkpointConfiguration ?? throw new ArgumentNullException(nameof(checkpointConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
-            _globalCheckpointInterval = TimeSpan.FromMinutes(10); //TODO: make configurable?
+            _globalCheckpointInterval = TimeSpan.FromSeconds(_checkpointConfiguration.CheckpointIntervalSeconds);
             _messages = new BlockingCollection<ControlMessage>();
             _globalCheckpointTimer = new Timer(CreateBarrierMessagesForSources, null, int.MaxValue, int.MaxValue);
             _timerActive = false;
@@ -74,10 +79,10 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             var sourceInstances = _graphConfiguration.InstanceNames.Where(name => !dataConnections.Any(pair => pair.Item2 == name));
             foreach(var instanceName in sourceInstances)
             {
-                _logger.Debug($"Generated barrier message for {instanceName}");
                 var msg = new ControlMessage(_vertexConfiguration.GetPartitionKeyForInstanceName(instanceName));
                 msg.AddPayload(new BarrierPayload());
                 _messages.Add(msg);
+                _logger.Information($"Generated barrier message for {instanceName}");
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using BlackSP.Kernel.Operators;
 using BlackSP.WordCount.Events;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,19 +10,27 @@ namespace BlackSP.WordCount.Operators
 {
     public class WordCountAggregator : IAggregateOperator<WordEvent, WordEvent>
     {
-        public TimeSpan WindowSize => TimeSpan.FromSeconds(1);
+        public static int WindowSizeSeconds = 5;
+        public TimeSpan WindowSize => TimeSpan.FromSeconds(WindowSizeSeconds);
+
+        private readonly ILogger _logger;
+
+        public WordCountAggregator(ILogger logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
         public IEnumerable<WordEvent> Aggregate(IEnumerable<WordEvent> window)
         {
-            foreach(var group in window.GroupBy(ev => ev.Word))
+            var wordGroups = window.GroupBy(ev => ev.Word);
+            _logger.Debug($"Aggregating {wordGroups.Count()} different words");
+            foreach (var group in wordGroups)
             {
-                var word = group.Key;
-                var count = group.Sum(ev => ev.Count);
                 yield return new WordEvent
                 {
                     EventTime = group.First().EventTime,
-                    Word = word,
-                    Count = count
+                    Word = group.Key,
+                    Count = group.Sum(ev => ev.Count)
                 };
             }
         }

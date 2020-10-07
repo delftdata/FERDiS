@@ -34,7 +34,8 @@ namespace BlackSP.Simulator.Builders
                 var vertexThreads = graph.StartAllVertices(10, TimeSpan.FromSeconds(5));
                 
                 var allWorkerThreads = vertexThreads.Append(Task.Run(() => VertexFaultTrigger(graph)));
-                await Task.WhenAll(allWorkerThreads).ConfigureAwait(false);
+                var exitedThread = await Task.WhenAny(allWorkerThreads).ConfigureAwait(true);
+                await exitedThread;
             }
         }
 

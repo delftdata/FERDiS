@@ -136,6 +136,7 @@ namespace BlackSP.Core.Coordination
         private void WorkerStateMachine_OnStateChange(string affectedInstanceName, WorkerState newState)
         {
             _logger.Information($"Worker {affectedInstanceName} transitioned to state: {newState}");
+            
             if (newState == WorkerState.Faulted)
             {
                 _graphStateMachine.Fire(Trigger.WorkerFaulted);
