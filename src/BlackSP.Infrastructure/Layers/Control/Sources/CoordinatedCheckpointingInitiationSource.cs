@@ -45,7 +45,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
-            _globalCheckpointInterval = TimeSpan.FromMinutes(1);
+            _globalCheckpointInterval = TimeSpan.FromMinutes(10); //TODO: make configurable?
             _messages = new BlockingCollection<ControlMessage>();
             _globalCheckpointTimer = new Timer(CreateBarrierMessagesForSources, null, int.MaxValue, int.MaxValue);
             _timerActive = false;

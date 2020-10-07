@@ -32,7 +32,7 @@ namespace BlackSP.Core.Handlers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
             _latencyMillis = new List<int>();
-            _metricWindowSize = TimeSpan.FromSeconds(5);
+            _metricWindowSize = TimeSpan.FromSeconds(60);
         }
 
         public Task<IEnumerable<TMessage>> Handle(TMessage message)

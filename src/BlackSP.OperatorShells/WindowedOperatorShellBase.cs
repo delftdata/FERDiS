@@ -24,7 +24,7 @@ namespace BlackSP.OperatorShells
         public WindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator;
-            _currentWindow = new FixedEventWindow<TIn>(DateTime.Now, _pluggedInOperator.WindowSize);
+            _currentWindow = new FixedEventWindow<TIn>(DateTime.UtcNow, _pluggedInOperator.WindowSize);
         }
 
         public sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)

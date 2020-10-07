@@ -22,6 +22,7 @@ namespace BlackSP.Core.Windows
             if(LatestEventTime >= UpperBoundary)
             {   //the window has closed as events beyond the upper boundary are arriving..
                 //clear the window and set the new window boundaries
+                Console.WriteLine("CLOSING WINDOW");
                 var closedWindow = Events.ToArray();
                 SortedEvents.Clear();
                 LowerBoundary = UpperBoundary;
