@@ -16,6 +16,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Payloads
 
         [ProtoMember(2)]
         public IEnumerable<string> UpstreamHaltingInstances { get; set; }
+
+        [ProtoMember(3)]
+        public IEnumerable<string> DownstreamHaltingInstances { get; set; }
     }
 
     public enum WorkerRequestType

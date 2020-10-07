@@ -88,14 +88,22 @@ namespace BlackSP.Core.Dispatchers
             }
         }
 
-        public async Task Flush()
+        public async Task Flush(IEnumerable<string> downstreamInstancesToFlush)
         {
-            //TODO: make decision which queues to flush, currently hardcoded to non-control queues only.
-            var flushes = _outputQueues.Where(pair => !_originDict[pair.Key].Item1.IsControl).Select(q => q.Value.BeginFlush()).ToList();
-            _logger.Fatal($"Dispatcher flushing {flushes.Count}/{_outputQueues.Count} queues");//TODO: change to debug/verbose
+            var flushes = GetQueuesByInstanceNames(downstreamInstancesToFlush).Select(q => q.BeginFlush()).ToList();
+            _logger.Debug($"Dispatcher flushing {flushes.Count}/{_outputQueues.Count} queues");
             await Task.WhenAll(flushes).ConfigureAwait(false);
-            _logger.Fatal($"Dispatcher flushed {flushes.Count}/{_outputQueues.Count} queues");//TODO: change to debug/verbose
+            _logger.Debug($"Dispatcher flushed {flushes.Count}/{_outputQueues.Count} queues");
 
+        }
+
+        private IEnumerable<IFlushableQueue<byte[]>> GetQueuesByInstanceNames(IEnumerable<string> instanceNames)
+        {
+            return _outputQueues.Where(p =>
+            {
+                var (endpoint, shardId) = _originDict[p.Key];
+                return instanceNames.Contains(endpoint.GetRemoteInstanceName(shardId));
+            }).Select(p => p.Value);
         }
     }
 }

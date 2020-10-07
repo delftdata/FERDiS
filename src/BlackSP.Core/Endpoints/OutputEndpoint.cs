@@ -133,12 +133,10 @@ namespace BlackSP.Core.Endpoints
                 if (message?.IsFlushMessage() ?? false)
                 {
                     await queueAccess.WaitAsync(t).ConfigureAwait(false);
-                    _logger.Warning($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                    _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     await dispatchQueue.EndFlush().ConfigureAwait(false);
-                    //TODO: HYPOTHESIS THIS BLOCKS?!
-                    _logger.Warning($"GONNA ADD FLUSH MSG - CAME FROM {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     dispatchQueue.Add(message, t); //after flush the dispatchqueue is empty, add the flush message to signal completion downstream
-                    _logger.Warning($"Output endpoint {_endpointConfig.LocalEndpointName} flush listener ended dispatcher queue flush, flush message sent back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} flush listener ended dispatcher queue flush, flush message sent back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     queueAccess.Release();
                 }
                 else

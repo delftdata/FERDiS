@@ -108,9 +108,9 @@ namespace BlackSP.Core.Endpoints
                 var msg = await streamReader.ReadNextMessage(t).ConfigureAwait(false);
                 if (msg.IsFlushMessage()) //flush message arrived from network is reply stating that flushing completed
                 {
-                    _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");//TODO: make debug level
+                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
                     await receptionQueue.EndFlush().ConfigureAwait(false);
-                    _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} successfully ended flushing");//TODO: make debug level
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} successfully ended flushing");
                 }
                 passthroughQueue.Add(msg, t);
             }
@@ -129,23 +129,21 @@ namespace BlackSP.Core.Endpoints
                         //actual deserialization and adding to reception queue..
                         TMessage message = await _serializer.DeserializeAsync<TMessage>(bytes, t).ConfigureAwait(false)
                             ?? throw new Exception("unexpected null message from deserializer");//TODO: custom exception?
-                        //_logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} adding message");
                         receptionQueue.Add(message, t);
-                        //_logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} added message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     }
                     receptionQueue.ThrowIfFlushingStarted();
                 }
                 catch (FlushInProgressException)
                 {
-                    _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} started flushing");//TODO: make debug level
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} started flushing");
                     await writer.WriteMessage(MagicMessageExtensions.ConstructFlushMessage(), t).ConfigureAwait(false);
-                    _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent flush message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");//TODO: make debug level
+                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent flush message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");//TODO: make debug level
                     byte[] msg = null;
                     while (msg == null || !msg.IsFlushMessage())
                     {
                         msg = passthroughQueue.Take(); //keep taking until flush message returns from upstream
                     }
-                    _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");//TODO: make debug level
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");//TODO: make debug level
                 }
             }
 

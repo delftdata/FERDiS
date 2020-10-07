@@ -30,6 +30,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         private readonly TimeSpan _globalCheckpointInterval;
         private readonly Timer _globalCheckpointTimer;
         private readonly BlockingCollection<ControlMessage> _messages;
+
+        private bool _timerActive;
+        
         private bool disposedValue;
 
         public CoordinatedCheckpointingInitiationSource(WorkerGraphStateManager graphStateManager,
@@ -45,8 +48,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             _globalCheckpointInterval = TimeSpan.FromMinutes(1);
             _messages = new BlockingCollection<ControlMessage>();
             _globalCheckpointTimer = new Timer(CreateBarrierMessagesForSources, null, int.MaxValue, int.MaxValue);
+            _timerActive = false;
 
-            foreach(var manager in _graphStateManager.GetAllWorkerStateManagers())
+            foreach (var manager in _graphStateManager.GetAllWorkerStateManagers())
             {
                 manager.OnStateChange += WorkerStateManager_OnStateChange;
             }
@@ -79,15 +83,17 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
 
         private void WorkerStateManager_OnStateChange(string affectedInstanceName, WorkerState newState)
         {
-            if (_graphStateManager.GetAllWorkerStateManagers().Select(m => m.CurrentState).Any(s => s != WorkerState.Running))
+            if (_timerActive && !_graphStateManager.AreAllWorkersInState(WorkerState.Running))
             {   //not all workers are running, temporarily suspend global checkpoint timer
                 _logger.Information("Suspending global checkpoint timer, not all workers are operational");
                 _globalCheckpointTimer.Change(int.MaxValue, int.MaxValue);
+                _timerActive = false;
             }
-            else
+            else if(!_timerActive && _graphStateManager.AreAllWorkersInState(WorkerState.Running))
             {
                 _logger.Information("Resuming global checkpoint timer, all workers are operational");
                 _globalCheckpointTimer.Change(_globalCheckpointInterval, _globalCheckpointInterval);
+                _timerActive = true;
             }
         }
 

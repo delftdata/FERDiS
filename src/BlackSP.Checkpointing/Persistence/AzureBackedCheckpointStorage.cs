@@ -43,13 +43,13 @@ namespace BlackSP.Checkpointing.Persistence
         public async Task Delete(Guid id)
         {
             var blobContainerClient = GetBlobContainerClientForCheckpoints();
-            var blobsInCheckpoint = blobContainerClient.GetBlobs(prefix: $"id");
+            var blobsInCheckpoint = blobContainerClient.GetBlobs(prefix: $"{id}");
             foreach(var blob in blobsInCheckpoint)
             {
                 var subBlob = blobContainerClient.GetBlobClient(blob.Name);
-                if(await subBlob.ExistsAsync())
+                if(await subBlob.ExistsAsync().ConfigureAwait(false))
                 {
-                    await subBlob.DeleteAsync();
+                    await subBlob.DeleteAsync().ConfigureAwait(false);
                 }
             }
         }

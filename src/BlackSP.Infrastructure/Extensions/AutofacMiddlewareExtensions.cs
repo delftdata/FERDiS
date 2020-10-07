@@ -7,6 +7,8 @@ using BlackSP.Infrastructure.Layers.Control.Handlers;
 using BlackSP.Infrastructure.Layers.Data.Handlers;
 using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Checkpointing;
+using BlackSP.Core.Handlers;
+using System;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -37,6 +39,7 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder AddDataLayerMessageHandlersForWorker<TShell, TOperator>(this ContainerBuilder builder, CheckpointCoordinationMode cpMode)
         {
             //pre operator handlers
+            builder.RegisterType<MetricLoggingHandler<DataMessage>>().As<IHandler<DataMessage>>();
             builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>();
 
             switch(cpMode)
@@ -49,8 +52,8 @@ namespace BlackSP.Infrastructure.Extensions
                     break;
                 case CheckpointCoordinationMode.CommunicationInduced:
                     //TODO: register handler for cic
+                    throw new NotImplementedException("NO CIC HANDLER REGISTRATION IMPLEMENTED");
                     break;
-
             }
 
             //operator handler
@@ -67,6 +70,7 @@ namespace BlackSP.Infrastructure.Extensions
 
         public static ContainerBuilder AddDataLayerMessageHandlersForSource(this ContainerBuilder builder, CheckpointCoordinationMode cpMode)
         {
+            builder.RegisterType<MetricLoggingHandler<DataMessage>>().As<IHandler<DataMessage>>();
             switch (cpMode)
             {
                 case CheckpointCoordinationMode.Uncoordinated:

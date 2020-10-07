@@ -23,6 +23,9 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
         private readonly ICheckpointService _checkpointService;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ICheckpointConfiguration _checkpointConfiguration;
+
+        private Guid _lastSentCheckpointId;
+
         public CheckpointDependencyTrackingDispatchHandler(ICheckpointService checkpointService, 
             IVertexConfiguration vertexConfiguration,
             ICheckpointConfiguration checkpointConfiguration)
@@ -35,14 +38,17 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
         public Task<IEnumerable<DataMessage>> Handle(DataMessage message)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
+
+
             var cpId = _checkpointConfiguration.CoordinationMode == CheckpointCoordinationMode.Coordinated
                 ? _checkpointService.GetSecondLastCheckpointId(_vertexConfiguration.InstanceName)
                 : _checkpointService.GetLastCheckpointId(_vertexConfiguration.InstanceName);
             
-            if(cpId != Guid.Empty)
+            if(cpId != Guid.Empty && _lastSentCheckpointId != cpId)
             {
                 var payload = new CheckpointDependencyPayload { CheckpointId = cpId };
                 message.AddPayload(payload);
+                _lastSentCheckpointId = cpId;
             }
             return Task.FromResult(message.Yield());
         }

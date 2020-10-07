@@ -18,7 +18,7 @@ namespace BlackSP.ThroughputExperiment
             var logTargets = LogTargetFlags.Console;
             logTargets = logTargets | (useSimulator ? LogTargetFlags.File : LogTargetFlags.AzureBlob);
             
-            var logLevel = LogEventLevel.Debug;
+            var logLevel = LogEventLevel.Information;
 
             var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
             var app = await appBuilder
@@ -33,16 +33,9 @@ namespace BlackSP.ThroughputExperiment
         static void ConfigureOperatorGraph(IOperatorVertexGraphBuilder graph)
         {
             var source = graph.AddSource<SampleSourceOperator, SampleEvent>(1);
-            var filter = graph.AddFilter<SampleFilterOperator, SampleEvent>(2);
-            var mapper = graph.AddMap<SampleMapOperator, SampleEvent, SampleEvent>(2);
-            //var aggregate = graph.AddAggregate<SampleAggregateOperator, SampleEvent, SampleEvent2>(2);
             var sink = graph.AddSink<SampleSinkOperator, SampleEvent>(1);
 
-            source.Append(filter);
-            filter.Append(mapper);
-            //mapper.Append(aggregate);
-            mapper.Append(sink);
-            
+            source.Append(sink);
         }
     }
 }

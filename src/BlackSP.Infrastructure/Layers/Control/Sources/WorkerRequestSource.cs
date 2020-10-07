@@ -51,7 +51,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             _graphConfiguration = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            messages = new BlockingCollection<ControlMessage>(1 << 12);
+            messages = new BlockingCollection<ControlMessage>(Constants.DefaultThreadBoundaryQueueSize);
             heartbeatInterval = TimeSpan.FromSeconds(Constants.HeartbeatSeconds);
             lastHeartBeat = DateTime.Now.Add(-heartbeatInterval);//make sure we start off with a heartbeat
 
@@ -112,26 +112,40 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
                     msg.AddPayload(new WorkerRequestPayload { RequestType = WorkerRequestType.StartProcessing });
                     break;
                 case WorkerState.Halting:
-                    var upstreamWorkersThatAreHalted = _graphConfiguration.GetAllInstancesUpstreamOf(affectedInstanceName)
-                        .Where(name => name != _vertexConfiguration.InstanceName)
-                        .Select(name => (name, _graphManager.GetWorkerStateManager(name).CurrentState))
-                        .Where(pair => pair.CurrentState == WorkerState.Halting || pair.CurrentState == WorkerState.Halted)//no need to include faulted instances
-                        .Select(pair => pair.name)
-                        .ToArray();
-
-                    msg.AddPayload(new WorkerRequestPayload { 
-                        RequestType = WorkerRequestType.StopProcessing,
-                        UpstreamHaltingInstances = upstreamWorkersThatAreHalted
-                    });
+                    msg.AddPayload(GetWorkerRequestPayloadForHaltingInstance(affectedInstanceName));
                     break;
                 case WorkerState.Recovering:
                     var targetCheckpointId = _graphManager.GetWorkerStateManager(affectedInstanceName).RestoringCheckpointId;
                     msg.AddPayload(new CheckpointRestoreRequestPayload(targetCheckpointId));
                     break;
                 default:
-                    throw new InvalidOperationException($"Attempted to determine message for new WorkerState {newState}, which is not implemented in {this.GetType()}");
+                    throw new InvalidOperationException($"Attempted to determine notification message for instance {affectedInstanceName} with WorkerState {newState}, which is not implemented in {this.GetType()}");
             }
             messages.Add(msg);
+        }
+
+        private WorkerRequestPayload GetWorkerRequestPayloadForHaltingInstance(string instanceName)
+        {
+            var upstreamWorkersThatAreHalting = _graphConfiguration.GetAllInstancesUpstreamOf(instanceName, true)
+                .Where(name => name != _vertexConfiguration.InstanceName) //exclude this instance (coordinator)
+                .Select(name => (name, _graphManager.GetWorkerStateManager(name).CurrentState))
+                .Where(pair => pair.CurrentState == WorkerState.Halting || pair.CurrentState == WorkerState.Halted) //no need to include faulted instances
+                .Select(pair => pair.name)
+                .ToArray();
+
+            var downstreamWorkersThatAreHalting = _graphConfiguration.GetAllInstancesDownstreamOf(instanceName, true)
+                .Where(name => name != _vertexConfiguration.InstanceName) //exclude this instance (coordinator)
+                .Select(name => (Name: name, State: _graphManager.GetWorkerStateManager(name).CurrentState))
+                .Where(pair => pair.State == WorkerState.Halting || pair.State == WorkerState.Halted) //no need to include faulted instances
+                .Select(pair => pair.Name)
+                .ToArray();
+
+            return new WorkerRequestPayload
+            {
+                RequestType = WorkerRequestType.StopProcessing,
+                UpstreamHaltingInstances = upstreamWorkersThatAreHalting,
+                DownstreamHaltingInstances = downstreamWorkersThatAreHalting
+            };
         }
 
         #region dispose pattern

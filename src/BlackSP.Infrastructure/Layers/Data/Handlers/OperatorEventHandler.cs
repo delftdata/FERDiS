@@ -27,7 +27,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
             IEnumerable<DataMessage> result = _operatorShell.OperateOnEvent(payload.Event).Select(ev =>
             {
-                var res = new DataMessage(AssociatedMessage.MetaData, ev.GetPartitionKey());
+                var res = new DataMessage(AssociatedMessage.CreatedAtUtc, AssociatedMessage.MetaData, ev.GetPartitionKey());
                 res.AddPayload(new EventPayload { Event = ev });
                 return res;
             }).ToList(); // remove materialisation?

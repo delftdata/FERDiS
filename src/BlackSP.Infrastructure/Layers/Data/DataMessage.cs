@@ -18,22 +18,28 @@ namespace BlackSP.Infrastructure.Layers.Data
         [ProtoMember(2)]
         public override int? PartitionKey { get; }
 
+        [ProtoMember(3)]
+        public override DateTime CreatedAtUtc { get; set; }
+
         public DataMessage()
         {
             MetaData = new Dictionary<string, MessagePayloadBase>();
             PartitionKey = null;
+            //CreatedAtUtc = DateTime.MinValue;
         }
 
-        public DataMessage(int? partitionKey)
+        public DataMessage(DateTime createdAtUtc, int? partitionKey)
         {
             MetaData = new Dictionary<string, MessagePayloadBase>();
             PartitionKey = partitionKey;
+            CreatedAtUtc = createdAtUtc;
         }
 
-        public DataMessage(IDictionary<string, MessagePayloadBase> metaData, int? partitionKey)
+        public DataMessage(DateTime createdAtUtc, IDictionary<string, MessagePayloadBase> metaData, int? partitionKey)
         {
             MetaData = new Dictionary<string, MessagePayloadBase>(metaData);
             PartitionKey = partitionKey;
+            CreatedAtUtc = createdAtUtc;
         }
     }
 }

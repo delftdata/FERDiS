@@ -17,11 +17,15 @@ namespace BlackSP.Infrastructure.Layers.Control
 
         [ProtoMember(2)]
         public override IDictionary<string, MessagePayloadBase> MetaData { get; }
-
+        
+        //[ProtoMember(3)] - not a protomember as its not really relevant to transfer between instances for this message type
+        public override DateTime CreatedAtUtc { get; set; }
+        
         public ControlMessage()
         {
             PartitionKey = null;
             MetaData = new Dictionary<string, MessagePayloadBase>();
+            CreatedAtUtc = DateTime.MinValue;
         }
 
         public ControlMessage(int partitionKey)

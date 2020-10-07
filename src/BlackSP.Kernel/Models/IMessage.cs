@@ -8,10 +8,11 @@ namespace BlackSP.Kernel.Models
     {
         bool IsControl { get; }
 
-
         int? PartitionKey { get; }
 
         IEnumerable<MessagePayloadBase> Payloads { get; }
+
+        DateTime CreatedAtUtc { get; }
 
         /// <summary>
         /// Try to extract a strongly typed MessagePayloadBase implementation<br/>

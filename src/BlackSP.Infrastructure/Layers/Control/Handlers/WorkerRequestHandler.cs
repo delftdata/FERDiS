@@ -17,6 +17,7 @@ using BlackSP.Infrastructure.Layers.Data;
 using BlackSP.Infrastructure.Layers.Control.Payloads;
 using BlackSP.Kernel;
 using System.Diagnostics;
+using BlackSP.Kernel.Checkpointing;
 
 namespace BlackSP.Infrastructure.Layers.Control.Handlers
 {
@@ -26,6 +27,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
     public class WorkerRequestHandler : ForwardingPayloadHandlerBase<ControlMessage, WorkerRequestPayload>, IDisposable
     {
         private readonly IVertexConfiguration _vertexConfiguration;
+        private readonly ICheckpointService _checkpointService;
         private readonly DataMessageProcessor _processor;
         private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
@@ -77,14 +79,14 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                 switch (requestType)
                 {
                     case WorkerRequestType.Status:
-                        _logger.Information("Processing status request");
+                        _logger.Verbose("Processing status request");
                         action = Task.CompletedTask;
                         break;
                     case WorkerRequestType.StartProcessing:
                         action = StartDataProcess();
                         break;
                     case WorkerRequestType.StopProcessing:
-                        action = StopDataProcess(payload.UpstreamHaltingInstances);
+                        action = StopDataProcess(payload.UpstreamHaltingInstances.OrEmpty(), payload.DownstreamHaltingInstances.OrEmpty());
                         break;
                     default:
                         throw new InvalidOperationException($"Received worker request \"{requestType}\" which is not implemented in {this.GetType()}");
@@ -109,7 +111,8 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             if (_activeThread == null)
             {
                 _ctSource = new CancellationTokenSource();
-                _activeThread = _processor.StartProcess(_ctSource.Token);
+                _activeThread = _processor.StartProcess(_ctSource.Token)
+                    .ContinueWith(LogExceptionIfFaulted, TaskScheduler.Current);
                 _logger.Information($"Data processor started by coordinator instruction");
             }
             else
@@ -119,19 +122,17 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             return Task.CompletedTask;
         }
 
-        private async Task StopDataProcess(IEnumerable<string> upstreamHaltedInstances)
+        private async Task StopDataProcess(IEnumerable<string> upstreamHaltedInstances, IEnumerable<string> downstreamHaltedInstances)
         {
             if (_activeThread != null)
             {
+                _logger.Verbose($"Data processor halt instruction received by coordinator");
                 var sw = new Stopwatch();
-                
-                _logger.Fatal($"Data processor halt instruction received by coordinator"); //TODO: make debug level
                 sw.Start();
-                var processorHaltTask = CancelProcessingAndResetLocally();
-                var networkFlushTask = _processor.Flush(upstreamHaltedInstances ?? Enumerable.Empty<string>());
-                await Task.WhenAll(processorHaltTask, networkFlushTask).ConfigureAwait(false);
+                await CancelProcessorThread().ConfigureAwait(false);
+                await _processor.Flush(upstreamHaltedInstances, downstreamHaltedInstances).ConfigureAwait(false);
                 sw.Stop();
-                _logger.Fatal($"Data processor halt & network flush successfull in {sw.ElapsedMilliseconds}ms, proceeding with network flush with upstream halting instances"); //TODO: make debug level
+                _logger.Debug($"Data processor halt & network flush successfull in {sw.ElapsedMilliseconds}ms");
             }
             else
             {
@@ -139,7 +140,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             }
         }
 
-        private async Task CancelProcessingAndResetLocally()
+        private async Task CancelProcessorThread()
         {
             try
             {
@@ -155,6 +156,14 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             }
         }
 
+        private void LogExceptionIfFaulted(Task t)
+        {
+            if(t.IsFaulted)
+            {
+                _logger.Fatal(t.Exception, "DataProcessor thread exited with exception");
+            }
+        }
+
         #region dispose support
 
         protected virtual void Dispose(bool disposing)
@@ -163,12 +172,14 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             {
                 if (disposing)
                 {
-                    if(_activeThread != null)
+                    try
                     {
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                        CancelProcessingAndResetLocally();
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                        _ctSource?.Cancel();
+                        _ctSource?.Dispose();
+                        _activeThread?.Wait();
+                        _activeThread?.Dispose();
                     }
+                    catch(Exception) { }
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer

@@ -91,6 +91,37 @@ namespace BlackSP.Core.Coordination
 
         public WorkerStateManager GetWorkerStateManager(string instanceName) => _workerStateManagers[instanceName];
 
+        /// <summary>
+        /// Utility method querying the worker managers for state
+        /// </summary>
+        /// <param name="states"></param>
+        /// <returns></returns>
+        public bool AreAllWorkersInState(params WorkerState[] states)
+        {
+            var allInState = true;
+            foreach (var workerManager in _workerStateManagers.Values)
+            {
+                allInState = allInState && states.Contains(workerManager.CurrentState);
+            }
+            return allInState;
+        }
+
+        /// <summary>
+        /// Utility method querying the worker managers for state
+        /// </summary>
+        /// <param name="states"></param>
+        /// <returns></returns>
+        public bool IsAnyWorkerInState(params WorkerState[] states)
+        {
+            foreach (var workerManager in _workerStateManagers.Values)
+            {
+                if (states.Contains(workerManager.CurrentState))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         private void InitializeWorkerStateMachines()
         {
@@ -193,7 +224,7 @@ namespace BlackSP.Core.Coordination
                 }
                 catch (Exception e)
                 {
-                    _logger.Fatal(e, $"Recovery line preparation failed with exception, halting all workers");
+                    _logger.Fatal(e, $"Recovery line preparation failed with exception, halting all workers");                    
                     foreach(var worker in _workerStateManagers.Values)
                     {
                         //halt all workers, we cannot continue with a failed instance and no recovery line
@@ -212,11 +243,15 @@ namespace BlackSP.Core.Coordination
                         .Select(kv => kv.Value).ToArray()
                     : Enumerable.Empty<WorkerStateManager>();
 
-                foreach (var statemachine in workersToHalt)
+                var res = Parallel.ForEach(workersToHalt, manager => manager.FireTrigger(WorkerStateTrigger.DataProcessorHalt));
+                if(res.IsCompleted)
                 {
-                    statemachine.FireTrigger(WorkerStateTrigger.DataProcessorHalt);
+                    _logger.Verbose($"Fired DataProcessorHalt trigger on {workersToHalt.Count()} instances: {String.Join(", ", workersToHalt.Select(m => m.InstanceName))}");
+                } 
+                else
+                {
+                    _logger.Warning($"Failed to fire DataProcessorHalt trigger on {workersToHalt.Count()} instances: {String.Join(", ", workersToHalt.Select(m => m.InstanceName))}");
                 }
-                _logger.Verbose($"Fired DataProcessorHalt trigger on {workersToHalt.Count()} instances: {String.Join(", ", workersToHalt.Select(m => m.InstanceName))}");
             }).ContinueWith(LogException, TaskScheduler.Current);
             t.Wait(); //wait for async operation to complete before returning
         }
@@ -233,36 +268,10 @@ namespace BlackSP.Core.Coordination
 
         #endregion
 
-        #region state transition guards
-
         private bool IsRecoveryLinePrepared()
         {
             return _preparedRecoveryLine != null;
         }
-
-        private bool AreAllWorkersInState(params WorkerState[] states)
-        {
-            var allInState = true;
-            foreach(var workerManager in _workerStateManagers.Values)
-            {
-                allInState = allInState && states.Contains(workerManager.CurrentState);
-            }
-            return allInState;
-        }
-
-        private bool IsAnyWorkerInState(params WorkerState[] states)
-        {
-            foreach (var workerManager in _workerStateManagers.Values)
-            {
-                if(states.Contains(workerManager.CurrentState))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        #endregion
 
         private void LogException(Task t)
         {

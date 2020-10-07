@@ -30,13 +30,6 @@ namespace BlackSP.Kernel.Checkpointing
         Task<Guid> TakeCheckpoint(string currentInstanceName);
 
         /// <summary>
-        /// Will attempt to take a checkpoint of the application's initial state. 
-        /// If this checkpoint was already taken and the vertex is recovering from a failure, no checkpoint will be taken
-        /// </summary>
-        /// <returns></returns>
-        Task TakeInitialCheckpointIfNotExists(string currentInstanceName);
-
-        /// <summary>
         /// Gets the most recently taken checkpoint's id
         /// </summary>
         /// <param name="currentInstanceName"></param>
@@ -66,5 +59,11 @@ namespace BlackSP.Kernel.Checkpointing
         /// <param name="failedInstanceNames"></param>
         /// <returns></returns>
         Task<IRecoveryLine> CalculateRecoveryLine(IEnumerable<string> failedInstanceNames);
+
+        /// <summary>
+        /// Empties checkpoint storage, typically most useful on startup/shutdown
+        /// </summary>
+        /// <returns></returns>
+        Task ClearCheckpointStorage();
     }
 }

@@ -51,17 +51,15 @@ namespace BlackSP.Core.Processors
         /// <summary>
         /// Start core processes for message processing
         /// </summary>
-        public async Task StartProcess(CancellationToken t)
+        public virtual async Task StartProcess(CancellationToken t)
         {
             var passthroughQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
             var exitSource = new CancellationTokenSource();
             var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, exitSource.Token);
             try
-            {
-                
+            {                
                 var deliveryThread = Task.Run(() => ProcessFromSource(passthroughQueue, linkedSource.Token));
                 var dispatchThread = Task.Run(() => DispatchResults(passthroughQueue, linkedSource.Token));
-                // U fooken w0t m8?!
                 var exitedTask = await Task.WhenAny(deliveryThread, dispatchThread).ConfigureAwait(false);
                 exitSource.Cancel();
                 await Task.WhenAll(deliveryThread, dispatchThread).ConfigureAwait(false);

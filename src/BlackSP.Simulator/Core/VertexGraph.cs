@@ -68,7 +68,7 @@ namespace BlackSP.Simulator.Core
                         throw;
                     }
                     _logger.Warning(e, $"Vertex exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
-                    await Task.Delay(restartTimeout);
+                    await Task.Delay(restartTimeout).ConfigureAwait(false);
                 }
             }             
         }

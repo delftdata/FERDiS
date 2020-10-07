@@ -49,14 +49,28 @@ namespace BlackSP.Checkpointing
             _dpTracker.UpdateDependency(originInstanceName, checkpointId);
         }
 
-        public Guid GetLatestCheckpointId(string currentInstanceName)
+        public Guid GetLastCheckpointId(string currentInstanceName)
         {
-            return _dpTracker.Dependencies[currentInstanceName];
+            try
+            {
+                return _dpTracker.Dependencies[currentInstanceName];
+            } 
+            catch(KeyNotFoundException)
+            {
+                return Guid.Empty;
+            }
         }
 
         public Guid GetSecondLastCheckpointId(string currentInstanceName)
         {
-            return _dpTracker.GetPreviousDependency(currentInstanceName);
+            try
+            {
+                return _dpTracker.GetPreviousDependency(currentInstanceName);
+            }
+            catch (KeyNotFoundException)
+            {
+                return Guid.Empty;
+            }
         }
 
         ///<inheritdoc/>
@@ -77,14 +91,14 @@ namespace BlackSP.Checkpointing
             //Under the assumption of exact same object registration order (at least regarding instances of the same type) this could be extended to support multiple instances
             if(_register.Contains(identifier))
             {
-                throw new NotSupportedException($"Registering multiple instances of the same type is not supported");
+                throw new NotSupportedException($"Registering multiple instances of the same type is not supported - type: {type.Name}");
             }
             
             if(!o.AssertCheckpointability())
             {
                 return false;
             }
-            _logger.Verbose($"Object of type {type} is registered for checkpointing with {nameof(CheckpointService)}.");
+            _logger.Verbose($"Object of type {type.Name} is registered for checkpointing with {nameof(CheckpointService)}.");
             _register.Add(identifier, o);
             return true;
         }
@@ -100,38 +114,13 @@ namespace BlackSP.Checkpointing
             return checkpoint.Id;
         }
 
-        ///<inheritdoc/>
-        public async Task TakeInitialCheckpointIfNotExists(string currentInstanceName)
+        public async Task ClearCheckpointStorage()
         {
+            _logger.Debug("Starting checkpoint storage clear");
             var allCheckpointMetadatas = await _storage.GetAllMetaData().ConfigureAwait(false);
-            //there is a checkpoint taken by this instance, without any dependencies on its own older checkpoints so it must be the initial one
-            var allCheckpointsByInstance = allCheckpointMetadatas.Where(m => m.InstanceName == currentInstanceName);
-            var firstCheckpoint = allCheckpointsByInstance.FirstOrDefault(m => !m.Dependencies.ContainsKey(currentInstanceName));
-            if (firstCheckpoint != null)
-            {
-                _logger.Information($"Skipping initial checkpoint, it already exists");
-                var lastCheckpoint = allCheckpointMetadatas.OrderBy(m => m.CreatedAtUtc).Last();
-                _dpTracker.OverwriteDependencies(lastCheckpoint.Dependencies); //ensure next checkpoint inherits dependencies from latest checkpoint
-                _dpTracker.UpdateDependency(currentInstanceName, lastCheckpoint.Id);
-                return;
-            }
-            
-            try
-            {
-                _logger.Information($"Taking checkpoint of initial state");
-                await TakeCheckpoint(currentInstanceName).ConfigureAwait(false);
-                _logger.Information($"Initial checkpoint successfully taken");
-            } 
-            catch(Exception e)
-            {
-                _logger.Warning("Failed to take initial checkpoint, rethrowing exception");
-                throw;
-            }
-        }
-
-        public Guid GetLastCheckpointId(string currentInstanceName)
-        {
-            return _dpTracker.Dependencies[currentInstanceName];
+            var deleteTasks = allCheckpointMetadatas.Select(meta => _storage.Delete(meta.Id));
+            await Task.WhenAll(deleteTasks).ConfigureAwait(false);
+            _logger.Debug("Checkpoint storage cleared successfully");
         }
 
         ///<inheritdoc/>
@@ -141,7 +130,7 @@ namespace BlackSP.Checkpointing
                 ?? throw new CheckpointRestorationException($"Checkpoint storage returned null for checkpoint ID: {checkpointId}");
             _register.RestoreCheckpoint(checkpoint);
             _dpTracker.OverwriteDependencies(checkpoint.MetaData.Dependencies);
-            //TODO: delete all checkpoints after (and/or before?) current checkpoint
+            _dpTracker.UpdateDependency(checkpoint.MetaData.InstanceName, checkpoint.Id); //ensure next checkpoint depends on current
         }
 
     }

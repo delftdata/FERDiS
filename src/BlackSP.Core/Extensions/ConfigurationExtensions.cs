@@ -12,44 +12,36 @@ namespace BlackSP.Core.Extensions
 
         /// <summary>
         /// Returns an enumerable of instancenames that lie downstream of the given instance with supplied name.<br/>
-        /// Note that this includes all downstream operators, not just the direct descendants.
+        /// (instances are not necessarily workers only!)
         /// </summary>
         /// <param name="config"></param>
         /// <param name="instanceName"></param>
+        /// <param name="excludeGrandChildren"></param>
         /// <returns></returns>
-        public static IEnumerable<string> GetAllInstancesDownstreamOf(this IVertexGraphConfiguration graphConfig, string instanceName)
+        public static IEnumerable<string> GetAllInstancesDownstreamOf(this IVertexGraphConfiguration graphConfig, string instanceName, bool excludeGrandChildren)
         {
             _ = graphConfig ?? throw new ArgumentNullException(nameof(graphConfig));
 
-            var downstreamInstances = new List<string>();
-
             var children = graphConfig.InstanceConnections.Where(t => t.Item1 == instanceName).Select(t => t.Item2);
+            var grandChildren = excludeGrandChildren ? Enumerable.Empty<string>() : children.SelectMany(child => graphConfig.GetAllInstancesDownstreamOf(child, excludeGrandChildren));
 
-            foreach(var child in children)
-            {
-                downstreamInstances.Add(child);
-
-                var grandChildren = graphConfig.GetAllInstancesDownstreamOf(child);
-                foreach(var grandChild in grandChildren)
-                {
-                    downstreamInstances.Add(grandChild);
-                }
-            }
-            return downstreamInstances;
+            return children.Concat(grandChildren);
         }
 
         /// <summary>
-        /// Returns an enumerable of instancenames that lie downstream of the given instance with supplied name.<br/>
-        /// Note that this includes direct upstream instances only
+        /// Returns an enumerable of instancenames that are upstream of the given instance with supplied name.<br/>
+        /// (instances are not necessarily workers only!)
         /// </summary>
         /// <param name="config"></param>
         /// <param name="instanceName"></param>
+        /// <param name="excludeGrandParents"></param>
         /// <returns></returns>
-        public static IEnumerable<string> GetAllInstancesUpstreamOf(this IVertexGraphConfiguration graphConfig, string instanceName)
+        public static IEnumerable<string> GetAllInstancesUpstreamOf(this IVertexGraphConfiguration graphConfig, string instanceName, bool excludeGrandParents)
         {
             _ = graphConfig ?? throw new ArgumentNullException(nameof(graphConfig));
 
             var parents = graphConfig.InstanceConnections.Where(t => t.Item2 == instanceName).Select(t => t.Item1);
+            var grandParents = excludeGrandParents ? Enumerable.Empty<string>() : parents.SelectMany(parent => graphConfig.GetAllInstancesUpstreamOf(parent, excludeGrandParents));
             return parents;
         }
 

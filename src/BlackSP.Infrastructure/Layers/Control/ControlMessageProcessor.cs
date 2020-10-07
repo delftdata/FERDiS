@@ -21,6 +21,7 @@ namespace BlackSP.Infrastructure.Layers.Control
     {
         private readonly ICheckpointService _checkpointService;
         private readonly IVertexConfiguration _vertexConfiguration;
+        private readonly ILogger _logger;
         public ControlMessageProcessor(
             ICheckpointService checkpointService,
             IVertexConfiguration vertexConfiguration,
@@ -31,13 +32,17 @@ namespace BlackSP.Infrastructure.Layers.Control
         {
             _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public override async Task StartProcess(CancellationToken t)
         {
-            if(_vertexConfiguration.VertexType != VertexType.Coordinator)
+            if(_vertexConfiguration.VertexType == VertexType.Coordinator)
             {
-                await _checkpointService.TakeInitialCheckpointIfNotExists(_vertexConfiguration.InstanceName).ConfigureAwait(false);
+                //coordinator start means initial system startup, clear storage first
+                _logger.Information("Coordinator control layer start, clearing checkpoint storage");
+                await _checkpointService.ClearCheckpointStorage().ConfigureAwait(false);
+                _logger.Information("Clearing checkpoint storage completed");
             }
             await base.StartProcess(t).ConfigureAwait(false);
         }

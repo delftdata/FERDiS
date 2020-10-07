@@ -14,6 +14,8 @@ namespace BlackSP.Core.Models
 
         public abstract IDictionary<string, MessagePayloadBase> MetaData { get; }
 
+        public abstract DateTime CreatedAtUtc { get; set; }
+
         public IEnumerable<MessagePayloadBase> Payloads => MetaData.Values;
 
         public bool TryExtractPayload<TPayload>(out TPayload payload) where TPayload : MessagePayloadBase

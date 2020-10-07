@@ -35,6 +35,6 @@ namespace BlackSP.Kernel
         /// Empty all dispatch queues
         /// </summary>
         /// <returns></returns>
-        Task Flush();
+        Task Flush(IEnumerable<string> downstreamInstancesToFlush);
     }
 }

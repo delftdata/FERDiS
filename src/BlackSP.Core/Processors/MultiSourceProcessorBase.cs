@@ -74,9 +74,14 @@ namespace BlackSP.Core.Processors
             if(t.IsFaulted)
             {
                 _logger.Fatal(t.Exception, "MultiSourceProcessor encountered exception, exiting");
-            } else
+            } 
+            else if(t.IsCanceled)
             {
-                _logger.Fatal($"Thread exited");
+                //shh this is okay
+            }
+            else
+            {
+                _logger.Warning($"Thread exited without exception or cancellation");
             }
         }
 

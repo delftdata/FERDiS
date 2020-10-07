@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace BlackSP.Core.Extensions
@@ -17,6 +18,17 @@ namespace BlackSP.Core.Extensions
         {
             _ = item ?? throw new ArgumentNullException(nameof(item));
             yield return item;
+        }
+
+        /// <summary>
+        /// Coalesces over a potentially null ienumerable and returns an empty enumerable if it was null
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="potentialNull"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> OrEmpty<T> (this IEnumerable<T> enumerable)
+        {
+            return enumerable ?? Enumerable.Empty<T>();
         }
     }
 }
