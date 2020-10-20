@@ -2,6 +2,7 @@
 using BlackSP.Simulator.Configuration;
 using Serilog;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -22,7 +23,7 @@ namespace BlackSP.Simulator.Core
             _identityTable = identityTable ?? throw new ArgumentNullException(nameof(identityTable));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _vertexCancellationSources = new Dictionary<string, CancellationTokenSource>();
+            _vertexCancellationSources = new ConcurrentDictionary<string, CancellationTokenSource>();
         }
 
         public IEnumerable<Task> StartAllVertices(int maxRestarts, TimeSpan restartTimeout)
@@ -41,6 +42,7 @@ namespace BlackSP.Simulator.Core
             if (source != null)
             {
                 source.Cancel();
+                _vertexCancellationSources.Remove(instanceName);
             }
         }
 
@@ -52,7 +54,7 @@ namespace BlackSP.Simulator.Core
                 while (true)
                 {
                     var ctSource = new CancellationTokenSource();
-                    _vertexCancellationSources[instanceName] = ctSource;
+                    _vertexCancellationSources.Add(instanceName, ctSource);
                     try
                     {
                         await v.StartAs(instanceName, ctSource.Token);

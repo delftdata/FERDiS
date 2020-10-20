@@ -1,4 +1,5 @@
-﻿using BlackSP.Core.Extensions;
+﻿using BlackSP.Checkpointing;
+using BlackSP.Core.Extensions;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
@@ -15,20 +16,23 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
 
         private readonly ICheckpointService _checkpointingService;
         private readonly IVertexConfiguration _vertexConfiguration;
+        private readonly ICheckpointConfiguration _checkpointConfiguration;
         private readonly ILogger _logger;
         private DateTime _lastCheckpointUtc;
         private TimeSpan _checkpointInterval;
 
-        public UncoordinatedCheckpointingHandler(ICheckpointService checkpointingService, 
+        public UncoordinatedCheckpointingHandler(ICheckpointService checkpointingService,
+            ICheckpointConfiguration checkpointConfiguration,
             IVertexConfiguration vertexConfiguration,
             ILogger logger)
         {
             _checkpointingService = checkpointingService ?? throw new ArgumentNullException(nameof(checkpointingService));
+            _checkpointConfiguration = checkpointConfiguration ?? throw new ArgumentNullException(nameof(checkpointConfiguration));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _lastCheckpointUtc = DateTime.UtcNow;
-            _checkpointInterval = TimeSpan.FromMinutes(1); //TODO: make configurable?
+            _checkpointInterval = TimeSpan.FromSeconds(_checkpointConfiguration.CheckpointIntervalSeconds);
         }
 
         public async Task<IEnumerable<DataMessage>> Handle(DataMessage message)

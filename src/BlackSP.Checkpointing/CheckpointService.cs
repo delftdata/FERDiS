@@ -14,6 +14,7 @@ using Serilog;
 using System.Collections.Immutable;
 using BlackSP.Kernel.Models;
 using BlackSP.Checkpointing.Models;
+using BlackSP.Kernel.Operators;
 
 namespace BlackSP.Checkpointing
 {
@@ -93,12 +94,12 @@ namespace BlackSP.Checkpointing
             {
                 throw new NotSupportedException($"Registering multiple instances of the same type is not supported - type: {type.Name}");
             }
-            
-            if(!o.AssertCheckpointability())
+            var test = o as IOperatorShell != null;
+            if (!o.AssertCheckpointability())
             {
                 return false;
             }
-            _logger.Verbose($"Object of type {type.Name} is registered for checkpointing with {nameof(CheckpointService)}.");
+            _logger.Debug($"Object of type {type.Name} is registered for checkpointing with {nameof(CheckpointService)}.");
             _register.Add(identifier, o);
             return true;
         }

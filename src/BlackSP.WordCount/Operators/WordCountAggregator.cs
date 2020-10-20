@@ -26,6 +26,10 @@ namespace BlackSP.WordCount.Operators
             _logger.Debug($"Aggregating {wordGroups.Count()} different words");
             foreach (var group in wordGroups)
             {
+                if(group.Any(ev => ev.Count == 0 || ev.EventTime == default))
+                {
+                    throw new InvalidProgramException("u fooken wot?");
+                }
                 yield return new WordEvent
                 {
                     EventTime = group.First().EventTime,

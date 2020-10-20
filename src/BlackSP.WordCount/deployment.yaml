@@ -170,7 +170,7 @@ metadata:
     namespace: default
     name: crainst06
     labels:
-        operator: sink01
+        operator: aggregate01
         instance: crainst06
 spec:
     replicas: 1
@@ -182,7 +182,7 @@ spec:
         metadata:
             name: crainst06
             labels:
-                operator: sink01
+                operator: aggregate01
                 instance: crainst06
         spec:
             containers:
@@ -203,7 +203,7 @@ metadata:
     namespace: default
     name: crainst07
     labels:
-        operator: coordinator01
+        operator: sink01
         instance: crainst07
 spec:
     replicas: 1
@@ -215,7 +215,7 @@ spec:
         metadata:
             name: crainst07
             labels:
-                operator: coordinator01
+                operator: sink01
                 instance: crainst07
         spec:
             containers:
@@ -227,5 +227,38 @@ spec:
               - name: AZURE_STORAGE_CONN_STRING
                 value: "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
               args: ["crainst07", "1500"] #CRA instance name crainst07, exposed on port 1500
+              #resources: #requests #cpu "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
+---
+
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+    namespace: default
+    name: crainst08
+    labels:
+        operator: coordinator01
+        instance: crainst08
+spec:
+    replicas: 1
+    serviceName: crainst08
+    selector:
+        matchLabels:
+            instance: crainst08
+    template:
+        metadata:
+            name: crainst08
+            labels:
+                operator: coordinator01
+                instance: crainst08
+        spec:
+            containers:
+            - name: crainst08
+              image: mdzwart/cra-net3.1:latest
+              ports:
+              - containerPort: 1500
+              env:
+              - name: AZURE_STORAGE_CONN_STRING
+                value: "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net"
+              args: ["crainst08", "1500"] #CRA instance name crainst08, exposed on port 1500
               #resources: #requests #cpu "500m" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
 ---

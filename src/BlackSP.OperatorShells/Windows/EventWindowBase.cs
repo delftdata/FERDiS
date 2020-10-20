@@ -5,6 +5,7 @@ using System.Linq;
 
 namespace BlackSP.Core.Windows
 {
+    [Serializable]
     public abstract class EventWindowBase<TEvent>
         where TEvent: class, IEvent
     {

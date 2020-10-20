@@ -6,7 +6,12 @@ using System.Text;
 
 namespace BlackSP.WordCount.Events
 {
+    /// <summary>
+    /// serializable required as these events are aggregated 
+    /// and may therefore be part of a checkpoint
+    /// </summary>
     [ProtoContract]
+    [Serializable]
     public class WordEvent : IEvent
     {
         public string Key => Word;

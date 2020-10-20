@@ -6,6 +6,7 @@ using System.Text;
 
 namespace BlackSP.Core.Windows
 {
+    [Serializable]
     public class SlidingEventWindow<TEvent> : EventWindowBase<TEvent>
         where TEvent : class, IEvent
     {

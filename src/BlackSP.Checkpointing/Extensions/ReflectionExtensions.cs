@@ -40,9 +40,16 @@ namespace BlackSP.Checkpointing.Extensions
         public static IEnumerable<FieldInfo> GetCheckpointableFields(this object o)
         {
             _ = o ?? throw new ArgumentNullException(nameof(o));
-            return o.GetType()
-                    .GetRuntimeFields()
-                    .Where(field => field.HasCheckpointableAttribute());
+
+            List<FieldInfo> fields = new List<FieldInfo>();
+
+            var baseType = o.GetType();
+            while (baseType != null)
+            {
+                fields.AddRange(baseType.GetRuntimeFields().Where(field => field.HasCheckpointableAttribute()));
+                baseType = baseType.BaseType;
+            }
+            return fields;
         }
 
         public static bool HasCheckpointableAttribute(this FieldInfo field)

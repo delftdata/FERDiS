@@ -101,7 +101,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 _logger.Debug($"Duplicate connectionKey encountered: {connectionKey}");
                 throw new InvalidOperationException($"Received two barriers from one connection - {endpoint.RemoteVertexName} at {endpoint.GetRemoteInstanceName(shardId)} shard {shardId}");
             }
-            _logger.Debug($"Received barrier payload, proceeding to block connection to vertex {endpoint.RemoteVertexName} shard {shardId}");
+            _logger.Information($"Received barrier, proceeding to block connection to instance {endpoint.GetRemoteInstanceName(shardId)}");
             _messageReceiver.Block(endpoint, shardId);
             _blockedConnections.Add((endpoint, shardId));
             _blockedConnectionKeys.Add(connectionKey);
@@ -119,6 +119,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 _blockedConnectionKeys.Clear();
                 //re-add the barrier to propagate it downstream
                 AssociatedMessage.AddPayload(payload);
+                _logger.Information($"Unblocked {AllUpstreamConnectionKeys.Count()} upstream connections and forwarded barrier");
             }
         }
 

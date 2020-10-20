@@ -27,7 +27,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
         protected override Task<IEnumerable<ControlMessage>> Handle(CheckpointRestoreCompletionPayload payload)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
-            _logger.Information($"Received checkpoint restore completion response from {payload.InstanceName} with checkpointId: {payload.CheckpointId}");
+            _logger.Debug($"Received checkpoint restore completion response from {payload.InstanceName} with checkpointId: {payload.CheckpointId}");
             var workerManager = _graphManager.GetWorkerStateManager(payload.InstanceName);
             workerManager.FireTrigger(WorkerStateTrigger.CheckpointRestoreCompleted, payload.CheckpointId);
             return Task.FromResult(Enumerable.Empty<ControlMessage>());
