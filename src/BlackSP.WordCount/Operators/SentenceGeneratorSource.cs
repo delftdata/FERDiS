@@ -12,7 +12,7 @@ namespace BlackSP.WordCount.Operators
 {
     class SentenceGeneratorSource : ISourceOperator<SentenceEvent>
     {
-        private static string[] defaultSentences = new[] { "A B C", "B C D", "C D A", "D A B" };
+        private static string[] defaultSentences = new[] { "A", "A B", "A B C", "A B C D" };
         
         [Checkpointable]
         private int lastSentenceIndex = 0;
@@ -27,10 +27,10 @@ namespace BlackSP.WordCount.Operators
 
         public SentenceEvent ProduceNext(CancellationToken t)
         {
-            if(sentencesGenerated >= defaultSentences.Length * 20) //keep going until each sentence was sent 20 times
+            if(sentencesGenerated >= defaultSentences.Length * 200000) //keep going until each sentence was sent 20 times
             {
                 Task.Delay(WordCountAggregator.WindowSizeSeconds*2000).Wait();
-                _logger.Information($"Each sentence sent at least 20 times, now sending all words as one sentence");
+                _logger.Information($"Each sentence sent at least 200.000 times, now sending all words as one sentence");
                 return new SentenceEvent
                 {
                     EventTime = DateTime.UtcNow,
@@ -39,7 +39,7 @@ namespace BlackSP.WordCount.Operators
             } 
             else
             {
-                Task.Delay(1000).Wait();//nasty sleep to throttle the amount of data being generated
+                //Task.Delay(1000).Wait();//nasty sleep to throttle the amount of data being generated
             }
             var i = lastSentenceIndex;
             lastSentenceIndex = (lastSentenceIndex + 1) % defaultSentences.Length; //round robin pick sentences

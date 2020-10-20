@@ -94,14 +94,13 @@ namespace BlackSP.Checkpointing
             {
                 throw new NotSupportedException($"Registering multiple instances of the same type is not supported - type: {type.Name}");
             }
-            var test = o as IOperatorShell != null;
-            if (!o.AssertCheckpointability())
+            if (o.AssertCheckpointability())
             {
-                return false;
+                _logger.Debug($"Object of type {type.Name} is registered for checkpointing with {nameof(CheckpointService)}.");
+                _register.Add(identifier, o);
+                return true;
             }
-            _logger.Debug($"Object of type {type.Name} is registered for checkpointing with {nameof(CheckpointService)}.");
-            _register.Add(identifier, o);
-            return true;
+            return false;
         }
 
         ///<inheritdoc/>

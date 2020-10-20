@@ -1,4 +1,5 @@
-﻿using BlackSP.Core.Monitors;
+﻿using BlackSP.Core.Extensions;
+using BlackSP.Core.Monitors;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Models;
 using Serilog;
@@ -45,13 +46,13 @@ namespace BlackSP.Core.Coordination
             /// </summary>
             WorkerHealthy
         }
-
         
         public State CurrentState => _graphStateMachine.State;
 
         private readonly IEnumerable<string> _workerInstanceNames;
         private readonly WorkerStateManager.Factory _stateMachineFactory;
         private readonly ICheckpointService _checkpointService;
+        private readonly IVertexGraphConfiguration _graphConfiguration;
         private readonly ILogger _logger;
         private readonly IDictionary<string, WorkerStateManager> _workerStateManagers;
         private readonly StateMachine<State, Trigger> _graphStateMachine;
@@ -64,7 +65,7 @@ namespace BlackSP.Core.Coordination
                                        IVertexConfiguration vertexConfiguration,
                                        ILogger logger)
         {
-            _ = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
+            _graphConfiguration = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
             _workerInstanceNames = graphConfiguration.InstanceNames.Where(s => s != vertexConfiguration.InstanceName);
             _stateMachineFactory = stateMachineFactory ?? throw new ArgumentNullException(nameof(stateMachineFactory));
             _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
@@ -146,9 +147,6 @@ namespace BlackSP.Core.Coordination
             {
                 _graphStateMachine.Fire(Trigger.WorkerHealthy);
             }
-
-            //... workers will automagically go back to halted state when they restart
-            //... workers will automagically go back to halted state when checkpoint restore completes
         }
 
         private void ConnectionMonitor_OnConnectionChange(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
@@ -213,9 +211,9 @@ namespace BlackSP.Core.Coordination
             var failedInstances = _workerStateManagers.Values.Where(sm => sm.CurrentState == WorkerState.Faulted).Select(sm => sm.InstanceName);
             var t = Task.Run(async () =>
             {
-                var stopwatch = new Stopwatch();
                 try
                 {
+                    var stopwatch = new Stopwatch();
                     _logger.Information("Recovery line preparation started");
                     stopwatch.Start();
                     _preparedRecoveryLine = await _checkpointService.CalculateRecoveryLine(failedInstances).ConfigureAwait(false)
@@ -225,36 +223,39 @@ namespace BlackSP.Core.Coordination
                 }
                 catch (Exception e)
                 {
-                    _logger.Fatal(e, $"Recovery line preparation failed with exception, halting all workers");                    
-                    foreach(var worker in _workerStateManagers.Values)
-                    {
-                        //halt all workers, we cannot continue with a failed instance and no recovery line
-                        worker.FireTrigger(WorkerStateTrigger.DataProcessorHalt);
-                    }
+                    _logger.Fatal(e, $"Recovery line preparation failed with exception, halting all workers");
+                    FireWorkerHaltTriggers(_workerInstanceNames); //fire halt triggers on all worker instances
                     throw;
                 }
-                finally
-                {
-                    stopwatch.Stop();
-                }
+                FireWorkerHaltTriggers(_preparedRecoveryLine?.AffectedWorkers ?? Enumerable.Empty<string>());
 
-                var workersToHalt = _preparedRecoveryLine != null 
-                    ? _workerStateManagers.Where(kv => _preparedRecoveryLine.AffectedWorkers.Contains(kv.Key))
-                        .Where(kv => kv.Value.CurrentState == WorkerState.Running)
-                        .Select(kv => kv.Value).ToArray()
-                    : Enumerable.Empty<WorkerStateManager>();
-
-                var res = Parallel.ForEach(workersToHalt, manager => manager.FireTrigger(WorkerStateTrigger.DataProcessorHalt));
-                if(res.IsCompleted)
-                {
-                    _logger.Verbose($"Fired DataProcessorHalt trigger on {workersToHalt.Count()} instances: {String.Join(", ", workersToHalt.Select(m => m.InstanceName))}");
-                } 
-                else
-                {
-                    _logger.Warning($"Failed to fire DataProcessorHalt trigger on {workersToHalt.Count()} instances: {String.Join(", ", workersToHalt.Select(m => m.InstanceName))}");
-                }
             }).ContinueWith(LogException, TaskScheduler.Current);
             t.Wait(); //wait for async operation to complete before returning
+        }
+
+        /// <summary>
+        /// Determines which workers need to receive a halt instruction
+        /// </summary>
+        /// <param name="haltedWorkers"></param>
+        private void FireWorkerHaltTriggers(IEnumerable<string> haltedWorkers)
+        {
+            var workersToHalt = _workerStateManagers.Where(kv => haltedWorkers.Contains(kv.Key))
+                        .Where(kv => kv.Value.CurrentState == WorkerState.Running)
+                        .Select(kv => kv.Value)
+                        .ToArray();
+            var haltingInstanceNames = workersToHalt.Select(man => man.InstanceName).ToList();
+
+            foreach(var workerManager in workersToHalt)
+            {
+                var downstreamWorkers = _graphConfiguration.GetAllInstancesDownstreamOf(workerManager.InstanceName, true)
+                    .Where(name => haltingInstanceNames.Contains(name))
+                    .ToArray();
+                var upstreamWorkers = _graphConfiguration.GetAllInstancesUpstreamOf(workerManager.InstanceName, true)
+                    .Where(name => haltingInstanceNames.Contains(name))
+                    .ToArray();
+                workerManager.FireTrigger(WorkerStateTrigger.DataProcessorHalt, (downstreamWorkers, upstreamWorkers));
+            }
+            _logger.Verbose($"Fired DataProcessorHalt trigger on {workersToHalt.Count()} instances: {String.Join(", ", workersToHalt.Select(m => m.InstanceName))}");
         }
 
         private void RecoverPreparedRecoveryLine()

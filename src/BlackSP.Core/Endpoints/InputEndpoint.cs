@@ -102,16 +102,10 @@ namespace BlackSP.Core.Endpoints
 
         private async Task ReadMessagesFromStream(PipeStreamReader streamReader, BlockingCollection<byte[]> passthroughQueue, int shardId, CancellationToken t)
         {
-            IFlushableQueue<TMessage> receptionQueue = _receiver.GetReceptionQueue(_endpointConfig, shardId);
+            //IFlushableQueue<TMessage> receptionQueue = _receiver.GetReceptionQueue(_endpointConfig, shardId);
             while (!t.IsCancellationRequested)
             {
                 var msg = await streamReader.ReadNextMessage(t).ConfigureAwait(false);
-                if (msg.IsFlushMessage()) //flush message arrived from network is reply stating that flushing completed
-                {
-                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
-                    await receptionQueue.EndFlush().ConfigureAwait(false);
-                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} resuming reading from network");
-                }
                 passthroughQueue.Add(msg, t);
             }
             t.ThrowIfCancellationRequested();
@@ -141,8 +135,10 @@ namespace BlackSP.Core.Endpoints
                     byte[] msg = null;
                     while (msg == null || !msg.IsFlushMessage())
                     {
-                        msg = passthroughQueue.Take(); //keep taking until flush message returns from upstream
+                        msg = passthroughQueue.Take(t); //keep taking until flush message returns from upstream
                     }
+                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
+                    await receptionQueue.EndFlush().ConfigureAwait(false);
                     _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");//TODO: make debug level
                 }
             }

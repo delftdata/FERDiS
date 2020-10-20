@@ -1,3 +1,4 @@
+using BlackSP.Checkpointing;
 using BlackSP.Infrastructure.Builders;
 using BlackSP.Infrastructure.Builders.Graph;
 using BlackSP.Infrastructure.Models;
@@ -60,7 +61,7 @@ namespace BlackSP.Infrastructure.UnitTests
             //sink does not have append method, awesome
 
             var logConfig = new LogConfiguration();
-            var cpConfig = new CheckpointConfiguration(0,false);
+            var cpConfig = new CheckpointConfiguration(CheckpointCoordinationMode.Coordinated, false, 10);
             await graphBuilder.Build(logConfig, cpConfig); //ensure complete (will add coordinator)
 
             //Asserts

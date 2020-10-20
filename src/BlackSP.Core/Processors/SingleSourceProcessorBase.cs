@@ -21,6 +21,9 @@ namespace BlackSP.Core.Processors
         private readonly IPipeline<TMessage> _pipeline;
         private readonly IDispatcher<TMessage> _dispatcher;
         private readonly ILogger _logger;
+
+        private CancellationTokenSource _processTokenSource;
+        private Task _processThread;
         private TMessage _injectedMessage;
 
         public SingleSourceProcessorBase(
@@ -48,41 +51,60 @@ namespace BlackSP.Core.Processors
             _injectedMessage = message ?? throw new ArgumentNullException(nameof(message));
         }
 
+        public virtual Task PreStartHook(CancellationToken t)
+        {
+            return Task.CompletedTask;
+        }
+
         /// <summary>
         /// Start core processes for message processing
         /// </summary>
-        public virtual async Task StartProcess(CancellationToken t)
+        public async Task StartProcess(CancellationToken t)
         {
-            var passthroughQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
-            var exitSource = new CancellationTokenSource();
-            var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, exitSource.Token);
+            if (!Constants.SkipProcessorPreStartHooks)
+            {
+                await PreStartHook(t).ConfigureAwait(false);
+            }
+            using var passthroughQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+            _processTokenSource = new CancellationTokenSource();
+            using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, _processTokenSource.Token);
             try
             {                
                 var deliveryThread = Task.Run(() => ProcessFromSource(passthroughQueue, linkedSource.Token));
                 var dispatchThread = Task.Run(() => DispatchResults(passthroughQueue, linkedSource.Token));
+                _processThread = Task.WhenAll(deliveryThread, dispatchThread);
                 var exitedTask = await Task.WhenAny(deliveryThread, dispatchThread).ConfigureAwait(false);
-                exitSource.Cancel();
-                await Task.WhenAll(deliveryThread, dispatchThread).ConfigureAwait(false);
+                _processTokenSource.Cancel();
+                await _processThread.ConfigureAwait(false);
                 await exitedTask.ConfigureAwait(false);
                 t.ThrowIfCancellationRequested();
+                _logger.Information("Processor exited gracefully");
             }
             catch (OperationCanceledException) {
                 /*silence cancellation request exceptions*/
-                _logger.Information("Processor exited due to cancellation request");
+                _logger.Debug("Processor exited due to cancellation request");
                 throw;
             }
             catch (Exception e)
             {
-                _logger.Fatal(e, "Processor encountered exception");
+                _logger.Warning(e, "Processor exited due to exception");
                 throw;
-            }
+            } 
             finally
             {
-                _logger.Information("Processor shutting down");
-                passthroughQueue.Dispose();
-                exitSource.Dispose();
-                linkedSource.Dispose();
+                _processTokenSource.Dispose();
+                _processTokenSource = null;
             }
+        }
+
+        public async Task StopProcess()
+        {
+            if(_processThread == null || _processTokenSource == null)
+            {
+                return;
+            }
+            _processTokenSource.Cancel();
+            await _processThread.ConfigureAwait(false);
         }
 
         private async Task ProcessFromSource(BlockingCollection<TMessage> passthroughQueue, CancellationToken t) {

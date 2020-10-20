@@ -76,8 +76,6 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             {
                 await PerformBarrierBlocking(payload, endpoint, shardId).ConfigureAwait(false);
             }
-
-            //TODO: when coordinated need to forward last checkpoint ID with barrier instead of latest one!!
             
             if(AssociatedMessage.PartitionKey.HasValue)
             {   //fail-safe to ensure correct inner working of the implementation
@@ -110,17 +108,22 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             {
                 //take a checkpoint
                 await TakeCheckpoint().ConfigureAwait(false);
-
-                foreach (var (ep, sId) in _blockedConnections)
-                {   //and unblock all connections
-                    _messageReceiver.Unblock(ep, sId);
-                }
-                _blockedConnections.Clear();
-                _blockedConnectionKeys.Clear();
+                //and unblock all connections
+                UnblockAllConnections();
                 //re-add the barrier to propagate it downstream
                 AssociatedMessage.AddPayload(payload);
                 _logger.Information($"Unblocked {AllUpstreamConnectionKeys.Count()} upstream connections and forwarded barrier");
             }
+        }
+
+        private void UnblockAllConnections()
+        {
+            foreach (var (ep, sId) in _blockedConnections)
+            {   
+                _messageReceiver.Unblock(ep, sId);
+            }
+            _blockedConnections.Clear();
+            _blockedConnectionKeys.Clear();
         }
 
         /// <summary>

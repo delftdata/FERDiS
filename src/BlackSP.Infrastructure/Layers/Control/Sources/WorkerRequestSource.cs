@@ -104,7 +104,6 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
 
         private void WorkerStateManager_OnStateChangeNotificationRequired(string affectedInstanceName, WorkerState newState)
         {
-            Task.Delay(1000).Wait(); // Nasty hack to guarantee to some degree that no other triggers are still changing manager states
             int partitionKey = _vertexConfiguration.GetPartitionKeyForInstanceName(affectedInstanceName);
             var msg = new ControlMessage(partitionKey);
             switch (newState)
@@ -127,20 +126,13 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
 
         private WorkerRequestPayload GetWorkerRequestPayloadForHaltingInstance(string instanceName)
         {
-            var upstreamWorkersThatAreHalting = _graphConfiguration.GetAllInstancesUpstreamOf(instanceName, true)
-                .Where(name => name != _vertexConfiguration.InstanceName) //exclude this instance (coordinator)
-                .Select(name => (name, _graphManager.GetWorkerStateManager(name).CurrentState))
-                .Where(pair => pair.CurrentState == WorkerState.Halting || pair.CurrentState == WorkerState.Halted) //no need to include faulted instances
-                .Select(pair => pair.name)
-                .ToArray();
-
-            var downstreamWorkersThatAreHalting = _graphConfiguration.GetAllInstancesDownstreamOf(instanceName, true)
-                .Where(name => name != _vertexConfiguration.InstanceName) //exclude this instance (coordinator)
-                .Select(name => (Name: name, State: _graphManager.GetWorkerStateManager(name).CurrentState))
-                .Where(pair => pair.State == WorkerState.Halting || pair.State == WorkerState.Halted) //no need to include faulted instances
-                .Select(pair => pair.Name)
-                .ToArray();
-
+            var workerManager = _graphManager.GetWorkerStateManager(instanceName);
+            if(workerManager.DataProcessorHaltArgs == default)
+            {
+                throw new InvalidOperationException($"Attempting to halt worker {instanceName} without supplying required arguments");
+            }
+            
+            var (downstreamWorkersThatAreHalting, upstreamWorkersThatAreHalting) = workerManager.DataProcessorHaltArgs;
             return new WorkerRequestPayload
             {
                 RequestType = WorkerRequestType.StopProcessing,

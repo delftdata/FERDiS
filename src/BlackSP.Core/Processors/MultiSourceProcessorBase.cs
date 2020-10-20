@@ -42,16 +42,30 @@ namespace BlackSP.Core.Processors
             disposed = false;
         }
 
+        public virtual Task PreStartHook(CancellationToken t)
+        {
+            return Task.CompletedTask;
+        }
+
         /// <summary>
         /// Start core processes for multi-source message processing
         /// </summary>
-        public virtual async Task StartProcess(CancellationToken t)
+        public async Task StartProcess(CancellationToken t)
         {
-            var dispatchQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+            if(!Constants.SkipProcessorPreStartHooks)
+            {
+                await PreStartHook(t).ConfigureAwait(false);
+            }
+            using var dispatchQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+            using var exceptionSource = new CancellationTokenSource();
+            using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, exceptionSource.Token);
             try
             {
-                var threads = StartThreads(dispatchQueue, t);
+                var threads = StartThreads(dispatchQueue, linkedSource.Token);
+                var exitedThread = await Task.WhenAny(threads).ConfigureAwait(false);
+                exceptionSource.Cancel();
                 await Task.WhenAll(threads).ConfigureAwait(false);
+                await exitedThread.ConfigureAwait(false);
             }
             finally
             {

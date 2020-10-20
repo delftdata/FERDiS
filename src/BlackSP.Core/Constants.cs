@@ -21,5 +21,10 @@ namespace BlackSP.Core
         /// TODO
         /// </summary>
         public const int MetricIntervalSeconds = 30;
+
+        /// <summary>
+        /// When set to true will skip processor start checks
+        /// </summary>
+        public const bool SkipProcessorPreStartHooks = false;
     }
 }

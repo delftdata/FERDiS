@@ -53,8 +53,8 @@ namespace BlackSP.Core.Coordination
 
         public string InstanceName { get; private set; }
         public WorkerState CurrentState => _stateMachine.State;
-        public Guid RestoringCheckpointId => restoringCheckpointId;
-
+        public Guid RestoringCheckpointId { get; private set; }
+        public (string[], string[]) DataProcessorHaltArgs { get; private set; }
         /// <summary>
         /// Event that fires whenever a state change has happened
         /// </summary>
@@ -68,25 +68,94 @@ namespace BlackSP.Core.Coordination
         
         public delegate void StateChangeEvent(string affectedInstanceName, WorkerState newState);
 
-        private Guid restoringCheckpointId;
 
         private readonly ILogger _logger;
         private readonly StateMachine<WorkerState, WorkerStateTrigger> _stateMachine;
         private readonly StateMachine<WorkerState, WorkerStateTrigger>.TriggerWithParameters<Guid> _checkpointRestoreInitiationTrigger;
         private readonly StateMachine<WorkerState, WorkerStateTrigger>.TriggerWithParameters<Guid> _checkpointRestoreCompletionTrigger;
+        private readonly StateMachine<WorkerState, WorkerStateTrigger>.TriggerWithParameters<(string[], string[])> _dataProcessorHaltTrigger;
 
         public WorkerStateManager(string workerInstanceName, ILogger logger)
         {
             InstanceName = workerInstanceName ?? throw new ArgumentNullException(nameof(workerInstanceName));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            restoringCheckpointId = default;
+            RestoringCheckpointId = default;
 
             var machine = new StateMachine<WorkerState, WorkerStateTrigger>(WorkerState.Offline);
             _checkpointRestoreInitiationTrigger = machine.SetTriggerParameters<Guid>(WorkerStateTrigger.CheckpointRestoreStart);
             _checkpointRestoreCompletionTrigger = machine.SetTriggerParameters<Guid>(WorkerStateTrigger.CheckpointRestoreCompleted);
+            _dataProcessorHaltTrigger = machine.SetTriggerParameters<(string[], string[])>(WorkerStateTrigger.DataProcessorHalt);
             _stateMachine = ConfigureStateMachine(machine);
             machine.OnTransitioned(OnStateTransition);
+        }
+
+        /// <summary>
+        /// Notify the statemachine of a trigger, may cause state change
+        /// </summary>
+        public void FireTrigger(WorkerStateTrigger trigger)
+        {
+            if (trigger == WorkerStateTrigger.CheckpointRestoreStart || trigger == WorkerStateTrigger.CheckpointRestoreCompleted)
+            {
+                throw new ArgumentException("Checkpoint related triggers require Guid argument", nameof(trigger));
+            }
+            else if(trigger == WorkerStateTrigger.DataProcessorHalt)
+            {
+                throw new ArgumentException("Data processor halt trigger requires (string[], string[]) argument", nameof(trigger));
+            }
+
+            try
+            {
+                _stateMachine.Fire(trigger);
+            }
+            catch (InvalidOperationException e)
+            {
+                _logger.Warning(e, $"Invalid statemachine transition in worker {InstanceName} caused by trigger {trigger} in state {CurrentState}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Notify the statemachine of a trigger that takes a checkpoint identifier as argument, may cause state change
+        /// </summary>
+        public void FireTrigger(WorkerStateTrigger trigger, Guid checkpointId)
+        {
+            if (trigger != WorkerStateTrigger.CheckpointRestoreStart && trigger != WorkerStateTrigger.CheckpointRestoreCompleted)
+            {
+                throw new ArgumentException("Only checkpoint related triggers take a Guid argument", nameof(trigger));
+            }
+
+            var triggerWithParam = trigger == WorkerStateTrigger.CheckpointRestoreStart ? _checkpointRestoreInitiationTrigger : _checkpointRestoreCompletionTrigger;
+            try
+            {
+                _stateMachine.Fire(triggerWithParam, checkpointId);
+            }
+            catch (InvalidOperationException e)
+            {
+                _logger.Debug(e, $"Invalid worker state transition using trigger {trigger}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Notify the statemachine of a trigger, may cause state change
+        /// </summary>
+        public void FireTrigger(WorkerStateTrigger trigger, (string[], string[]) upAndDownstreamHaltedInstances)
+        {
+            if (trigger != WorkerStateTrigger.DataProcessorHalt)
+            {
+                throw new ArgumentException("Only data processor halt trigger requires (string[],string[]) argument", nameof(trigger));
+            }
+
+            try
+            {
+                _stateMachine.Fire(_dataProcessorHaltTrigger, upAndDownstreamHaltedInstances);
+            }
+            catch (InvalidOperationException e)
+            {
+                _logger.Warning(e, $"Invalid statemachine transition in worker {InstanceName} caused by trigger {trigger} in state {CurrentState}");
+                throw;
+            }
         }
 
         #region statemachine guards & actions
@@ -97,7 +166,7 @@ namespace BlackSP.Core.Coordination
                 .Permit(WorkerStateTrigger.Startup, WorkerState.Halted);
 
             machine.Configure(WorkerState.Halting)
-                .OnEntryFrom(WorkerStateTrigger.DataProcessorHalt, OnHaltDataProcessor, "Processor actively requested to halt")
+                .OnEntryFrom(_dataProcessorHaltTrigger, OnHaltDataProcessor, "Processor actively requested to halt")
                 .Permit(WorkerStateTrigger.DataProcessorHaltCompleted, WorkerState.Halted)
                 .Permit(WorkerStateTrigger.Failure, WorkerState.Faulted);
 
@@ -105,7 +174,8 @@ namespace BlackSP.Core.Coordination
                 //.OnEntryFrom(WorkerStateTrigger.NetworkDisconnected, OnHaltDataProcessor, "Worker has network disconnect, halt processor")
                 .Permit(WorkerStateTrigger.DataProcessorStart, WorkerState.Running)
                 .PermitIf(_checkpointRestoreInitiationTrigger, WorkerState.Recovering, EnsureValidCheckpointId, "Checkpoint validity guard")
-                .Permit(WorkerStateTrigger.Failure, WorkerState.Faulted);
+                .Permit(WorkerStateTrigger.Failure, WorkerState.Faulted)
+                .OnEntryFrom(WorkerStateTrigger.DataProcessorHaltCompleted, OnHaltDataProcessorCompleted);
                 //.Ignore(WorkerStateTrigger.DataProcessorHalt)
                 //.Ignore(WorkerStateTrigger.NetworkConnected)
                 //.Ignore(WorkerStateTrigger.NetworkDisconnected); //TODO: consider if this trigger is ignorable here or should yield Failed state
@@ -113,7 +183,7 @@ namespace BlackSP.Core.Coordination
             machine.Configure(WorkerState.Running)
                 .OnEntry(OnStartDataProcessor)
                 //.Permit(WorkerStateTrigger.NetworkDisconnected, WorkerState.Halted)
-                .Permit(WorkerStateTrigger.DataProcessorHalt, WorkerState.Halting)
+                .PermitIf(_dataProcessorHaltTrigger, WorkerState.Halting, ((string[], string[]) arg) => true, "")
                 .Permit(WorkerStateTrigger.Failure, WorkerState.Faulted)
                 .Ignore(WorkerStateTrigger.DataProcessorStart)
                 .Ignore(WorkerStateTrigger.Startup);
@@ -143,7 +213,7 @@ namespace BlackSP.Core.Coordination
 
         private bool EnsureCorrectCheckpointRestored(Guid checkpointId)
         {
-            return restoringCheckpointId == checkpointId;
+            return RestoringCheckpointId == checkpointId;
         }
 
         private bool EnsureValidCheckpointId(Guid checkpointId)
@@ -153,13 +223,13 @@ namespace BlackSP.Core.Coordination
 
         private void OnStartCheckpointRestore(Guid checkpointId)
         {
-            restoringCheckpointId = checkpointId;
+            RestoringCheckpointId = checkpointId;
             OnStateChangeNotificationRequired?.Invoke(InstanceName, CurrentState);
         }
 
         private void CompleteRestoringCheckpoint()
         {
-            restoringCheckpointId = default;
+            RestoringCheckpointId = default;
             //no notification required
         }
 
@@ -168,54 +238,19 @@ namespace BlackSP.Core.Coordination
             OnStateChangeNotificationRequired?.Invoke(InstanceName, _stateMachine.State);
         }
 
-        private void OnHaltDataProcessor()
+
+
+        private void OnHaltDataProcessor((string[], string[]) connectedInstancesThatHalt)
         {
+            DataProcessorHaltArgs = connectedInstancesThatHalt;
             OnStateChangeNotificationRequired?.Invoke(InstanceName, _stateMachine.State);
         }
+
+        private void OnHaltDataProcessorCompleted()
+        {
+            DataProcessorHaltArgs = default;
+        }
         #endregion
-
-        /// <summary>
-        /// Notify the statemachine of a trigger, may cause state change
-        /// </summary>
-        public void FireTrigger(WorkerStateTrigger trigger)
-        {
-            if(trigger == WorkerStateTrigger.CheckpointRestoreStart || trigger == WorkerStateTrigger.CheckpointRestoreCompleted)
-            {
-                throw new ArgumentException("Checkpoint related triggers require Guid argument", nameof(trigger));
-            }
-            
-            try
-            {
-                _stateMachine.Fire(trigger);
-            }
-            catch (InvalidOperationException e)
-            {
-                _logger.Debug(e, $"Invalid state transition in worker {InstanceName} caused by trigger {trigger} in state {CurrentState}");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Notify the statemachine of a trigger that takes a checkpoint identifier as argument, may cause state change
-        /// </summary>
-        public void FireTrigger(WorkerStateTrigger trigger, Guid checkpointId)
-        {
-            if (trigger != WorkerStateTrigger.CheckpointRestoreStart && trigger != WorkerStateTrigger.CheckpointRestoreCompleted)
-            {
-                throw new ArgumentException("Only checkpoint related triggers take a Guid argument", nameof(trigger));
-            }
-
-            var triggerWithParam = trigger == WorkerStateTrigger.CheckpointRestoreStart ? _checkpointRestoreInitiationTrigger : _checkpointRestoreCompletionTrigger;
-            try
-            {
-                _stateMachine.Fire(triggerWithParam, checkpointId);
-            }
-            catch(InvalidOperationException e)
-            {
-                _logger.Debug(e, $"Invalid worker state transition using trigger {trigger}");
-                throw;
-            }
-        }
 
     }
 }

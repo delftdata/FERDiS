@@ -35,16 +35,15 @@ namespace BlackSP.Infrastructure.Layers.Control
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public override async Task StartProcess(CancellationToken t)
+        public override async Task PreStartHook(CancellationToken t)
         {
-            if(_vertexConfiguration.VertexType == VertexType.Coordinator)
+            if(false && _vertexConfiguration.VertexType == VertexType.Coordinator)
             {
                 //coordinator start means initial system startup, clear storage first
                 _logger.Information("Coordinator control layer start, clearing checkpoint storage");
                 await _checkpointService.ClearCheckpointStorage().ConfigureAwait(false);
                 _logger.Information("Clearing checkpoint storage completed");
             }
-            await base.StartProcess(t).ConfigureAwait(false);
         }
     }
 }

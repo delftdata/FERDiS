@@ -92,6 +92,7 @@ namespace BlackSP.Core.Endpoints
             }
             finally
             {
+                _logger.Fatal($"DISONNECTING {_endpointConfig.GetRemoteInstanceName(remoteShardId)}");
                 _connectionMonitor.MarkDisconnected(_endpointConfig, remoteShardId);
             }
         }
