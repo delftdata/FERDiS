@@ -7,10 +7,10 @@ namespace BlackSP.Core
     public static class Constants
     {
 
-        public const int KeepAliveTimeoutSeconds = 30;
-        public const int KeepAliveIntervalSeconds = 10;
+        public const int KeepAliveTimeoutSeconds = 15;
+        public const int KeepAliveIntervalSeconds = 5;
 
-        public const int HeartbeatSeconds = 20;
+        public const int HeartbeatSeconds = 30;
 
         /// <summary>
         /// Provides a default value for the queue size of queues on thread boundaries
@@ -20,7 +20,7 @@ namespace BlackSP.Core
         /// <summary>
         /// TODO
         /// </summary>
-        public const int MetricIntervalSeconds = 30;
+        public const int MetricIntervalSeconds = 10;
 
         /// <summary>
         /// When set to true will skip processor start checks

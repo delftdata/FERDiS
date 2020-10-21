@@ -4,7 +4,7 @@ using System.Text;
 
 namespace BlackSP.Core.Extensions
 {
-    internal static class MagicMessageExtensions
+    internal static class ControlMessageExtensions
     {
         /// <summary>
         /// Checks if the byte[] matches the conditions to be considered a KeepAlive message
@@ -41,9 +41,7 @@ namespace BlackSP.Core.Extensions
         /// <returns></returns>
         internal static byte[] ConstructFlushMessage()
         {
-            var msg = new byte[1];
-            msg[0] = 254;
-            return msg;
+            return new byte[1] { (byte)254 };
         }
 
     }

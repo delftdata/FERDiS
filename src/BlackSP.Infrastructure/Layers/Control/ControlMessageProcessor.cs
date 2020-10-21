@@ -1,4 +1,5 @@
-﻿using BlackSP.Core.Models;
+﻿using BlackSP.Core;
+using BlackSP.Core.Models;
 using BlackSP.Core.Processors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Checkpointing;
@@ -37,7 +38,7 @@ namespace BlackSP.Infrastructure.Layers.Control
 
         public override async Task PreStartHook(CancellationToken t)
         {
-            if(false && _vertexConfiguration.VertexType == VertexType.Coordinator)
+            if(_vertexConfiguration.VertexType == VertexType.Coordinator)
             {
                 //coordinator start means initial system startup, clear storage first
                 _logger.Information("Coordinator control layer start, clearing checkpoint storage");

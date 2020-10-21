@@ -66,6 +66,7 @@ namespace BlackSP.Core.Models
         {
             if (IsFlushing)
             {
+                Task.Delay(millisecondsTimeout).Wait();
                 item = default;
                 return false;
             }

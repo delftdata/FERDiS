@@ -126,13 +126,13 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
         {
             if (_activeThread != null)
             {
-                _logger.Verbose($"Data processor halt instruction received by coordinator");
+                _logger.Debug($"Data processor halt instruction received by coordinator");
                 var sw = new Stopwatch();
                 sw.Start();
                 await CancelProcessorThread().ConfigureAwait(false);
                 await _processor.Flush(upstreamHaltedInstances, downstreamHaltedInstances).ConfigureAwait(false);
                 sw.Stop();
-                _logger.Debug($"Data processor halt & network flush successfull in {sw.ElapsedMilliseconds}ms");
+                _logger.Information($"Data processor halt & network flush successful in {sw.ElapsedMilliseconds}ms");
             }
             else
             {
@@ -161,7 +161,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             if(t.IsFaulted)
             {
                 _logger.Fatal(t.Exception, "DataProcessor thread exited with exception");
-            }
+            } 
         }
 
         #region dispose support

@@ -15,22 +15,26 @@ namespace BlackSP.WordCount.Operators
         private static string[] defaultSentences = new[] { "A", "A B", "A B C", "A B C D" };
         
         [Checkpointable]
-        private int lastSentenceIndex = 0;
+        private int lastSentenceIndex;
+        
         [Checkpointable]
-        private int sentencesGenerated = 0;
+        private int sentencesGenerated;
+        
         private readonly ILogger _logger;
 
         public SentenceGeneratorSource(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            lastSentenceIndex = 0;
+            sentencesGenerated = 0;
         }
 
         public SentenceEvent ProduceNext(CancellationToken t)
         {
-            if(sentencesGenerated >= defaultSentences.Length * 200000) //keep going until each sentence was sent 20 times
+            if(sentencesGenerated >= defaultSentences.Length * 500000) //keep going until each sentence was sent 20 times
             {
                 Task.Delay(WordCountAggregator.WindowSizeSeconds*2000).Wait();
-                _logger.Information($"Each sentence sent at least 200.000 times, now sending all words as one sentence");
+                _logger.Information($"Each sentence sent at least 500.000 times, now sending all words as one sentence");
                 return new SentenceEvent
                 {
                     EventTime = DateTime.UtcNow,
@@ -44,7 +48,7 @@ namespace BlackSP.WordCount.Operators
             var i = lastSentenceIndex;
             lastSentenceIndex = (lastSentenceIndex + 1) % defaultSentences.Length; //round robin pick sentences
             sentencesGenerated++;
-            _logger.Debug($"Sending {defaultSentences[i]} ({i} , {lastSentenceIndex})");
+            //_logger.Debug($"Sending {defaultSentences[i]} ({i} , {lastSentenceIndex})");
             return new SentenceEvent
             {
                 EventTime = DateTime.UtcNow,

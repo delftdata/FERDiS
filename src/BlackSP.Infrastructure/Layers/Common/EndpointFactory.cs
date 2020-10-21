@@ -26,11 +26,11 @@ namespace BlackSP.Infrastructure.Layers.Common
 
             if(config.IsControl)
             {
-                return _scope.Resolve<TimeoutInputEndpoint<ControlMessage>.Factory>().Invoke(config.LocalEndpointName);
+                return _scope.Resolve<FlushableTimeoutInputEndpoint<ControlMessage>.Factory>().Invoke(config.LocalEndpointName);
             } 
             else
             {
-                return _scope.Resolve<InputEndpoint<DataMessage>.Factory>().Invoke(config.LocalEndpointName);
+                return _scope.Resolve<FlushableTimeoutInputEndpoint<DataMessage>.Factory>().Invoke(config.LocalEndpointName);
             }
         }
 
@@ -40,11 +40,11 @@ namespace BlackSP.Infrastructure.Layers.Common
 
             if (config.IsControl)
             {
-                return _scope.Resolve<TimeoutOutputEndpoint<ControlMessage>.Factory>().Invoke(config.LocalEndpointName);
+                return _scope.Resolve<FlushableTimeoutOutputEndpoint<ControlMessage>.Factory>().Invoke(config.LocalEndpointName);
             }
             else
             {
-                return _scope.Resolve<OutputEndpoint<DataMessage>.Factory>().Invoke(config.LocalEndpointName);
+                return _scope.Resolve<FlushableTimeoutOutputEndpoint<DataMessage>.Factory>().Invoke(config.LocalEndpointName);
             }
         }
 

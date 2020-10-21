@@ -17,6 +17,7 @@ namespace BlackSP.Checkpointing.UnitTests.Models
         public ClassB()
         {
             _counter = 0;
+            _largeBoi = new byte[0];
         }
 
         public void IncrementCounter()

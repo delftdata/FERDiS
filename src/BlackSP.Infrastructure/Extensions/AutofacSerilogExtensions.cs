@@ -30,17 +30,17 @@ namespace BlackSP.Infrastructure.Extensions
             }
             if (targetFlags.HasFlag(LogTargetFlags.File))
             {
-                logConfig.WriteTo.RollingFile($"{AppDomain.CurrentDomain.BaseDirectory}logs/{instanceName}-{{Date}}.log", logLevel);
+                logConfig.WriteTo.RollingFile($"{AppDomain.CurrentDomain.BaseDirectory}logs/{instanceName}-{{Date}}.log", logLevel,
+                    outputTemplate: $"[{{Timestamp:HH:mm:ss}} {{Level:u3}}] [{instanceName}] {{Message}}{{NewLine}}{{Exception}}");
             }
             if (targetFlags.HasFlag(LogTargetFlags.AzureBlob))
             {
                 var connectionString = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING"));
-                logConfig.WriteTo.AzureBlobStorage(connectionString, logLevel, "logs", $"{instanceName}-{{yyyy}}-{{MM}}-{{dd}}.log");
+                logConfig.WriteTo.AzureBlobStorage(connectionString, logLevel, "logs", $"{instanceName}-{{yyyy}}-{{MM}}-{{dd}}.log",
+                    outputTemplate: $"[{{Timestamp:HH:mm:ss}} {{Level:u3}}] [{instanceName}] {{Message}}{{NewLine}}{{Exception}}");
             }
             var log = logConfig.CreateLogger();
-
             builder.RegisterLogger(log, autowireProperties: true);
-
             return builder;
         }
     }

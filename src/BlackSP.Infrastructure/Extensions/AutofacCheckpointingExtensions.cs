@@ -31,12 +31,12 @@ namespace BlackSP.Infrastructure.Extensions
 
             builder.RegisterInstance(config).AsImplementedInterfaces();
 
-            builder.RegisterType<CheckpointDependencyTracker>().AsSelf();
-            builder.RegisterType<ObjectRegistry>().AsSelf();
-            builder.RegisterType<AzureBackedCheckpointStorage>().AsImplementedInterfaces();
+            builder.RegisterType<CheckpointDependencyTracker>().AsSelf().InstancePerLifetimeScope();
+            builder.RegisterType<ObjectRegistry>().AsSelf().InstancePerLifetimeScope();
+            builder.RegisterType<AzureBackedCheckpointStorage>().AsImplementedInterfaces().InstancePerLifetimeScope();
             builder.RegisterType<RecoveryLineCalculator>().AsSelf();
             //above are the dependencies of the service below
-            builder.RegisterType<CheckpointService>().As<ICheckpointService>().InstancePerLifetimeScope();
+            builder.RegisterType<CheckpointService>().As<ICheckpointService>().SingleInstance();
 
             if (autoRegisterComponents)
             {

@@ -39,6 +39,8 @@ namespace BlackSP.Infrastructure.Extensions
             builder.RegisterGeneric(typeof(InputEndpoint<>)).AsSelf();
             builder.RegisterGeneric(typeof(TimeoutOutputEndpoint<>)).AsSelf();
             builder.RegisterGeneric(typeof(TimeoutInputEndpoint<>)).AsSelf();
+            builder.RegisterGeneric(typeof(FlushableTimeoutOutputEndpoint<>)).AsSelf();
+            builder.RegisterGeneric(typeof(FlushableTimeoutInputEndpoint<>)).AsSelf();
             builder.RegisterType<EndpointFactory>().AsSelf();
             return builder;
         }

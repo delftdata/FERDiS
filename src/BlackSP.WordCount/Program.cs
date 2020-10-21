@@ -14,7 +14,7 @@ namespace BlackSP.WordCount
     {
         static async Task Main(string[] args)
         {
-            var useSimulator = true;
+            var useSimulator = false;
 
             var logTargets = LogTargetFlags.Console | (useSimulator ? LogTargetFlags.File : LogTargetFlags.AzureBlob);
             var logLevel = LogEventLevel.Information;
