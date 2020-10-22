@@ -57,8 +57,8 @@ namespace BlackSP.Infrastructure.Builders
 
     public interface IProducingOperatorVertexBuilder<T> : IOperatorVertexBuilder
     {
-        void Append(IConsumingOperatorVertexBuilder<T> otherOperator);
-        void Append<T2>(IConsumingOperatorVertexBuilder<T, T2> otherOperator);
-        void Append<T2>(IConsumingOperatorVertexBuilder<T2, T> otherOperator);
+        void Append(IConsumingOperatorVertexBuilder<T> otherOperator, bool asPipeline = false);
+        void Append<T2>(IConsumingOperatorVertexBuilder<T, T2> otherOperator, bool asPipeline = false);
+        void Append<T2>(IConsumingOperatorVertexBuilder<T2, T> otherOperator, bool asPipeline = false);
     }
 }

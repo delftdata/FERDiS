@@ -152,9 +152,9 @@ namespace BlackSP.Core.Coordination
         private void ConnectionMonitor_OnConnectionChange(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
         {
             var (changedConnection, isConnected) = e.ChangedConnection;
-            if (!changedConnection.IsUpstream)
+            if (changedConnection.IsUpstream)
             {
-                return; //we will get two reports, one from upstream, one from downstream, selectively ignore downstream to not handle duplicates.
+                return; //we will get two reports, one from upstream, one from downstream, selectively ignore upstream to not handle duplicates.
             }
             var changedInstanceName = changedConnection.Endpoint.GetRemoteInstanceName(changedConnection.ShardId);
             var workerManager = this.GetWorkerStateManager(changedInstanceName);
@@ -261,11 +261,34 @@ namespace BlackSP.Core.Coordination
         private void RecoverPreparedRecoveryLine()
         {
             _ = _preparedRecoveryLine ?? throw new InvalidOperationException("Cannot recover recovery line as none had been prepared");
-            foreach(var name in _preparedRecoveryLine.AffectedWorkers)
+
+            var t = Task.Run(async () =>
             {
-                _workerStateManagers[name].FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, _preparedRecoveryLine.RecoveryMap[name]);
-            }
-            _preparedRecoveryLine = null;
+                try
+                {
+                    _logger.Information("Recovery line restoration started");
+                    foreach (var name in _preparedRecoveryLine.AffectedWorkers)
+                    {
+                        _workerStateManagers[name].FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, _preparedRecoveryLine.RecoveryMap[name]);
+                    }
+                    var stopwatch = new Stopwatch();
+                    stopwatch.Start();
+                    var deleteCount = await _checkpointService.CollectGarbageAfterRecoveryLine(_preparedRecoveryLine).ConfigureAwait(false);
+                    _preparedRecoveryLine = null;
+                    stopwatch.Stop();
+                    _logger.Information($"Checkpoint restore triggers fired and gc deleted {deleteCount} checkpoints in {stopwatch.ElapsedMilliseconds}ms");
+                }
+                catch (Exception e)
+                {
+                    _logger.Error(e, $"Recovery-trigger firing and garbage collection failed with exception");
+                    throw;
+                }
+                FireWorkerHaltTriggers(_preparedRecoveryLine?.AffectedWorkers ?? Enumerable.Empty<string>());
+
+            }).ContinueWith(LogException, TaskScheduler.Current);
+            t.Wait(); //wait for async operation to complete before returning
+
+            
         }
 
         #endregion

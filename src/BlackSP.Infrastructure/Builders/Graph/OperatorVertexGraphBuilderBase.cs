@@ -51,14 +51,14 @@ namespace BlackSP.Infrastructure.Builders.Graph
             var allInstances = new List<string>();
             var allConnections = new List<Tuple<string, string>>();
 
-            foreach (var configurator in VertexBuilders.Where(c => !c.VertexName.Contains("coordinator")))
+            foreach (var vertexBuilder in VertexBuilders.Where(c => !c.VertexName.Contains("coordinator")))
             {
                 //get instance names
                 //only use outgoing connections to build tuples
 
-                var instanceNames = configurator.InstanceNames;
-                var targetInstanceNames = configurator.OutgoingEdges.Select(e => e.ToVertex).Where(v => !v.VertexName.Contains("coordinator")).SelectMany(v => v.InstanceNames);
-
+                var instanceNames = vertexBuilder.InstanceNames;
+                var targetInstanceNames = vertexBuilder.OutgoingEdges.Select(e => e.ToVertex).Where(v => !v.VertexName.Contains("coordinator")).SelectMany(v => v.InstanceNames);
+                //TODO: skip some connections when pipeline
                 foreach(var instanceName in instanceNames)
                 {
                     foreach(var targetInst in targetInstanceNames)
@@ -83,8 +83,8 @@ namespace BlackSP.Infrastructure.Builders.Graph
             //connect to all existing configurators (all workers)
             foreach (var configurator in VertexBuilders)
             {
-                var fromCoordinatorEdge = new Edge(coordinatorConfigurator, coordinatorConfigurator.GetAvailableOutputEndpoint(), configurator, configurator.GetAvailableInputEndpoint());
-                var toCoordinatorEdge = new Edge(configurator, configurator.GetAvailableOutputEndpoint(), coordinatorConfigurator, coordinatorConfigurator.GetAvailableInputEndpoint());
+                var fromCoordinatorEdge = new Edge(coordinatorConfigurator, coordinatorConfigurator.GetAvailableOutputEndpoint(), configurator, configurator.GetAvailableInputEndpoint(), EdgeType.Shuffle);
+                var toCoordinatorEdge = new Edge(configurator, configurator.GetAvailableOutputEndpoint(), coordinatorConfigurator, coordinatorConfigurator.GetAvailableInputEndpoint(), EdgeType.Shuffle);
 
                 coordinatorConfigurator.OutgoingEdges.Add(fromCoordinatorEdge);
                 coordinatorConfigurator.IncomingEdges.Add(toCoordinatorEdge);

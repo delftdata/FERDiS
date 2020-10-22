@@ -56,7 +56,7 @@ namespace BlackSP.Checkpointing.Core
                 //extend datastructure
                 AddFutureCheckpoints(cpStacksPerInstance, failedInstances);
             }
-            //remove checkpoints that have dependencies (orphan messages)
+            //remove checkpoints that have dependencies (ie orphan messages)
             EnsureNoOrphansInRecoveryLine(cpStacksPerInstance);
             //construct result object
             IDictionary<string, Guid> recoveryMap = cpStacksPerInstance.WhereStackNonEmpty()

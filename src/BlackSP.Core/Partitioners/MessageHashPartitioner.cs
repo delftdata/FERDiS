@@ -27,6 +27,13 @@ namespace BlackSP.Core.Partitioners
             var targetEndpoints = _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl == message.IsControl);
             foreach(var endpoint in targetEndpoints)
             {
+                //TODO: EXTEND IMPLEMENTATION
+                //if endpoint type pipeline THEN targetshard = currentshard
+
+
+
+
+
                 if(message.PartitionKey.HasValue)
                 {   //got partitionkey, so do partitioning
                     var targetShard = Math.Abs(message.PartitionKey.Value) % endpoint.RemoteInstanceNames.Count();

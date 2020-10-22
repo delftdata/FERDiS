@@ -20,7 +20,7 @@ using BlackSP.Infrastructure.Layers.Data.Payloads;
 namespace BlackSP.Infrastructure.Layers.Control.Handlers
 {
     /// <summary>
-    /// TODO: make insert barrier
+    /// 
     /// </summary>
     public class DataLayerBarrierInjectionHandler : ForwardingPayloadHandlerBase<ControlMessage, BarrierPayload>
     {

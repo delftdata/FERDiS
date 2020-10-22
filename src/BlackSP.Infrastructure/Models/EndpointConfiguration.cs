@@ -22,7 +22,6 @@ namespace BlackSP.Infrastructure.Models
 
         public string GetConnectionKey(int shardId)
         {
-            //TODO: consider using remote instanceName as key?
             if(shardId < RemoteInstanceNames.Count() && shardId > -1)
             {
                 return $"{RemoteInstanceNames.ElementAt(shardId)}{RemoteVertexName}{RemoteEndpointName}{shardId}";

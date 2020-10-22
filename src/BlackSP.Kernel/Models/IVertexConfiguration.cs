@@ -30,6 +30,11 @@ namespace BlackSP.Kernel.Models
         string InstanceName { get; }
 
         /// <summary>
+        /// The shard of the current running instance
+        /// </summary>
+        int ShardId { get; }
+
+        /// <summary>
         /// The type of the current vertex
         /// </summary>
         VertexType VertexType { get; }

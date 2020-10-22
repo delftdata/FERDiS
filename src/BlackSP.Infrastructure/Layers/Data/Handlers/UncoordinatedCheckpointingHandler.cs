@@ -6,6 +6,7 @@ using BlackSP.Kernel.Models;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -31,17 +32,24 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _lastCheckpointUtc = DateTime.UtcNow;
             _checkpointInterval = TimeSpan.FromSeconds(_checkpointConfiguration.CheckpointIntervalSeconds);
         }
 
         public async Task<IEnumerable<DataMessage>> Handle(DataMessage message)
         {
-            if(DateTime.UtcNow - _lastCheckpointUtc > _checkpointInterval)
+            if(_lastCheckpointUtc == default)
             {
-                _logger.Information($"Uncoordinated checkpoint will be taken, interval: {_checkpointInterval.TotalSeconds}s");
-                await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
-                _logger.Information($"Uncoordinated checkpoint has been taken, interval: {_checkpointInterval.TotalSeconds}s");
+                _lastCheckpointUtc = DateTime.UtcNow;
+
+            }
+            if (DateTime.UtcNow - _lastCheckpointUtc > _checkpointInterval)
+            {
+                _logger.Information($"Uncoordinated checkpoint will be taken, configured interval is {_checkpointInterval.TotalSeconds}s");
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                var cpId = await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
+                sw.Stop();
+                _logger.Information($"Checkpoint {cpId} has been taken in {sw.ElapsedMilliseconds}ms");
                 _lastCheckpointUtc = DateTime.UtcNow;
             }
             return message.Yield();

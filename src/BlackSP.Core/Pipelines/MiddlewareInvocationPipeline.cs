@@ -54,15 +54,6 @@ namespace BlackSP.Core.Pipelines
                     break; // no need to continue iterating the middlewares if current middleware 'absorbed' the message
                 }
             }
-
-            //TODO: Layers
-            //e.g. barrier blocking
-            //e.g. cic clock updates & CP
-            //e.g. uncoord. CP (count & invoke)
-            //e.g. control message processing (do restore, should clear receiver and dispatcher)
-            //e.g. operatorshell
-            //e.g. heartbeat / metric collector
-            //e.g. cic clock updates
             return results;//.AsEnumerable();
         }
     }

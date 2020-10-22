@@ -74,7 +74,8 @@ namespace BlackSP.CRA.Configuration
             SetConsoleSilenced(true);
             
             var vertexConfig = target.GetVertexConfiguration();
-            var hostConfig = new HostConfiguration(target.ModuleType, GetVertexGraphConfiguration(), vertexConfig, LogConfiguration, CheckpointConfiguration);
+            var graphConfig = GetVertexGraphConfiguration();
+            var hostConfig = new HostConfiguration(target.ModuleType, graphConfig, vertexConfig, LogConfiguration, CheckpointConfiguration);
             await _craClient.InstantiateVertexAsync(
                 target.InstanceNames.ToArray(),
                 target.VertexName,
@@ -89,7 +90,7 @@ namespace BlackSP.CRA.Configuration
         {
             Console.WriteLine($"Registering connection \"{edge.FromVertex.VertexName} {edge.FromEndpoint}\" to \"{edge.ToVertex.VertexName} {edge.ToEndpoint}\"");
             SetConsoleSilenced(true);
-            var initiator = edge.FromVertex.VertexName.Contains("coordinator") ? ConnectionInitiator.ToSide : ConnectionInitiator.FromSide;
+            //var initiator = edge.FromVertex.VertexName.Contains("coordinator") ? ConnectionInitiator.ToSide : ConnectionInitiator.FromSide;
             await _craClient.ConnectAsync(edge.FromVertex.VertexName, edge.FromEndpoint, edge.ToVertex.VertexName, edge.ToEndpoint).ConfigureAwait(false);
             SetConsoleSilenced(false);
         }

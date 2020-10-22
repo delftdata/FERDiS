@@ -27,29 +27,21 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
     public class WorkerRequestHandler : ForwardingPayloadHandlerBase<ControlMessage, WorkerRequestPayload>, IDisposable
     {
         private readonly IVertexConfiguration _vertexConfiguration;
-        private readonly ICheckpointService _checkpointService;
         private readonly DataMessageProcessor _processor;
-        private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
 
         private CancellationTokenSource _ctSource;
         private Task _activeThread;
-        private bool upstreamFullyConnected;
-        private bool downstreamFullyConnected;
         private bool disposedValue;
 
         public WorkerRequestHandler(DataMessageProcessor processor,
-                                    ConnectionMonitor connectionMonitor,
                                     IVertexConfiguration vertexConfiguration,  
                                     ILogger logger)
         {            
             _processor = processor ?? throw new ArgumentNullException(nameof(processor));
-            _connectionMonitor = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            upstreamFullyConnected = downstreamFullyConnected = false;
-            _connectionMonitor.OnConnectionChange += ConnectionMonitor_OnConnectionChange;
         }
 
         protected override async Task<IEnumerable<ControlMessage>> Handle(WorkerRequestPayload payload)
@@ -62,8 +54,8 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             response.AddPayload(new WorkerResponsePayload()
             {
                 OriginInstanceName = _vertexConfiguration.InstanceName,
-                UpstreamFullyConnected = upstreamFullyConnected,
-                DownstreamFullyConnected = downstreamFullyConnected,
+                //UpstreamFullyConnected = upstreamFullyConnected,
+                //DownstreamFullyConnected = downstreamFullyConnected,
                 DataProcessActive = _activeThread != null,
                 OriginalRequestType = payload.RequestType
             });
@@ -98,12 +90,6 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                 _logger.Fatal(e, $"Exception in {this.GetType()} while handling request of type \"{requestType}\"");
                 throw;
             }
-        }
-
-        private void ConnectionMonitor_OnConnectionChange(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
-        {
-            upstreamFullyConnected = e.UpstreamFullyConnected;
-            downstreamFullyConnected = e.DownstreamFullyConnected;
         }
 
         private Task StartDataProcess()
@@ -182,18 +168,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                     catch(Exception) { }
                 }
 
-                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                // TODO: set large fields to null
                 disposedValue = true;
             }
         }
-
-        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-        // ~DataLayerControllerMiddleware()
-        // {
-        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        //     Dispose(disposing: false);
-        // }
 
         public void Dispose()
         {

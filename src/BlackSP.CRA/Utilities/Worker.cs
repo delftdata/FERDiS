@@ -39,7 +39,6 @@ namespace BlackSP.CRA.Utilities
             
         }
 
-        //TODO: resolve correct ip? just got dockernat ip :/
         private static string GetLocalIPAddress()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());

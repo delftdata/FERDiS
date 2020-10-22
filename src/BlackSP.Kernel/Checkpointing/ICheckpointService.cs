@@ -61,6 +61,13 @@ namespace BlackSP.Kernel.Checkpointing
         Task<IRecoveryLine> CalculateRecoveryLine(IEnumerable<string> failedInstanceNames);
 
         /// <summary>
+        /// Deletes any checkpoints from storage that are considered garbage with respect to the provided recovery line
+        /// </summary>
+        /// <param name="recoveryLine"></param>
+        /// <returns></returns>
+        Task<int> CollectGarbageAfterRecoveryLine(IRecoveryLine recoveryLine);
+
+        /// <summary>
         /// Empties checkpoint storage, typically most useful on startup/shutdown
         /// </summary>
         /// <returns></returns>

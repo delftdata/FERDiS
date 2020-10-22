@@ -47,6 +47,7 @@ namespace BlackSP.Checkpointing
         ///<inheritdoc/>
         public void UpdateCheckpointDependency(string originInstanceName, Guid checkpointId)
         {
+            _logger.Debug($"Updating checkpoint dependency on instance {originInstanceName} to {checkpointId}");
             _dpTracker.UpdateDependency(originInstanceName, checkpointId);
         }
 
@@ -80,6 +81,33 @@ namespace BlackSP.Checkpointing
             var allCheckpointMetadatas = await _storage.GetAllMetaData().ConfigureAwait(false);
             var calculator = _rlCalcFactory.Invoke(allCheckpointMetadatas);
             return calculator.CalculateRecoveryLine(_checkpointConfiguration.AllowReusingState, failedInstanceNames);
+        }
+
+        public async Task<int> CollectGarbageAfterRecoveryLine(IRecoveryLine recoveryLine)
+        {
+            _ = recoveryLine ?? throw new ArgumentNullException(nameof(recoveryLine));
+            var allCheckpointMetas = await _storage.GetAllMetaData().ConfigureAwait(false);
+            var cpStacksPerInstance = allCheckpointMetas
+                .GroupBy(m => m.InstanceName)
+                .Select(group => group.OrderBy(m => m.CreatedAtUtc))
+                .Select(sortedGroup => new Stack<MetaData>(sortedGroup))
+                .ToList();
+            var garbage = new List<MetaData>();
+            foreach(var stack in cpStacksPerInstance)
+            {
+                var instanceName = stack.Peek().InstanceName;
+                if(!recoveryLine.AffectedWorkers.Contains(instanceName))
+                {
+                    continue;
+                }
+                var cpId = recoveryLine.RecoveryMap[instanceName];
+                while(stack.Peek().Id != cpId)
+                {
+                    garbage.Add(stack.Pop());
+                }
+            }
+            await Task.WhenAll(garbage.Select(meta => _storage.Delete(meta.Id))).ConfigureAwait(false);
+            return garbage.Count;
         }
 
         ///<inheritdoc/>

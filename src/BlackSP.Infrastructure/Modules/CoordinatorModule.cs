@@ -7,6 +7,7 @@ using BlackSP.Kernel.MessageProcessing;
 using System;
 using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Infrastructure.Layers.Control.Sources;
+using BlackSP.Checkpointing;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -33,7 +34,10 @@ namespace BlackSP.Infrastructure.Modules
             builder.UseControlLayer();
             //add more ControlMessage sources
             builder.RegisterType<WorkerRequestSource>().As<ISource<ControlMessage>>();
-            builder.RegisterType<CoordinatedCheckpointingInitiationSource>().As<ISource<ControlMessage>>();
+            if(_configuration.CheckpointingConfiguration.CoordinationMode == CheckpointCoordinationMode.Coordinated)
+            {
+                builder.RegisterType<CoordinatedCheckpointingInitiationSource>().As<ISource<ControlMessage>>();
+            }
             builder.AddControlLayerMessageHandlersForCoordinator();
 
             base.Load(builder);

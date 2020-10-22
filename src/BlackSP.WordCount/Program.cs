@@ -14,7 +14,7 @@ namespace BlackSP.WordCount
     {
         static async Task Main(string[] args)
         {
-            var useSimulator = false;
+            var useSimulator = true;
 
             var logTargets = LogTargetFlags.Console | (useSimulator ? LogTargetFlags.File : LogTargetFlags.AzureBlob);
             var logLevel = LogEventLevel.Information;
@@ -22,7 +22,7 @@ namespace BlackSP.WordCount
             var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
             var app = await appBuilder
                 .ConfigureLogging(new LogConfiguration(logTargets, logLevel))
-                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Coordinated, false, 60))
+                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Uncoordinated, true, 45))
                 .ConfigureOperators(ConfigureOperatorGraph)
                 .Build();
 

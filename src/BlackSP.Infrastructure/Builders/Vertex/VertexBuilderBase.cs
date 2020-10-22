@@ -83,7 +83,8 @@ namespace BlackSP.Infrastructure.Builders.Vertex
                 LocalEndpointName = asInput ? edge.ToEndpoint : edge.FromEndpoint,
                 RemoteVertexName = asInput ? edge.FromVertex.VertexName : edge.ToVertex.VertexName,
                 RemoteEndpointName = asInput ? edge.FromEndpoint : edge.ToEndpoint,
-                RemoteInstanceNames = asInput ? edge.FromVertex.InstanceNames : edge.ToVertex.InstanceNames
+                RemoteInstanceNames = asInput ? edge.FromVertex.InstanceNames : edge.ToVertex.InstanceNames,
+                //TODO: is pipeline or shuffle
             };
         }
     }

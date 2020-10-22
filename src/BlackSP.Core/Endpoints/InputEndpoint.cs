@@ -131,7 +131,7 @@ namespace BlackSP.Core.Endpoints
                 {
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} started flushing");
                     await writer.WriteMessage(ControlMessageExtensions.ConstructFlushMessage(), t).ConfigureAwait(false);
-                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent flush message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");//TODO: make debug level
+                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent flush message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     byte[] msg = null;
                     while (msg == null || !msg.IsFlushMessage())
                     {
@@ -139,7 +139,7 @@ namespace BlackSP.Core.Endpoints
                     }
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
                     await receptionQueue.EndFlush().ConfigureAwait(false);
-                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");//TODO: make debug level
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
                 }
             }
 

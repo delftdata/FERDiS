@@ -20,8 +20,7 @@ namespace BlackSP.Infrastructure.Extensions
         {
             object obj = context.Instance;
             var manager = context.Context.Resolve<ICheckpointService>();
-            var isRegistered = manager.RegisterObject(obj);
-            //TODO: log information
+            manager.RegisterObject(obj);
         }
 
         public static ContainerBuilder UseCheckpointingService(this ContainerBuilder builder, ICheckpointConfiguration config, bool autoRegisterComponents = false)

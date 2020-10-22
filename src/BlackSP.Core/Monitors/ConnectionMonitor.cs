@@ -107,16 +107,6 @@ namespace BlackSP.Core.Monitors
         public IEnumerable<ActiveConnection> ActiveConnections { get; }
 
         public Tuple<ActiveConnection, bool> ChangedConnection { get; }
-
-        public int UpstreamChannelCount { get; }
-        public int DownstreamChannelCount { get; }
-        
-        //Utility properties below
-        public int UpstreamConnectedChannelCount => ActiveConnections.Count(c => c.IsUpstream);
-
-        public int DownstreamConnectedChannelCount => ActiveConnections.Count(c => !c.IsUpstream);
-        public bool DownstreamFullyConnected => DownstreamChannelCount == DownstreamConnectedChannelCount;
-        public bool UpstreamFullyConnected => UpstreamChannelCount == UpstreamConnectedChannelCount;
         
         public ConnectionMonitorEventArgs(IVertexConfiguration vertexConfiguration, IEnumerable<ActiveConnection> activeConnections, ActiveConnection changedConnection, bool changedConnectionStatus)
         {
@@ -124,9 +114,6 @@ namespace BlackSP.Core.Monitors
 
             ActiveConnections = activeConnections;
             ChangedConnection = Tuple.Create(changedConnection, changedConnectionStatus);
-
-            UpstreamChannelCount = vertexConfiguration.InputEndpoints.Sum(e => e.RemoteInstanceNames.Count());
-            DownstreamChannelCount = vertexConfiguration.OutputEndpoints.Sum(e => e.RemoteInstanceNames.Count());
         }
     }
 }

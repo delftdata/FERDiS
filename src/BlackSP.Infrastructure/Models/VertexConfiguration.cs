@@ -9,7 +9,6 @@ using System.Text;
 namespace BlackSP.Infrastructure.Models
 {
     [Serializable]
-
     public class VertexConfiguration : IVertexConfiguration
     {
         /// <inheritdoc/>
@@ -22,6 +21,9 @@ namespace BlackSP.Infrastructure.Models
         public string InstanceName => _currentInstanceName ?? string.Empty;
         private string _currentInstanceName;
 
+        public int ShardId { get; set; }
+
+
         /// <inheritdoc/>
         public VertexType VertexType { get; set; }
 
@@ -33,10 +35,12 @@ namespace BlackSP.Infrastructure.Models
         /// <inheritdoc/>
 #pragma warning disable CA2227 // Collection properties should be read only
         public ICollection<IEndpointConfiguration> OutputEndpoints { get; set; }
+
 #pragma warning restore CA2227 // Collection properties should be read only
 
         public void SetCurrentShardId(int shardId)
         {
+            ShardId = shardId;
             _currentInstanceName = InstanceNames.ElementAt(shardId);
         }
     }

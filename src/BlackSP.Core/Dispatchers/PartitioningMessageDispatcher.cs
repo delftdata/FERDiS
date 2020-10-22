@@ -63,11 +63,6 @@ namespace BlackSP.Core.Dispatchers
             }
         }
 
-        public Task Clear()
-        {
-            throw new NotImplementedException();
-        }
-
         private void QueueForDispatch(string targetConnectionKey, byte[] bytes, CancellationToken t)
         {
             var outputQueue = _outputQueues.Get(targetConnectionKey);
@@ -78,6 +73,7 @@ namespace BlackSP.Core.Dispatchers
         {
             foreach (var endpointConfig in _vertexConfiguration.OutputEndpoints)
             {
+                
                 var shardCount = endpointConfig.RemoteInstanceNames.Count();
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {

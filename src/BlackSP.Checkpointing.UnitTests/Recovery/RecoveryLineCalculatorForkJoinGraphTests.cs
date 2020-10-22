@@ -54,12 +54,30 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
         public void SourceFailure_ShouldRollbackToLastCheckpoint_RestReturnsToInitialState()
         {
             _ = utility.AddCheckpoint(instance1);
+            _ = utility.AddCheckpoint(instance1);
             var latestCp = utility.AddCheckpoint(instance1);
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
             var recoveryLine = calculator.CalculateRecoveryLine(true, instance1);
             Assert.AreEqual(recoveryLine.AffectedWorkers.Count(), instanceCount); //in this test all instances roll back to their initial state except the source which can recover its last checkpoint
             Assert.AreEqual(latestCp, recoveryLine.RecoveryMap[instance1]);
             Assert.AreEqual(initialCheckpoints[instance2], recoveryLine.RecoveryMap[instance2]);
+            Assert.AreEqual(initialCheckpoints[instance3], recoveryLine.RecoveryMap[instance3]);
+            Assert.AreEqual(initialCheckpoints[instance4], recoveryLine.RecoveryMap[instance4]);
+        }
+
+        [Test]
+        public void SourceFailure_ShouldRollbackToLastCheckpoint_OthersRollbackToPreventOrphans()
+        {
+            _ = utility.AddCheckpoint(instance1);
+            _ = utility.AddCheckpoint(instance2);
+            _ = utility.AddCheckpoint(instance1);
+            var latestCp2 = utility.AddCheckpoint(instance2);
+            var latestCp1 = utility.AddCheckpoint(instance1);
+            var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
+            var recoveryLine = calculator.CalculateRecoveryLine(false, instance1);
+            Assert.AreEqual(recoveryLine.AffectedWorkers.Count(), instanceCount); //in this test all instances roll back to their initial state except the source which can recover its last checkpoint
+            Assert.AreEqual(latestCp1, recoveryLine.RecoveryMap[instance1]);
+            Assert.AreEqual(latestCp2, recoveryLine.RecoveryMap[instance2]);
             Assert.AreEqual(initialCheckpoints[instance3], recoveryLine.RecoveryMap[instance3]);
             Assert.AreEqual(initialCheckpoints[instance4], recoveryLine.RecoveryMap[instance4]);
         }

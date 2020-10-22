@@ -18,7 +18,7 @@ namespace BlackSP.Core
         public const int DefaultThreadBoundaryQueueSize = 1 << 12;
 
         /// <summary>
-        /// TODO
+        /// Interval atwhich metrics are logged
         /// </summary>
         public const int MetricIntervalSeconds = 10;
 
