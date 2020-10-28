@@ -16,3 +16,5 @@ scopes
 */scripts/
 **/publishprofiles/*
 /test-coverage-report/**
+**/*.yaml
+**/*.yml
