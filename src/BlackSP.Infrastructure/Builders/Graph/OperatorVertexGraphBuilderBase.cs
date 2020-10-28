@@ -61,11 +61,11 @@ namespace BlackSP.Infrastructure.Builders.Graph
                 var targetVertices = vertexBuilder.OutgoingEdges.Select(e => e.ToVertex).Where(v => !v.VertexName.Contains("coordinator"));
 
                 var targetInstanceNames = targetVertices.SelectMany(v => v.InstanceNames);
-                //TODO: skip some connections when pipeline
+
                 var fromShardId = 0;
                 foreach(var instanceName in instanceNames)
                 {
-                    foreach(var edge in vertexBuilder.OutgoingEdges)
+                    foreach(var edge in vertexBuilder.OutgoingEdges.Where(v => !v.ToVertex.VertexName.Contains("coordinator")))
                     {
                         if(edge.IsPipeline())
                         {

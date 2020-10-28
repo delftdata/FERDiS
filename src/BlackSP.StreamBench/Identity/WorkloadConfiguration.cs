@@ -12,10 +12,11 @@ namespace BlackSP.StreamBench
 
         internal static void ConfigureIdentity(IVertexGraphBuilder graph)
         {
-            var source = graph.AddSource<IdentitySource, IdentityEvent>(1);
-            var sink = graph.AddSink<IdentitySink, IdentityEvent>(1);
+            //note current setup is sources and sinks in pipeline connection
+            var source = graph.AddSource<IdentitySource, IdentityEvent>(2);
+            var sink = graph.AddSink<IdentitySink, IdentityEvent>(2);
 
-            source.Append(sink);
+            source.Append(sink).AsPipeline();
         }
     }
 }
