@@ -86,9 +86,9 @@ namespace BlackSP.CRA.Configuration
             SetConsoleSilenced(false);
         }
 
-        private async Task RegisterCRAVertexConnectionAsync(Edge edge)
+        private async Task RegisterCRAVertexConnectionAsync(IEdgeBuilder edge)
         {
-            Console.WriteLine($"Registering connection \"{edge.FromVertex.VertexName} {edge.FromEndpoint}\" to \"{edge.ToVertex.VertexName} {edge.ToEndpoint}\"");
+            Console.WriteLine($"Registering connection \"{edge.FromVertex.VertexName} {edge.FromEndpoint}\" to \"{edge.ToVertex.VertexName} {edge.ToEndpoint}\" configured as {(edge.IsPipeline() ? "pipeline" : "shuffle")}");
             SetConsoleSilenced(true);
             //var initiator = edge.FromVertex.VertexName.Contains("coordinator") ? ConnectionInitiator.ToSide : ConnectionInitiator.FromSide;
             await _craClient.ConnectAsync(edge.FromVertex.VertexName, edge.FromEndpoint, edge.ToVertex.VertexName, edge.ToEndpoint).ConfigureAwait(false);

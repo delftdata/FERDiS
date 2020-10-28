@@ -1,6 +1,6 @@
 ﻿using BlackSP.Checkpointing;
 using BlackSP.Infrastructure;
-using BlackSP.Infrastructure.Builders.Graph;
+using BlackSP.Infrastructure.Builders;
 using BlackSP.Infrastructure.Models;
 using BlackSP.WordCount.Events;
 using BlackSP.WordCount.Operators;
@@ -29,16 +29,16 @@ namespace BlackSP.WordCount
             await app.RunAsync();
         }
 
-        static void ConfigureOperatorGraph(IOperatorVertexGraphBuilder graph)
+        static void ConfigureOperatorGraph(IVertexGraphBuilder graph)
         {
             var source = graph.AddSource<SentenceGeneratorSource, SentenceEvent>(1);
-            var mapper = graph.AddMap<SentenceToWordMapper, SentenceEvent, WordEvent>(2);
-            var reducer = graph.AddAggregate<WordCountAggregator, WordEvent, WordEvent>(3);
-            var sink = graph.AddSink<WordCountLoggerSink, WordEvent>(1);
+            var mapper = graph.AddMap<SentenceToWordMapper, SentenceEvent, WordEvent>(3);
+            var reducer = graph.AddAggregate<WordCountAggregator, WordEvent, WordEvent>(2);
+            var sink = graph.AddSink<WordCountLoggerSink, WordEvent>(2);
 
             source.Append(mapper);
             mapper.Append(reducer);
-            reducer.Append(sink);
+            reducer.Append(sink).AsPipeline();
         }
     }
 }

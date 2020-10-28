@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
-using BlackSP.Checkpointing.Attributes;
+using BlackSP.Checkpointing;
 
 namespace BlackSP.ThroughputExperiment
 {

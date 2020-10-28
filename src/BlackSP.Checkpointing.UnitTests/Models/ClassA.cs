@@ -1,4 +1,4 @@
-﻿using BlackSP.Checkpointing.Attributes;
+﻿using BlackSP.Checkpointing;
 using System;
 using System.Collections.Generic;
 using System.Linq;

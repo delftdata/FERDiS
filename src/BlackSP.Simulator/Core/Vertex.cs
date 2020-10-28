@@ -59,14 +59,14 @@ namespace BlackSP.Simulator.Core
                 var endpointFactory = dependencyScope.Resolve<EndpointFactory>();
                 foreach (var endpointConfig in hostConfig.VertexConfiguration.InputEndpoints)
                 {
-                    var endpoint = new InputEndpointHost(endpointFactory.ConstructInputEndpoint(endpointConfig), _connectionTable, dependencyScope.Resolve<ILogger>());
+                    var endpoint = new InputEndpointHost(endpointFactory.ConstructInputEndpoint(endpointConfig, false), _connectionTable, dependencyScope.Resolve<ILogger>());
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
                 logger.Debug($"Input endpoints created");
 
                 foreach (var endpointConfig in hostConfig.VertexConfiguration.OutputEndpoints)
                 {
-                    var endpoint = new OutputEndpointHost(endpointFactory.ConstructOutputEndpoint(endpointConfig), _connectionTable, dependencyScope.Resolve<ILogger>());
+                    var endpoint = new OutputEndpointHost(endpointFactory.ConstructOutputEndpoint(endpointConfig, false), _connectionTable, dependencyScope.Resolve<ILogger>());
                     threads.Add(endpoint.Start(instanceName, endpointConfig.LocalEndpointName, t));
                 }
                 logger.Debug($"Output endpoints created");

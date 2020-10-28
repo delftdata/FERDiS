@@ -1,4 +1,5 @@
 ﻿
+using BlackSP.Infrastructure.Builders.Edge;
 using BlackSP.Infrastructure.Models;
 using System;
 
@@ -11,28 +12,28 @@ namespace BlackSP.Infrastructure.Builders.Vertex
         {
         }
 
-        public void Append(IConsumingOperatorVertexBuilder<T> otherOperator)
+        public IEdgeBuilder Append(IConsumingOperatorVertexBuilder<T> otherVertex)
         {
-            _ = otherOperator ?? throw new ArgumentNullException(nameof(otherOperator));
-            var edge = new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint());
-            OutgoingEdges.Add(edge);
-            otherOperator.IncomingEdges.Add(edge);
+            return AppendGeneric(otherVertex);
         }
 
-        public void Append<T2>(IConsumingOperatorVertexBuilder<T, T2> otherOperator)
+        public IEdgeBuilder Append<T2>(IConsumingOperatorVertexBuilder<T, T2> otherVertex)
         {
-            _ = otherOperator ?? throw new ArgumentNullException(nameof(otherOperator));
-            var edge = new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint());
-            OutgoingEdges.Add(edge);
-            otherOperator.IncomingEdges.Add(edge);
+            return AppendGeneric(otherVertex);
         }
 
-        public void Append<T2>(IConsumingOperatorVertexBuilder<T2, T> otherOperator)
+        public IEdgeBuilder Append<T2>(IConsumingOperatorVertexBuilder<T2, T> otherVertex)
         {
-            _ = otherOperator ?? throw new ArgumentNullException(nameof(otherOperator));
-            var edge = new Edge(this, GetAvailableOutputEndpoint(), otherOperator, otherOperator.GetAvailableInputEndpoint());
-            OutgoingEdges.Add(edge);
-            otherOperator.IncomingEdges.Add(edge);
+            return AppendGeneric(otherVertex);
+        }
+
+        private IEdgeBuilder AppendGeneric(IVertexBuilder otherVertex)
+        {
+            _ = otherVertex ?? throw new ArgumentNullException(nameof(otherVertex));
+            var edge = new EdgeBuilder(this, GetAvailableOutputEndpoint(), otherVertex, otherVertex.GetAvailableInputEndpoint());
+            OutgoingEdges.Add(edge.AsShuffle()); //note: default behavior is shuffle connection
+            otherVertex.IncomingEdges.Add(edge);
+            return edge;
         }
     }
 }

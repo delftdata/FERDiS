@@ -25,7 +25,7 @@ namespace BlackSP.Infrastructure.UnitTests
     public class OperatorGraphBuilderTests
     {
         private TestOperatorGraphBuilder graphBuilder; //expose internal api
-        private IOperatorVertexGraphBuilder publicGraphBuilder => graphBuilder; //expose public api
+        private IVertexGraphBuilder publicGraphBuilder => graphBuilder; //expose public api
         
         [SetUp]
         public void Setup()

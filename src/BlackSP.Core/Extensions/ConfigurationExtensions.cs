@@ -66,7 +66,7 @@ namespace BlackSP.Core.Extensions
                 {
                     if(remoteInstanceName == instanceName)
                     {
-                        return endpoint.GetConnectionKey(i).GetHashCode();
+                        return endpoint.GetConnectionKey(i).GetHashCode();//only used in coordinator so hashcode only gets calculated on a single machine
                     }
                     i++;
                 }

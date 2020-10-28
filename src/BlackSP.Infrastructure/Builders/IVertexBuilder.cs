@@ -11,8 +11,8 @@ namespace BlackSP.Infrastructure.Builders
     {
         string VertexName { get; }
         ICollection<string> InstanceNames { get; }
-        ICollection<Edge> OutgoingEdges { get; }
-        ICollection<Edge> IncomingEdges { get; }
+        ICollection<IEdgeBuilder> OutgoingEdges { get; }
+        ICollection<IEdgeBuilder> IncomingEdges { get; }
 
         VertexType VertexType { get; }
         Type ModuleType { get; }
@@ -57,8 +57,8 @@ namespace BlackSP.Infrastructure.Builders
 
     public interface IProducingOperatorVertexBuilder<T> : IOperatorVertexBuilder
     {
-        void Append(IConsumingOperatorVertexBuilder<T> otherOperator, bool asPipeline = false);
-        void Append<T2>(IConsumingOperatorVertexBuilder<T, T2> otherOperator, bool asPipeline = false);
-        void Append<T2>(IConsumingOperatorVertexBuilder<T2, T> otherOperator, bool asPipeline = false);
+        IEdgeBuilder Append(IConsumingOperatorVertexBuilder<T> otherOperator);
+        IEdgeBuilder Append<T2>(IConsumingOperatorVertexBuilder<T, T2> otherOperator);
+        IEdgeBuilder Append<T2>(IConsumingOperatorVertexBuilder<T2, T> otherOperator);
     }
 }

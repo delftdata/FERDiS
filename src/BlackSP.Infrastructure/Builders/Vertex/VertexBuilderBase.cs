@@ -23,8 +23,8 @@ namespace BlackSP.Infrastructure.Builders.Vertex
         public abstract VertexType VertexType { get; }
         public abstract Type ModuleType { get; }
 
-        public virtual ICollection<Edge> OutgoingEdges { get; private set; }
-        public virtual ICollection<Edge> IncomingEdges { get; private set; }
+        public virtual ICollection<IEdgeBuilder> OutgoingEdges { get; private set; }
+        public virtual ICollection<IEdgeBuilder> IncomingEdges { get; private set; }
 
         private ICollection<string> InputEndpointNames { get; set; }
         private ICollection<string> OutputEndpointNames { get; set; }
@@ -34,8 +34,8 @@ namespace BlackSP.Infrastructure.Builders.Vertex
         {
             InstanceNames = instanceNames;
             VertexName = vertexName;
-            OutgoingEdges = new List<Edge>();
-            IncomingEdges = new List<Edge>();
+            OutgoingEdges = new List<IEdgeBuilder>();
+            IncomingEdges = new List<IEdgeBuilder>();
 
             InputEndpointNames = new List<string>();
             OutputEndpointNames = new List<string>();
@@ -71,7 +71,7 @@ namespace BlackSP.Infrastructure.Builders.Vertex
             };
         }
 
-        private static IEndpointConfiguration AsEndpointConfiguration(Edge edge, bool asInput)
+        private static IEndpointConfiguration AsEndpointConfiguration(IEdgeBuilder edge, bool asInput)
         {
             _ = edge ?? throw new ArgumentNullException(nameof(edge));
             bool fromCoordinator = edge.FromVertex.VertexType == VertexType.Coordinator;
@@ -84,7 +84,7 @@ namespace BlackSP.Infrastructure.Builders.Vertex
                 RemoteVertexName = asInput ? edge.FromVertex.VertexName : edge.ToVertex.VertexName,
                 RemoteEndpointName = asInput ? edge.FromEndpoint : edge.ToEndpoint,
                 RemoteInstanceNames = asInput ? edge.FromVertex.InstanceNames : edge.ToVertex.InstanceNames,
-                //TODO: is pipeline or shuffle
+                IsPipeline = edge.IsPipeline()
             };
         }
     }

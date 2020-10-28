@@ -21,21 +21,20 @@ namespace BlackSP.Core.Partitioners
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
         }
 
+        
+
         public IEnumerable<string> Partition(IMessage message)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
             var targetEndpoints = _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl == message.IsControl);
             foreach(var endpoint in targetEndpoints)
             {
-                //TODO: EXTEND IMPLEMENTATION
-                //if endpoint type pipeline THEN targetshard = currentshard
-
-
-
-
-
-                if(message.PartitionKey.HasValue)
-                {   //got partitionkey, so do partitioning
+                if(endpoint.IsPipeline)
+                {   //if pipeline sent to instance with same shardId as current instance
+                    yield return endpoint.GetConnectionKey(_vertexConfiguration.ShardId);
+                } 
+                else if(message.PartitionKey.HasValue)
+                {   //got partitionkey, so do partitioning                 !
                     var targetShard = Math.Abs(message.PartitionKey.Value) % endpoint.RemoteInstanceNames.Count();
                     yield return endpoint.GetConnectionKey(targetShard);
                 } 

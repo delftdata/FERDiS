@@ -20,6 +20,8 @@ namespace BlackSP.Infrastructure.Models
 
         public IEnumerable<string> RemoteInstanceNames { get; set; }
 
+        public bool IsPipeline { get; set; }
+
         public string GetConnectionKey(int shardId)
         {
             if(shardId < RemoteInstanceNames.Count() && shardId > -1)

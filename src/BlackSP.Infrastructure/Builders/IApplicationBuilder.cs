@@ -14,7 +14,7 @@ namespace BlackSP.Infrastructure.Builders
         /// Allows specifying handle for configuring the operator vertex graph
         /// </summary>
         /// <param name="builder"></param>
-        IApplicationBuilder ConfigureOperators(Action<IOperatorVertexGraphBuilder> builder);
+        IApplicationBuilder ConfigureOperators(Action<IVertexGraphBuilder> builder);
 
         /// <summary>
         /// Sets the log configuration passed to every vertex

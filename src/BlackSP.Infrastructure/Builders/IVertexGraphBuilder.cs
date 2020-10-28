@@ -6,12 +6,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Infrastructure.Builders.Graph
+namespace BlackSP.Infrastructure.Builders
 {
     /// <summary>
     /// Interface for building a graph of operator vertices by adding different types of operators
     /// </summary>
-    public interface IOperatorVertexGraphBuilder
+    public interface IVertexGraphBuilder
     {
 
         /// <summary>

@@ -1,6 +1,6 @@
 ﻿using BlackSP.Checkpointing;
 using BlackSP.Infrastructure;
-using BlackSP.Infrastructure.Builders.Graph;
+using BlackSP.Infrastructure.Builders;
 using BlackSP.Infrastructure.Models;
 using BlackSP.ThroughputExperiment.Events;
 using Serilog.Events;
@@ -30,7 +30,7 @@ namespace BlackSP.ThroughputExperiment
             await app.RunAsync();
         }
 
-        static void ConfigureOperatorGraph(IOperatorVertexGraphBuilder graph)
+        static void ConfigureOperatorGraph(IVertexGraphBuilder graph)
         {
             var source = graph.AddSource<SampleSourceOperator, SampleEvent>(1);
             var sink = graph.AddSink<SampleSinkOperator, SampleEvent>(1);

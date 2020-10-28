@@ -4,10 +4,10 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace BlackSP.ThroughputExperiment.Events
+namespace BlackSP.StreamBench.Identity.Events
 {
     [ProtoContract]
-    public class SampleEvent2 : IEvent
+    public class IdentityEvent : IEvent
     {
         [ProtoMember(1)]
         public string Key { get; set; }
@@ -16,15 +16,15 @@ namespace BlackSP.ThroughputExperiment.Events
         public DateTime EventTime { get; set; }
 
         [ProtoMember(3)]
-        public int EventCount { get; set; }
+        public string Value { get; set; }
 
-        public SampleEvent2() { }
+        public IdentityEvent() { }
 
-        public SampleEvent2(string key, DateTime? eventTime, int count)
+        public IdentityEvent(string key, DateTime? eventTime, string value)
         {
             Key = key;
             EventTime = eventTime ?? throw new ArgumentNullException(nameof(eventTime));
-            EventCount = count;
+            Value = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         public int GetPartitionKey()
@@ -32,7 +32,6 @@ namespace BlackSP.ThroughputExperiment.Events
             MD5 md5Hasher = MD5.Create();
             var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(Key));
             return BitConverter.ToInt32(hashed, 0);
-            //return Key.GetHashCode();
         }
     }
 }

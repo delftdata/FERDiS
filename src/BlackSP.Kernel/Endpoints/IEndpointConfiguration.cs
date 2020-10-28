@@ -33,6 +33,12 @@ namespace BlackSP.Kernel.Endpoints
         bool IsControl { get; }
 
         /// <summary>
+        /// Indicator of endpoint being in pipeline or shuffle configuration<br/>
+        /// false indicates it being a shuffle endpoint
+        /// </summary>
+        bool IsPipeline { get; }
+
+        /// <summary>
         /// Utility method to get a unique key string representing a single connection within the endpoint
         /// </summary>
         /// <param name="shardId"></param>

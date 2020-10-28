@@ -1,6 +1,6 @@
 ﻿using BlackSP.Checkpointing;
 using BlackSP.Kernel.Operators;
-using BlackSP.WordCount.Events;
+using BlackSP.StreamBench.WordCount.Events;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.WordCount.Operators
+namespace BlackSP.StreamBench.WordCount.Operators
 {
     class WordCountLoggerSink : ISinkOperator<WordEvent>
     {

@@ -1,4 +1,5 @@
 ﻿using BlackSP.Checkpointing;
+using BlackSP.Infrastructure.Builders.Edge;
 using BlackSP.Infrastructure.Builders.Vertex;
 using BlackSP.Infrastructure.Models;
 using BlackSP.Kernel.Models;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Builders.Graph
 {
-    public abstract class OperatorVertexGraphBuilderBase : IOperatorVertexGraphBuilder
+    public abstract class OperatorVertexGraphBuilderBase : IVertexGraphBuilder
     {
         public ICollection<IVertexBuilder> VertexBuilders { get; }
 
@@ -57,14 +58,28 @@ namespace BlackSP.Infrastructure.Builders.Graph
                 //only use outgoing connections to build tuples
 
                 var instanceNames = vertexBuilder.InstanceNames;
-                var targetInstanceNames = vertexBuilder.OutgoingEdges.Select(e => e.ToVertex).Where(v => !v.VertexName.Contains("coordinator")).SelectMany(v => v.InstanceNames);
+                var targetVertices = vertexBuilder.OutgoingEdges.Select(e => e.ToVertex).Where(v => !v.VertexName.Contains("coordinator"));
+
+                var targetInstanceNames = targetVertices.SelectMany(v => v.InstanceNames);
                 //TODO: skip some connections when pipeline
+                var fromShardId = 0;
                 foreach(var instanceName in instanceNames)
                 {
-                    foreach(var targetInst in targetInstanceNames)
+                    foreach(var edge in vertexBuilder.OutgoingEdges)
                     {
-                        allConnections.Add(Tuple.Create(instanceName, targetInst));
+                        if(edge.IsPipeline())
+                        {
+                            allConnections.Add(Tuple.Create(instanceName, edge.ToVertex.InstanceNames.ElementAt(fromShardId)));
+                        } 
+                        else //no pipeline, there is a shuffle/mesh connection between these vertices
+                        {
+                            foreach (var targetInst in targetInstanceNames)
+                            {
+                                allConnections.Add(Tuple.Create(instanceName, targetInst));
+                            }
+                        }
                     }
+                    fromShardId++;
                 }
                 allInstances.AddRange(instanceNames);
             }
@@ -83,8 +98,10 @@ namespace BlackSP.Infrastructure.Builders.Graph
             //connect to all existing configurators (all workers)
             foreach (var configurator in VertexBuilders)
             {
-                var fromCoordinatorEdge = new Edge(coordinatorConfigurator, coordinatorConfigurator.GetAvailableOutputEndpoint(), configurator, configurator.GetAvailableInputEndpoint(), EdgeType.Shuffle);
-                var toCoordinatorEdge = new Edge(configurator, configurator.GetAvailableOutputEndpoint(), coordinatorConfigurator, coordinatorConfigurator.GetAvailableInputEndpoint(), EdgeType.Shuffle);
+                var fromCoordinatorEdge = new EdgeBuilder(coordinatorConfigurator, coordinatorConfigurator.GetAvailableOutputEndpoint(), configurator, configurator.GetAvailableInputEndpoint())
+                    .AsShuffle();
+                var toCoordinatorEdge = new EdgeBuilder(configurator, configurator.GetAvailableOutputEndpoint(), coordinatorConfigurator, coordinatorConfigurator.GetAvailableInputEndpoint())
+                    .AsShuffle();
 
                 coordinatorConfigurator.OutgoingEdges.Add(fromCoordinatorEdge);
                 coordinatorConfigurator.IncomingEdges.Add(toCoordinatorEdge);
@@ -95,9 +112,6 @@ namespace BlackSP.Infrastructure.Builders.Graph
             }
             VertexBuilders.Add(coordinatorConfigurator);
         }
-
-        //Note the explicit interface implementations below, this is to avoid duplicating generic type constraints from the interface
-        //this makes the methods only available when casting object instance to the interface, and they cannot be marked public (even though they are)
 
         public AggregateOperatorVertexBuilder<TOperator, TIn, TOut> AddAggregate<TOperator, TIn, TOut>(int shardCount)
             where TOperator : IAggregateOperator<TIn, TOut>

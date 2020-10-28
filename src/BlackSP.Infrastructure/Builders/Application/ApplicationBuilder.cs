@@ -27,7 +27,7 @@ namespace BlackSP.Infrastructure.Builders.Application
         }
 
         /// <inheritdoc/>
-        public IApplicationBuilder ConfigureOperators(Action<IOperatorVertexGraphBuilder> builder)
+        public IApplicationBuilder ConfigureOperators(Action<IVertexGraphBuilder> builder)
         {
             _ = builder ?? throw new ArgumentNullException(nameof(builder));
             builder.Invoke(_graphBuilder);
