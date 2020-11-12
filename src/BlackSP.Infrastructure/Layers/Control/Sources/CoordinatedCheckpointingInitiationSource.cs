@@ -82,7 +82,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
                 var msg = new ControlMessage(_vertexConfiguration.GetPartitionKeyForInstanceName(instanceName));
                 msg.AddPayload(new BarrierPayload());
                 _messages.Add(msg);
-                _logger.Information($"Generated barrier message for {instanceName}");
+                _logger.Information($"Generated barrier for source {instanceName}");
             }
         }
 
