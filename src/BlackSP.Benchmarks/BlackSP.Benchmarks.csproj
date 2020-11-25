@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="lib\NEXMarkGenerator.jar" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ContentWithTargetPath Include="lib\NEXMarkGenerator.jar">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>NEXMarkGenerator.jar</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Confluent.Kafka" Version="1.5.2" />
+  </ItemGroup>
+
+</Project>
