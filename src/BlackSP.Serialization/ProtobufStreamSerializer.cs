@@ -43,6 +43,7 @@ namespace BlackSP.Serialization
         private TypeModel BuildTypeModel(int inheritanceFieldNum)
         {
             var typeModel = RuntimeTypeModel.Create();
+            
             var baseEventType = typeModel.Add(typeof(IEvent), true);
             var subTypes = TypeLoader.GetClassesExtending(typeof(IEvent), false);
             foreach (var subType in subTypes)
@@ -62,6 +63,11 @@ namespace BlackSP.Serialization
             foreach (var subType in payloadSubTypes)
             {
                 basePayloadType.AddSubType(inheritanceFieldNum++, subType);
+            }
+
+            foreach(var type in TypeLoader.GetProtobufAnnotatedTypes())
+            {
+                typeModel.Add(type, true);
             }
 
             return typeModel.Compile();

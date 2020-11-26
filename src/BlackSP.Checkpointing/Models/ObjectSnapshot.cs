@@ -33,10 +33,19 @@ namespace BlackSP.Checkpointing.Models
         public void RestoreObject(object target)
         {
             _ = target ?? throw new ArgumentNullException(nameof(target));
+            //if hook implemented, call it
+            (target as ICheckpointableAnnotated)?.OnBeforeRestore();
+            //do restore
             foreach (var fieldinfo in target.GetCheckpointableFields())
             {
                 fieldinfo.SetValue(target, _fieldValues[fieldinfo.Name]);
+                var cpAttr = fieldinfo.GetCustomAttributes(true)
+                    .Select(attr => attr as CheckpointableAttribute)
+                    .Where(val => val != null)
+                    .First();
             }
+            //if hook implemented, call it
+            (target as ICheckpointableAnnotated)?.OnAfterRestore();
         }
 
         protected bool Equals(ObjectSnapshot other)

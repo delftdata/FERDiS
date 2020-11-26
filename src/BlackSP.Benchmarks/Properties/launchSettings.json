@@ -3,11 +3,19 @@
     "Produce to Kafka": {
       "commandName": "Project",
       "environmentVariables": {
-        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
-        "GENERATOR_CALLS": "100",
+        "GENERATOR_CALLS": "100000",
         "KAFKA_BROKERLIST": "localhost:32400,localhost:32401,localhost:32402,localhost:32403,localhost:32404,localhost:32405"
       },
-      "commandLineArgs": ""
+      "commandLineArgs": "produce"
+    },
+
+    "Run BlackSP (simulator)": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
+        "KAFKA_BROKERLIST": "localhost:32400,localhost:32401,localhost:32402,localhost:32403,localhost:32404,localhost:32405"
+      },
+      "commandLineArgs": "blacksp simulator"
     }
   }
 }

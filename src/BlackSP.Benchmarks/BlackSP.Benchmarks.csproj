@@ -18,6 +18,12 @@
   
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="1.5.2" />
+    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="6.1.1" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\BlackSP.CRA\BlackSP.CRA.csproj" />
+    <ProjectReference Include="..\BlackSP.Simulator\BlackSP.Simulator.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,12 @@
-﻿using BlackSP.Benchmarks.NEXMark;
+﻿using BlackSP.Benchmarks.Events;
+using BlackSP.Benchmarks.NEXMark;
 using BlackSP.Benchmarks.NEXMark.Models;
+using BlackSP.Benchmarks.Operators;
+using BlackSP.Checkpointing;
+using BlackSP.Infrastructure;
+using BlackSP.Infrastructure.Models;
 using Confluent.Kafka;
+using Serilog.Events;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -16,96 +22,62 @@ namespace BlackSP.Benchmarks
     {
         static async Task Main(string[] args)
         {
-            int generatorCalls = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_CALLS"));
-            string brokerList = Environment.GetEnvironmentVariable("KAFKA_BROKERLIST");
-            
-            var config = new ProducerConfig { BootstrapServers = brokerList, Partitioner = Partitioner.Consistent };
-            using var producer = new ProducerBuilder<int, string>(config).Build();
-            using var ctSource = new CancellationTokenSource();
-            
-            var startInfo = new ProcessStartInfo("java", $"-jar NEXMarkGenerator.jar -gen-calls {generatorCalls} -prettyprint false")
+            if(args.Length < 1)
             {
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-                UseShellExecute = false
-            };
-            var generatorProcess = Process.Start(startInfo);
-            var outPrinter = Task.Run(() => ParseXMLAndProduceToKafka(generatorProcess.StandardOutput, producer, ctSource.Token));
+                Console.WriteLine("Required argument on position 0. Possible values: produce, blacksp");
+                return;
+            }
+            switch (args[0])
+            {
+                case "produce": 
+                    await ProduceNEXMarkAuctionData(); 
+                    break;
+                case "blacksp":
+                    if(args.Length < 2)
+                    {
+                        throw new ArgumentException("2nd argument required for blacksp. Possible values: simulator, cra");
+                    }
+                    await RunBlackSP(args[1] == "simulator");
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        static async Task ProduceNEXMarkAuctionData()
+        {
             try
             {
-                generatorProcess.WaitForExit();
-            } 
-            catch
+                await KafkaNEXMarkProducer.StartProductingAuctionData();
+            }
+            catch (Exception e)
             {
-                ctSource.Cancel();
-            } 
-            finally
-            {
-                await outPrinter;
+                Console.WriteLine($"Kafka auction data producer exited with exception");
+                Console.WriteLine(e);
             }
         }
 
-        static async Task ParseXMLAndProduceToKafka(StreamReader reader, IProducer<int, string> producer, CancellationToken token)
+        static async Task RunBlackSP(bool useSimulator)
         {
-            int generatorCalls = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_CALLS"));
+            var logTargets = LogTargetFlags.Console | (useSimulator ? LogTargetFlags.File : LogTargetFlags.AzureBlob);
+            var logLevel = LogEventLevel.Information;
 
-            //these numbers are approximations so the real count may end (somewhat) higher than the expected counts
-            //this seems to be particularly true for people and auctions.
-            double expectedPeopleCount = 50 + generatorCalls / 10;
-            double expectedAuctionCount = 50 + generatorCalls;
-            double expectedBidCount = generatorCalls * 10;
+            var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
+            var app = await appBuilder
+                .ConfigureLogging(new LogConfiguration(logTargets, logLevel))
+                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Uncoordinated, true, 45))
+                .ConfigureOperators((builder) => {
+                    var source = builder.AddSource<BidSourceOperator, BidEvent>(3);
+                    var filter = builder.AddFilter<Operators.Projection.BidFilterOperator, BidEvent>(3);
+                    var sink = builder.AddSink<Operators.Projection.BidSinkOperator, BidEvent>(1);
+                    source.Append(filter).AsPipeline();
+                    filter.Append(sink);
+                })
+                .Build();
 
-            int bidCount = 0;
-            int peopleCount = 0;
-            int auctionCount = 0;
-            while(!reader.EndOfStream)
-            {
-                //XML reading begin
-                var xmlHeader = reader.ReadLine();
-                if(string.IsNullOrEmpty(xmlHeader))
-                {
-                    continue; //skip empty lines until we see an xml header
-                }
-                var xmlBody = reader.ReadLine();
-                if(string.IsNullOrEmpty(xmlBody))
-                {
-                    throw new InvalidDataException("Empty xml body");
-                }
-                var xmlText = $"{xmlHeader}{xmlBody}";
-                //XML reading end
-                
-                var xDoc = XDocument.Parse(xmlText);
-                var parser = new XMLParser(xDoc);
-                
-                foreach(var person in parser.GetPeople())
-                {
-                    var message = new Message<int, string> { Key = person.Id, Value = JsonSerializer.Serialize(person) };
-                    await producer.ProduceAsync(Person.KafkaTopicName, message, token);
-                    peopleCount++;
-                }
-
-                foreach(var bid in parser.GetBids())
-                {
-                    var message = new Message<int, string> { Key = bid.AuctionId, Value = JsonSerializer.Serialize(bid) };
-                    await producer.ProduceAsync(Bid.KafkaTopicName, message, token);
-                    bidCount++;
-                }
-
-                foreach(var auction in parser.GetAuctions())
-                {
-                    var message = new Message<int, string> { Key = auction.Id, Value = JsonSerializer.Serialize(auction) };
-                    await producer.ProduceAsync(Auction.KafkaTopicName, message, token);
-                    auctionCount++;
-                }
-
-                var auctionPercent = (int)Math.Round(auctionCount / expectedAuctionCount * 100);
-                var peoplePercent = (int)Math.Round(peopleCount / expectedPeopleCount * 100);
-                var bidPercent = (int)Math.Round(bidCount / expectedBidCount * 100);
-                Console.WriteLine($"Auctions at ~{auctionPercent}%, People at ~{peoplePercent}%, Bids at ~{bidPercent}%");
-            }
-            Console.WriteLine($"-------------------------------------------------------------");
-            Console.WriteLine($"Produced {peopleCount} People, {auctionCount} Auctions and {bidCount} Bids to Kafka");
-
+            await app.RunAsync();
         }
+
+        
     }
 }
