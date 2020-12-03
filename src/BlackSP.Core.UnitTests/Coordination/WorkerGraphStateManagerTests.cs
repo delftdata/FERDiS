@@ -86,7 +86,7 @@ namespace BlackSP.Core.UnitTests.Coordination
             Assert.AreEqual(instanceNames.Count() - 1, workerstateChanges.Count);
             
             Assert.AreEqual("instance1", workerstateChanges.First(kv => kv.Value == WorkerState.Faulted).Key);
-            Assert.AreEqual("instance2", workerstateChanges.First(kv => kv.Value == WorkerState.Halted).Key);
+            Assert.AreEqual("instance2", workerstateChanges.First(kv => kv.Value == WorkerState.Halting).Key);
             Assert.AreEqual("instance3", workerstateChanges.First(kv => kv.Value == WorkerState.Running).Key);
         }
 

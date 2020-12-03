@@ -27,10 +27,9 @@ namespace BlackSP.OperatorShells
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
 
-            UpdateAllWindows(@event);
-
-            //TODO: implement custom exception
-            return OperateWithUpdatedWindows(@event) ?? throw new Exception("OperateWithUpdatedWindows returned null, expected IEnumerable");            
+            var closedWindow = UpdateAllWindows(@event);
+            
+            return OperateWithUpdatedWindows(@event, closedWindow) ?? throw new Exception("OperateWithUpdatedWindows returned null, expected IEnumerable");            
         }
 
         /// <summary>
@@ -39,7 +38,7 @@ namespace BlackSP.OperatorShells
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        protected abstract IEnumerable<IEvent> OperateWithUpdatedWindows(IEvent @event);
+        protected abstract IEnumerable<IEvent> OperateWithUpdatedWindows(IEvent newEvent, IEnumerable<IEvent> closedWindow);
 
         /// <summary>
         /// Handle for subclasses to access the sliding window with events of provided type
@@ -52,22 +51,23 @@ namespace BlackSP.OperatorShells
             var eventKey = eventType.FullName;
             if (!_currentWindows.ContainsKey(eventKey))
             {
-                _currentWindows.Add(eventKey, new SlidingEventWindow<IEvent>(_pluggedInOperator.WindowSize));
+                _currentWindows.Add(eventKey, new SlidingEventWindow<IEvent>(DateTime.Now, _pluggedInOperator.WindowSize, _pluggedInOperator.WindowSlideSize));
             }
             if (_currentWindows.TryGetValue(eventKey, out var eventWindow))
             {
                 return eventWindow;
             }
             //TODO: custom exception
-            throw new Exception($"Missing type for sliding window, was trying to find ${eventType}");
+            throw new Exception($"Missing sliding window of type {eventType}");
         }
 
         /// <summary>
-        /// Inserts provided event in the right window and updates watermarks of any other
+        /// Inserts provided event in the right window
         /// </summary>
         /// <param name="event"></param>
-        private void UpdateAllWindows(IEvent @event)
+        private IEnumerable<IEvent> UpdateAllWindows(IEvent @event)
         {
+            var closedWindow = Enumerable.Empty<IEvent>();
             foreach(var window in _currentWindows)
             {
                 var type = window.Key;
@@ -75,13 +75,14 @@ namespace BlackSP.OperatorShells
 
                 if(type == @event.GetType().FullName) //if this window holds this type of event
                 {
-                    slidingWindow.Insert(@event); //then insert the event
+                    closedWindow = slidingWindow.Insert(@event, DateTime.Now); //then insert the event
                 } 
-                else if(slidingWindow.TryUpdateWatermark(@event)) //else if this event advances the watermark
+                else if(slidingWindow.AdvanceWindow(DateTime.Now)) //else (other window type) if this event advances the watermark
                 {
                     slidingWindow.Prune(); //prune any expired events from window
                 }
             }
+            return closedWindow;
         }
     }
 }

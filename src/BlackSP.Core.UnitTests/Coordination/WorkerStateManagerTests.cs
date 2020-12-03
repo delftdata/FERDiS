@@ -76,23 +76,23 @@ namespace BlackSP.Core.UnitTests.Coordination
 
             stateMachine.FireTrigger(WorkerStateTrigger.Startup);
             stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorStart);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Running);
+            Assert.AreEqual(WorkerState.Running, stateMachine.CurrentState);
 
             //cant start recovery straight from started state
             Assert.Throws<InvalidOperationException>(() => stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId));
-            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Running);
+            Assert.AreEqual(WorkerState.Running, stateMachine.CurrentState);
             
             //cannot restore while halting
-            stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorHalt);
+            stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorHalt, (new[] { "" }, new[] { "" }));
             Assert.Throws<InvalidOperationException>(() => stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId));
 
             //complete halting and start restore
             stateMachine.FireTrigger(WorkerStateTrigger.DataProcessorHaltCompleted);
             stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, fakeCpId);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Recovering);
+            Assert.AreEqual(WorkerState.Recovering, stateMachine.CurrentState);
 
             stateMachine.FireTrigger(WorkerStateTrigger.CheckpointRestoreCompleted, fakeCpId);
-            Assert.AreEqual(stateMachine.CurrentState, WorkerState.Halted);
+            Assert.AreEqual(WorkerState.Halted, stateMachine.CurrentState);
         }
 
         [Test]

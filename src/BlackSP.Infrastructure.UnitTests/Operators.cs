@@ -40,7 +40,9 @@ namespace BlackSP.Infrastructure.UnitTests
 
     class SampleJoinOperator : IJoinOperator<EventA, EventB, EventC>
     {
-        public TimeSpan WindowSize { get => TimeSpan.FromMinutes(5); }
+        public TimeSpan WindowSize => TimeSpan.FromMinutes(5);
+        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(5);
+
 
         public EventC Join(EventA matchA, EventB matchB)
         {
@@ -55,7 +57,8 @@ namespace BlackSP.Infrastructure.UnitTests
 
     class SampleAggregateOperator : IAggregateOperator<EventC, EventD>
     {
-        public TimeSpan WindowSize { get => TimeSpan.FromMinutes(5); }
+        public TimeSpan WindowSize => TimeSpan.FromMinutes(5);
+        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(5);
 
         public IEnumerable<EventD> Aggregate(IEnumerable<EventC> window)
         {

@@ -12,75 +12,80 @@ namespace BlackSP.Core.Windows
 
         public ICollection<TEvent> Events => SortedEvents.Values;
         protected SortedList<long, TEvent> SortedEvents { get; private set; }
+        
+        /// <summary>
+        /// The size of the window
+        /// </summary>
         protected TimeSpan WindowSize { get; private set; }
         
         /// <summary>
-        /// Represents a watermark, a lower bound to determine which events to discard from the window
+        /// The amount of time the window slides ahead<br/>
+        /// Note: when equal to WindowSize, a tumbling behavior will emerge<br/>
+        /// When lower than WindowSize, typical sliding behavior will emerge
         /// </summary>
-        protected long LatestEventTime { get; set; }
+        protected TimeSpan WindowSlideSize { get; private set; }
+
+        /// <summary>
+        /// Represents a local timestamp (processing time) on which the current window has opened
+        /// </summary>
+        protected DateTime CurrentWindowStart { get; set; }
 
         private readonly object _windowLock;
         
-        public EventWindowBase(TimeSpan windowSize)
+        public EventWindowBase(DateTime startDate, TimeSpan windowSize, TimeSpan windowSlideSize)
         {
-            _ = windowSize == default ? throw new ArgumentException($"{nameof(windowSize)} has default value, pass a valid TimeSpan") : windowSize;
+            WindowSize = windowSize == default ? throw new ArgumentException($"{nameof(windowSize)} has default value, pass a valid TimeSpan") : windowSize;
+            WindowSlideSize = windowSlideSize == default ? throw new ArgumentException($"{nameof(windowSlideSize)} has default value, pass a valid TimeSpan") : windowSlideSize;
 
             SortedEvents = new SortedList<long, TEvent>();
-            LatestEventTime = DateTime.MinValue.Ticks;
-            WindowSize = windowSize;
+            CurrentWindowStart = startDate;
             _windowLock = new object();
         }
 
         /// <summary>
         /// Inserts an event in the window and updates watermarks, may<br/>
         /// a. return a closed window or <br/>
-        /// b. drop expired events from the public Events collection
+        /// b. return whats left in the window <br/>
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        public IEnumerable<TEvent> Insert(TEvent @event)
+        public IEnumerable<TEvent> Insert(TEvent @event, DateTime processingTime)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
 
             lock (_windowLock)
             {
-                long eventTimeTicks = @event.EventTime.Ticks;
-                var events = TryUpdateWatermark(@event) 
-                    ? OnWaterMarkAdvanced()
+                var events = AdvanceWindow(processingTime) 
+                    ? OnWindowAdvanced()
                     : Enumerable.Empty<TEvent>();
-                
-                SafeAddEventToWindow(eventTimeTicks, @event);
+                //add after window advance
+                SafeAddEventToWindow(processingTime.Ticks, @event);
                 return events;
             }
         }
 
         /// <summary>
-        /// Handle for updating the watermark of the current window.<br/>
-        /// Only updates if the provided event watermark is larger than the current watermark
-        /// NOTE: NOT ACTUAL WATERMARKS, NEEDS REFACTORING
+        /// Advances processing time
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        public bool TryUpdateWatermark(TEvent @event)
+        public bool AdvanceWindow(DateTime newProcessingTime)
         {
-            _ = @event ?? throw new ArgumentNullException(nameof(@event));
-
-            long eventTimeTicks = @event.EventTime.Ticks;
-            if(eventTimeTicks > LatestEventTime)
+            bool res = false;
+            while(newProcessingTime.Ticks > CurrentWindowStart.Ticks + WindowSize.Ticks)
             {
-                LatestEventTime = eventTimeTicks;
-                return true;
+                CurrentWindowStart = CurrentWindowStart.Add(WindowSlideSize);
+                res = true;
             }
-            return false;
+            return res;
         }
 
         /// <summary>
         /// Handle for implementing different window behaviors<br/>
-        /// Can return values in case a window closed<br/>
-        /// Gets invoked BEFORE adding the event with the advanced watermark to the current window
+        /// Can return values in case a window closed
         /// </summary>
         /// <returns></returns>
-        protected abstract IEnumerable<TEvent> OnWaterMarkAdvanced();
+        protected abstract IEnumerable<TEvent> OnWindowAdvanced();
 
 
         /// <summary>

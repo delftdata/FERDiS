@@ -11,6 +11,8 @@ namespace BlackSP.CRA.Kubernetes
         private ICollection<IVertexBuilder> _configurators;
         private string lastWrittenYamlFile;
 
+        private string DockerHubImageName => Environment.GetEnvironmentVariable("CRA_WORKER_DOCKER_IMAGE");
+
         public KubernetesDeploymentUtility()
         {}
         
@@ -105,7 +107,7 @@ spec:
         spec:
             containers:
             - name: {instanceName}
-              image: {Environment.GetEnvironmentVariable("CRA_WORKER_DOCKER_IMAGE") ?? throw new InvalidOperationException("Missing CRA_WORKER_DOCKER_IMAGE environment variable")}
+              image: {DockerHubImageName ?? throw new InvalidOperationException("Missing CRA_WORKER_DOCKER_IMAGE environment variable")}
               ports:
               - containerPort: 1500
               env:

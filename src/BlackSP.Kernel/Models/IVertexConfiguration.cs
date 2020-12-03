@@ -50,7 +50,8 @@ namespace BlackSP.Kernel.Models
         ICollection<IEndpointConfiguration> OutputEndpoints { get; }
 
         /// <summary>
-        /// Sets the shard ID this vertex is taking on. Affects the InstanceName property.
+        /// Sets the shard ID this vertex is taking on. Affects the InstanceName property.<br/>
+        /// Called by library code and should usually not be touched at all.
         /// </summary>
         /// <param name="shardId"></param>
         void SetCurrentShardId(int shardId);

@@ -60,7 +60,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
             //_testEndpoint = new InputEndpoint(_targetOperator, _serializer, arrayPool);
         }
 
-        [Test]
+        //[Test]
         public async Task Ingress_Should_ReturnEventsFromStream()
         {
             using (Stream testIngressStream = new MemoryStream())
@@ -104,7 +104,7 @@ namespace BlackSP.Core.UnitTests.Endpoints
             }
         }
 
-        [Test]
+        //[Test]
         public async Task HasInput_Should_ReturnFalse_WhenNoInput()
         {
             Assert.Fail();

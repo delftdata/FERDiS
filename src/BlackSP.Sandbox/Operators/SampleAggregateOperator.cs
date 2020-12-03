@@ -14,6 +14,7 @@ namespace BlackSP.Sandbox.Operators
         private readonly ILogger _logger;
 
         public TimeSpan WindowSize => TimeSpan.FromSeconds(2);
+        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(2);
 
         [Checkpointable]
         public int Counter;

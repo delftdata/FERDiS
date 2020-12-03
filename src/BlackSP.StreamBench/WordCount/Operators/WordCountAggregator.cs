@@ -12,6 +12,7 @@ namespace BlackSP.StreamBench.WordCount.Operators
     {
         public static int WindowSizeSeconds = 5;
         public TimeSpan WindowSize => TimeSpan.FromSeconds(WindowSizeSeconds);
+        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(WindowSizeSeconds);
 
         private readonly ILogger _logger;
 

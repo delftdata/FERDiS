@@ -8,6 +8,8 @@ namespace BlackSP.Kernel.Operators
     public interface IWindowedOperator : IOperator
     {
         TimeSpan WindowSize { get; }
+
+        TimeSpan WindowSlideSize { get; }
     }
 
     public interface IJoinOperator<TInA, TInB, TOut> : IWindowedOperator
@@ -37,6 +39,12 @@ namespace BlackSP.Kernel.Operators
         where TOut : class, IEvent
 
     {
+
+        /// <summary>
+        /// Closing of a window, aggregates into an enumerable of the expected output type
+        /// </summary>
+        /// <param name="window"></param>
+        /// <returns></returns>
         IEnumerable<TOut> Aggregate(IEnumerable<TIn> window);
     }
 }

@@ -10,25 +10,28 @@ namespace BlackSP.Core.Windows
     public class SlidingEventWindow<TEvent> : EventWindowBase<TEvent>
         where TEvent : class, IEvent
     {
-        public SlidingEventWindow(TimeSpan windowSize) : base(windowSize)
+        public SlidingEventWindow(DateTime startDate, TimeSpan windowSize, TimeSpan windowSlideSize) : base(startDate, windowSize, windowSlideSize)
         {
-        }
-
-        protected override IEnumerable<TEvent> OnWaterMarkAdvanced()
-        {
-            Prune();
-            return Enumerable.Empty<TEvent>();
         }
 
         /// <summary>
-        /// Removes all events from the current window based on watermark.<br/>
-        /// (anything that slid out will be removed)</br>
-        /// Wont perform any pruning when there is nothing to prune
+        /// Returns the window content and prunes events that should be removed from the window
         /// </summary>
-        /// <param name="maxAge"></param>
+        /// <returns></returns>
+        protected override IEnumerable<TEvent> OnWindowAdvanced()
+        {
+            var windowContent = Events.ToArray();
+            Prune();
+            return windowContent;
+        }
+
+        /// <summary>
+        /// Removes events from the current window based on processing time<br/>
+        /// (anything that slid out will be removed)</br>
+        /// </summary>
         public void Prune()
         {
-            var maxAge = LatestEventTime - WindowSize.Ticks;
+            var maxAge = CurrentWindowStart.Ticks;
 
             var oldestEventTick = SortedEvents.FirstOrDefault().Key;
             if (oldestEventTick == default || oldestEventTick > maxAge)

@@ -13,9 +13,10 @@ using System.Threading.Tasks;
 
 namespace BlackSP.OperatorShells.UnitTests.Operator
 {
-    class EventCounterAggregateConfiguration : IAggregateOperator<TestEvent, TestEvent2>
+    class EventCounterAggregateOperator : IAggregateOperator<TestEvent, TestEvent2>
     {
         public TimeSpan WindowSize { get; set; }
+        public TimeSpan WindowSlideSize { get; set; }
 
         public IEnumerable<TestEvent2> Aggregate(IEnumerable<TestEvent> window)
         {
@@ -37,29 +38,36 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         [SetUp]
         public void SetUp()
         {
-            _windowSize = TimeSpan.FromSeconds(5);
-            _operator = new AggregateOperatorShell<TestEvent, TestEvent2>(new EventCounterAggregateConfiguration
+            _windowSize = TimeSpan.FromMilliseconds(250);
+
+            _operator = new AggregateOperatorShell<TestEvent, TestEvent2>(new EventCounterAggregateOperator
             {
-                WindowSize = _windowSize
+                WindowSize = _windowSize,
+                WindowSlideSize = _windowSize //tumbling window
             });
             _startTime = DateTime.Now;
 
             _testEvents = new List<TestEvent>();
             for(int i = 0; i < 10; i++)
             {
-                _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i, EventTime = _startTime.AddMilliseconds(i) });
+                _testEvents.Add(new TestEvent {
+                    Key = $"K{i}", 
+                    Value = (byte)i, 
+                    EventTime = _startTime.AddMilliseconds(i) 
+                });
             }
         }
 
         [Test]
-        public void AggregateOperator_EmitsAResultFromWindow()
+        public async Task AggregateOperator_EmitsAResultFromWindow()
         {
             var results = _testEvents.SelectMany(e => _operator.OperateOnEvent(e)).ToArray();
-            //insert extra event that is in the next window, thus closing the current window
+            //insert extra event that is in the next window, closing the current window
+
+            await Task.Delay(_windowSize);
             var windowCloser = new TestEvent
             {
                 Key = "K_closer",
-                EventTime = _startTime + _windowSize,
                 Value = 10
             };
             var ok = _operator.OperateOnEvent(windowCloser);

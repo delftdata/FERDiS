@@ -5,28 +5,39 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BlackSP.Core.UnitTests.Windows
 {
     public class SlidingEventWindowTests
     {
         [Test]
-        public void Add_DropsEventsThatAreOutOfWindow()
+        public async Task Add_DropsEventsThatAreOutOfWindow()
         {
             var startTime = DateTime.Now;
-            var windowSize = TimeSpan.FromSeconds(10);
-            var window = new SlidingEventWindow<TestEvent>(windowSize);
-            var testEvent1 = new TestEvent { Key = "key1", EventTime = startTime.AddSeconds(4), Value = 1 };
-            var testEvent2 = new TestEvent { Key = "key2", EventTime = startTime.AddSeconds(6), Value = 1 };
-            var testEvent3 = new TestEvent { Key = "key3", EventTime = testEvent2.EventTime.Add(windowSize), Value = 1 };
+            var windowSize = TimeSpan.FromSeconds(2);
+            var windowSlidingSize = TimeSpan.FromSeconds(1);
+            var window = new SlidingEventWindow<TestEvent>(startTime.AddMilliseconds(-1), windowSize, windowSlidingSize);
+            var testEvent1 = new TestEvent { Key = "key1", Value = 1 };
+            var testEvent2 = new TestEvent { Key = "key2", Value = 1 };
+            var testEvent3 = new TestEvent { Key = "key3", Value = 1 };
+            var testEvent4 = new TestEvent { Key = "key4", Value = 1 };
             Assert.IsEmpty(window.Events); //assert empty on start
 
-            window.Insert(testEvent1);
-            window.Insert(testEvent2);
-            Assert.AreEqual(2, window.Events.Count);
-            window.Insert(testEvent3);
-            Assert.AreEqual(1, window.Events.Count);
-            Assert.AreEqual(window.Events.First().Key, testEvent3.Key);
+            var windowBeforeSlide = window.Insert(testEvent1, startTime); //first event arrives
+            Assert.IsEmpty(windowBeforeSlide); //no resulting events unless window slides
+
+            windowBeforeSlide = window.Insert(testEvent2, startTime.Add(windowSlidingSize)); //second one arrives
+            Assert.AreEqual(new TestEvent[] { testEvent1, testEvent2 }, window.Events);
+            Assert.IsEmpty(windowBeforeSlide); //window didnt slide yet
+
+            windowBeforeSlide = window.Insert(testEvent3, startTime.Add(windowSize)); //third arrives and window slides
+            Assert.AreEqual(new TestEvent[] { testEvent1, testEvent2 }, windowBeforeSlide);
+            Assert.AreEqual(new TestEvent[] { testEvent2, testEvent3 }, window.Events);
+
+            windowBeforeSlide = window.Insert(testEvent4, startTime.Add(2*windowSize)); //fourth arrives and window slides two steps ahead
+            Assert.AreEqual(new TestEvent[] { testEvent2, testEvent3 }, windowBeforeSlide);
+            Assert.AreEqual(new TestEvent[] { testEvent4 }, window.Events);
         }
 
         [Test]
@@ -34,37 +45,40 @@ namespace BlackSP.Core.UnitTests.Windows
         {
             var startTime = DateTime.Now;
             var windowSize = TimeSpan.FromSeconds(10);
-            var window = new SlidingEventWindow<TestEvent>(windowSize);
-            var testEvent = new TestEvent { Key = "key", EventTime = startTime.AddSeconds(5), Value = 1 };
+            var window = new SlidingEventWindow<TestEvent>(startTime.AddMilliseconds(-1), windowSize, windowSize/2);
+            var testEvent = new TestEvent { Key = "key", Value = 1 };
 
             Assert.IsEmpty(window.Events); //assert empty on start
 
-            window.Insert(testEvent);
-            window.Insert(testEvent);
-            window.Insert(testEvent);
-            window.Insert(testEvent);
+            window.Insert(testEvent, startTime);
+            window.Insert(testEvent, startTime.AddMilliseconds(1));
+            window.Insert(testEvent, startTime.AddMilliseconds(2));
+            window.Insert(testEvent, startTime.AddMilliseconds(3));
 
             Assert.AreEqual(4, window.Events.Count);
         }
 
         [Test]
-        public void Add_DropsDuplicateKeyEntriesCorrectly()
+        public async Task Add_DropsDuplicateKeyEntriesCorrectly()
         {
             var startTime = DateTime.Now;
-            var windowSize = TimeSpan.FromSeconds(10);
-            var window = new SlidingEventWindow<TestEvent>(windowSize);
-            var testEvent = new TestEvent { Key = "key", EventTime = startTime.AddSeconds(5), Value = 1 };
-            var testEvent2 = new TestEvent { Key = "key", EventTime = startTime.Add(windowSize).AddSeconds(5), Value = 1 };
+            var windowSize = TimeSpan.FromSeconds(1);
+            var windowSlidingSize = windowSize / 2;
+            var window = new SlidingEventWindow<TestEvent>(startTime.AddMilliseconds(-1), windowSize, windowSlidingSize);
+            var testEvent = new TestEvent { Key = "key", Value = 1 };
+            var testEvent2 = new TestEvent { Key = "key", Value = 1 };
             Assert.IsEmpty(window.Events); //assert empty on start
 
-            window.Insert(testEvent);
-            window.Insert(testEvent);
-            window.Insert(testEvent);
-            window.Insert(testEvent);
+            window.Insert(testEvent, startTime);
+            window.Insert(testEvent, startTime.AddMilliseconds(1));
+            window.Insert(testEvent, startTime.AddMilliseconds(2));
+            var windowBeforeSlide = window.Insert(testEvent, startTime.AddMilliseconds(700));
+            Assert.IsEmpty(windowBeforeSlide);
             Assert.AreEqual(4, window.Events.Count);
-
-            window.Insert(testEvent2);
-            Assert.AreEqual(1, window.Events.Count);
+            //next insert causes sliding, leaving only the last event (of the last 4) and the new event
+            windowBeforeSlide = window.Insert(testEvent2, startTime.AddSeconds(1));
+            Assert.AreEqual(4, windowBeforeSlide.Count());
+            Assert.AreEqual(2, window.Events.Count);
 
         }
     }

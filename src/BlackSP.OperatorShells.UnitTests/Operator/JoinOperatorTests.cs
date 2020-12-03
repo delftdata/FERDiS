@@ -12,6 +12,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
     class JoinOperatorConfigurationForTest : IJoinOperator<TestEvent, TestEvent2, TestEvent2>
     {
         public TimeSpan WindowSize { get; set; }
+        public TimeSpan WindowSlideSize { get; set; }
 
         public TestEvent2 Join(TestEvent matchA, TestEvent2 matchB)
         {
@@ -34,14 +35,19 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
 
         private JoinOperatorShell<TestEvent, TestEvent2, TestEvent2> _operator;
         private TimeSpan _windowSize;
+        private TimeSpan _windowSlideSize;
         private DateTime _startTime;
 
         [SetUp]
         public void SetUp()
         {
             _startTime = DateTime.Now;
-            _windowSize = TimeSpan.FromSeconds(10);
-            _operator = new JoinOperatorShell<TestEvent, TestEvent2, TestEvent2>(new JoinOperatorConfigurationForTest { WindowSize = _windowSize });
+            _windowSize = TimeSpan.FromMilliseconds(500);
+            _windowSlideSize = TimeSpan.FromMilliseconds(500);
+            _operator = new JoinOperatorShell<TestEvent, TestEvent2, TestEvent2>(new JoinOperatorConfigurationForTest { 
+                WindowSize = _windowSize,
+                WindowSlideSize = _windowSlideSize
+            });
         }
         
         [Test]
@@ -105,27 +111,26 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         }
 
         [Test]
-        public void FilterOperator_ShouldNotJoinWithEventsOutOfWindow()
+        public async Task FilterOperator_ShouldNotJoinWithEventsOutOfWindow()
         {
             var output = new List<IEvent>();
-            IList<IEvent> events = new List<IEvent>();
 
-            events.Add(new TestEvent { Key = "K1_A", EventTime = _startTime.AddSeconds(1), Value = 2 });
-            events.Add(new TestEvent2 { Key = "K2_A", EventTime = _startTime.Add(_windowSize).AddSeconds(1), Value = 2 });
-            events.Add(new TestEvent { Key = "K1_B", EventTime = _startTime.Add(_windowSize).AddSeconds(2), Value = 2 });
-            //second two events cause first event to go out of window so shouldnt return as a match
-            foreach (var @event in events)
-            {
-                output.AddRange(_operator.OperateOnEvent(@event));
-            }
+            output.AddRange(_operator.OperateOnEvent(new TestEvent { Key = "K1_A", Value = 2 }));
+            await Task.Delay(_windowSize);
+
+            output.AddRange(_operator.OperateOnEvent(new TestEvent2 { Key = "K2_A", Value = 2 }));
+            output.AddRange(_operator.OperateOnEvent(new TestEvent { Key = "K1_B", Value = 2 }));
+            
+            //second two events happen delayed to cause the first event to go out of window 
+            //so should only return one match
 
             Assert.IsNotEmpty(output);
             var outputEvent = output.First() as TestEvent2;
-            output.RemoveAt(0);
             Assert.IsNotNull(outputEvent);
             Assert.AreEqual(4, outputEvent.Value);
             Assert.AreEqual("K1_B+K2_A", outputEvent.Key);
             
+            output.RemoveAt(0);
             Assert.IsEmpty(output);
         }
 

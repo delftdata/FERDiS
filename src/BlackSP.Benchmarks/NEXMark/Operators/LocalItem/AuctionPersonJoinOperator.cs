@@ -10,6 +10,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.LocalItem
     class AuctionPersonJoinOperator : IJoinOperator<AuctionEvent, PersonEvent, JoinEvent>
     {
         public TimeSpan WindowSize => TimeSpan.FromSeconds(10);
+        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(5);
 
         public JoinEvent Join(AuctionEvent matchA, PersonEvent matchB)
         {
