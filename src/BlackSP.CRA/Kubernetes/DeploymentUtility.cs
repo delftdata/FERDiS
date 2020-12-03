@@ -8,8 +8,6 @@ namespace BlackSP.CRA.Kubernetes
 {
     public class KubernetesDeploymentUtility
     {
-        private const string DockerHubImageName = "mdzwart/cra-net3.1:latest";
-
         private ICollection<IVertexBuilder> _configurators;
         private string lastWrittenYamlFile;
 
@@ -82,16 +80,15 @@ namespace BlackSP.CRA.Kubernetes
             return deploymentYamlBuilder.ToString();
         }
 
-        private string BuildDeploymentSection(IVertexBuilder configurator, string instanceName)
+        private string BuildDeploymentSection(IVertexBuilder builder, string instanceName)
         {
-            return $@"
-kind: StatefulSet
+            return $@"kind: StatefulSet
 apiVersion: apps/v1
 metadata:
     namespace: default
     name: {instanceName}
     labels:
-        operator: {configurator.VertexName}
+        operator: {builder.VertexName}
         instance: {instanceName}
 spec:
     replicas: 1
@@ -103,21 +100,35 @@ spec:
         metadata:
             name: {instanceName}
             labels:
-                operator: {configurator.VertexName}
+                operator: {builder.VertexName}
                 instance: {instanceName}
         spec:
             containers:
             - name: {instanceName}
-              image: {DockerHubImageName}
+              image: {Environment.GetEnvironmentVariable("CRA_WORKER_DOCKER_IMAGE") ?? throw new InvalidOperationException("Missing CRA_WORKER_DOCKER_IMAGE environment variable")}
               ports:
               - containerPort: 1500
               env:
-              - name: AZURE_STORAGE_CONN_STRING
-                value: ""{Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING")}""
+{GetEnvironmentSection()}
               args: [""{instanceName}"", ""1500""] #CRA instance name {instanceName}, exposed on port 1500
               #resources: #requests #cpu ""500m"" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
 ---
-";  //TODO: consider putting entire environment in env section of yaml?
+";
+        }
+
+        private string GetEnvironmentSection()
+        {
+            var keysToInsert = Environment.GetEnvironmentVariable("ENVIRONMENT_VARIABLE_KEYS_TO_CRA");
+            var sb = new StringBuilder();
+
+            foreach (var dirtyKey in keysToInsert.Split(','))
+            {
+                var key = dirtyKey.Trim();
+                var value = Environment.GetEnvironmentVariable(key);
+                sb.Append("              - name: ").Append(key).AppendLine()
+                  .Append("                value: ").Append('"').Append(value).Append('"').AppendLine();
+            }
+            return sb.Remove(sb.Length -1, 1).ToString();
         }
     }
 }

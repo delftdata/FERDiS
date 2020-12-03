@@ -1,10 +1,10 @@
-﻿using BlackSP.Benchmarks.Events;
+﻿using BlackSP.Benchmarks.NEXMark.Events;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Benchmarks.Operators.Projection
+namespace BlackSP.Benchmarks.NEXMark.Operators.Projection
 {
     public class BidFilterOperator : IFilterOperator<BidEvent>
     {

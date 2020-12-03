@@ -13,9 +13,9 @@ namespace BlackSP.OperatorShells
     {
         private readonly ISourceOperator<TEvent> _pluggedInOperator;
 
-        public SourceOperatorShell(ISourceOperator<TEvent> pluggedInOperator) : base(pluggedInOperator)
+        public SourceOperatorShell(ISourceOperator<TEvent> pluggedInOperator) : base()
         {
-            _pluggedInOperator = pluggedInOperator;
+            _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
         }
 
         /// <summary>

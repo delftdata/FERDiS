@@ -3,19 +3,35 @@
     "Produce to Kafka": {
       "commandName": "Project",
       "environmentVariables": {
-        "GENERATOR_CALLS": "100000",
-        "KAFKA_BROKERLIST": "localhost:32400,localhost:32401,localhost:32402,localhost:32403,localhost:32404,localhost:32405"
+        "GENERATOR_CALLS": "1000000",
+        "KAFKA_BROKERLIST": "localhost:32400,localhost:32401,localhost:32402,localhost:32403,localhost:32404,localhost:32405",
+        "GENERATOR_SKIP_TOPICS": "bids"
       },
       "commandLineArgs": "produce"
     },
 
-    "Run BlackSP (simulator)": {
+    "Run BlackSP (Simulator)": {
       "commandName": "Project",
       "environmentVariables": {
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
-        "KAFKA_BROKERLIST": "localhost:32400,localhost:32401,localhost:32402,localhost:32403,localhost:32404,localhost:32405"
+        "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}",
+        "LOG_TARGETS": "3", // 1 (console) || 2 (file) || 4 (azure blob)
+        "LOG_LEVEL": "2" //0-5,
       },
       "commandLineArgs": "blacksp simulator"
+    },
+
+    "Run BlackSP (CRA)": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
+        "CRA_WORKER_DOCKER_IMAGE": "mdzwart/cra-net3.1:latest",
+        "KAFKA_BROKER_DNS_TEMPLATE": "kafka-{0}.kafka.kafka.svc.cluster.local:9092",
+        "LOG_TARGETS": "5", // 1 (console) || 2 (file) || 4 (azure blob)
+        "LOG_LEVEL": "2", //0-5,
+        "ENVIRONMENT_VARIABLE_KEYS_TO_CRA": "AZURE_STORAGE_CONN_STRING, KAFKA_BROKER_DNS_TEMPLATE, LOG_TARGETS, LOG_LEVEL" //list of environment variable keys that will be forwarded to the environment in the k8s deployment
+      },
+      "commandLineArgs": "blacksp cra"
     }
   }
 }

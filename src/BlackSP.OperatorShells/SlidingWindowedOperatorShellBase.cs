@@ -15,12 +15,12 @@ namespace BlackSP.OperatorShells
         private readonly IWindowedOperator _pluggedInOperator;
 
         [Checkpointable]
-        private readonly IDictionary<Type, SlidingEventWindow<IEvent>> _currentWindows;
+        private readonly IDictionary<string, SlidingEventWindow<IEvent>> _currentWindows;
 
-        public SlidingWindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)
+        public SlidingWindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base()
         {
-            _pluggedInOperator = pluggedInOperator;
-            _currentWindows = new Dictionary<Type, SlidingEventWindow<IEvent>>();
+            _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
+            _currentWindows = new Dictionary<string, SlidingEventWindow<IEvent>>();
         }
 
         public sealed override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
@@ -49,11 +49,12 @@ namespace BlackSP.OperatorShells
         protected SlidingEventWindow<IEvent> GetWindow(Type eventType)
         {
             _ = eventType ?? throw new ArgumentNullException(nameof(eventType));
-            if(!_currentWindows.ContainsKey(eventType))
+            var eventKey = eventType.FullName;
+            if (!_currentWindows.ContainsKey(eventKey))
             {
-                _currentWindows.Add(eventType, new SlidingEventWindow<IEvent>(_pluggedInOperator.WindowSize));
+                _currentWindows.Add(eventKey, new SlidingEventWindow<IEvent>(_pluggedInOperator.WindowSize));
             }
-            if (_currentWindows.TryGetValue(eventType, out var eventWindow))
+            if (_currentWindows.TryGetValue(eventKey, out var eventWindow))
             {
                 return eventWindow;
             }
@@ -72,7 +73,7 @@ namespace BlackSP.OperatorShells
                 var type = window.Key;
                 var slidingWindow = window.Value;
 
-                if(type == @event.GetType()) //if this window holds this type of event
+                if(type == @event.GetType().FullName) //if this window holds this type of event
                 {
                     slidingWindow.Insert(@event); //then insert the event
                 } 

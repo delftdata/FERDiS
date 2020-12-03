@@ -36,13 +36,47 @@ namespace BlackSP.Serialization.Utilities
             .SelectMany(s => s.GetTypes());
         }
 
+        /// <summary>
+        /// Gets all loaded types that have protobuf annotations
+        /// </summary>
+        /// <returns></returns>
         public static IEnumerable<Type> GetProtobufAnnotatedTypes()
         {
             var contractAttributeType = typeof(ProtoContractAttribute);
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             return assemblies
                 .SafeGetTypes()
-                .Where(t => t.CustomAttributes.Any(cad => cad.AttributeType == contractAttributeType));
+                .Where(t => t.CustomAttributes.Any(cad => cad.AttributeType == contractAttributeType))
+                .Where(t => t.IsClass);
+        }
+
+        public static IEnumerable<Type> GetAllBaseTypes(this Type t)
+        {
+            var baseType = t.BaseType;
+            while(baseType != null)
+            {
+                yield return baseType;
+                baseType = baseType.BaseType;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the highest base type found under System.Object
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        public static Type GetHighestBaseType(this Type t)
+        {
+            var baseType = t;
+            while (baseType != null)
+            {
+                if(baseType.BaseType == typeof(object))
+                {
+                    return baseType;
+                }
+                baseType = baseType.BaseType;
+            }
+            throw new ArgumentException($"Type {t} does not have {typeof(object)} in its hierarchy");
         }
     }
 }

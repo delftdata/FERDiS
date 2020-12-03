@@ -1,5 +1,4 @@
-﻿using BlackSP.Benchmarks.Events;
-using BlackSP.Benchmarks.NEXMark;
+﻿using BlackSP.Benchmarks.NEXMark.Events;
 using BlackSP.Benchmarks.NEXMark.Models;
 using BlackSP.Checkpointing;
 using BlackSP.Kernel.Models;
@@ -14,17 +13,19 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace BlackSP.Benchmarks.Operators
+namespace BlackSP.Benchmarks.NEXMark.Operators
 {
-    public class AuctionSourceOperator : KafkaSourceOperatorBase<Auction>, ISourceOperator<AuctionEvent>
+    public class PersonSourceOperator : KafkaSourceOperatorBase<Person>, ISourceOperator<PersonEvent>
     {
-        protected override string TopicName => Auction.KafkaTopicName;
 
-        public AuctionSourceOperator(IVertexConfiguration vertexConfig, ILogger logger) : base(vertexConfig, logger)
+        protected override string TopicName => Person.KafkaTopicName;
+
+        public PersonSourceOperator(IVertexConfiguration vertexConfig, ILogger logger) : base(vertexConfig, logger)
         {
         }
 
-        public AuctionEvent ProduceNext(CancellationToken t)
+        private int counter = 0;
+        public PersonEvent ProduceNext(CancellationToken t)
         {
             var consumeResult = Consumer.Consume(t);
             if(consumeResult.IsPartitionEOF)
@@ -33,11 +34,11 @@ namespace BlackSP.Benchmarks.Operators
             }
             //ensure local offset is stored before returning msg
             UpdateOffsets(consumeResult.Partition, (int)consumeResult.Offset);
-            var auction = consumeResult.Message.Value ?? throw new InvalidDataException("Received null Auction object from Kafka");
-            return new AuctionEvent { 
-                Key = auction.Id.ToString(), 
-                Auction = auction, 
-                EventTime = DateTime.Now 
+            var person = consumeResult.Message.Value ?? throw new InvalidDataException("Received null Person object from Kafka");
+            return new PersonEvent {
+                Key = person.Id.ToString(), 
+                Person = person, 
+                EventTime = DateTime.Now
             };
         }
 

@@ -12,17 +12,12 @@ namespace BlackSP.OperatorShells
 {
     public abstract class OperatorShellBase : IOperatorShell, IDisposable
     {
-        private readonly IOperator _pluggedInOperator;
-
 
         /// <summary>
-        /// Base constructor for Operators, will throw when passing null options
+        /// Base constructor for Operators
         /// </summary>
-        /// <param name="options"></param>
-        public OperatorShellBase(IOperator pluggedInOperator)
+        public OperatorShellBase()
         {
-            _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
-
         }
 
         public abstract IEnumerable<IEvent> OperateOnEvent(IEvent @event);

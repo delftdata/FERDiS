@@ -12,9 +12,9 @@ namespace BlackSP.OperatorShells
     {
         private readonly IFilterOperator<TEvent> _pluggedInOperator;
 
-        public FilterOperatorShell(IFilterOperator<TEvent> pluggedInOperator) : base(pluggedInOperator)
+        public FilterOperatorShell(IFilterOperator<TEvent> pluggedInOperator) : base()
         {
-            _pluggedInOperator = pluggedInOperator;
+            _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
         }
 
         public override IEnumerable<IEvent> OperateOnEvent(IEvent @event)

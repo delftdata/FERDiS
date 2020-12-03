@@ -6,6 +6,7 @@ using System.Text;
 
 namespace BlackSP.Core.Models
 {
+    [Serializable]
     public abstract class MD5PartitionKeyEventBase : IEvent
     {
         public abstract string Key { get; set; }

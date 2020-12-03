@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BlackSP.Kernel.Models;
@@ -19,11 +20,8 @@ namespace BlackSP.Serialization
 
 
         public ProtobufStreamSerializer()
-        {
-            var inheritanceFieldNum = 64; //set high to not get in the way of individual model definitions
-            
-            
-            _protobuf = BuildTypeModel(inheritanceFieldNum);
+        {            
+            _protobuf = BuildTypeModel();
         }
 
         public Task<T> Deserialize<T>(Stream inputStream, CancellationToken t)
@@ -40,10 +38,42 @@ namespace BlackSP.Serialization
             return Task.CompletedTask;
         }
 
-        private TypeModel BuildTypeModel(int inheritanceFieldNum)
+        private TypeModel BuildTypeModel()
         {
+            int inheritanceFieldNum = 64; //set high to not get in the way of individual model definitions
+
             var typeModel = RuntimeTypeModel.Create();
-            
+            foreach(var type in TypeLoader.GetProtobufAnnotatedTypes())
+            {
+                var interfaces = type.GetInterfaces();
+                foreach (var interf in interfaces)
+                {
+                    //Console.WriteLine($"Type {type} under interface {interf}");
+                    var metaType = typeModel.Add(interf, true);
+                    metaType.AddSubType(inheritanceFieldNum++, type);
+                }
+
+                if(!interfaces.Any())
+                {
+                    var baseType = type.GetHighestBaseType();
+                    if (baseType != type)
+                    {
+                        //Console.WriteLine($"Type {type} under base {baseType}");
+                        var metaType = typeModel.Add(baseType, true);
+                        metaType.AddSubType(inheritanceFieldNum++, type);
+                    }
+                    else
+                    {
+                        //Console.WriteLine($"Type {type} standalone");
+                        typeModel.Add(baseType, true);
+                    }
+                }
+            }
+
+            return typeModel.Compile();
+        }
+
+        /**
             var baseEventType = typeModel.Add(typeof(IEvent), true);
             var subTypes = TypeLoader.GetClassesExtending(typeof(IEvent), false);
             foreach (var subType in subTypes)
@@ -64,13 +94,6 @@ namespace BlackSP.Serialization
             {
                 basePayloadType.AddSubType(inheritanceFieldNum++, subType);
             }
-
-            foreach(var type in TypeLoader.GetProtobufAnnotatedTypes())
-            {
-                typeModel.Add(type, true);
-            }
-
-            return typeModel.Compile();
-        }
+         */
     }
 }

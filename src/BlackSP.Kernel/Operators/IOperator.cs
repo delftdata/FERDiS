@@ -22,7 +22,7 @@ namespace BlackSP.Kernel.Operators
         where TEvent : class, IEvent
     {
         /// <summary>
-        /// Last step in the streaming process, emits event to external system
+        /// Last step in the streaming process, sink event into system output
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
@@ -32,6 +32,12 @@ namespace BlackSP.Kernel.Operators
     public interface IFilterOperator<TEvent> : IOperator 
         where TEvent : class, IEvent
     {
+
+        /// <summary>
+        /// Event filter, return either the event or null
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
         TEvent Filter(TEvent @event);
     }
 

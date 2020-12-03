@@ -13,9 +13,9 @@ namespace BlackSP.OperatorShells
     {
         private readonly ISinkOperator<TEvent> _pluggedInOperator;
 
-        public SinkOperatorShell(ISinkOperator<TEvent> pluggedInOperator) : base(pluggedInOperator)
+        public SinkOperatorShell(ISinkOperator<TEvent> pluggedInOperator) : base()
         {
-            _pluggedInOperator = pluggedInOperator;
+            _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
         }
 
         public override IEnumerable<IEvent> OperateOnEvent(IEvent @event)

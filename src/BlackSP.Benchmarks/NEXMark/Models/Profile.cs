@@ -7,6 +7,7 @@ namespace BlackSP.Benchmarks.NEXMark.Models
 {
 
     [ProtoContract]
+    [Serializable]
     public class Profile
     {
         /// <summary>

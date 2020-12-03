@@ -1,5 +1,4 @@
-﻿using BlackSP.Benchmarks.Events;
-using BlackSP.Benchmarks.NEXMark;
+﻿using BlackSP.Benchmarks.NEXMark.Events;
 using BlackSP.Benchmarks.NEXMark.Models;
 using BlackSP.Checkpointing;
 using BlackSP.Kernel.Models;
@@ -14,18 +13,17 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace BlackSP.Benchmarks.Operators
+namespace BlackSP.Benchmarks.NEXMark.Operators
 {
-    public class PersonSourceOperator : KafkaSourceOperatorBase<Person>, ISourceOperator<PersonEvent>
+    public class BidSourceOperator : KafkaSourceOperatorBase<Bid>, ISourceOperator<BidEvent>
     {
+        protected override string TopicName => Bid.KafkaTopicName;
 
-        protected override string TopicName => Person.KafkaTopicName;
-
-        public PersonSourceOperator(IVertexConfiguration vertexConfig, ILogger logger) : base(vertexConfig, logger)
+        public BidSourceOperator(IVertexConfiguration vertexConfig, ILogger logger) : base(vertexConfig, logger)
         {
         }
 
-        public PersonEvent ProduceNext(CancellationToken t)
+        public BidEvent ProduceNext(CancellationToken t)
         {
             var consumeResult = Consumer.Consume(t);
             if(consumeResult.IsPartitionEOF)
@@ -34,12 +32,9 @@ namespace BlackSP.Benchmarks.Operators
             }
             //ensure local offset is stored before returning msg
             UpdateOffsets(consumeResult.Partition, (int)consumeResult.Offset);
-            var person = consumeResult.Message.Value ?? throw new InvalidDataException("Received null Person object from Kafka");
-            return new PersonEvent {
-                Key = person.Id.ToString(), 
-                Person = person, 
-                EventTime = DateTime.Now
-            };
+            var bid = consumeResult.Message.Value ?? throw new InvalidDataException("Received null Bid object from Kafka");
+            //Logger.Warning($"Received bid: {bid.PersonId} offered {bid.Amount} for {bid.AuctionId}");
+            return new BidEvent { Key = bid.AuctionId.ToString(), Bid = bid, EventTime = DateTime.Now };
         }
 
         

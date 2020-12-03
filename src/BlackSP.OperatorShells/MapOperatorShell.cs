@@ -12,9 +12,9 @@ namespace BlackSP.OperatorShells
     {
         private readonly IMapOperator<TIn, TOut> _pluggedInOperator;
 
-        public MapOperatorShell(IMapOperator<TIn, TOut> pluggedInOperator) : base(pluggedInOperator)
+        public MapOperatorShell(IMapOperator<TIn, TOut> pluggedInOperator) : base()
         {
-            _pluggedInOperator = pluggedInOperator;
+            _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
         }
 
         public override IEnumerable<IEvent> OperateOnEvent(IEvent @event)

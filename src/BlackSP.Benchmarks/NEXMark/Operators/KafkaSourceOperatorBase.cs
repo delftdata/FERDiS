@@ -1,4 +1,4 @@
-﻿using BlackSP.Benchmarks.NEXMark;
+﻿using BlackSP.Benchmarks.NEXMark.Generator;
 using BlackSP.Checkpointing;
 using BlackSP.Kernel.Models;
 using Confluent.Kafka;
@@ -9,14 +9,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Benchmarks.Operators
+namespace BlackSP.Benchmarks.NEXMark.Operators
 {
     public abstract class KafkaSourceOperatorBase<T> : ICheckpointableAnnotated
         where T : class
     {
         protected readonly int PartitionCountPerTopic = 6;
         protected readonly int BrokerCount = 6;
-        protected readonly string BrokerDomainNameTemplate = "localhost:3240{0}";//"kafka-{0}.kafka.kafka.svc.cluster.local:9092";
+        protected readonly string BrokerDomainNameTemplate;
 
         protected abstract string TopicName { get; }
         protected IConsumer<int, T> Consumer { get; private set; }
@@ -24,18 +24,17 @@ namespace BlackSP.Benchmarks.Operators
         [Checkpointable]
         private IDictionary<int, int> _offsets;
 
-        private readonly IVertexConfiguration _vertexConfiguration;
-        private readonly ILogger _logger;
-
-        protected ILogger Logger => _logger;
-        protected IVertexConfiguration VertexConfiguration => _vertexConfiguration;
+        protected ILogger Logger { get; }
+        protected IVertexConfiguration VertexConfiguration { get; }
 
         protected KafkaSourceOperatorBase(IVertexConfiguration vertexConfig, ILogger logger)
         {
-            _vertexConfiguration = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));   
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            VertexConfiguration = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));   
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _offsets = new Dictionary<int, int>();
-            
+
+            BrokerDomainNameTemplate = Environment.GetEnvironmentVariable("KAFKA_BROKER_DNS_TEMPLATE");
+
             GetConsumer(); //ensure initialisation of Consumer property
         }
 
@@ -45,6 +44,7 @@ namespace BlackSP.Benchmarks.Operators
 
         protected void UpdateOffsets(int tp, int offset)
         {
+            if(offset < 0) { offset = 0; }
             _offsets[tp] = offset;
         }
 
@@ -58,11 +58,16 @@ namespace BlackSP.Benchmarks.Operators
 
             if(Consumer == null)
             {
-                Consumer = new ConsumerBuilder<int, T>(GetConsumerConfig(_vertexConfiguration.VertexName))
+                Consumer = new ConsumerBuilder<int, T>(GetConsumerConfig(VertexConfiguration.VertexName+"wtf"))
                     .SetValueDeserializer((new ProtoBufAsyncValueSerializer<T>() as IAsyncDeserializer<T>).AsSyncOverAsync())
                     .SetErrorHandler((_, e) => {
-                        _logger.Error($"Error raised by Kafka consumer: {e}");
-                        if (e.IsFatal) { throw new KafkaException(e); }
+                        if (e.IsFatal) {
+                            Logger.Fatal($"Fatal error raised by Kafka consumer: {e}");
+                            throw new KafkaException(e);
+                        } else
+                        {
+                            Logger.Warning($"Error raised by Kafka consumer: {e}");
+                        }
                     })
                     .Build();
 
@@ -71,7 +76,7 @@ namespace BlackSP.Benchmarks.Operators
                 {
                     if(!_offsets.ContainsKey(partition))
                     {
-                        _offsets.Add(partition, 0);
+                        _offsets.Add(partition, (int)Offset.Beginning);
                     }
                 }
                 var tpos = assignedPartitions
@@ -88,8 +93,8 @@ namespace BlackSP.Benchmarks.Operators
         /// <returns></returns>
         private IEnumerable<Partition> GetPartitions()
         {
-            var vertexShardId = _vertexConfiguration.ShardId;
-            var vertexShardCount = _vertexConfiguration.InstanceNames.Count();
+            var vertexShardId = VertexConfiguration.ShardId;
+            var vertexShardCount = VertexConfiguration.InstanceNames.Count();
             var kafkaShardCount = PartitionCountPerTopic;
             for(int kafkaShard = 0; kafkaShard < kafkaShardCount; kafkaShard++)
             {
@@ -107,7 +112,8 @@ namespace BlackSP.Benchmarks.Operators
             {
                 BootstrapServers = GetBrokerList(),
                 GroupId = groupId,
-                //EnableAutoCommit = false,
+                EnableAutoCommit = false,
+                AutoOffsetReset = AutoOffsetReset.Earliest
             };
         }
 

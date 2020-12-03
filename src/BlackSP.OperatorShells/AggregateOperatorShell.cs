@@ -15,7 +15,7 @@ namespace BlackSP.OperatorShells
 
         public AggregateOperatorShell(IAggregateOperator<TIn, TOut> pluggedInOperator) : base(pluggedInOperator)
         {
-            _pluggedInOperator = pluggedInOperator;
+            _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
         }
 
         protected override IEnumerable<TOut> ProcessClosedWindow(IEnumerable<TIn> closedWindow)

@@ -1,4 +1,4 @@
-﻿using BlackSP.Benchmarks.Events;
+﻿using BlackSP.Benchmarks.NEXMark.Events;
 using BlackSP.Kernel.Operators;
 using Serilog;
 using System;
@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Benchmarks.Operators.Projection
+namespace BlackSP.Benchmarks.NEXMark.Operators.Projection
 {
     class BidSinkOperator : ISinkOperator<BidEvent>
     {
@@ -23,7 +23,7 @@ namespace BlackSP.Benchmarks.Operators.Projection
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             var bid = @event.Bid;
-            _logger.Debug($"pid:{bid.PersonId},aid{bid.AuctionId},amt:{bid.Amount}");
+            _logger.Information($"pid:{bid.PersonId},aid{bid.AuctionId},amt:{bid.Amount}");
         }
     }
 }

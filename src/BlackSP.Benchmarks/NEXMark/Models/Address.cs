@@ -6,6 +6,7 @@ using System.Text;
 namespace BlackSP.Benchmarks.NEXMark.Models
 {
     [ProtoContract]
+    [Serializable]
     public class Address
     {
         [ProtoMember(1)]

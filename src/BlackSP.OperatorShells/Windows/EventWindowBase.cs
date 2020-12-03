@@ -57,6 +57,7 @@ namespace BlackSP.Core.Windows
         /// <summary>
         /// Handle for updating the watermark of the current window.<br/>
         /// Only updates if the provided event watermark is larger than the current watermark
+        /// NOTE: NOT ACTUAL WATERMARKS, NEEDS REFACTORING
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>

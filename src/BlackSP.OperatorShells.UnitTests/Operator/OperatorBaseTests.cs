@@ -14,7 +14,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
 
     class TestBaseOperatorShell : OperatorShellBase
     {
-        public TestBaseOperatorShell() : base(new BaseOperator())
+        public TestBaseOperatorShell() : base()
         {}
 
         public override IEnumerable<IEvent> OperateOnEvent(IEvent @event)

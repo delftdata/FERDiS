@@ -8,6 +8,7 @@ using System.Xml.Linq;
 namespace BlackSP.Benchmarks.NEXMark.Models
 {
     [ProtoContract]
+    [Serializable]
     public class Bid
     {
         public static readonly string KafkaTopicName = "bids";

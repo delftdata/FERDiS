@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 
-namespace BlackSP.Benchmarks.NEXMark
+namespace BlackSP.Benchmarks.NEXMark.Generator
 {
     public class XMLParser
     {
@@ -40,10 +40,10 @@ namespace BlackSP.Benchmarks.NEXMark
                     address = new Address
                     {
                         Street = addressElem.Element("street")?.Value ?? throw new InvalidDataException("Missing street element on address"),
-                        City = addressElem.Element("street")?.Value ?? throw new InvalidDataException("Missing street element on address"),
-                        Country = addressElem.Element("street")?.Value ?? throw new InvalidDataException("Missing street element on address"),
-                        Province = addressElem.Element("street")?.Value ?? throw new InvalidDataException("Missing street element on address"),
-                        Zipcode = addressElem.Element("street")?.Value ?? throw new InvalidDataException("Missing street element on address")
+                        City = addressElem.Element("city")?.Value ?? throw new InvalidDataException("Missing street city on address"),
+                        Country = addressElem.Element("country")?.Value ?? throw new InvalidDataException("Missing country element on address"),
+                        Province = addressElem.Element("province")?.Value ?? throw new InvalidDataException("Missing province element on address"),
+                        Zipcode = addressElem.Element("zipcode")?.Value ?? throw new InvalidDataException("Missing zipcode element on address")
                     };
                 }
 

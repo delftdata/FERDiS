@@ -21,9 +21,9 @@ namespace BlackSP.OperatorShells
         [Checkpointable]
         private FixedEventWindow<TIn> _currentWindow;
         
-        public WindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base(pluggedInOperator)
+        public WindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base()
         {
-            _pluggedInOperator = pluggedInOperator;
+            _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
             _currentWindow = new FixedEventWindow<TIn>(DateTime.UtcNow, _pluggedInOperator.WindowSize);
         }
 
