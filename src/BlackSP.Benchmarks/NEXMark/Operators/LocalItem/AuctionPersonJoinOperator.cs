@@ -7,19 +7,19 @@ using System.Text;
 
 namespace BlackSP.Benchmarks.NEXMark.Operators.LocalItem
 {
-    class AuctionPersonJoinOperator : IJoinOperator<AuctionEvent, PersonEvent, JoinEvent>
+    class AuctionPersonJoinOperator : IJoinOperator<AuctionEvent, PersonEvent, AuctionPersonEvent>
     {
         public TimeSpan WindowSize => TimeSpan.FromSeconds(10);
         public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(5);
 
-        public JoinEvent Join(AuctionEvent matchA, PersonEvent matchB)
+        public AuctionPersonEvent Join(AuctionEvent matchA, PersonEvent matchB)
         {
-            return new JoinEvent
+            return new AuctionPersonEvent
             {
                 Key = string.Empty,
                 EventTime = matchA.EventTime > matchB.EventTime ? matchA.EventTime : matchB.EventTime,
-                EventA = matchA.Auction,
-                EventB = matchB.Person
+                Auction = matchA.Auction,
+                Person = matchB.Person
             };
         }
 

@@ -13,25 +13,31 @@ namespace BlackSP.Benchmarks
     {
         static async Task Main(string[] args)
         {
-            if(args.Length < 1)
+            try
             {
-                Console.WriteLine("Required argument on position 0. Possible values: produce, blacksp");
-                return;
-            }
-            switch (args[0])
+                if (args.Length < 1)
+                {
+                    Console.WriteLine("Required argument on position 0. Possible values: produce, blacksp");
+                    return;
+                }
+                switch (args[0])
+                {
+                    case "produce":
+                        await ProduceNEXMarkAuctionData();
+                        break;
+                    case "blacksp":
+                        var infrastructure = (Infrastructure)int.Parse(Environment.GetEnvironmentVariable("BLACKSP_INFRASTRUCTURE"));
+                        var benchmark = (Benchmark)int.Parse(Environment.GetEnvironmentVariable("BLACKSP_BENCHMARK"));
+                        await RunBlackSP(infrastructure, benchmark);
+                        break;
+                    default:
+                        break;
+                }
+            } 
+            catch(Exception e)
             {
-                case "produce": 
-                    await ProduceNEXMarkAuctionData(); 
-                    break;
-                case "blacksp":
-                    if(args.Length < 2)
-                    {
-                        throw new ArgumentException("2nd argument required for blacksp. Possible values: simulator, cra");
-                    }
-                    await RunBlackSP(args[1] == "simulator");
-                    break;
-                default:
-                    break;
+                Console.WriteLine($"Benchmarks exited with an exception\n{e}");
+                throw;
             }
         }
 
@@ -39,9 +45,9 @@ namespace BlackSP.Benchmarks
         {
             try
             {
-                string brokerList = Environment.GetEnvironmentVariable("KAFKA_BROKERLIST");
+                string brokerList = Environment.GetEnvironmentVariable("KAFKA_BROKERLIST") ?? string.Empty;
                 int genCalls = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_CALLS"));
-                string skipTopicList = Environment.GetEnvironmentVariable("GENERATOR_SKIP_TOPICS");
+                string skipTopicList = Environment.GetEnvironmentVariable("GENERATOR_SKIP_TOPICS") ?? string.Empty;
                 await KafkaNEXMarkProducer.StartProductingAuctionData(genCalls, brokerList, skipTopicList);
             }
             catch (Exception e)
@@ -51,16 +57,19 @@ namespace BlackSP.Benchmarks
             }
         }
 
-        static async Task RunBlackSP(bool useSimulator)
+        static async Task RunBlackSP(Infrastructure infrastructure, Benchmark benchmark)
         {
             var logTargets = (LogTargetFlags) int.Parse(Environment.GetEnvironmentVariable("LOG_TARGETS"));
             var logLevel = (LogEventLevel) int.Parse(Environment.GetEnvironmentVariable("LOG_LEVEL")); ;
 
-            var appBuilder = useSimulator ? Simulator.Hosting.CreateDefaultApplicationBuilder() : CRA.Hosting.CreateDefaultApplicationBuilder();
+            var appBuilder = infrastructure == Infrastructure.Simulator 
+                ? Simulator.Hosting.CreateDefaultApplicationBuilder() 
+                : CRA.Hosting.CreateDefaultApplicationBuilder();
+
             var app = await appBuilder
                 .ConfigureLogging(new LogConfiguration(logTargets, logLevel))
                 .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Uncoordinated, true, 45))
-                .ConfigureOperators(Queries.LocalItem)
+                .ConfigureOperators(benchmark.ConfigureGraph())
                 .Build();
 
             await app.RunAsync();

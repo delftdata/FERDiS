@@ -1,6 +1,5 @@
 ﻿using BlackSP.Benchmarks.NEXMark.Models;
 using BlackSP.Core.Models;
-using BlackSP.Kernel.Models;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
@@ -8,9 +7,10 @@ using System.Text;
 
 namespace BlackSP.Benchmarks.NEXMark.Events
 {
+
     [ProtoContract]
     [Serializable]
-    public class JoinEvent : MD5PartitionKeyEventBase
+    public class BidAuctionEvent : MD5PartitionKeyEventBase
     {
 
         [ProtoMember(1)]
@@ -20,9 +20,9 @@ namespace BlackSP.Benchmarks.NEXMark.Events
         public override DateTime EventTime { get; set; }
 
         [ProtoMember(3)]
-        public Auction EventA { get; set; }
+        public Bid Bid { get; set; }
 
         [ProtoMember(4)]
-        public Person EventB { get; set; }
+        public Auction Auction { get; set; }
     }
 }

@@ -17,7 +17,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
         public static async Task StartProductingAuctionData(int generatorCalls, string brokerList, string skipTopicList)
         {
             using var ctSource = new CancellationTokenSource();
-
+            Console.WriteLine($"Starting generator process \"java -jar NEXMarkGenerator.jar -gen-calls {generatorCalls}\"");
             var startInfo = new ProcessStartInfo("java", $"-jar NEXMarkGenerator.jar -gen-calls {generatorCalls} -prettyprint false")
             {
                 RedirectStandardError = true,
@@ -42,6 +42,12 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
 
         static async Task ParseXMLAndProduceToKafka(StreamReader reader, int generatorCalls, string brokerList, string skipTopicList, CancellationToken token)
         {
+            Console.WriteLine($"Instantiating kafka producers for topics {Bid.KafkaTopicName},{Auction.KafkaTopicName},{Person.KafkaTopicName}");
+            if(!string.IsNullOrEmpty(skipTopicList))
+            {
+                Console.WriteLine($"Skipping kafka topics {skipTopicList}");
+            }
+
             var config = new ProducerConfig { 
                 BootstrapServers = brokerList, 
                 Partitioner = Partitioner.Consistent
@@ -70,6 +76,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
             int peopleCount = 0;
             int auctionCount = 0;
 
+            Console.WriteLine("Beginning to parse generator data and produce it to kafka topics");
             int i = 0;
             while (!reader.EndOfStream)
             {

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Benchmarks.NEXMark.Operators.LocalItem
 {
-    public class AuctionPersonSinkOperator : ISinkOperator<JoinEvent>
+    public class AuctionPersonSinkOperator : ISinkOperator<AuctionPersonEvent>
     {
 
         private readonly ILogger _logger;
@@ -19,10 +19,10 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.LocalItem
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task Sink(JoinEvent @event)
+        public async Task Sink(AuctionPersonEvent @event)
         {
-            var auction = @event.EventA;
-            var person = @event.EventB;
+            var auction = @event.Auction;
+            var person = @event.Person;
             _logger.Information($"[ {person.FullName}, {person.Address.Street}, {person.Address.Zipcode}, {person.Address.Province}, {auction.CategoryId} ]");
         }
     }
