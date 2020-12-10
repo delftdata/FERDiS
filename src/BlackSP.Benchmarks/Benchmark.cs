@@ -1,5 +1,4 @@
-﻿using BlackSP.Benchmarks.NEXMark;
-using BlackSP.Infrastructure.Builders;
+﻿using BlackSP.Infrastructure.Builders;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,15 +27,15 @@ namespace BlackSP.Benchmarks
             switch(benchmark)
             {
                 case Benchmark.WordCount:
-                    throw new NotImplementedException();
+                    return WordCount.Queries.WordCount;
                 case Benchmark.Selection:
-                    return Queries.Selection;
+                    return NEXMark.Queries.Selection;
                 case Benchmark.LocalItem:
-                    return Queries.LocalItem;
+                    return NEXMark.Queries.LocalItem;
                 case Benchmark.HotItem:
-                    return Queries.HotItem;
+                    return NEXMark.Queries.HotItem;
                 case Benchmark.AverageSellingPriceBySeller:
-                    return Queries.AverageSellingPriceBySeller;
+                    return NEXMark.Queries.AverageSellingPriceBySeller;
                 default:
                     throw new ArgumentException($"Unknown Benchmark number provided: {benchmark}");
             }

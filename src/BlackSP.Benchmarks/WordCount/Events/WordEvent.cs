@@ -4,7 +4,7 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace BlackSP.StreamBench.WordCount.Events
+namespace BlackSP.Benchmarks.WordCount.Events
 {
     /// <summary>
     /// serializable required as these events are aggregated 

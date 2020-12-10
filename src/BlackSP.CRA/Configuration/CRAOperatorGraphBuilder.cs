@@ -53,7 +53,6 @@ namespace BlackSP.CRA.Configuration
             string craVertexDefinition = typeof(OperatorVertex).Name.ToLowerInvariant();
             Console.WriteLine($"Defining CRA vertex type {typeof(OperatorVertex)} as {craVertexDefinition}");
             await _craClient.DefineVertexAsync(craVertexDefinition, () => new OperatorVertex()).ConfigureAwait(false);
-
             foreach (var builder in VertexBuilders)
             {
                 await RegisterCRAVertexAsync(builder, craVertexDefinition).ConfigureAwait(false);

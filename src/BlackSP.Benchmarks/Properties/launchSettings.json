@@ -18,7 +18,7 @@
         "LOG_TARGETS": "3", // 1 (console) || 2 (file) || 4 (azure blob)
         "LOG_LEVEL": "2", //0-5
         "BLACKSP_INFRASTRUCTURE": "0", //0 (simulator) || 1 (cra)
-        "BLACKSP_BENCHMARK": "4"
+        "BLACKSP_BENCHMARK": "0"
       },
       "commandLineArgs": "blacksp"
     },
@@ -35,7 +35,7 @@
         "BLACKSP_BENCHMARK": "3",
         "ENVIRONMENT_VARIABLE_KEYS_TO_CRA": "AZURE_STORAGE_CONN_STRING, KAFKA_BROKER_DNS_TEMPLATE, LOG_TARGETS, LOG_LEVEL" //list of environment variable keys that will be forwarded to the environment in the k8s deployment
       },
-      "commandLineArgs": "blacksp cra"
+      "commandLineArgs": "blacksp"
     }
   }
 }
