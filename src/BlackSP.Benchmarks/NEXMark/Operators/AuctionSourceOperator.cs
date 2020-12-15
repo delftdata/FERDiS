@@ -1,4 +1,5 @@
-﻿using BlackSP.Benchmarks.NEXMark;
+﻿using BlackSP.Benchmarks.Kafka;
+using BlackSP.Benchmarks.NEXMark;
 using BlackSP.Benchmarks.NEXMark.Events;
 using BlackSP.Benchmarks.NEXMark.Models;
 using BlackSP.Checkpointing;
@@ -16,7 +17,7 @@ using System.Threading;
 
 namespace BlackSP.Benchmarks.NEXMark.Operators
 {
-    public class AuctionSourceOperator : KafkaSourceOperatorBase<Auction>, ISourceOperator<AuctionEvent>
+    public class AuctionSourceOperator : KafkaConsumerBase<Auction>, ISourceOperator<AuctionEvent>
     {
         protected override string TopicName => Auction.KafkaTopicName;
 

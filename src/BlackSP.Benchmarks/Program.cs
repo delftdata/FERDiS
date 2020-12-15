@@ -22,7 +22,10 @@ namespace BlackSP.Benchmarks
                 }
                 switch (args[0])
                 {
-                    case "produce":
+                    case "pagerank":
+                        await ProducePageRankAuctionData();
+                        break;
+                    case "nexmark":
                         await ProduceNEXMarkAuctionData();
                         break;
                     case "blacksp":
@@ -49,6 +52,21 @@ namespace BlackSP.Benchmarks
                 int genCalls = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_CALLS"));
                 string skipTopicList = Environment.GetEnvironmentVariable("GENERATOR_SKIP_TOPICS") ?? string.Empty;
                 await KafkaNEXMarkProducer.StartProductingAuctionData(genCalls, brokerList, skipTopicList);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Kafka auction data producer exited with exception");
+                Console.WriteLine(e);
+            }
+        }
+
+        static async Task ProducePageRankAuctionData()
+        {
+            try
+            {
+                string brokerList = Environment.GetEnvironmentVariable("KAFKA_BROKERLIST") ?? string.Empty;
+                string edgesFileLoc = Environment.GetEnvironmentVariable("EDGES_FILE_LOCATION");
+                await PageRank.Producer.StartProductingGraphData(brokerList, edgesFileLoc);
             }
             catch (Exception e)
             {

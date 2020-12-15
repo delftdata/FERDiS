@@ -1,4 +1,5 @@
-﻿using BlackSP.Benchmarks.NEXMark.Models;
+﻿using BlackSP.Benchmarks.Kafka;
+using BlackSP.Benchmarks.NEXMark.Models;
 using Confluent.Kafka;
 using System;
 using System.Collections.Generic;

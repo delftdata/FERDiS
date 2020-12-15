@@ -9,9 +9,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Benchmarks.NEXMark.Operators
+namespace BlackSP.Benchmarks.Kafka
 {
-    public abstract class KafkaSourceOperatorBase<T> : ICheckpointableAnnotated
+    public abstract class KafkaConsumerBase<T> : ICheckpointableAnnotated
         where T : class
     {
         protected readonly int PartitionCountPerTopic = 6;
@@ -27,7 +27,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators
         protected ILogger Logger { get; }
         protected IVertexConfiguration VertexConfiguration { get; }
 
-        protected KafkaSourceOperatorBase(IVertexConfiguration vertexConfig, ILogger logger)
+        protected KafkaConsumerBase(IVertexConfiguration vertexConfig, ILogger logger)
         {
             VertexConfiguration = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));   
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
