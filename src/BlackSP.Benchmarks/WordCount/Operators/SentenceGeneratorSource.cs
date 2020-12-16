@@ -31,13 +31,12 @@ namespace BlackSP.Benchmarks.WordCount.Operators
 
         public SentenceEvent ProduceNext(CancellationToken t)
         {
-            if(sentencesGenerated >= defaultSentences.Length * 500000) //keep going until each sentence was sent 20 times
+            if(sentencesGenerated >= defaultSentences.Length * 500000) //keep going until each sentence was sent x times
             {
                 Task.Delay(WordCountAggregator.WindowSizeSeconds*2000).Wait();
                 _logger.Information($"Each sentence sent at least 500.000 times, now sending all words as one sentence");
                 return new SentenceEvent
                 {
-                    EventTime = DateTime.UtcNow,
                     Sentence = string.Join(" ", defaultSentences)
                 };
             } 
@@ -51,7 +50,6 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             //_logger.Debug($"Sending {defaultSentences[i]} ({i} , {lastSentenceIndex})");
             return new SentenceEvent
             {
-                EventTime = DateTime.UtcNow,
                 Sentence = defaultSentences[i]
             };
         }

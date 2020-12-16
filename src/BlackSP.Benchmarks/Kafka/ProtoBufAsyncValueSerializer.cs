@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Toolkit.HighPerformance.Extensions;
 
-namespace BlackSP.Benchmarks.NEXMark.Generator
+namespace BlackSP.Benchmarks.Kafka
 {
     public class ProtoBufAsyncValueSerializer<T> : IAsyncSerializer<T>, IAsyncDeserializer<T>
         where T : class

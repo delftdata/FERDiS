@@ -1,4 +1,5 @@
-﻿using BlackSP.Benchmarks.NEXMark.Events;
+﻿using BlackSP.Benchmarks.Kafka;
+using BlackSP.Benchmarks.NEXMark.Events;
 using BlackSP.Benchmarks.NEXMark.Models;
 using BlackSP.Checkpointing;
 using BlackSP.Kernel.Models;
@@ -15,7 +16,7 @@ using System.Threading;
 
 namespace BlackSP.Benchmarks.NEXMark.Operators
 {
-    public class PersonSourceOperator : KafkaSourceOperatorBase<Person>, ISourceOperator<PersonEvent>
+    public class PersonSourceOperator : KafkaConsumerBase<Person>, ISourceOperator<PersonEvent>
     {
 
         protected override string TopicName => Person.KafkaTopicName;

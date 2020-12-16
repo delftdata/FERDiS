@@ -1,13 +1,23 @@
 {
   "profiles": {
-    "Produce to Kafka": {
+    "NEXMark to Kafka": {
       "commandName": "Project",
       "environmentVariables": {
         "GENERATOR_CALLS": "10000",
         "KAFKA_BROKERLIST": "localhost:32400,localhost:32401,localhost:32402,localhost:32403,localhost:32404,localhost:32405",
         "GENERATOR_SKIP_TOPICS": "" //bids,people,auctions
       },
-      "commandLineArgs": "produce"
+      "commandLineArgs": "nexmark"
+    },
+
+    "PageRank to Kafka": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "EDGES_FILE_LOCATION": "C:\\Users\\marcd\\Downloads\\cc-edges.txt",
+        "KAFKA_BROKERLIST": "localhost:32400,localhost:32401,localhost:32402,localhost:32403,localhost:32404,localhost:32405",
+        "GENERATOR_SKIP_TOPICS": "" //bids,people,auctions
+      },
+      "commandLineArgs": "pagerank"
     },
 
     "Run BlackSP (Simulator)": {
