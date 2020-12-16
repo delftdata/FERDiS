@@ -17,10 +17,12 @@ namespace BlackSP.Benchmarks.PageRank.Operators
         {
             return window.Select(pe => pe.Page)
                          .GroupBy(p => p.PageId)
+                         //TODO: group by epoch
                          .Select(group => new Page
                          {
                              PageId = group.Key,
-                             Rank = group.Sum(p => p.Rank)
+                             Rank = group.Sum(p => p.Rank),
+                             Epoch = 0 //TODO: real epoch
                          })
                          .Select(p => new PageEvent
                          {

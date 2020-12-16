@@ -42,10 +42,11 @@ namespace BlackSP.Benchmarks.PageRank
             
             using StreamReader reader = File.OpenText(edgeFileLocation);
 
+            int i = 0;
             string row = string.Empty;
             int currentFromId = 0;
             List<int> neighbours = new List<int>();
-
+            Console.WriteLine("Starting producing Adjacency events to Kafka");
             while ((row = reader.ReadLine()) != null)
             {
                 var ids = row.Split('\t');
@@ -54,19 +55,47 @@ namespace BlackSP.Benchmarks.PageRank
 
                 if(fromId != currentFromId)
                 {
-                    var adjacency = new Adjacency { PageId = currentFromId, Neighbours = neighbours.ToArray() };
-                    var message = new Message<int, Adjacency> { Key = adjacency.PageId, Value = adjacency };
-                    await adjacencyProducer.ProduceAsync(Adjacency.KafkaTopicName, message);
-
+                    /*await*/ adjacencyProducer.ProduceAdjacency(currentFromId, neighbours.ToArray());
+                    var lastFromId = currentFromId;
                     currentFromId = fromId;
                     neighbours = new List<int>();
-                }
 
+                    while(lastFromId+1 < currentFromId) //need to insert empty adjacencies for page ids which have no neighbours
+                    {
+                        lastFromId++;
+                        /*await*/ adjacencyProducer.ProduceAdjacency(lastFromId, neighbours.ToArray());
+                    }
+                }
                 neighbours.Add(toId);
+                i++;
+                if(i % 500 == 0)
+                {
+                    Console.WriteLine($"Producing progress @ page {currentFromId}");
+                }
             }
-            
+
+            Console.WriteLine("Completed producing Adjacency events to Kafka");
 
         }
 
+    }
+
+    public static class ProducerExtensions
+    {
+        public static async Task ProduceAdjacency(this IProducer<int, Adjacency> producer, int pageId, int[] neighbours)
+        {
+            var adjacency = new Adjacency
+            {
+                PageId = pageId,
+                Neighbours = neighbours
+            };
+
+            var message = new Message<int, Adjacency>
+            {
+                Key = adjacency.PageId,
+                Value = adjacency
+            };
+            await producer.ProduceAsync(Adjacency.KafkaTopicName, message);
+        }
     }
 }

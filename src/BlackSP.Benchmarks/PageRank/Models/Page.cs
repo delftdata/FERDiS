@@ -18,5 +18,8 @@ namespace BlackSP.Benchmarks.PageRank.Models
 
         [ProtoMember(2)]
         public double Rank { get; set; }
+
+        [ProtoMember(3)]
+        public int Epoch { get; set; }
     }
 }

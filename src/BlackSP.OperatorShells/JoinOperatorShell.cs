@@ -11,7 +11,10 @@ namespace BlackSP.OperatorShells
         where TInB : class, IEvent
         where TOut : class, IEvent
     {
+        
         private readonly IJoinOperator<TInA, TInB, TOut> _pluggedInOperator;
+
+
         public JoinOperatorShell(IJoinOperator<TInA, TInB, TOut> pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator;

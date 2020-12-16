@@ -10,9 +10,9 @@ namespace BlackSP.Benchmarks.PageRank.Operators
 {
     public class PageRankJoinOperator : IJoinOperator<AdjacencyEvent, PageEvent, PageUpdateEvent>
     {
-        public TimeSpan WindowSize => TimeSpan.FromSeconds(10);
+        public TimeSpan WindowSize => TimeSpan.FromSeconds(300);
 
-        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(10);
+        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(300);
 
         /// <summary>
         /// Representing a count as a double to not repeatedly cast to double during division in Map method
@@ -64,6 +64,11 @@ namespace BlackSP.Benchmarks.PageRank.Operators
         private IEnumerable<Page> GetPages(Adjacency adjacency, Page page)
         {
             yield return new Page { PageId = page.PageId, Rank = RandomJump };
+
+            if (adjacency.Neighbours == null)
+            {
+                yield break;
+            }
 
             var neighboursRank = (DampeningFactor * page.Rank) / adjacency.Neighbours.Length;
             foreach (int neighbour in adjacency.Neighbours)

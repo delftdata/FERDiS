@@ -21,7 +21,10 @@ namespace BlackSP.Benchmarks.PageRank.Operators
         public async Task Sink(PageEvent @event)
         {
             var page = @event.Page;
-            _logger.Information($"PageRank {page.PageId:N8} : {page.Rank:N5}");
+            if(page.Rank > 1e-7) //top ranks expected in (~0.001, ~0.02) range
+            {
+                _logger.Information($"PageRank {page.PageId:D7} : {page.Rank:E3}");
+            }
         }
     }
 }
