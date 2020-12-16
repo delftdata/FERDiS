@@ -6,7 +6,11 @@ using System.Text;
 namespace BlackSP.Benchmarks.PageRank.Models
 {
 
+    /// <summary>
+    /// Model containing a page and its rank
+    /// </summary>
     [ProtoContract]
+    [Serializable]
     public class Page
     {
         [ProtoMember(1)]

@@ -1,4 +1,6 @@
-﻿using BlackSP.Infrastructure.Builders;
+﻿using BlackSP.Benchmarks.PageRank.Events;
+using BlackSP.Benchmarks.PageRank.Operators;
+using BlackSP.Infrastructure.Builders;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,21 +10,31 @@ namespace BlackSP.Benchmarks.PageRank
     public static class Queries
     {
 
-        public static void PageRank(IVertexGraphBuilder graphBuilder)
+        public static void PageRank(IVertexGraphBuilder builder)
         {
-            //source - string source (pid, n0, ..., nx)
-            //map0 - mapper to adjacency (pid, [n0, ..., nx]) 
+            var source = builder.AddSource<AdjacencySourceOperator, AdjacencyEvent>(3);
 
-            //map1 - mapper to initial page (pid, rank)
+            var initialRankMapper = builder.AddMap<InitialRankMapOperator, AdjacencyEvent, PageEvent>(3);
+            source.Append(initialRankMapper);
 
-            //map2 - mapper (stateful) to hold/overwrite page ranks
+            var collectionFilter = builder.AddFilter<RankCollectionFilterOperator, PageEvent>(2);
+            initialRankMapper.Append(collectionFilter);
 
-            //join - (map0, map2)
-            //map3 - expand join results
+            var prJoin = builder.AddJoin<PageRankJoinOperator, AdjacencyEvent, PageEvent, PageUpdateEvent>(3);
+            source.Append(prJoin);
+            collectionFilter.Append(prJoin);
 
-            //aggregate - sum ranks from map3
+            var expansionMap = builder.AddMap<PageUpdateExpansionMapOperator, PageUpdateEvent, PageEvent>(3);
+            prJoin.Append(expansionMap).AsPipeline(); //Note: is pipeline, join and expander need same shardcount
 
-            //sink - from map2, updates continuously, convergence can be checked by inspecting the output stream
+            var prSumAggregate = builder.AddAggregate<PageRankSumAggregateOperator, PageEvent, PageEvent>(2);
+            expansionMap.Append(prSumAggregate);
+
+            prSumAggregate.Append(collectionFilter); //this edge closes the cycle!
+
+            var sink = builder.AddSink<PageRankSinkOperator, PageEvent>(1);
+
+            collectionFilter.Append(sink);
         }
     }
 }

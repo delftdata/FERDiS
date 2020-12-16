@@ -4,15 +4,14 @@ using System.Text;
 
 namespace BlackSP.Checkpointing
 {
+
+    /// <summary>
+    /// Annotation for class fields to mark them as part of application state and that the field values should be part of checkpoints and be restored on checkpoint restore.<br/>
+    /// Combine with the <see cref="ICheckpointableAnnotated "/> interface to implement checkpoint related hooks.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = true)]
     public sealed class CheckpointableAttribute : Attribute
-    {        
-        public CheckpointableAttribute()
-        {
-
-        }
-
-    }
+    { }
 
     public interface ICheckpointableAnnotated
     {

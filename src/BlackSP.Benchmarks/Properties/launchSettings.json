@@ -43,7 +43,9 @@
         "LOG_LEVEL": "2", //0-5,
         "BLACKSP_INFRASTRUCTURE": "1", //0 (simulator) || 1 (cra)
         "BLACKSP_BENCHMARK": "3",
-        "ENVIRONMENT_VARIABLE_KEYS_TO_CRA": "AZURE_STORAGE_CONN_STRING, KAFKA_BROKER_DNS_TEMPLATE, LOG_TARGETS, LOG_LEVEL" //list of environment variable keys that will be forwarded to the environment in the k8s deployment
+        "PR_PAGE_COUNT": "88258310",
+        "PR_DAMPENING_FACTOR": "0.85",
+        "ENVIRONMENT_VARIABLE_KEYS_TO_CRA": "AZURE_STORAGE_CONN_STRING, KAFKA_BROKER_DNS_TEMPLATE, LOG_TARGETS, LOG_LEVEL, PR_PAGE_COUNT, PR_DAMPENING_FACTOR" //list of environment variable keys that will be forwarded to the environment in the k8s deployment
       },
       "commandLineArgs": "blacksp"
     }

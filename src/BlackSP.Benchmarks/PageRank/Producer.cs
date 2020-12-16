@@ -15,6 +15,14 @@ namespace BlackSP.Benchmarks.PageRank
     public class Producer
     {
 
+        /// <summary>
+        /// The edge file is expected to be formatted line-by-line as "int\tint"<br/>
+        /// The first int is the "from" pageId and the second int is the "to" pageId
+        /// https://github.com/commoncrawl/cc-crawl-statistics
+        /// </summary>
+        /// <param name="brokerList"></param>
+        /// <param name="edgeFileLocation"></param>
+        /// <returns></returns>
         public static async Task StartProductingGraphData(string brokerList, string edgeFileLocation)
         {
             _ = brokerList ?? throw new ArgumentNullException(nameof(brokerList));

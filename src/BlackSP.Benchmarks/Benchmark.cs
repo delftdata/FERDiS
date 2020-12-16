@@ -11,7 +11,8 @@ namespace BlackSP.Benchmarks
         Selection,
         LocalItem,
         HotItem,
-        AverageSellingPriceBySeller
+        AverageSellingPriceBySeller,
+        PageRank
     }
 
     public static class BenchmarkExtensions
@@ -36,6 +37,8 @@ namespace BlackSP.Benchmarks
                     return NEXMark.Queries.HotItem;
                 case Benchmark.AverageSellingPriceBySeller:
                     return NEXMark.Queries.AverageSellingPriceBySeller;
+                case Benchmark.PageRank:
+                    return PageRank.Queries.PageRank;
                 default:
                     throw new ArgumentException($"Unknown Benchmark number provided: {benchmark}");
             }

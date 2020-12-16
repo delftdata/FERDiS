@@ -5,7 +5,12 @@ using System.Text;
 
 namespace BlackSP.Benchmarks.PageRank.Models
 {
+
+    /// <summary>
+    /// Model class containing a page and its neighbours
+    /// </summary>
     [ProtoContract]
+    [Serializable]
     public class Adjacency
     {
 
