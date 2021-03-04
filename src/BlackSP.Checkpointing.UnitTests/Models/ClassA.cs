@@ -9,10 +9,10 @@ namespace BlackSP.Checkpointing.UnitTests.Models
     public class ClassA
     {
 
-        [Checkpointable]
+        [ApplicationState]
         private string _value;
 
-        [Checkpointable]
+        [ApplicationState]
         private ICollection<int> _ints;
 
         public ClassA(string value)

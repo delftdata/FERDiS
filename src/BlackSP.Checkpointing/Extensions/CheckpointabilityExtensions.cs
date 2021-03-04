@@ -55,7 +55,7 @@ namespace BlackSP.Checkpointing.Extensions
         public static bool HasCheckpointableAttribute(this FieldInfo field)
         {
             _ = field ?? throw new ArgumentNullException(nameof(field));
-            return field.CustomAttributes.Any(attrData => attrData.AttributeType == typeof(CheckpointableAttribute));
+            return field.CustomAttributes.Any(attrData => attrData.AttributeType == typeof(ApplicationStateAttribute));
         }
 
         public static IEnumerable<KeyValuePair<string, object>> GetCheckpointableFieldsAsKeyValuePairs(this object o)

@@ -34,18 +34,18 @@ namespace BlackSP.Checkpointing.Models
         {
             _ = target ?? throw new ArgumentNullException(nameof(target));
             //if hook implemented, call it
-            (target as ICheckpointableAnnotated)?.OnBeforeRestore();
+            (target as ICheckpointable)?.OnBeforeRestore();
             //do restore
             foreach (var fieldinfo in target.GetCheckpointableFields())
             {
                 fieldinfo.SetValue(target, _fieldValues[fieldinfo.Name]);
                 var cpAttr = fieldinfo.GetCustomAttributes(true)
-                    .Select(attr => attr as CheckpointableAttribute)
+                    .Select(attr => attr as ApplicationStateAttribute)
                     .Where(val => val != null)
                     .First();
             }
             //if hook implemented, call it
-            (target as ICheckpointableAnnotated)?.OnAfterRestore();
+            (target as ICheckpointable)?.OnAfterRestore();
         }
 
         protected bool Equals(ObjectSnapshot other)

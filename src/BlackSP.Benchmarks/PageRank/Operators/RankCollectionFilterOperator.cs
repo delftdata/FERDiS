@@ -14,7 +14,7 @@ namespace BlackSP.Benchmarks.PageRank.Operators
     public class RankCollectionFilterOperator : IFilterOperator<PageEvent>
     {
 
-        [Checkpointable]
+        [ApplicationState]
         private readonly IDictionary<int, Models.Page> _pageRanks;
 
         public RankCollectionFilterOperator()

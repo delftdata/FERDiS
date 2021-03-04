@@ -16,7 +16,7 @@ namespace BlackSP.Sandbox.Operators
         public TimeSpan WindowSize => TimeSpan.FromSeconds(2);
         public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(2);
 
-        [Checkpointable]
+        [ApplicationState]
         public int Counter;
 
         public SampleAggregateOperator(ILogger logger)

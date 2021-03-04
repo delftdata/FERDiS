@@ -11,7 +11,7 @@ using System.Text;
 
 namespace BlackSP.Benchmarks.Kafka
 {
-    public abstract class KafkaConsumerBase<T> : ICheckpointableAnnotated
+    public abstract class KafkaConsumerBase<T> : ICheckpointable
         where T : class
     {
         protected readonly int PartitionCountPerTopic = 6;
@@ -21,7 +21,7 @@ namespace BlackSP.Benchmarks.Kafka
         protected abstract string TopicName { get; }
         protected IConsumer<int, T> Consumer { get; private set; }
 
-        [Checkpointable]
+        [ApplicationState]
         private IDictionary<int, int> _offsets;
 
         protected ILogger Logger { get; }

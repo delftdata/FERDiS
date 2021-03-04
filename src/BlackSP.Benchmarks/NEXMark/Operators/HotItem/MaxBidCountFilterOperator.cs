@@ -15,7 +15,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.HotItem
         /// Contains bidCount values<br/>
         /// Note: is persisted
         /// </summary>
-        [Checkpointable]
+        [ApplicationState]
         private readonly IDictionary<int, int> _bidCounts;
 
         public MaxBidCountFilterOperator()
