@@ -14,10 +14,10 @@ namespace BlackSP.Benchmarks.WordCount.Operators
     {
         private static string[] defaultSentences = new[] { "A", "A B", "A B C", "A B C D" };
         
-        [Checkpointable]
+        [ApplicationState]
         private int lastSentenceIndex;
         
-        [Checkpointable]
+        [ApplicationState]
         private int sentencesGenerated;
         
         private readonly ILogger _logger;

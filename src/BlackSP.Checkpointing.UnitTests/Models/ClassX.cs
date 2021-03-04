@@ -9,7 +9,7 @@ namespace BlackSP.Checkpointing.UnitTests.Models
 {
     class ClassX
     {
-        [Checkpointable]
+        [ApplicationState]
         private BlockingCollection<Stream> streams;//this is a non-serializable type (used to test that this indeed is NOT supported)
 
         public ClassX()

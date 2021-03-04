@@ -15,7 +15,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
 
         private readonly ILogger _logger;
 
-        [Checkpointable]
+        [ApplicationState]
         private IDictionary<string, int> _wordCountMap;
         
         public WordCountLoggerSink(ILogger logger)

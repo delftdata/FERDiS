@@ -8,10 +8,10 @@ namespace BlackSP.Checkpointing.UnitTests.Models
     class ClassB
     {
 
-        [Checkpointable]
+        [ApplicationState]
         private int _counter;
 
-        [Checkpointable]
+        [ApplicationState]
         private byte[] _largeBoi;
 
         public ClassB()

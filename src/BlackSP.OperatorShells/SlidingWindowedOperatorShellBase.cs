@@ -14,7 +14,7 @@ namespace BlackSP.OperatorShells
     {
         private readonly IWindowedOperator _pluggedInOperator;
 
-        [Checkpointable]
+        [ApplicationState]
         private readonly IDictionary<string, SlidingEventWindow<IEvent>> _currentWindows;
 
         public SlidingWindowedOperatorShellBase(IWindowedOperator pluggedInOperator) : base()
