@@ -30,7 +30,9 @@ namespace BlackSP.Benchmarks.PageRank.Operators
                 _pageRanks.Add(page.PageId, page);
                 return @event;
             }
-
+            //if epoch == then +
+            //if epoch < then ignore
+            //if epoch > then overwrite
             var lastPage = _pageRanks[page.PageId];
             _pageRanks[page.PageId] = page;
             return page.Rank != lastPage.Rank ? @event : null;      

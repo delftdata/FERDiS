@@ -22,8 +22,8 @@ namespace BlackSP.Benchmarks.PageRank.Operators
                          {
                              PageId = group.Key,
                              Rank = group.Sum(p => p.Rank),
-                             Epoch = 0 //TODO: real epoch
-                         })
+                             Epoch = 0 //TODO: delete epoch, probably useless
+                         }) 
                          .Select(p => new PageEvent
                          {
                              Key = p.PageId.ToString(),

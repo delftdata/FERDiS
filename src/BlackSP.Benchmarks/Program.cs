@@ -17,7 +17,7 @@ namespace BlackSP.Benchmarks
             {
                 if (args.Length < 1)
                 {
-                    Console.WriteLine("Required argument on position 0. Possible values: produce, blacksp");
+                    Console.WriteLine("Required argument on position 0. Possible values: pagerank, nexmark, benchmark");
                     return;
                 }
                 switch (args[0])
@@ -28,10 +28,10 @@ namespace BlackSP.Benchmarks
                     case "nexmark":
                         await ProduceNEXMarkAuctionData();
                         break;
-                    case "blacksp":
+                    case "benchmark":
                         var infrastructure = (Infrastructure)int.Parse(Environment.GetEnvironmentVariable("BLACKSP_INFRASTRUCTURE"));
                         var benchmark = (Benchmark)int.Parse(Environment.GetEnvironmentVariable("BLACKSP_BENCHMARK"));
-                        await RunBlackSP(infrastructure, benchmark);
+                        await RunBenchmark(infrastructure, benchmark);
                         break;
                     default:
                         break;
@@ -75,7 +75,7 @@ namespace BlackSP.Benchmarks
             }
         }
 
-        static async Task RunBlackSP(Infrastructure infrastructure, Benchmark benchmark)
+        static async Task RunBenchmark(Infrastructure infrastructure, Benchmark benchmark)
         {
             var logTargets = (LogTargetFlags) int.Parse(Environment.GetEnvironmentVariable("LOG_TARGETS"));
             var logLevel = (LogEventLevel) int.Parse(Environment.GetEnvironmentVariable("LOG_LEVEL")); ;
