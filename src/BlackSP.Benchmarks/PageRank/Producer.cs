@@ -73,7 +73,7 @@ namespace BlackSP.Benchmarks.PageRank
                     Console.WriteLine($"Producing progress @ page {currentFromId}");
                 }
             }
-
+            adjacencyProducer.Flush();
             Console.WriteLine("Completed producing Adjacency events to Kafka");
 
         }

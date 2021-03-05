@@ -26,7 +26,8 @@ namespace BlackSP.Benchmarks.PageRank.Operators
             var page = new Page
             {
                 PageId = @event.Adjacancy.PageId,
-                Rank = 1/TotalPageCount
+                Rank = 1 / TotalPageCount,
+                Epoch = 0
             };
 
             yield return new PageEvent

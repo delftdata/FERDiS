@@ -1,5 +1,6 @@
 ﻿using BlackSP.Benchmarks.PageRank.Events;
 using BlackSP.Benchmarks.PageRank.Models;
+using BlackSP.Checkpointing;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
@@ -8,11 +9,11 @@ using System.Text;
 
 namespace BlackSP.Benchmarks.PageRank.Operators
 {
-    public class PageRankJoinOperator : IJoinOperator<AdjacencyEvent, PageEvent, PageUpdateEvent>
+    public class RankUpdateJoinOperator : IJoinOperator<AdjacencyEvent, PageEvent, PageUpdateEvent>
     {
-        public TimeSpan WindowSize => TimeSpan.FromSeconds(300);
+        public TimeSpan WindowSize => Constants.RankUpdateWindowSize;
 
-        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(300);
+        public TimeSpan WindowSlideSize => Constants.RankUpdateWindowSlideSize;
 
         /// <summary>
         /// Representing a count as a double to not repeatedly cast to double during division in Map method
@@ -29,26 +30,23 @@ namespace BlackSP.Benchmarks.PageRank.Operators
         /// </summary>
         private readonly double RandomJump;
 
-        public PageRankJoinOperator()
+        public RankUpdateJoinOperator()
         {
-            string pageCountString = Environment.GetEnvironmentVariable("PR_PAGE_COUNT") ?? throw new InvalidOperationException("Missing environment variable PR_PAGE_COUNT");
+            string pageCountString = Environment.GetEnvironmentVariable("PR_PAGE_COUNT") ?? throw new ArgumentException("Missing environment variable PR_PAGE_COUNT");
             TotalPageCount = double.Parse(pageCountString);
 
-            string dampeningString = Environment.GetEnvironmentVariable("PR_DAMPENING_FACTOR") ?? throw new InvalidOperationException("Missing environment variable PR_DAMPENING_FACTOR");
+            string dampeningString = Environment.GetEnvironmentVariable("PR_DAMPENING_FACTOR") ?? throw new ArgumentException("Missing environment variable PR_DAMPENING_FACTOR");
             DampeningFactor = double.Parse(dampeningString);
 
             if(DampeningFactor < 0 || DampeningFactor > 1)
             {
-                throw new InvalidOperationException($"Environment variable PR_DAMPENING_FACTOR out of range, must be [0, 1] but was {dampeningString}");
+                throw new ArgumentOutOfRangeException($"Environment variable PR_DAMPENING_FACTOR out of range, must be [0, 1] but was {dampeningString}");
             }
-
             RandomJump = (1 - DampeningFactor) / TotalPageCount;
+
         }
 
-        public bool Match(AdjacencyEvent testA, PageEvent testB)
-        {
-            return testA.Adjacancy.PageId == testB.Page.PageId;
-        }
+        public bool Match(AdjacencyEvent testA, PageEvent testB) => testA.Adjacancy.PageId == testB.Page.PageId;
         
         public PageUpdateEvent Join(AdjacencyEvent matchA, PageEvent matchB)
         {
@@ -63,7 +61,7 @@ namespace BlackSP.Benchmarks.PageRank.Operators
 
         private IEnumerable<Page> GetPages(Adjacency adjacency, Page page)
         {
-            yield return new Page { PageId = page.PageId, Rank = RandomJump };
+            yield return new Page { PageId = page.PageId, Rank = RandomJump, Epoch = page.Epoch + 1 };
 
             if (adjacency.Neighbours == null)
             {
@@ -73,7 +71,7 @@ namespace BlackSP.Benchmarks.PageRank.Operators
             var neighboursRank = (DampeningFactor * page.Rank) / adjacency.Neighbours.Length;
             foreach (int neighbour in adjacency.Neighbours)
             {
-                yield return new Page { PageId = neighbour, Rank = neighboursRank };
+                yield return new Page { PageId = neighbour, Rank = neighboursRank, Epoch = page.Epoch + 1 };
             }
         }
 

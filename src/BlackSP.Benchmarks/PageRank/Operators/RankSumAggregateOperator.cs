@@ -7,22 +7,21 @@ using System.Linq;
 
 namespace BlackSP.Benchmarks.PageRank.Operators
 {
-    public class PageRankSumAggregateOperator : IAggregateOperator<PageEvent, PageEvent>
+    public class RankSumAggregateOperator : IAggregateOperator<PageEvent, PageEvent>
     {
-        public TimeSpan WindowSize => TimeSpan.FromSeconds(10);
+        public TimeSpan WindowSize => Constants.RankSumWindowSize;
 
-        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(10);
+        public TimeSpan WindowSlideSize => Constants.RankSumWindowSlideSize;
 
         public IEnumerable<PageEvent> Aggregate(IEnumerable<PageEvent> window)
         {
             return window.Select(pe => pe.Page)
-                         .GroupBy(p => p.PageId)
-                         //TODO: group by epoch
+                         .GroupBy(p => (PageId: p.PageId, Epoch: p.Epoch))
                          .Select(group => new Page
                          {
-                             PageId = group.Key,
+                             PageId = group.Key.PageId,
                              Rank = group.Sum(p => p.Rank),
-                             Epoch = 0 //TODO: delete epoch, probably useless
+                             Epoch = group.Key.Epoch
                          }) 
                          .Select(p => new PageEvent
                          {

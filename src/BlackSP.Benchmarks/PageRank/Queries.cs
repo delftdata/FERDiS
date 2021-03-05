@@ -12,29 +12,36 @@ namespace BlackSP.Benchmarks.PageRank
 
         public static void PageRank(IVertexGraphBuilder builder)
         {
+            //provides stream of vertice-neighbours pairs
             var source = builder.AddSource<AdjacencySourceOperator, AdjacencyEvent>(1);
 
-            var initialRankMapper = builder.AddMap<InitialRankMapOperator, AdjacencyEvent, PageEvent>(1);
-            source.Append(initialRankMapper);
+            //applies initial ranks to vertices
+            var initialRanker = builder.AddMap<InitialRankMapOperator, AdjacencyEvent, PageEvent>(1);
+            source.Append(initialRanker);
 
-            var collectionFilter = builder.AddFilter<RankCollectionFilterOperator, PageEvent>(1);
-            initialRankMapper.Append(collectionFilter);
+            //collects/forwards ranks and forms the entry/exit point of the pagerank update loop
+            var rankCollecter = builder.AddFilter<RankCollectFilterOperator, PageEvent>(1);
+            initialRanker.Append(rankCollecter);
 
-            var prJoin = builder.AddJoin<PageRankJoinOperator, AdjacencyEvent, PageEvent, PageUpdateEvent>(1);
-            source.Append(prJoin);
-            collectionFilter.Append(prJoin);
+            //updates page ranks
+            var rankUpdater = builder.AddJoin<RankUpdateJoinOperator, AdjacencyEvent, PageEvent, PageUpdateEvent>(1);
+            source.Append(rankUpdater);
+            rankCollecter.Append(rankUpdater);
 
-            var expansionMap = builder.AddMap<PageUpdateExpansionMapOperator, PageUpdateEvent, PageEvent>(1);
-            prJoin.Append(expansionMap).AsPipeline(); //Note: is pipeline, join and expander need same shardcount
+            //expands page rank update events into sets of new pageranks
+            var updateExpander = builder.AddMap<PageUpdateExpansionMapOperator, PageUpdateEvent, PageEvent>(1);
+            rankUpdater.Append(updateExpander).AsPipeline(); //Note: is pipeline, join and expander need same shardcount
 
-            var prSumAggregate = builder.AddAggregate<PageRankSumAggregateOperator, PageEvent, PageEvent>(1);
-            expansionMap.Append(prSumAggregate);
+            //sums pageranks
+            var rankSummer = builder.AddAggregate<RankSumAggregateOperator, PageEvent, PageEvent>(1);
+            updateExpander.Append(rankSummer);
 
-            prSumAggregate.Append(collectionFilter); //this edge closes the cycle!
+            //end of pagerank update, cycle back to collecter (this edge closes the cycle)
+            rankSummer.Append(rankCollecter);
 
+            //receives updates from the collecter and sinks the results to the log
             var sink = builder.AddSink<PageRankSinkOperator, PageEvent>(1);
-
-            collectionFilter.Append(sink);
+            rankCollecter.Append(sink);
         }
     }
 }

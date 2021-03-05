@@ -1,4 +1,5 @@
 ﻿using BlackSP.Benchmarks.PageRank.Events;
+using BlackSP.Checkpointing;
 using BlackSP.Kernel.Operators;
 using Serilog;
 using System;
@@ -13,17 +14,43 @@ namespace BlackSP.Benchmarks.PageRank.Operators
 
         private readonly ILogger _logger;
 
+        [ApplicationState]
+        private readonly IDictionary<int, Models.Page> _pageRanks;
+
+
         public PageRankSinkOperator(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _pageRanks = new Dictionary<int, Models.Page>();
         }
 
         public async Task Sink(PageEvent @event)
         {
-            var page = @event.Page;
-            if(page.Rank > 1e-7) //top ranks expected in (~0.001, ~0.02) range
+            var newPage = @event.Page;
+            bool rankDidChange = false;
+            
+            if(_pageRanks.TryGetValue(newPage.PageId, out var existingPage))
             {
-                _logger.Information($"PageRank {page.PageId:D7} : {page.Rank:E3}");
+                _pageRanks.Remove(newPage.PageId);
+                if(existingPage.Epoch == newPage.Epoch) //updated rank arrived
+                {
+                    rankDidChange = Math.Abs(newPage.Rank - existingPage.Rank) > 0.0001d;
+                } 
+                else if(existingPage.Epoch < newPage.Epoch) //new epoch arrived
+                {
+                    rankDidChange = true;
+                }
+                else
+                {
+                    newPage = existingPage;
+                }
+            }
+
+            _pageRanks.Add(newPage.PageId, newPage);
+
+            if (newPage.Epoch % Constants.EpochSinkInterval == 0 && rankDidChange)
+            {
+                _logger.Information($"PageRank {newPage.PageId:D7} : {newPage.Rank:E3} : {newPage.Epoch:D2}");
             }
         }
     }
