@@ -8,12 +8,13 @@ using System.Threading.Tasks;
 
 namespace BlackSP.OperatorShells
 {
+    [Obsolete("Not in use")]
     public class SourceOperatorShell<TEvent> : OperatorShellBase 
         where TEvent : class, IEvent
     {
         private readonly ISourceOperator<TEvent> _pluggedInOperator;
 
-        public SourceOperatorShell(ISourceOperator<TEvent> pluggedInOperator) : base()
+        public SourceOperatorShell(ISourceOperator<TEvent> pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
         }
@@ -23,7 +24,7 @@ namespace BlackSP.OperatorShells
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        public override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
+        public override Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
         {
             throw new NotImplementedException(); 
         }

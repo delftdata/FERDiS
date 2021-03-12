@@ -22,6 +22,8 @@ namespace BlackSP.Infrastructure.Models
 
         public bool IsPipeline { get; set; }
 
+        public bool IsBackchannel { get; set; }
+
         public string GetConnectionKey(int shardId)
         {
             if(shardId < RemoteInstanceNames.Count() && shardId > -1)

@@ -23,6 +23,8 @@ namespace BlackSP.Infrastructure.Builders.Edge
 
         public EdgeType Type { get; private set; }
 
+        private bool _isBackchannel;
+
         public EdgeBuilder(IVertexBuilder fromVertex, string fromEndpoint, IVertexBuilder toVertex, string toEndpoint)
         {
             FromVertex = fromVertex ?? throw new ArgumentNullException(nameof(fromVertex));
@@ -32,6 +34,8 @@ namespace BlackSP.Infrastructure.Builders.Edge
             ToEndpoint = toEndpoint ?? throw new ArgumentNullException(nameof(toEndpoint));
 
             Type = EdgeType.None;
+
+            _isBackchannel = false;
         }
 
         public IEdgeBuilder AsPipeline()
@@ -60,5 +64,13 @@ namespace BlackSP.Infrastructure.Builders.Edge
         {
             return Type == EdgeType.Shuffle;
         }
+
+        public IEdgeBuilder AsBackchannel()
+        {
+            _isBackchannel = true;
+            return this;
+        }
+
+        public bool IsBackchannel() => _isBackchannel;
     }
 }

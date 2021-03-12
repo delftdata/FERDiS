@@ -46,10 +46,7 @@ namespace BlackSP.Core.Models
             {
                 throw new ArgumentException($"Payload type \"{typeof(TPayload)}\" does not implement static string MetaDataKey property", nameof(payload));
             }
-            if (MetaData.ContainsKey(metaDataKey))
-            {
-                MetaData.Remove(metaDataKey);
-            }
+            MetaData.Remove(metaDataKey);
             MetaData.Add(metaDataKey, payload);
         }
     }

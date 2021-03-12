@@ -1,11 +1,11 @@
-﻿using BlackSP.Benchmarks.PageRank.Events;
+﻿using BlackSP.Benchmarks.Graph.Events;
 using BlackSP.Checkpointing;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Benchmarks.PageRank.Operators
+namespace BlackSP.Benchmarks.Graph.Operators
 {
 
     /// <summary>

@@ -25,7 +25,7 @@ namespace BlackSP.Infrastructure.Extensions
             //processor
             builder.RegisterType<ControlMessageProcessor>().InstancePerLifetimeScope();
             //pipeline
-            builder.RegisterType<MiddlewareInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().InstancePerLifetimeScope();
+            builder.RegisterType<HandlerInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().InstancePerLifetimeScope();
             //message source
             builder.RegisterType<ReceiverMessageSource<ControlMessage>>().As<IReceiver<ControlMessage>, ISource<ControlMessage>>().InstancePerLifetimeScope();
             
@@ -41,7 +41,7 @@ namespace BlackSP.Infrastructure.Extensions
             //processor
             builder.RegisterType<DataMessageProcessor>().InstancePerLifetimeScope();
             //pipeline
-            builder.RegisterType<MiddlewareInvocationPipeline<DataMessage>>().As<IPipeline<DataMessage>>().InstancePerLifetimeScope();
+            builder.RegisterType<HandlerInvocationPipeline<DataMessage>>().As<IPipeline<DataMessage>>().InstancePerLifetimeScope();
             
             if(useNetworkAsDataSource)
             {

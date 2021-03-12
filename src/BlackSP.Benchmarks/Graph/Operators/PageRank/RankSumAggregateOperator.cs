@@ -1,11 +1,11 @@
-﻿using BlackSP.Benchmarks.PageRank.Events;
-using BlackSP.Benchmarks.PageRank.Models;
+﻿using BlackSP.Benchmarks.Graph.Events;
+using BlackSP.Benchmarks.Graph.Models;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BlackSP.Benchmarks.PageRank.Operators
+namespace BlackSP.Benchmarks.Graph.Operators
 {
     public class RankSumAggregateOperator : IAggregateOperator<PageEvent, PageEvent>
     {

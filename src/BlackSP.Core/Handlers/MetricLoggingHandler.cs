@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Extensions;
+using BlackSP.Kernel.Extensions;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using Serilog;

@@ -44,13 +44,13 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         }
 
         [Test]
-        public void FilterOperator_DistinctUsesLocalStateToFilterDuplicates()
+        public async Task FilterOperator_DistinctUsesLocalStateToFilterDuplicates()
         {
             var results = new List<IEvent>();
             foreach (var e in _testEvents)
             {
-                results.AddRange(_distinctOperator.OperateOnEvent(e));
-                results.AddRange(_distinctOperator.OperateOnEvent(e));//Add the events twice, so the seconds can get filtered
+                results.AddRange(await _distinctOperator.OperateOnEvent(e));
+                results.AddRange(await _distinctOperator.OperateOnEvent(e));//Add the events twice, so the seconds can get filtered
             }
             Assert.AreEqual(results.Count(), _testEvents.Count());
             foreach (var e in _testEvents)

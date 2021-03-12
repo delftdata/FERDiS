@@ -24,7 +24,7 @@ namespace BlackSP.OperatorShells
             GetWindow(typeof(TInB));
         }
 
-        protected override IEnumerable<IEvent> OperateWithUpdatedWindows(IEvent @event, IEnumerable<IEvent> closedWindow)
+        protected override IEnumerable<IEvent> OperateWithUpdatedWindows(IEvent @event, IEnumerable<IEvent> closedWindow, bool windowDidAdvance)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
 

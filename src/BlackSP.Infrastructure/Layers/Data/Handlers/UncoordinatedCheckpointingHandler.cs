@@ -1,6 +1,7 @@
 ﻿using BlackSP.Checkpointing;
 using BlackSP.Core.Extensions;
 using BlackSP.Kernel.Checkpointing;
+using BlackSP.Kernel.Extensions;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using Serilog;

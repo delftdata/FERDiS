@@ -21,9 +21,8 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         [Test]
         public void FilterOperator_ThrowsOnUnexpectedType()
         {
-            Assert.Throws<ArgumentException>(() => 
-            _distinctOperator.OperateOnEvent(new TestEvent2()).ToArray() //ensure materialisation of results
-            ); //enqueue unexpected event type
+            Assert.ThrowsAsync<ArgumentException>(async () => (await _distinctOperator.OperateOnEvent(new TestEvent2())).ToArray() //ensure materialisation of results
+            );
         }
 
         [TearDown]

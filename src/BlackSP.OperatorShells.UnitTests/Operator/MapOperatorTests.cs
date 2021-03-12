@@ -40,10 +40,10 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         }
 
         [Test]
-        public void MapOperator_TransformsAnEvent()
+        public async Task MapOperator_TransformsAnEvent()
         {
             //operate on one event
-            var output = _mapOperator.OperateOnEvent(_testEvents[0]);           
+            var output = await _mapOperator.OperateOnEvent(_testEvents[0]);           
             Assert.IsTrue(output.Any());
             
             var transformedEvent = output.First() as TestEvent2;
@@ -54,13 +54,13 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         }
 
         [Test]
-        public void MapOperator_TransformsMultipleEvents()
+        public async Task MapOperator_TransformsMultipleEvents()
         {
             var output = new List<IEvent>();
 
             foreach(var e in _testEvents)
             {
-                output.AddRange(_mapOperator.OperateOnEvent(e));
+                output.AddRange(await _mapOperator.OperateOnEvent(e));
             }
 
             foreach(var e in _testEvents)

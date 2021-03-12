@@ -37,7 +37,8 @@ namespace BlackSP.Infrastructure.Builders
     }
 
     public interface IOperatorVertexBuilder : IVertexBuilder
-    {   
+    {
+        //void WithBackchannel<T>();
     }
 
     /// <summary>

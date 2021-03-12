@@ -1,4 +1,4 @@
-﻿using BlackSP.Benchmarks.PageRank.Events;
+﻿using BlackSP.Benchmarks.Graph.Events;
 using BlackSP.Checkpointing;
 using BlackSP.Kernel.Operators;
 using Serilog;
@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Benchmarks.PageRank.Operators
+namespace BlackSP.Benchmarks.Graph.Operators
 {
     public class PageRankSinkOperator : ISinkOperator<PageEvent>
     {

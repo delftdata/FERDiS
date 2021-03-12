@@ -84,7 +84,8 @@ namespace BlackSP.Infrastructure.Builders.Vertex
                 RemoteVertexName = asInput ? edge.FromVertex.VertexName : edge.ToVertex.VertexName,
                 RemoteEndpointName = asInput ? edge.FromEndpoint : edge.ToEndpoint,
                 RemoteInstanceNames = asInput ? edge.FromVertex.InstanceNames : edge.ToVertex.InstanceNames,
-                IsPipeline = edge.IsPipeline()
+                IsPipeline = edge.IsPipeline(),
+                IsBackchannel = edge.IsBackchannel()
             };
         }
     }

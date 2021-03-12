@@ -6,6 +6,7 @@ using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Extensions;
 using Serilog;
 using System;
 using System.Collections.Generic;

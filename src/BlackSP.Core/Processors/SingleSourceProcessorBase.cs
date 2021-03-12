@@ -125,6 +125,7 @@ namespace BlackSP.Core.Processors
                     var results = await _pipeline.Process(message).ConfigureAwait(false);
                     foreach (var msg in results)
                     {
+                        _logger.Verbose($"Adding message to dispatch thread queue (current queue size: {passthroughQueue.Count})");
                         passthroughQueue.Add(msg, t);
                     }
                 }

@@ -22,8 +22,8 @@ namespace BlackSP.Benchmarks
                 }
                 switch (args[0])
                 {
-                    case "pagerank":
-                        await ProducePageRankAuctionData();
+                    case "graph":
+                        await ProduceGraphData();
                         break;
                     case "nexmark":
                         await ProduceNEXMarkAuctionData();
@@ -60,13 +60,13 @@ namespace BlackSP.Benchmarks
             }
         }
 
-        static async Task ProducePageRankAuctionData()
+        static async Task ProduceGraphData()
         {
             try
             {
                 string brokerList = Environment.GetEnvironmentVariable("KAFKA_BROKERLIST") ?? string.Empty;
                 string edgesFileLoc = Environment.GetEnvironmentVariable("EDGES_FILE_LOCATION");
-                await PageRank.Producer.StartProductingGraphData(brokerList, edgesFileLoc);
+                await Graph.Producer.StartProductingGraphData(brokerList, edgesFileLoc);
             }
             catch (Exception e)
             {

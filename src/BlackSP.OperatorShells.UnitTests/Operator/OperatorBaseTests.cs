@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.UnitTests.Events;
+using BlackSP.Kernel.Extensions;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using NUnit.Framework;
@@ -14,12 +15,12 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
 
     class TestBaseOperatorShell : OperatorShellBase
     {
-        public TestBaseOperatorShell() : base()
+        public TestBaseOperatorShell() : base(new BaseOperator())
         {}
 
-        public override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
+        public override async Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
         {
-            yield return @event; //base operator that just passes on events
+            return @event.Yield(); //base operator that just passes on events
         }
     }
 
@@ -41,23 +42,23 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         }
 
         [Test]
-        public void Operator_PassesAnEventThrough()
+        public async Task Operator_PassesAnEventThrough()
         {
-            var results = _operator.OperateOnEvent(_testEvents[0]);
+            var results = await _operator.OperateOnEvent(_testEvents[0]);
 
             Assert.IsTrue(results.Any());
             Assert.AreEqual(_testEvents[0], results.First());
         }
 
         [Test]
-        public void Operator_PassesEventsThroughInOrder()
+        public async Task Operator_PassesEventsThroughInOrder()
         {
             foreach (var e in _testEvents)
             {
-                _operator.OperateOnEvent(e);
+                await _operator.OperateOnEvent(e);
             }
 
-            var results = _testEvents.SelectMany(e => _operator.OperateOnEvent(e)).ToArray();
+            var results = (await Task.WhenAll(_testEvents.Select(e => _operator.OperateOnEvent(e)))).SelectMany(res => res);
 
             Assert.IsTrue(results.Any());
             Assert.IsTrue(Enumerable.SequenceEqual(_testEvents, results));

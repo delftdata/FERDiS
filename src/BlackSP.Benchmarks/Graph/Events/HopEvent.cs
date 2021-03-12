@@ -1,16 +1,16 @@
-﻿using BlackSP.Benchmarks.PageRank.Models;
+﻿using BlackSP.Benchmarks.Graph.Models;
 using BlackSP.Core.Models;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Benchmarks.PageRank.Events
+namespace BlackSP.Benchmarks.Graph.Events
 {
 
     [ProtoContract]
     [Serializable]
-    public class PageEvent : MD5PartitionKeyEventBase
+    public class HopEvent : MD5PartitionKeyEventBase
     {
 
         [ProtoMember(1)]
@@ -20,6 +20,6 @@ namespace BlackSP.Benchmarks.PageRank.Events
         public override DateTime EventTime { get; set; }
 
         [ProtoMember(3)]
-        public Page Page { get; set; }
+        public Neighbour Neighbour { get; set; }
     }
 }

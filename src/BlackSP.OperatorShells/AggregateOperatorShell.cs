@@ -20,14 +20,28 @@ namespace BlackSP.OperatorShells
             GetWindow(typeof(TIn)); //ensure window creation
         }
 
-        protected override IEnumerable<IEvent> OperateWithUpdatedWindows(IEvent newEvent, IEnumerable<IEvent> closedWindow)
+        protected override IEnumerable<IEvent> OperateWithUpdatedWindows(IEvent newEvent, IEnumerable<IEvent> closedWindow, bool windowDidAdvance)
         {
             _ = closedWindow ?? throw new ArgumentNullException(nameof(closedWindow));
-            if(!closedWindow.Any())
+
+            if(!windowDidAdvance)
             {
-                return closedWindow;
+                return Enumerable.Empty<IEvent>();
             }
-            return _pluggedInOperator.Aggregate(closedWindow.Cast<TIn>());
+
+            if(_pluggedInOperator.WindowSize == _pluggedInOperator.WindowSlideSize)
+            {
+                //tumbling mode
+                return _pluggedInOperator.Aggregate(closedWindow.Cast<TIn>());
+            }
+            else
+            {
+                //sliding mode
+                var currentWindowContent = GetWindow(typeof(TIn)).Events.Cast<TIn>();
+                return _pluggedInOperator.Aggregate(currentWindowContent);
+            }
+
+
         }
     }
 }

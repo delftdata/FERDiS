@@ -20,8 +20,8 @@ namespace BlackSP.Core.Windows
         
         /// <summary>
         /// The amount of time the window slides ahead<br/>
-        /// Note: when equal to WindowSize, a tumbling behavior will emerge<br/>
-        /// When lower than WindowSize, typical sliding behavior will emerge
+        /// Note: when equal to WindowSize, tumbling behavior will emerge<br/>
+        /// When lower than WindowSize, sliding behavior will emerge
         /// </summary>
         protected TimeSpan WindowSlideSize { get; private set; }
 
@@ -49,15 +49,14 @@ namespace BlackSP.Core.Windows
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        public IEnumerable<TEvent> Insert(TEvent @event, DateTime processingTime)
+        public IEnumerable<TEvent> Insert(TEvent @event, DateTime processingTime, out bool windowDidAdvance)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
 
             lock (_windowLock)
             {
-                var events = AdvanceWindow(processingTime) 
-                    ? OnWindowAdvanced()
-                    : Enumerable.Empty<TEvent>();
+                windowDidAdvance = AdvanceWindow(processingTime);
+                var events =  windowDidAdvance ? OnWindowAdvanced() : Enumerable.Empty<TEvent>();
                 //add after window advance
                 SafeAddEventToWindow(processingTime.Ticks, @event);
                 return events;

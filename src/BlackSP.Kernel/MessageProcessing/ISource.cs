@@ -8,7 +8,22 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Kernel.MessageProcessing
 {
-    public interface ISource<T>
+
+    public interface ISource
+    {
+        /// <summary>
+        /// Reference information on the last object returned by the Take(..) method.
+        /// </summary>
+        (IEndpointConfiguration, int) MessageOrigin { get; }
+
+        /// <summary>
+        /// Begin flushing the message source
+        /// </summary>
+        /// <returns></returns>
+        Task Flush(IEnumerable<string> upstreamInstancesToFlush);
+    }
+
+    public interface ISource<T> : ISource
     {
         
 
@@ -18,17 +33,6 @@ namespace BlackSP.Kernel.MessageProcessing
         /// <param name="t"></param>
         /// <returns></returns>
         Task<T> Take(CancellationToken t);
-
-        /// <summary>
-        /// Reference information on the last object returned by the Take(..) method.
-        /// </summary>
-        (IEndpointConfiguration, int) MessageOrigin { get; }
-        
-        /// <summary>
-        /// Begin flushing the message source
-        /// </summary>
-        /// <returns></returns>
-        Task Flush(IEnumerable<string> upstreamInstancesToFlush);
 
     }
 }

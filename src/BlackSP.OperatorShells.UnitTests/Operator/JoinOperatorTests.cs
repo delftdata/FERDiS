@@ -64,7 +64,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
 
             foreach(var @event in events.AsEnumerable<IEvent>().Concat(events2))
             {
-                output.AddRange(_operator.OperateOnEvent(@event));
+                output.AddRange(await _operator.OperateOnEvent(@event));
             }
 
             Assert.IsNotEmpty(output);
@@ -90,7 +90,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             //matches are on value so (K1_A, K2_A) and (K2_C, K1_A)
             foreach (var @event in events)
             {
-                output.AddRange(_operator.OperateOnEvent(@event));
+                output.AddRange(await _operator.OperateOnEvent(@event));
             }
             
             Assert.IsNotEmpty(output);
@@ -115,11 +115,11 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         {
             var output = new List<IEvent>();
 
-            output.AddRange(_operator.OperateOnEvent(new TestEvent { Key = "K1_A", Value = 2 }));
+            output.AddRange(await _operator.OperateOnEvent(new TestEvent { Key = "K1_A", Value = 2 }));
             await Task.Delay(_windowSize);
 
-            output.AddRange(_operator.OperateOnEvent(new TestEvent2 { Key = "K2_A", Value = 2 }));
-            output.AddRange(_operator.OperateOnEvent(new TestEvent { Key = "K1_B", Value = 2 }));
+            output.AddRange(await _operator.OperateOnEvent(new TestEvent2 { Key = "K2_A", Value = 2 }));
+            output.AddRange(await _operator.OperateOnEvent(new TestEvent { Key = "K1_B", Value = 2 }));
             
             //second two events happen delayed to cause the first event to go out of window 
             //so should only return one match

@@ -1,13 +1,14 @@
-﻿using BlackSP.Benchmarks.PageRank.Events;
-using BlackSP.Benchmarks.PageRank.Models;
+﻿using BlackSP.Benchmarks.Graph.Events;
+using BlackSP.Benchmarks.Graph.Models;
 using BlackSP.Checkpointing;
 using BlackSP.Kernel.Operators;
+using BlackSP.OperatorShells;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Benchmarks.PageRank.Operators
+namespace BlackSP.Benchmarks.Graph.Operators
 {
     public class RankUpdateJoinOperator : IJoinOperator<AdjacencyEvent, PageEvent, PageUpdateEvent>
     {
@@ -43,7 +44,6 @@ namespace BlackSP.Benchmarks.PageRank.Operators
                 throw new ArgumentOutOfRangeException($"Environment variable PR_DAMPENING_FACTOR out of range, must be [0, 1] but was {dampeningString}");
             }
             RandomJump = (1 - DampeningFactor) / TotalPageCount;
-
         }
 
         public bool Match(AdjacencyEvent testA, PageEvent testB) => testA.Adjacancy.PageId == testB.Page.PageId;

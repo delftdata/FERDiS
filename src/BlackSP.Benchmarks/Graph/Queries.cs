@@ -1,11 +1,11 @@
-﻿using BlackSP.Benchmarks.PageRank.Events;
-using BlackSP.Benchmarks.PageRank.Operators;
+﻿using BlackSP.Benchmarks.Graph.Events;
+using BlackSP.Benchmarks.Graph.Operators;
 using BlackSP.Infrastructure.Builders;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Benchmarks.PageRank
+namespace BlackSP.Benchmarks.Graph
 {
     public static class Queries
     {
@@ -42,6 +42,39 @@ namespace BlackSP.Benchmarks.PageRank
             //receives updates from the collecter and sinks the results to the log
             var sink = builder.AddSink<PageRankSinkOperator, PageEvent>(1);
             rankCollecter.Append(sink);
+        }
+
+        public static void NHop(IVertexGraphBuilder builder)
+        {
+            var source = builder.AddSource<RandomEdgeSourceOperator, HopEvent>(1);//builder.AddSource<AdjacencySourceOperator, AdjacencyEvent>(1);
+
+
+            var hopUpdateMapper = builder.AddMap<HopCountUpdateMapOperator, HopEvent, HopEvent>(1);
+
+            var hopAggregate = builder.AddAggregate<HopCountAggregateOperator, HopEvent, HopEvent>(1);
+            //var subsampler = builder.AddFilter<SamplerFilterOperator, HopEvent>(1);
+            
+            var sink = builder.AddSink<HopCountSinkOperator, HopEvent>(1);
+
+            
+            
+            source.Append(hopUpdateMapper);
+            
+            hopUpdateMapper.Append(hopAggregate);
+            hopAggregate.Append(hopUpdateMapper).AsBackchannel(); //mark edge that closes loop as backchannel, needed for distributed deadlock avoidance
+
+            //subsampler.Append(hopUpdateMapper); 
+
+            hopUpdateMapper.Append(sink);
+            
+
+            //source.Append(hopAggregate);
+
+            //hopUpdateMapper.Append(hopAggregate);
+            //hopAggregate.Append(hopUpdateMapper);
+
+            //hopUpdateMapper.Append(sink);
+
         }
     }
 }

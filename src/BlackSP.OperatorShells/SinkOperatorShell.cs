@@ -13,16 +13,16 @@ namespace BlackSP.OperatorShells
     {
         private readonly ISinkOperator<TEvent> _pluggedInOperator;
 
-        public SinkOperatorShell(ISinkOperator<TEvent> pluggedInOperator) : base()
+        public SinkOperatorShell(ISinkOperator<TEvent> pluggedInOperator) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
         }
 
-        public override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
+        public override async Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
             var tEvent = @event as TEvent ?? throw new ArgumentException($"Argument {nameof(@event)} was not of expected type {typeof(TEvent)}");
-            _pluggedInOperator.Sink(tEvent);
+           await  _pluggedInOperator.Sink(tEvent).ConfigureAwait(false);
             return Enumerable.Empty<IEvent>();
         }
 

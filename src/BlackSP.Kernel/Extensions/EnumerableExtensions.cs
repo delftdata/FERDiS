@@ -3,10 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Core.Extensions
+namespace BlackSP.Kernel.Extensions
 {
     public static class EnumerableExtensions
     {
+
+        /// <summary>
+        /// Wraps this object instance into an IEnumerable&lt;T&gt;
+        /// consisting of a single item or empty if the reference is null
+        /// </summary>
+        /// <typeparam name="T"> Type of the object. </typeparam>
+        /// <param name="item"> The instance that will be wrapped. </param>
+        /// <returns> An IEnumerable&lt;T&gt; consisting of a single item. </returns>
+        public static IEnumerable<T> YieldOrEmpty<T>(this T item)
+        {
+            if(item == null)
+            {
+                yield break;
+            }
+            yield return item;
+        }
+
+
         /// <summary>
         /// Wraps this object instance into an IEnumerable&lt;T&gt;
         /// consisting of a single item.

@@ -47,4 +47,26 @@ namespace BlackSP.Kernel.Operators
     {
         IEnumerable<TOut> Map(TIn @event);
     }
+
+
+
+    public interface ICycleOperator : IOperator
+    {
+        Task Consume(IEvent @event);
+    }
+
+    /// <summary>
+    /// Interface to handle backchannel input over, backchannel input may not result in new messages.
+    /// </summary>
+    /// <typeparam name="TEvent"></typeparam>
+    public interface ICycleOperator<TEvent> : ICycleOperator
+        where TEvent : class, IEvent
+    {
+        /// <summary>
+        /// Handle to consume a message from upstream
+        /// </summary>
+        /// <param name="event"></param>
+        /// <returns></returns>
+        Task Consume(TEvent @event);
+    }
 }

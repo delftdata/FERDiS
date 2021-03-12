@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "NEXMark to Kafka": {
+    "NEXMark data to Kafka": {
       "commandName": "Project",
       "environmentVariables": {
         "GENERATOR_CALLS": "10000",
@@ -10,14 +10,14 @@
       "commandLineArgs": "nexmark"
     },
 
-    "PageRank to Kafka": {
+    "Graph data to Kafka": {
       "commandName": "Project",
       "environmentVariables": {
         "EDGES_FILE_LOCATION": "C:\\Users\\marcd\\Downloads\\test-edges.txt",
         "KAFKA_BROKERLIST": "localhost:32400,localhost:32401,localhost:32402,localhost:32403,localhost:32404,localhost:32405",
         "PR_PAGE_COUNT": "88258310"
       },
-      "commandLineArgs": "pagerank"
+      "commandLineArgs": "graph"
     },
 
     "Run BlackSP (Simulator)": {
@@ -28,7 +28,7 @@
         "LOG_TARGETS": "3", // 1 (console) | 2 (file) | 4 (azure blob)
         "LOG_LEVEL": "2", //0-5
         "BLACKSP_INFRASTRUCTURE": "0", //0 = simulator
-        "BLACKSP_BENCHMARK": "5", //0-5
+        "BLACKSP_BENCHMARK": "6", //0-6
         "PR_PAGE_COUNT": "9964",
         "PR_DAMPENING_FACTOR": "0.85"
       },
@@ -44,7 +44,7 @@
         "LOG_TARGETS": "5", // 1 (console) || 2 (file) || 4 (azure blob)
         "LOG_LEVEL": "2", //0-5,
         "BLACKSP_INFRASTRUCTURE": "1", //1 = cra
-        "BLACKSP_BENCHMARK": "0", //0-5
+        "BLACKSP_BENCHMARK": "6", //0-5
         "PR_PAGE_COUNT": "9964",
         "PR_DAMPENING_FACTOR": "0.85",
         "ENVIRONMENT_VARIABLE_KEYS_TO_CRA": "AZURE_STORAGE_CONN_STRING, KAFKA_BROKER_DNS_TEMPLATE, LOG_TARGETS, LOG_LEVEL, PR_PAGE_COUNT, PR_DAMPENING_FACTOR" //list of environment variable keys that will be forwarded to the environment in the k8s deployment

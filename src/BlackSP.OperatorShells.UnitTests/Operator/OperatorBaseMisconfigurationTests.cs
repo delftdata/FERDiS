@@ -4,6 +4,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BlackSP.OperatorShells.UnitTests.Operator
 {
@@ -11,7 +12,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
     {
         class ExceptionBaseOperatorShell : TestBaseOperatorShell
         {
-            public override IEnumerable<IEvent> OperateOnEvent(IEvent @event)
+            public override Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
             {
                 throw new NotImplementedException();
             }

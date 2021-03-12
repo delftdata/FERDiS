@@ -24,18 +24,19 @@ namespace BlackSP.Core.UnitTests.Windows
             var testEvent4 = new TestEvent { Key = "key4", Value = 1 };
             Assert.IsEmpty(window.Events); //assert empty on start
 
-            var windowBeforeSlide = window.Insert(testEvent1, startTime); //first event arrives
+            bool didAdvance;
+            var windowBeforeSlide = window.Insert(testEvent1, startTime, out didAdvance); //first event arrives
             Assert.IsEmpty(windowBeforeSlide); //no resulting events unless window slides
 
-            windowBeforeSlide = window.Insert(testEvent2, startTime.Add(windowSlidingSize)); //second one arrives
+            windowBeforeSlide = window.Insert(testEvent2, startTime.Add(windowSlidingSize), out didAdvance); //second one arrives
             Assert.AreEqual(new TestEvent[] { testEvent1, testEvent2 }, window.Events);
             Assert.IsEmpty(windowBeforeSlide); //window didnt slide yet
 
-            windowBeforeSlide = window.Insert(testEvent3, startTime.Add(windowSize)); //third arrives and window slides
+            windowBeforeSlide = window.Insert(testEvent3, startTime.Add(windowSize), out didAdvance); //third arrives and window slides
             Assert.AreEqual(new TestEvent[] { testEvent1, testEvent2 }, windowBeforeSlide);
             Assert.AreEqual(new TestEvent[] { testEvent2, testEvent3 }, window.Events);
 
-            windowBeforeSlide = window.Insert(testEvent4, startTime.Add(2*windowSize)); //fourth arrives and window slides two steps ahead
+            windowBeforeSlide = window.Insert(testEvent4, startTime.Add(2*windowSize), out didAdvance); //fourth arrives and window slides two steps ahead
             Assert.AreEqual(new TestEvent[] { testEvent2, testEvent3 }, windowBeforeSlide);
             Assert.AreEqual(new TestEvent[] { testEvent4 }, window.Events);
         }
@@ -49,11 +50,12 @@ namespace BlackSP.Core.UnitTests.Windows
             var testEvent = new TestEvent { Key = "key", Value = 1 };
 
             Assert.IsEmpty(window.Events); //assert empty on start
+            bool didAdvance;
 
-            window.Insert(testEvent, startTime);
-            window.Insert(testEvent, startTime.AddMilliseconds(1));
-            window.Insert(testEvent, startTime.AddMilliseconds(2));
-            window.Insert(testEvent, startTime.AddMilliseconds(3));
+            window.Insert(testEvent, startTime, out didAdvance);
+            window.Insert(testEvent, startTime.AddMilliseconds(1), out didAdvance);
+            window.Insert(testEvent, startTime.AddMilliseconds(2), out didAdvance);
+            window.Insert(testEvent, startTime.AddMilliseconds(3), out didAdvance);
 
             Assert.AreEqual(4, window.Events.Count);
         }
@@ -68,15 +70,16 @@ namespace BlackSP.Core.UnitTests.Windows
             var testEvent = new TestEvent { Key = "key", Value = 1 };
             var testEvent2 = new TestEvent { Key = "key", Value = 1 };
             Assert.IsEmpty(window.Events); //assert empty on start
+            bool didAdvance;
 
-            window.Insert(testEvent, startTime);
-            window.Insert(testEvent, startTime.AddMilliseconds(1));
-            window.Insert(testEvent, startTime.AddMilliseconds(2));
-            var windowBeforeSlide = window.Insert(testEvent, startTime.AddMilliseconds(700));
+            window.Insert(testEvent, startTime, out didAdvance);
+            window.Insert(testEvent, startTime.AddMilliseconds(1), out didAdvance);
+            window.Insert(testEvent, startTime.AddMilliseconds(2), out didAdvance);
+            var windowBeforeSlide = window.Insert(testEvent, startTime.AddMilliseconds(700), out didAdvance);
             Assert.IsEmpty(windowBeforeSlide);
             Assert.AreEqual(4, window.Events.Count);
             //next insert causes sliding, leaving only the last event (of the last 4) and the new event
-            windowBeforeSlide = window.Insert(testEvent2, startTime.AddSeconds(1));
+            windowBeforeSlide = window.Insert(testEvent2, startTime.AddSeconds(1), out didAdvance);
             Assert.AreEqual(4, windowBeforeSlide.Count());
             Assert.AreEqual(2, window.Events.Count);
 

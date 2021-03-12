@@ -35,5 +35,17 @@ namespace BlackSP.Infrastructure.Builders
         /// </summary>
         /// <returns></returns>
         bool IsPipeline();
+
+        /// <summary>
+        /// Reconfigures the edge builder to create a backchannel configuration, use this to indicate channels that loop back upstream
+        /// </summary>
+        /// <returns></returns>
+        IEdgeBuilder AsBackchannel();
+
+        /// <summary>
+        /// Bool indicating wether the edge is marked as a backchannel
+        /// </summary>
+        /// <returns></returns>
+        bool IsBackchannel();
     }
 }

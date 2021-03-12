@@ -12,7 +12,7 @@ namespace BlackSP.Kernel.Operators
     public interface IOperatorShell
     {
 
-        IEnumerable<IEvent> OperateOnEvent(IEvent @event);
+        Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event, bool isCycleInput = false);
 
     }
 }

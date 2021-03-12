@@ -39,6 +39,11 @@ namespace BlackSP.Kernel.Endpoints
         bool IsPipeline { get; }
 
         /// <summary>
+        /// Indicator of endpoint being input from upstream
+        /// </summary>
+        bool IsBackchannel { get; }
+
+        /// <summary>
         /// Utility method to get a unique key string representing a single connection within the endpoint
         /// </summary>
         /// <param name="shardId"></param>

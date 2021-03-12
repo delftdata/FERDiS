@@ -53,7 +53,6 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
                 _testEvents.Add(new TestEvent {
                     Key = $"K{i}", 
                     Value = (byte)i, 
-                    EventTime = _startTime.AddMilliseconds(i) 
                 });
             }
         }
@@ -61,16 +60,18 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         [Test]
         public async Task AggregateOperator_EmitsAResultFromWindow()
         {
-            var results = _testEvents.SelectMany(e => _operator.OperateOnEvent(e)).ToArray();
+            var operations = _testEvents.Select(e => _operator.OperateOnEvent(e));
+            var results = (await Task.WhenAll(operations)).SelectMany(res => res);
             //insert extra event that is in the next window, closing the current window
 
             await Task.Delay(_windowSize);
             var windowCloser = new TestEvent
             {
                 Key = "K_closer",
-                Value = 10
+                Value = 10,
             };
-            var ok = _operator.OperateOnEvent(windowCloser);
+
+            var ok = await _operator.OperateOnEvent(windowCloser);
             Assert.IsFalse(results.Any());
             Assert.IsTrue(ok.Any());
             var windowResult = ok.First() as TestEvent2;

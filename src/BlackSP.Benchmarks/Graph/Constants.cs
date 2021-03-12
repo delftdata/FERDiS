@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Benchmarks.PageRank
+namespace BlackSP.Benchmarks.Graph
 {
     public class Constants
     {
@@ -12,6 +12,14 @@ namespace BlackSP.Benchmarks.PageRank
 
         public static readonly TimeSpan RankSumWindowSize = TimeSpan.FromSeconds(1);
         public static readonly TimeSpan RankSumWindowSlideSize = TimeSpan.FromSeconds(1);
+
+        public static readonly TimeSpan HopCountWindowSize = TimeSpan.FromMilliseconds(500);
+        public static readonly TimeSpan HopCountWindowSlideSize = TimeSpan.FromMilliseconds(500);
+
+        /// <summary>
+        /// The N in N-hop neighbours
+        /// </summary>
+        public static readonly int HopCountMax = 3;
 
         /// <summary>
         /// The maximum amount of epochs any streaming pagerank element will make

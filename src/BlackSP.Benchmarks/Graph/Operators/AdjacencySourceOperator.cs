@@ -1,5 +1,5 @@
-﻿using BlackSP.Benchmarks.PageRank.Events;
-using BlackSP.Benchmarks.PageRank.Models;
+﻿using BlackSP.Benchmarks.Graph.Events;
+using BlackSP.Benchmarks.Graph.Models;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using Serilog;
@@ -8,8 +8,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
-namespace BlackSP.Benchmarks.PageRank.Operators
+namespace BlackSP.Benchmarks.Graph.Operators
 {
     public class AdjacencySourceOperator : Kafka.KafkaConsumerBase<Adjacency>, ISourceOperator<AdjacencyEvent>
     {
@@ -23,6 +24,7 @@ namespace BlackSP.Benchmarks.PageRank.Operators
 
         public AdjacencyEvent ProduceNext(CancellationToken t)
         {
+            Task.Delay(1).Wait(); //TODO: remove nasty throttle
             var consumeResult = Consumer.Consume(t);
             if (consumeResult.IsPartitionEOF)
             {
@@ -34,7 +36,8 @@ namespace BlackSP.Benchmarks.PageRank.Operators
             return new AdjacencyEvent
             {
                 Key = adjacency.PageId.ToString(),
-                Adjacancy = adjacency
+                Adjacancy = adjacency,
+                EventTime = DateTime.Now
             };
         }
     }

@@ -1,6 +1,7 @@
 ﻿using BlackSP.Core.Handlers;
 using BlackSP.Core.Models;
 using BlackSP.Infrastructure.Layers.Data.Payloads;
+using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
@@ -16,22 +17,28 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
     {
 
         private readonly IOperatorShell _operatorShell;
+        private readonly ISource<DataMessage> _messageSource;
 
-        public OperatorEventHandler(IOperatorShell operatorShell)
+        public OperatorEventHandler(IOperatorShell operatorShell, ISource<DataMessage> messageSource)
         {
             _operatorShell = operatorShell ?? throw new ArgumentNullException(nameof(operatorShell));
+            _messageSource = messageSource ?? throw new ArgumentNullException(nameof(messageSource));
         }
 
-        protected override Task<IEnumerable<DataMessage>> Handle(EventPayload payload)
+        protected override async Task<IEnumerable<DataMessage>> Handle(EventPayload payload)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
-            IEnumerable<DataMessage> result = _operatorShell.OperateOnEvent(payload.Event).Select(ev =>
+
+            var (endpointConfig, shardId) = _messageSource.MessageOrigin;
+
+            var events = await _operatorShell.OperateOnEvent(payload.Event, endpointConfig.IsBackchannel).ConfigureAwait(false);
+            IEnumerable<DataMessage> result = events.Select(ev =>
             {
-                var res = new DataMessage(AssociatedMessage.CreatedAtUtc, AssociatedMessage.MetaData, ev.GetPartitionKey());
+                var res = new DataMessage(AssociatedMessage.CreatedAtUtc, AssociatedMessage.MetaData, ev.Key != null ? ev.GetPartitionKey() : (int?)null);
                 res.AddPayload(new EventPayload { Event = ev });
                 return res;
-            }).ToList(); // remove materialisation?
-            return Task.FromResult(result);
+            });
+            return result;
         }
     }
 }

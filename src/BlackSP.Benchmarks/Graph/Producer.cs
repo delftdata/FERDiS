@@ -1,5 +1,5 @@
 ﻿using BlackSP.Benchmarks.Kafka;
-using BlackSP.Benchmarks.PageRank.Models;
+using BlackSP.Benchmarks.Graph.Models;
 using Confluent.Kafka;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Benchmarks.PageRank
+namespace BlackSP.Benchmarks.Graph
 {
     /// <summary>
     /// Produces Pagerank data from a provided file containing edge (int, int) pairs

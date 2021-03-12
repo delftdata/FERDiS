@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Benchmarks.PageRank.Models
+namespace BlackSP.Benchmarks.Graph.Models
 {
 
     /// <summary>
