@@ -33,9 +33,9 @@ namespace BlackSP.Benchmarks.Graph.Operators
             {
                 _results[key] = neighbour.Hops;
 
-                if(neighbour.Hops > 1) //to prevent logging trivial results
+                if(Constants.LogNhopOutput)
                 {
-                    _logger.Information($"NHop: [{neighbour.FromId:D4}, {neighbour.ToId:D4}] = {neighbour.Hops}");
+                    _logger.Information($"NHop: [{neighbour.FromId:D6}, {neighbour.ToId:D6}] = {neighbour.Hops}");
                 }
             }
         }

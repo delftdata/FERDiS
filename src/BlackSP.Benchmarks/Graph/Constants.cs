@@ -22,6 +22,11 @@ namespace BlackSP.Benchmarks.Graph
         public static readonly int HopCountMax = 3;
 
         /// <summary>
+        /// Wether to show nhop result tuples in the logs
+        /// </summary>
+        public static readonly bool LogNhopOutput = false;
+
+        /// <summary>
         /// The maximum amount of epochs any streaming pagerank element will make
         /// </summary>
         public static readonly int MaxEpochCount = 100;

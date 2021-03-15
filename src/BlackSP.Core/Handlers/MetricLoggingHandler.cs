@@ -45,7 +45,7 @@ namespace BlackSP.Core.Handlers
                 var latencyMin = _latencyMillis.Min();
                 var latencyMax = _latencyMillis.Max();
                 var latencyAvg = (int)_latencyMillis.Average();
-                _logger.Information($"Metrics [from:{_metricWindowStart:HH:mm:ss:FFF}] [to:{now:HH:mm:ss:FFF}] [tp:{throughput}] [lat-min:{latencyMin}] [lat-avg:{latencyAvg}] [lat-max:{latencyMax}]");
+                _logger.Information($"Metrics [from:{_metricWindowStart:HH:mm:ss:fff}] [to:{now:HH:mm:ss:fff}] [tp:{throughput}] [lat-min:{latencyMin}] [lat-avg:{latencyAvg}] [lat-max:{latencyMax}]");
                 _metricWindowStart = default;
             }
 

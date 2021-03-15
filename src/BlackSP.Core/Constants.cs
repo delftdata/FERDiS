@@ -20,7 +20,7 @@ namespace BlackSP.Core
         /// <summary>
         /// Interval atwhich metrics are logged
         /// </summary>
-        public const int MetricIntervalSeconds = 1;
+        public const int MetricIntervalSeconds = 5;
 
         /// <summary>
         /// When set to true will skip processor start checks

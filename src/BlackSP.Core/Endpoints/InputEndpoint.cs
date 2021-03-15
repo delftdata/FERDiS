@@ -77,8 +77,8 @@ namespace BlackSP.Core.Endpoints
                 var pipe = s.UsePipe(cancellationToken: callerOrExceptionSource.Token);
                 using PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
                 using PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for flush requests
-                var readerThread = Task.Run(() => ReadMessagesFromStream(streamReader, passthroughQueue, remoteShardId, callerOrExceptionSource.Token));
-                var deserializerThread = Task.Run(() => DeserializeToReceiver(streamWriter, passthroughQueue, remoteShardId, callerOrExceptionSource.Token));
+                var readerThread = ReadMessagesFromStream(streamReader, passthroughQueue, remoteShardId, callerOrExceptionSource.Token);
+                var deserializerThread = DeserializeToReceiver(streamWriter, passthroughQueue, remoteShardId, callerOrExceptionSource.Token);
                 var exitedTask = await Task.WhenAny(deserializerThread, readerThread).ConfigureAwait(false);
                 await exitedTask.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
             }

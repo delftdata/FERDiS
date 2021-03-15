@@ -10,7 +10,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
 {
     public class RandomEdgeSourceOperator : ISourceOperator<HopEvent>
     {
-        static int TotalVertexCount = 10000;
+        static int TotalVertexCount = 100000;
 
         public HopEvent ProduceNext(CancellationToken t)
         {
@@ -18,17 +18,17 @@ namespace BlackSP.Benchmarks.Graph.Operators
 
 
             Random r = new Random();
-            int fromId = r.Next(0, TotalVertexCount);
+            int fromId = r.Next(1, TotalVertexCount);
             int toId = fromId;
 
             while(toId == fromId)
             {
-                toId = r.Next(0, TotalVertexCount); //re-roll untill different
+                toId = r.Next(1, TotalVertexCount); //re-roll untill different
             }
 
             return new HopEvent
             {
-                Key = "",
+                Key = fromId.ToString(),
                 Neighbour = new Models.Neighbour
                 {
                     FromId = fromId,

@@ -74,8 +74,8 @@ namespace BlackSP.Core.Endpoints
                 using PipeStreamReader reader = new PipeStreamReader(pipe.Input);
                 using SemaphoreSlim queueAccess = new SemaphoreSlim(1, 1);
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
-                var writingThread = Task.Run(() => StartWritingOutput(writer, remoteShardId, queueAccess, callerOrExceptionSource.Token));
-                var readingThread = Task.Run(() => StartFlushRequestListener(reader, remoteShardId, queueAccess, callerOrExceptionSource.Token));
+                var writingThread = StartWritingOutput(writer, remoteShardId, queueAccess, callerOrExceptionSource.Token);
+                var readingThread = StartFlushRequestListener(reader, remoteShardId, queueAccess, callerOrExceptionSource.Token);
                 var exitedThread = await Task.WhenAny(writingThread, readingThread).ConfigureAwait(false);
                 await exitedThread.ConfigureAwait(false);
             }

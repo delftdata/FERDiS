@@ -44,7 +44,7 @@ namespace BlackSP.Core.Sources
             lockObj = new object();
         }
 
-        public Task<TMessage> Take(CancellationToken t) => TakeWithoutPriority(t);
+        public Task<TMessage> Take(CancellationToken t) => TakeWithPriority(t);
 
         private Task<TMessage> TakeWithoutPriority(CancellationToken t)
         {
@@ -66,24 +66,23 @@ namespace BlackSP.Core.Sources
             var activeQueuePairs = _msgQueues.Where(kv => !_blockedConnections.Contains(kv.Key));
 
             var priorityConnectionKeys = _vertexConfiguration.InputEndpoints.Where(ie => ie.IsBackchannel).SelectMany(ie => ie.GetAllConnectionKeys());
-            var activeNonPrioQueues = activeQueuePairs.Where(kv => !priorityConnectionKeys.Contains(kv.Key));
             var activePrioQueues = activeQueuePairs.Where(kv => priorityConnectionKeys.Contains(kv.Key));
 
             TMessage message = default;
 
             int takenIndex = -1;
             string takenConnectionKey = string.Empty;
-            if (activePrioQueues.Any(q => q.Value.UnderlyingCollection.Any()))
+            if (activePrioQueues.Select(q => q.Value.UnderlyingCollection).Any(queue => (queue.Count / (double)queue.BoundedCapacity) > 0.20d)) //any prio queue over 20% full? then take from those
             {
-                takenIndex = BlockingCollection<TMessage>.TryTakeFromAny(activePrioQueues.Select(kv => kv.Value.UnderlyingCollection).ToArray(), out message, 1, t);
-                takenConnectionKey = activePrioQueues.ElementAt(takenIndex == -1 ? 0 : takenIndex).Key;
+                takenIndex = BlockingCollection<TMessage>.TakeFromAny(activePrioQueues.Select(kv => kv.Value.UnderlyingCollection).ToArray(), out message, t);
+                takenConnectionKey = activePrioQueues.ElementAt(takenIndex).Key;
+            } 
+            else //else, take from any input channel
+            {
+                takenIndex = BlockingCollection<TMessage>.TakeFromAny(activeQueuePairs.Select(kv => kv.Value.UnderlyingCollection).ToArray(), out message, t);
+                takenConnectionKey = activeQueuePairs.ElementAt(takenIndex).Key;
             }
 
-            if (takenIndex == -1)
-            {
-                takenIndex = BlockingCollection<TMessage>.TakeFromAny(activeNonPrioQueues.Select(kv => kv.Value.UnderlyingCollection).ToArray(), out message, t);
-                takenConnectionKey = activeNonPrioQueues.ElementAt(takenIndex).Key;
-            }
             MessageOrigin = _originDictionary[takenConnectionKey];
             return Task.FromResult(message);
         }
@@ -148,7 +147,9 @@ namespace BlackSP.Core.Sources
                 {
                     int shardId = i;
                     var connectionKey = config.GetConnectionKey(shardId);
-                    _msgQueues[connectionKey] = new BlockingFlushableQueue<TMessage>(config.IsBackchannel ? int.MaxValue : Constants.DefaultThreadBoundaryQueueSize);
+                    //_msgQueues[connectionKey] = new BlockingFlushableQueue<TMessage>(config.IsBackchannel ? int.MaxValue : Constants.DefaultThreadBoundaryQueueSize);
+                    _msgQueues[connectionKey] = new BlockingFlushableQueue<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+
                     _originDictionary[connectionKey] = (config, shardId);
                 }
             }

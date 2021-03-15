@@ -46,34 +46,18 @@ namespace BlackSP.Benchmarks.Graph
 
         public static void NHop(IVertexGraphBuilder builder)
         {
-            var source = builder.AddSource<RandomEdgeSourceOperator, HopEvent>(1);//builder.AddSource<AdjacencySourceOperator, AdjacencyEvent>(1);
+            var source = builder.AddSource<RandomEdgeSourceOperator, HopEvent>(2);
 
-
-            var hopUpdateMapper = builder.AddMap<HopCountUpdateMapOperator, HopEvent, HopEvent>(1);
-
-            var hopAggregate = builder.AddAggregate<HopCountAggregateOperator, HopEvent, HopEvent>(1);
-            //var subsampler = builder.AddFilter<SamplerFilterOperator, HopEvent>(1);
+            var partitionMapper = builder.AddMap<HopCountPartitionMapper, HopEvent, HopEvent>(2);
+            var repartitionMapper = builder.AddMap<HopCountRepartitionMapper, HopEvent, HopEvent>(2);
             
-            var sink = builder.AddSink<HopCountSinkOperator, HopEvent>(1);
+            var sink = builder.AddSink<HopCountSinkOperator, HopEvent>(2);
 
-            
-            
-            source.Append(hopUpdateMapper);
-            
-            hopUpdateMapper.Append(hopAggregate);
-            hopAggregate.Append(hopUpdateMapper).AsBackchannel(); //mark edge that closes loop as backchannel, needed for distributed deadlock avoidance
-
-            //subsampler.Append(hopUpdateMapper); 
-
-            hopUpdateMapper.Append(sink);
-            
-
-            //source.Append(hopAggregate);
-
-            //hopUpdateMapper.Append(hopAggregate);
-            //hopAggregate.Append(hopUpdateMapper);
-
-            //hopUpdateMapper.Append(sink);
+            source.Append(partitionMapper);
+            partitionMapper.Append(repartitionMapper);
+            repartitionMapper.Append(partitionMapper).AsBackchannel(); 
+            repartitionMapper.Append(sink);
+           
 
         }
     }
