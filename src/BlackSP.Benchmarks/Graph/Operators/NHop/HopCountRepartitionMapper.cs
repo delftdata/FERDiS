@@ -60,7 +60,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
                         yield return new HopEvent { Key = toId.ToString(), EventTime = DateTime.Now, Neighbour = nbout };
                     }
                 }
-                _neighbourDict[nb.ToId] = new Dictionary<int, int>();
+                //_neighbourDict[nb.ToId] = new Dictionary<int, int>();
             }            
         }
 

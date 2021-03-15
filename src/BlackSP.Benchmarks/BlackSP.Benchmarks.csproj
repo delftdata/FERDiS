@@ -25,9 +25,5 @@
     <ProjectReference Include="..\BlackSP.CRA\BlackSP.CRA.csproj" />
     <ProjectReference Include="..\BlackSP.Simulator\BlackSP.Simulator.csproj" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="NHop\" />
-  </ItemGroup>
 
 </Project>
