@@ -59,36 +59,9 @@ namespace BlackSP.Core.Dispatchers
 
             foreach(var targetConnectionKey in _partitioner.Partition(message))
             {
-                QueueForDispatch(targetConnectionKey, bytes, t);
-            }
-        }
-
-        private void QueueForDispatch(string targetConnectionKey, byte[] bytes, CancellationToken t)
-        {
-            var outputQueue = _outputQueues.Get(targetConnectionKey);
-            
-        RETRY:
-            var ct = new CancellationTokenSource(500);
-            var lct = CancellationTokenSource.CreateLinkedTokenSource(t, ct.Token);
-            try
-            {
+                var outputQueue = _outputQueues.Get(targetConnectionKey);
                 outputQueue.Add(bytes, t);
-                ct.Dispose();
-                lct.Dispose();
-            } 
-            catch(OperationCanceledException) when (ct.IsCancellationRequested) {
-                _logger.Debug($"Suspecting full dispatch queue with target key: {targetConnectionKey}, trying again.");
-                ct.Dispose();
-                lct.Dispose();
-                goto RETRY;
             }
-            catch (OperationCanceledException) when (t.IsCancellationRequested)
-            {
-                ct.Dispose();
-                lct.Dispose();
-                throw;
-            }
-            
         }
 
         private void InitializeQueues()
