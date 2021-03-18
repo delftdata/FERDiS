@@ -127,7 +127,7 @@ namespace BlackSP.Core.Processors
                     var results = await _pipeline.Process(message).ConfigureAwait(false);
                     foreach (var msg in results)
                     {
-                        _logger.Verbose($"Adding message to dispatch thread queue (current queue size: {dispatchChannel.Reader.Count})");
+                        //_logger.Verbose($"Adding message to dispatch thread queue (current queue size: {dispatchChannel.Reader.Count})");
                         await dispatchChannel.Writer.WriteAsync(msg, t).ConfigureAwait(false);
                     }
                 }

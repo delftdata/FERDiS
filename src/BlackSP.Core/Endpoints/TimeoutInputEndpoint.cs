@@ -143,7 +143,9 @@ namespace BlackSP.Core.Endpoints
                 {
                     throw new Exception("unexpected null message from deserializer");//TODO: custom exception?
                 }
-                _receiver.GetReceptionQueue(_endpointConfig, shardId).Add(message, t);
+                //_receiver.GetReceptionQueue(_endpointConfig, shardId).Add(message, t);
+
+                throw new NotImplementedException();
             }
         }
 

@@ -1,9 +1,11 @@
-﻿using BlackSP.Core.Extensions;
+﻿using BlackSP.Core.Exceptions;
+using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Serialization;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
@@ -11,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.Sources
@@ -20,32 +23,65 @@ namespace BlackSP.Core.Sources
     /// Sorts and orders input based on message types to be consumed one-by-one.
     /// </summary>
     public sealed class ReceiverMessageSource<TMessage> : IReceiver<TMessage>, ISource<TMessage>, IDisposable
-        where TMessage : IMessage
+        where TMessage : class, IMessage
     {
         public (IEndpointConfiguration, int) MessageOrigin { get; private set; }
 
+        private readonly IObjectSerializer _serializer;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ILogger _logger;
         private IDictionary<string, (IEndpointConfiguration, int)> _originDictionary;
-        private IDictionary<string, BlockingFlushableQueue<TMessage>> _msgQueues;
+        private IDictionary<string, TaskCompletionSource<bool>> _flushDictionary;
+
+        private SemaphoreSlim _semaphorePriorityHigh;
+        private SemaphoreSlim _semaphorePriorityLow;
+        private SemaphoreSlim _semaphoreNextAccess;
+
+        private Channel<(TMessage, IEndpointConfiguration, int)> _channel;
+
         private List<string> _blockedConnections;
 
         private readonly object lockObj;
         private bool disposedValue;
 
-        public ReceiverMessageSource(IVertexConfiguration vertexConfiguration, ILogger logger)
+
+        public ReceiverMessageSource(IObjectSerializer serializer, IVertexConfiguration vertexConfiguration, ILogger logger)
         {
+            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _msgQueues = new Dictionary<string, BlockingFlushableQueue<TMessage>>();
             _originDictionary = new Dictionary<string, (IEndpointConfiguration, int)>();
+            _flushDictionary = new Dictionary<string, TaskCompletionSource<bool>>();
+
+            _semaphorePriorityHigh = new SemaphoreSlim(1, 1);
+            _semaphorePriorityLow = new SemaphoreSlim(1, 1);
+            _semaphoreNextAccess = new SemaphoreSlim(1, 1);
+
             InitialiseDataStructures();
+            
             _blockedConnections = new List<string>();
             lockObj = new object();
+
+            //note single capacity
+            _channel = Channel.CreateBounded<(TMessage, IEndpointConfiguration, int)>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.Wait });
         }
 
-        public Task<TMessage> Take(CancellationToken t) => TakeWithPriority(t);
+        public async Task<TMessage> Take(CancellationToken t)
+        {
+            if(await _channel.Reader.WaitToReadAsync(t))
+            {
+                var (msg, origin, shard) = await _channel.Reader.ReadAsync(t);
+                MessageOrigin = (origin, shard);
+                return msg;
+            } 
+            else
+            {
+                throw new InvalidOperationException($"{nameof(ReceiverMessageSource<TMessage>)} internal channel was completed, this yields an invalid program state");
+            }
+            
+        }
 
+#if false
         private Task<TMessage> TakeWithoutPriority(CancellationToken t)
         {
             var activeQueuePairs = _msgQueues.Where(kv => !_blockedConnections.Contains(kv.Key));
@@ -60,7 +96,6 @@ namespace BlackSP.Core.Sources
         }
 
 
-        [Obsolete]
         private Task<TMessage> TakeWithPriority(CancellationToken t)
         {
             var activeQueuePairs = _msgQueues.Where(kv => !_blockedConnections.Contains(kv.Key));
@@ -96,6 +131,42 @@ namespace BlackSP.Core.Sources
                 return _msgQueues[connectionKey];
             }
         }
+#endif
+        public async Task Receive(byte[] message, IEndpointConfiguration origin, int shardId, CancellationToken t)
+        {
+            //TODO: consider priority reception
+
+            _ = message ?? throw new ArgumentNullException(nameof(message));
+            _ = origin ?? throw new ArgumentNullException(nameof(origin));
+            var connectionKey = origin.GetConnectionKey(shardId);
+            
+            //handle non-deserializable flush message
+            if(message.IsFlushMessage())
+            {
+                _flushDictionary.Get(connectionKey).SetResult(true);
+                _flushDictionary.Remove(connectionKey);
+                return;
+            }
+
+            //do deserialization
+            var dserializedMsg = await _serializer.DeserializeAsync<TMessage>(message, t).ConfigureAwait(false);
+
+            //then keep trying to write to the source channel
+            while (await _channel.Writer.WaitToWriteAsync(t))
+            {
+                if (_flushDictionary.ContainsKey(connectionKey))
+                {
+                    throw new FlushInProgressException();
+                }
+
+                if(!_blockedConnections.Contains(connectionKey))
+                {
+                    await _channel.Writer.WriteAsync((dserializedMsg, origin, shardId), t);
+                    break;
+                }
+                //blocked? then loop for a next attempt to write to the channel
+            }
+        }
 
         public async Task Flush(IEnumerable<string> instanceNamesToFlush)
         {
@@ -105,7 +176,9 @@ namespace BlackSP.Core.Sources
             {
                 if(instanceNamesToFlush.Contains(endpoint.GetRemoteInstanceName(shardId)))
                 {
-                    flushes.Add(_msgQueues[endpoint.GetConnectionKey(shardId)].BeginFlush());
+                    var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    _flushDictionary.Add(endpoint.GetConnectionKey(shardId), tcs);
+                    flushes.Add(tcs.Task);
                 }
             }
             if(flushes.Count != instanceNamesToFlush.Count())
@@ -147,15 +220,12 @@ namespace BlackSP.Core.Sources
                 {
                     int shardId = i;
                     var connectionKey = config.GetConnectionKey(shardId);
-                    //_msgQueues[connectionKey] = new BlockingFlushableQueue<TMessage>(config.IsBackchannel ? int.MaxValue : Constants.DefaultThreadBoundaryQueueSize);
-                    _msgQueues[connectionKey] = new BlockingFlushableQueue<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
-
                     _originDictionary[connectionKey] = (config, shardId);
                 }
             }
         }
 
-        #region dispose pattern
+#region dispose pattern
         private void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -163,10 +233,6 @@ namespace BlackSP.Core.Sources
                 if (disposing)
                 {
                     // TODO: dispose managed state (managed objects)
-                    foreach(var queue in _msgQueues.Values)
-                    {
-                        queue.Dispose();
-                    }
                 }
 
                 disposedValue = true;
@@ -180,6 +246,6 @@ namespace BlackSP.Core.Sources
             GC.SuppressFinalize(this);
         }
 
-        #endregion
+#endregion
     }
 }

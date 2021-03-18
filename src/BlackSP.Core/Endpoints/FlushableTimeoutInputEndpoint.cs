@@ -29,7 +29,6 @@ namespace BlackSP.Core.Endpoints
         /// <returns></returns>
         public delegate FlushableTimeoutInputEndpoint<TMessage> Factory(string endpointName);
 
-        private readonly IObjectSerializer _serializer;
         private readonly IReceiver<TMessage> _receiver;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
@@ -37,12 +36,10 @@ namespace BlackSP.Core.Endpoints
 
         public FlushableTimeoutInputEndpoint(string endpointName,
                              IVertexConfiguration vertexConfig,
-                             IObjectSerializer serializer,
                              IReceiver<TMessage> receiver,
                              ConnectionMonitor connectionMonitor,
                              ILogger logger)
         {
-            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _receiver = receiver ?? throw new ArgumentNullException(nameof(receiver));
 
             _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
@@ -103,34 +100,19 @@ namespace BlackSP.Core.Endpoints
 
         private async Task ReadMessagesFromStream(PipeStreamReader streamReader, int shardId, ChannelWriter<byte[]> controlQueue, CancellationToken callerToken)
         {
-            var receptionQueue = _receiver.GetReceptionQueue(_endpointConfig, shardId);
+            //var receptionQueue = _receiver.GetReceptionQueue(_endpointConfig, shardId);
             while (!callerToken.IsCancellationRequested)
             {
                 try
                 {
-                    using var timeoutSource = new CancellationTokenSource(1000); //to ensure at least once a second we check if flushing started
-                    using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(callerToken, timeoutSource.Token);
-                    byte[] msg;
-                    try
-                    {
-                        msg = await streamReader.ReadNextMessage(linkedSource.Token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
-                    {
-                        receptionQueue.ThrowIfFlushingStarted();
-                        continue;
-                    }
-
+                    var msg = await streamReader.ReadNextMessage(callerToken).ConfigureAwait(false);
                     if (msg.IsKeepAliveMessage())
                     {
                         _logger.Verbose($"Keepalive message received on input endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
                     }
                     else
                     {
-                        //actual deserialization and adding to reception queue..
-                        TMessage message = await _serializer.DeserializeAsync<TMessage>(msg, callerToken).ConfigureAwait(false)
-                            ?? throw new Exception("unexpected null message from deserializer");//TODO: custom exception?
-                        receptionQueue.Add(message, callerToken);
+                        await _receiver.Receive(msg, _endpointConfig, shardId, callerToken).ConfigureAwait(false);
                     }
                 }
                 catch (FlushInProgressException)
@@ -143,7 +125,7 @@ namespace BlackSP.Core.Endpoints
                         msg = await streamReader.ReadNextMessage(callerToken).ConfigureAwait(false); //keep taking until flush message returns from upstream
                     }
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
-                    await receptionQueue.EndFlush().ConfigureAwait(false);
+                    await _receiver.Receive(msg, _endpointConfig, shardId, callerToken).ConfigureAwait(false);
                     _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
                 }
             }

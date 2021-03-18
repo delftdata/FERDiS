@@ -13,6 +13,7 @@ using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +30,6 @@ namespace BlackSP.Core.Endpoints
         /// <returns></returns>
         public delegate InputEndpoint<TMessage> Factory(string endpointName);
 
-        private readonly IObjectSerializer _serializer;
         private readonly IReceiver<TMessage> _receiver;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
@@ -37,12 +37,10 @@ namespace BlackSP.Core.Endpoints
 
         public InputEndpoint(string endpointName,
                              IVertexConfiguration vertexConfig,
-                             IObjectSerializer serializer,
                              IReceiver<TMessage> receiver,
                              ConnectionMonitor connectionMonitor,
                              ILogger logger)
         {
-            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _receiver = receiver ?? throw new ArgumentNullException(nameof(receiver));
 
             _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
@@ -74,13 +72,8 @@ namespace BlackSP.Core.Endpoints
                 _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} starting read & deserialize threads. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.GetRemoteInstanceName(remoteShardId)}\"");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
 
-                var pipe = s.UsePipe(cancellationToken: callerOrExceptionSource.Token);
-                using PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
-                using PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for flush requests
-                var readerThread = ReadMessagesFromStream(streamReader, passthroughQueue, remoteShardId, callerOrExceptionSource.Token);
-                var deserializerThread = DeserializeToReceiver(streamWriter, passthroughQueue, remoteShardId, callerOrExceptionSource.Token);
-                var exitedTask = await Task.WhenAny(deserializerThread, readerThread).ConfigureAwait(false);
-                await exitedTask.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
+                IDuplexPipe pipe = s.UsePipe(cancellationToken: callerOrExceptionSource.Token);
+                await ReceiveMessages(pipe, remoteShardId, callerOrExceptionSource.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
             {
@@ -100,32 +93,18 @@ namespace BlackSP.Core.Endpoints
             }
         }
 
-        private async Task ReadMessagesFromStream(PipeStreamReader streamReader, BlockingCollection<byte[]> passthroughQueue, int shardId, CancellationToken t)
+        private async Task ReceiveMessages(IDuplexPipe pipe, int shardId, CancellationToken t)
         {
-            //IFlushableQueue<TMessage> receptionQueue = _receiver.GetReceptionQueue(_endpointConfig, shardId);
+            using PipeStreamReader reader = new PipeStreamReader(pipe.Input);
+            using PipeStreamWriter writer = new PipeStreamWriter(pipe.Output, true); //backchannel for flush requests
+
             while (!t.IsCancellationRequested)
             {
-                var msg = await streamReader.ReadNextMessage(t).ConfigureAwait(false);
-                passthroughQueue.Add(msg, t);
-            }
-            t.ThrowIfCancellationRequested();
-        }
 
-        private async Task DeserializeToReceiver(PipeStreamWriter writer, BlockingCollection<byte[]> passthroughQueue, int shardId, CancellationToken t)
-        {
-            var receptionQueue = _receiver.GetReceptionQueue(_endpointConfig, shardId);
-            while(!t.IsCancellationRequested)
-            {
                 try
                 {
-                    if (passthroughQueue.TryTake(out var bytes, 1000))
-                    {
-                        //actual deserialization and adding to reception queue..
-                        TMessage message = await _serializer.DeserializeAsync<TMessage>(bytes, t).ConfigureAwait(false)
-                            ?? throw new Exception("unexpected null message from deserializer");//TODO: custom exception?
-                        receptionQueue.Add(message, t);
-                    }
-                    receptionQueue.ThrowIfFlushingStarted();
+                    var msg = await reader.ReadNextMessage(t).ConfigureAwait(false);
+                    await _receiver.Receive(msg, _endpointConfig, shardId, t).ConfigureAwait(false);
                 }
                 catch (FlushInProgressException)
                 {
@@ -135,14 +114,14 @@ namespace BlackSP.Core.Endpoints
                     byte[] msg = null;
                     while (msg == null || !msg.IsFlushMessage())
                     {
-                        msg = passthroughQueue.Take(t); //keep taking until flush message returns from upstream
+                        msg = msg = await reader.ReadNextMessage(t).ConfigureAwait(false); //keep reading&discarding until flush message returns from upstream
                     }
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
-                    await receptionQueue.EndFlush().ConfigureAwait(false);
+                    await _receiver.Receive(msg, _endpointConfig, shardId, t).ConfigureAwait(false);
                     _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
                 }
             }
-
+            t.ThrowIfCancellationRequested();
         }
 
         #region IDisposable Support

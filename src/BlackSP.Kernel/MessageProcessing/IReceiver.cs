@@ -6,20 +6,23 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BlackSP.Kernel
 {
 
     public interface IReceiver<TMessage>
     {
+
         /// <summary>
-        /// Get a receptionqueue that is associated with this receiver. This queue should only be filled.
-        /// References are adviced not to be kept as the collection itself may internally be overwritten.
+        /// Receive a message
         /// </summary>
         /// <param name="message"></param>
         /// <param name="origin"></param>
         /// <param name="shardId"></param>
-        IFlushableQueue<TMessage> GetReceptionQueue(IEndpointConfiguration origin, int shardId);
+        /// <param name="t"></param>
+        /// <returns></returns>
+        Task Receive(byte[] message, IEndpointConfiguration origin, int shardId, CancellationToken t);
 
         /// <summary>
         /// Block incoming messages from specified origin

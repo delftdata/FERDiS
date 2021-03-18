@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Kernel
@@ -29,7 +30,7 @@ namespace BlackSP.Kernel
         /// <param name="endpointName"></param>
         /// <param name="shardId"></param>
         /// <returns></returns>
-        IFlushableQueue<byte[]> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId);
+        IFlushable<Channel<byte[]>> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId);
 
         /// <summary>
         /// Empty all dispatch queues

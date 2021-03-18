@@ -27,9 +27,8 @@ namespace BlackSP.OperatorShells
         public sealed override async Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
-
+            await Task.Yield();
             var closedWindow = UpdateAllWindows(@event, out bool windowDidAdvance);
-            
             return OperateWithUpdatedWindows(@event, closedWindow, windowDidAdvance) ?? throw new Exception("OperateWithUpdatedWindows returned null, expected IEnumerable");            
         }
 

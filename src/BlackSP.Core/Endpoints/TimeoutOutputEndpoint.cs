@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.Endpoints
@@ -111,7 +112,7 @@ namespace BlackSP.Core.Endpoints
         /// <param name="msgQueue"></param>
         /// <param name="t"></param>
         /// <returns></returns>
-        private async Task StartWritingOutputWithKeepAlive(PipeStreamWriter writer, IFlushableQueue<byte[]> msgQueue, int pingFrequencySeconds, CancellationToken t)
+        private async Task StartWritingOutputWithKeepAlive(PipeStreamWriter writer, IFlushable<Channel<byte[]>> msgQueue, int pingFrequencySeconds, CancellationToken t)
         {
             var lastPingOffset = DateTimeOffset.Now.AddSeconds(-pingFrequencySeconds);
             while (!t.IsCancellationRequested)
@@ -122,16 +123,26 @@ namespace BlackSP.Core.Endpoints
                 var timeTillNextPing = nextPingOffset - DateTimeOffset.Now;
                 var msTillNextPing = Math.Max(0, (int)timeTillNextPing.TotalMilliseconds); //note truncation due to cast (basically flooring the value)
 
+                using var timeoutSource = new CancellationTokenSource(msTillNextPing);
+                using var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
                 byte[] message;
-                if (msTillNextPing == 0 || !msgQueue.TryTake(out message, msTillNextPing, t))
-                {   //either there are no more miliseconds to wait for the next ping --> (time for another ping)
-                    //or we couldnt fetch a message from the queue before those milliseconds passed --> (time for another ping)
+                try
+                {
+                    if(msTillNextPing == 0)
+                    {
+                        timeoutSource.Cancel(); //ensure cancellation in this case to keep sending keep-alive messages
+                    }
+                    message = await msgQueue.UnderlyingCollection.Reader.ReadAsync(lcts.Token).ConfigureAwait(false);
+                } 
+                catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
+                {
                     message = ControlMessageExtensions.ConstructKeepAliveMessage();
                     lastPingOffset = DateTimeOffset.Now;
                     _logger.Verbose($"PING prepared on output endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
                 }
+                
                 await writer.WriteMessage(message, t).ConfigureAwait(false);
-                if (message.IsKeepAliveMessage()) //ensure flushing to network to prevent keepalive message getting suck in the output buffer, eventually causing a timeout
+                if (message.IsKeepAliveMessage()) //ensure flushing to network to prevent keepalive message getting suck in the output buffer, potentially causing a timeout
                 {
                     _logger.Verbose($"PING force-sending on output endpoint: {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}");
                     await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);

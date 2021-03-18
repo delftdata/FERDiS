@@ -56,7 +56,7 @@ namespace BlackSP.Simulator.Core
                 _vertexCancellationSources.Add(instanceName, ctSource);
                 try
                 {
-                    await Task.Run(() => v.StartAs(instanceName, ctSource.Token)).ConfigureAwait(false);
+                    await v.StartAs(instanceName, ctSource.Token).ConfigureAwait(false);
                     return;
                 }
                 catch (OperationCanceledException)

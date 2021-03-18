@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.Dispatchers
@@ -27,7 +28,7 @@ namespace BlackSP.Core.Dispatchers
         private readonly IPartitioner<IMessage> _partitioner;
         private readonly ILogger _logger;
 
-        private readonly IDictionary<string, IFlushableQueue<byte[]>> _outputQueues;
+        private readonly IDictionary<string, FlushableChannel<byte[]>> _outputQueues;
         private readonly IDictionary<string, (IEndpointConfiguration, int)> _originDict;
         public PartitioningMessageDispatcher(IVertexConfiguration vertexConfiguration,
                                  IObjectSerializer serializer,
@@ -39,15 +40,16 @@ namespace BlackSP.Core.Dispatchers
             _partitioner = partitioner ?? throw new ArgumentNullException(nameof(serializer));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _outputQueues = new Dictionary<string, IFlushableQueue<byte[]>>();
+            _outputQueues = new Dictionary<string, FlushableChannel<byte[]>>();
             _originDict = new Dictionary<string, (IEndpointConfiguration, int)>();
             InitializeQueues();
         }
-        
-        public IFlushableQueue<byte[]> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId)
+       
+
+        public IFlushable<Channel<byte[]>> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId)
         {
             _ = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
-            string endpointKey =  endpoint.GetConnectionKey(shardId);
+            string endpointKey = endpoint.GetConnectionKey(shardId);
             return _outputQueues.Get(endpointKey);
         }
 
@@ -60,7 +62,7 @@ namespace BlackSP.Core.Dispatchers
             foreach(var targetConnectionKey in _partitioner.Partition(message))
             {
                 var outputQueue = _outputQueues.Get(targetConnectionKey);
-                outputQueue.Add(bytes, t);
+                await outputQueue.UnderlyingCollection.Writer.WriteAsync(bytes, t);
             }
         }
 
@@ -73,7 +75,7 @@ namespace BlackSP.Core.Dispatchers
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
                     var connectionKey = endpointConfig.GetConnectionKey(shardId);
-                    _outputQueues.Add(connectionKey, new BlockingFlushableQueue<byte[]>(Constants.DefaultThreadBoundaryQueueSize));
+                    _outputQueues.Add(connectionKey, new FlushableChannel<byte[]>(Constants.DefaultThreadBoundaryQueueSize));
                     _originDict.Add(connectionKey, (endpointConfig, shardId));
                 }
             }
@@ -88,7 +90,7 @@ namespace BlackSP.Core.Dispatchers
 
         }
 
-        private IEnumerable<IFlushableQueue<byte[]>> GetQueuesByInstanceNames(IEnumerable<string> instanceNames)
+        private IEnumerable<FlushableChannel<byte[]>> GetQueuesByInstanceNames(IEnumerable<string> instanceNames)
         {
             return _outputQueues.Where(p =>
             {
@@ -96,5 +98,7 @@ namespace BlackSP.Core.Dispatchers
                 return instanceNames.Contains(endpoint.GetRemoteInstanceName(shardId));
             }).Select(p => p.Value);
         }
+
+        
     }
 }

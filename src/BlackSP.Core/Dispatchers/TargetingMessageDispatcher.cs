@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.Dispatchers
@@ -27,7 +28,7 @@ namespace BlackSP.Core.Dispatchers
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly IObjectSerializer _serializer;
 
-        private readonly IDictionary<string, IFlushableQueue<byte[]>> _outputQueues;
+        private readonly IDictionary<string, FlushableChannel<byte[]>> _outputQueues;
 
 
         public TargetingMessageDispatcher(IVertexConfiguration vertexConfiguration, IObjectSerializer serializer)
@@ -35,13 +36,13 @@ namespace BlackSP.Core.Dispatchers
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
 
-            _outputQueues = new Dictionary<string, IFlushableQueue<byte[]>>();
+            _outputQueues = new Dictionary<string, FlushableChannel<byte[]>>();
 
             InitializeQueues();
         }
 
         
-        public IFlushableQueue<byte[]> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId)
+        public IFlushable<Channel<byte[]>> GetDispatchQueue(IEndpointConfiguration endpoint, int shardId)
         {
             _ = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
             string endpointKey = endpoint.GetConnectionKey(shardId);
@@ -60,8 +61,7 @@ namespace BlackSP.Core.Dispatchers
 
             foreach(var targetConnectionKey in targetConnectionKeys)
             {
-                _outputQueues.Get(targetConnectionKey).Add(bytes, t);
-
+                await _outputQueues.Get(targetConnectionKey).UnderlyingCollection.Writer.WriteAsync(bytes, t);
             }
         }
 
@@ -73,7 +73,7 @@ namespace BlackSP.Core.Dispatchers
                 for (int shardId = 0; shardId < shardCount; shardId++)
                 {
                     var endpointKey = endpointConfig.GetConnectionKey(shardId);
-                    _outputQueues.Add(endpointKey, new BlockingFlushableQueue<byte[]>(Constants.DefaultThreadBoundaryQueueSize));
+                    _outputQueues.Add(endpointKey, new FlushableChannel<byte[]>(Constants.DefaultThreadBoundaryQueueSize));
                 }
             }
         }

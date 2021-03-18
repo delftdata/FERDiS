@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Kernel.MessageProcessing
 {
-    public interface IFlushableQueue<T>
+    public interface IFlushable
     {
         /// <summary>
         /// Throw exception if flushing has started
@@ -14,16 +14,27 @@ namespace BlackSP.Kernel.MessageProcessing
         void ThrowIfFlushingStarted();
 
         /// <summary>
-        /// Begins flushing the queue
+        /// Begins flushing
         /// </summary>
         /// <returns></returns>
         Task BeginFlush();
 
         /// <summary>
-        /// Ends flushing the queue
+        /// Ends flushing
         /// </summary>
         /// <returns></returns>
         Task EndFlush();
+    }
+
+    public interface IFlushable<T> : IFlushable
+    {
+        T UnderlyingCollection { get; }
+
+    }
+
+    [Obsolete]
+    public interface IFlushableQueue<T> : IFlushable
+    {
 
         void Add(T item, CancellationToken cancellationToken);
 

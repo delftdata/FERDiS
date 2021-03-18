@@ -18,10 +18,19 @@ namespace BlackSP.Streams
         private readonly Stream _stream;
         private readonly PipeReader _reader;
 
+        private long PreviousBufferSize { get; set; }
+        private long CurrentBufferSize => _buffer.Length;
+
         private ReadResult _lastRead;
         private ReadOnlySequence<byte> _buffer;
         private bool _didRead;
         private bool _disposed;
+
+        private PipeStreamReader()
+        {
+            _didRead = _disposed = false;
+            PreviousBufferSize = 0;
+        }
 
         public PipeStreamReader(Stream source)
         {
@@ -34,7 +43,7 @@ namespace BlackSP.Streams
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _stream = reader.AsStream();
-            _didRead = _disposed = false;
+            
         }
 
         public async Task<byte[]> ReadNextMessage(CancellationToken t)
@@ -47,7 +56,6 @@ namespace BlackSP.Streams
                 {
                     _buffer = _buffer.Slice(readPosition);
                     var bytes = msgbodySequence.ToArray();
-                    //await AdvanceReader(t).ConfigureAwait(false);
                     return bytes;
                 } 
                 else
@@ -65,6 +73,7 @@ namespace BlackSP.Streams
             {
                 _reader.AdvanceTo(_buffer.Start, _buffer.End);
             }
+            
             _lastRead = await _reader.ReadAsync(t).ConfigureAwait(false);
             _buffer = _lastRead.Buffer;
             _didRead = true;

@@ -117,17 +117,23 @@ namespace BlackSP.Core.Endpoints
             {
                 t.ThrowIfCancellationRequested();
                 await queueAccess.WaitAsync(t).ConfigureAwait(false);
-                if (dispatchQueue.TryTake(out var message, 1000, t))
+
+                dispatchQueue.ThrowIfFlushingStarted();
+
+                using var timeoutSource = new CancellationTokenSource(1000);
+                using var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
+                try
                 {
+                    var message = await dispatchQueue.UnderlyingCollection.Reader.ReadAsync(lcts.Token);
                     await writer.WriteMessage(message, t).ConfigureAwait(false);
                     if (message.IsFlushMessage())
                     {
                         await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
                     }
-                } 
-                else
+                }
+                catch(OperationCanceledException) when (timeoutSource.IsCancellationRequested)
                 {
-                    //there was no message to dispatch before trytake timeout
+                    //there was no message to dispatch before timeout
                     //flush whatever is still in the output buffer
                     await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
                 }
@@ -180,7 +186,7 @@ namespace BlackSP.Core.Endpoints
                             await queueAccess.WaitAsync(t).ConfigureAwait(false);
                             _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
                             await dispatchQueue.EndFlush().ConfigureAwait(false);
-                            dispatchQueue.Add(message, t); //after flush the dispatchqueue is empty, add the flush message to signal completion downstream
+                            await dispatchQueue.UnderlyingCollection.Writer.WriteAsync(message, t).ConfigureAwait(false); //after flush the dispatchqueue is empty, add the flush message to signal completion downstream
                             _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} ended dispatcher queue flush, flush message sent back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
                             queueAccess.Release();
                         }

@@ -10,9 +10,9 @@ namespace BlackSP.Benchmarks.WordCount.Operators
 {
     public class WordCountAggregator : IAggregateOperator<WordEvent, WordEvent>
     {
-        public static int WindowSizeSeconds = 5;
-        public TimeSpan WindowSize => TimeSpan.FromSeconds(WindowSizeSeconds);
-        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(WindowSizeSeconds);
+        public static int WindowSizeMs = 100;
+        public TimeSpan WindowSize => TimeSpan.FromMilliseconds(WindowSizeMs);
+        public TimeSpan WindowSlideSize => TimeSpan.FromMilliseconds(WindowSizeMs);
 
         private readonly ILogger _logger;
 

@@ -52,6 +52,8 @@ namespace BlackSP.Benchmarks.Graph.Operators
             {
                 _logger.Information($"PageRank {newPage.PageId:D7} : {newPage.Rank:E3} : {newPage.Epoch:D2}");
             }
+
+            await Task.Yield();
         }
     }
 }

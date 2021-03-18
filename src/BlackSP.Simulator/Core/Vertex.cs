@@ -51,7 +51,7 @@ namespace BlackSP.Simulator.Core
                 logger.Debug($"Vertex startup initiated");
 
                 controller = dependencyScope.Resolve<ControlMessageProcessor>();
-                threads.Add(controller.StartProcess(t));
+                threads.Add(Task.Run(() => controller.StartProcess(t)));
 
                 //Note: let the vertex start up before creating endpoints (vertex needs to detect endpoint connection)
                 await Task.Delay(100).ConfigureAwait(false);
