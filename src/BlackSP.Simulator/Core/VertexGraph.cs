@@ -46,38 +46,40 @@ namespace BlackSP.Simulator.Core
             }
         }
 
-        private Task StartVertex(string instanceName, int maxRestarts, TimeSpan restartTimeout)
+        private async Task StartVertex(string instanceName, int maxRestarts, TimeSpan restartTimeout)
         {
             Vertex v = _lifetimeScope.Resolve<Vertex>();
-            return Task.Run(async () =>
+
+            while (true)
             {
-                while (true)
+                var ctSource = new CancellationTokenSource();
+                _vertexCancellationSources.Add(instanceName, ctSource);
+                try
                 {
-                    var ctSource = new CancellationTokenSource();
-                    _vertexCancellationSources.Add(instanceName, ctSource);
-                    try
-                    {
-                        await v.StartAs(instanceName, ctSource.Token);
-                        return;
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        _logger.Warning($"Vertex exited due to cancellation, restart in {restartTimeout.TotalSeconds} seconds.");
-                        await Task.Delay(restartTimeout);
-                    }
-                    catch (Exception e)
-                    {
-                        //exited without intent
-                        if (maxRestarts-- == 0)
-                        {
-                            _logger.Fatal($"Vertex exited with exceptions, no restart: exceeded maxRestarts.");
-                            throw;
-                        }
-                        _logger.Warning(e, $"Vertex exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
-                        await Task.Delay(restartTimeout).ConfigureAwait(false);
-                    }
+                    await Task.Run(() => v.StartAs(instanceName, ctSource.Token)).ConfigureAwait(false);
+                    return;
                 }
-            });//.ContinueWith(t => { Console.WriteLine("SIMULATION PROBLEM " + in); }, TaskScheduler.Current);
+                catch (OperationCanceledException)
+                {
+                    _logger.Warning($"Vertex exited due to cancellation, restart in {restartTimeout.TotalSeconds} seconds.");
+                    await Task.Delay(restartTimeout).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    //exited without intent
+                    if (maxRestarts-- == 0)
+                    {
+                        _logger.Fatal($"Vertex exited with exceptions, no restart: exceeded maxRestarts.");
+                        throw;
+                    }
+                    _logger.Warning(e, $"Vertex exited with exceptions, restart in {restartTimeout.TotalSeconds} seconds.");
+                    await Task.Delay(restartTimeout).ConfigureAwait(false);
+                }
+            }
+
+
+            //return Task.Run(async () =>
+            //{});//.ContinueWith(t => { Console.WriteLine("SIMULATION PROBLEM " + in); }, TaskScheduler.Current);
         }
     }
 }

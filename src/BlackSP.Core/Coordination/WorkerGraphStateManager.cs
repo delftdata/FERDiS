@@ -227,10 +227,11 @@ namespace BlackSP.Core.Coordination
                     FireWorkerHaltTriggers(_workerInstanceNames); //fire halt triggers on all worker instances
                     throw;
                 }
-                FireWorkerHaltTriggers(_preparedRecoveryLine?.AffectedWorkers ?? Enumerable.Empty<string>());
-
             }).ContinueWith(LogException, TaskScheduler.Current);
             t.Wait(); //wait for async operation to complete before returning
+
+            FireWorkerHaltTriggers(_preparedRecoveryLine?.AffectedWorkers ?? Enumerable.Empty<string>());
+
         }
 
         /// <summary>
@@ -255,28 +256,31 @@ namespace BlackSP.Core.Coordination
                     .ToArray();
                 workerManager.FireTrigger(WorkerStateTrigger.DataProcessorHalt, (downstreamWorkers, upstreamWorkers));
             }
-            _logger.Verbose($"Fired DataProcessorHalt trigger on {workersToHalt.Count()} instances: {String.Join(", ", workersToHalt.Select(m => m.InstanceName))}");
+            _logger.Verbose($"Fired DataProcessorHalt trigger on {workersToHalt.Length} instances: {String.Join(", ", workersToHalt.Select(m => m.InstanceName))}");
         }
 
         private void RecoverPreparedRecoveryLine()
         {
             _ = _preparedRecoveryLine ?? throw new InvalidOperationException("Cannot recover recovery line as none had been prepared");
+            
+            _logger.Information("Recovery line restoration started");
+            foreach (var name in _preparedRecoveryLine.AffectedWorkers)
+            {
+                _workerStateManagers[name].FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, _preparedRecoveryLine.RecoveryMap[name]);
+            }
+            
+            _logger.Information($"Checkpoint restore triggers fired on {String.Join(", ", _preparedRecoveryLine.AffectedWorkers)}");
 
             var t = Task.Run(async () =>
             {
                 try
                 {
-                    _logger.Information("Recovery line restoration started");
-                    foreach (var name in _preparedRecoveryLine.AffectedWorkers)
-                    {
-                        _workerStateManagers[name].FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, _preparedRecoveryLine.RecoveryMap[name]);
-                    }
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
                     var deleteCount = await _checkpointService.CollectGarbageAfterRecoveryLine(_preparedRecoveryLine).ConfigureAwait(false);
                     _preparedRecoveryLine = null;
                     stopwatch.Stop();
-                    _logger.Information($"Checkpoint restore triggers fired and gc deleted {deleteCount} checkpoints in {stopwatch.ElapsedMilliseconds}ms");
+                    _logger.Information($"Checkpoint gc deleted {deleteCount} checkpoints in {stopwatch.ElapsedMilliseconds}ms");
                 }
                 catch (Exception e)
                 {

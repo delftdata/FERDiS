@@ -42,7 +42,7 @@ namespace BlackSP.Simulator.Core
             {
                 int shardId = i;
                 //Connection c = incomingConnections[shardId];
-                threads.Add(Task.Run(() => IngressWithRestart(instanceName, endpointName, shardId, 10, TimeSpan.FromSeconds(10), linkedCTSource.Token)));
+                threads.Add(IngressWithRestart(instanceName, endpointName, shardId, 10, TimeSpan.FromSeconds(10), linkedCTSource.Token));
             }
 
             try
@@ -83,7 +83,7 @@ namespace BlackSP.Simulator.Core
                     c = _connectionTable.GetIncomingConnections(instanceName, endpointName)[shardId];
                     using var callerOrResetSource = CancellationTokenSource.CreateLinkedTokenSource(t, c.ResetToken);
                     _logger.Verbose($"Input endpoint {c.ToEndpointName}${shardId} starting ingress");
-                    await _inputEndpoint.Ingress(c.FromStream, c.FromEndpointName, c.FromShardId, callerOrResetSource.Token).ConfigureAwait(false);
+                    await Task.Run(() => _inputEndpoint.Ingress(c.FromStream, c.FromEndpointName, c.FromShardId, callerOrResetSource.Token)).ConfigureAwait(false);
                     _logger.Verbose($"Input endpoint {c.ToEndpointName}${shardId} exiting gracefully");
                 }
                 catch (OperationCanceledException) when (t.IsCancellationRequested)

@@ -39,7 +39,7 @@ namespace BlackSP.Simulator.Core
             for(var i = 0; i < outgoingConnections.Length; i++)
             {
                 int shardId = i;
-                threads.Add(Task.Run(() => EgressWithRestart(instanceName, endpointName, shardId, 10, TimeSpan.FromSeconds(10), linkedCTSource.Token)));
+                threads.Add(EgressWithRestart(instanceName, endpointName, shardId, 10, TimeSpan.FromSeconds(10), linkedCTSource.Token));
             }
 
             try
@@ -84,7 +84,7 @@ namespace BlackSP.Simulator.Core
                     c = _connectionTable.GetOutgoingConnections(instanceName, endpointName)[shardId];
                     using var callerOrResetSource = CancellationTokenSource.CreateLinkedTokenSource(t, c.ResetToken);
                     _logger.Verbose($"Output endpoint {c.FromEndpointName}${shardId} starting egress");
-                    await _outputEndpoint.Egress(c.ToStream, c.ToEndpointName, c.ToShardId, callerOrResetSource.Token).ConfigureAwait(false);
+                    await Task.Run(() => _outputEndpoint.Egress(c.ToStream, c.ToEndpointName, c.ToShardId, callerOrResetSource.Token)).ConfigureAwait(false);
                     _logger.Verbose($"Output endpoint {c.FromEndpointName}${shardId} exiting gracefully");
                 }
                 catch (OperationCanceledException) when (t.IsCancellationRequested)
