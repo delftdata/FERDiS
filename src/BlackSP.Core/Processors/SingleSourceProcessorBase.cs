@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.Processors
@@ -65,13 +66,13 @@ namespace BlackSP.Core.Processors
             {
                 await PreStartHook(t).ConfigureAwait(false);
             }
-            using var passthroughQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+            var channel = Channel.CreateBounded<TMessage>(new BoundedChannelOptions(Constants.DefaultThreadBoundaryQueueSize) { FullMode = BoundedChannelFullMode.Wait });
             _processTokenSource = new CancellationTokenSource();
             using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, _processTokenSource.Token);
             try
             {                
-                var deliveryThread = Task.Run(() => ProcessFromSource(passthroughQueue, linkedSource.Token));
-                var dispatchThread = Task.Run(() => DispatchResults(passthroughQueue, linkedSource.Token));
+                var deliveryThread = Task.Run(() => ProcessFromSource(channel, linkedSource.Token));
+                var dispatchThread = Task.Run(() => DispatchResults(channel, linkedSource.Token));
                 _processThread = Task.WhenAll(deliveryThread, dispatchThread);
                 var exitedTask = await Task.WhenAny(deliveryThread, dispatchThread).ConfigureAwait(false);
                 _processTokenSource.Cancel();
@@ -107,13 +108,14 @@ namespace BlackSP.Core.Processors
             await _processThread.ConfigureAwait(false);
         }
 
-        private async Task ProcessFromSource(BlockingCollection<TMessage> passthroughQueue, CancellationToken t) {
+        private async Task ProcessFromSource(Channel<TMessage> dispatchChannel, CancellationToken t)
+        {
             try
             {
                 while (!t.IsCancellationRequested)
                 {
                     TMessage message;
-                    if(_injectedMessage != null)
+                    if (_injectedMessage != null)
                     {
                         message = _injectedMessage;
                         _injectedMessage = null;
@@ -125,30 +127,30 @@ namespace BlackSP.Core.Processors
                     var results = await _pipeline.Process(message).ConfigureAwait(false);
                     foreach (var msg in results)
                     {
-                        _logger.Verbose($"Adding message to dispatch thread queue (current queue size: {passthroughQueue.Count})");
-                        passthroughQueue.Add(msg, t);
+                        _logger.Verbose($"Adding message to dispatch thread queue (current queue size: {dispatchChannel.Reader.Count})");
+                        await dispatchChannel.Writer.WriteAsync(msg, t).ConfigureAwait(false);
                     }
                 }
             }
             finally
             {
                 //note: not starting flushing on source as this is requested by a checkpoint restore request
-                passthroughQueue.CompleteAdding();
+                dispatchChannel.Writer.Complete();
             }
         }
 
-        private async Task DispatchResults(BlockingCollection<TMessage> passthroughQueue, CancellationToken t)
+        private async Task DispatchResults(Channel<TMessage> dispatchChannel, CancellationToken t)
         {
             try
             {
-                foreach (var message in passthroughQueue.GetConsumingEnumerable(t))
+                while (await dispatchChannel.Reader.WaitToReadAsync(t))
                 {
+                    var message = await dispatchChannel.Reader.ReadAsync(t);
                     await _dispatcher.Dispatch(message, t).ConfigureAwait(false);
                 }
             }
             finally
             {
-                //await _dispatcher.Flush().ConfigureAwait(false);
             }
         }
 
