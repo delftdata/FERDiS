@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.Processors
@@ -56,12 +57,12 @@ namespace BlackSP.Core.Processors
             {
                 await PreStartHook(t).ConfigureAwait(false);
             }
-            using var dispatchQueue = new BlockingCollection<TMessage>(Constants.DefaultThreadBoundaryQueueSize);
+            var channel = Channel.CreateBounded<TMessage>(new BoundedChannelOptions(Constants.DefaultThreadBoundaryQueueSize) { FullMode = BoundedChannelFullMode.Wait });
             using var exceptionSource = new CancellationTokenSource();
             using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, exceptionSource.Token);
             try
             {
-                var threads = StartThreads(dispatchQueue, linkedSource.Token);
+                var threads = StartThreads(channel, linkedSource.Token);
                 var exitedThread = await Task.WhenAny(threads).ConfigureAwait(false);
                 exceptionSource.Cancel();
                 await Task.WhenAll(threads).ConfigureAwait(false);
@@ -69,18 +70,17 @@ namespace BlackSP.Core.Processors
             }
             finally
             {
-                dispatchQueue.CompleteAdding();
-                dispatchQueue.Dispose();
+                channel.Writer.Complete();
             }
         }
 
-        private IEnumerable<Task> StartThreads(BlockingCollection<TMessage> dispatchQueue, CancellationToken t)
+        private IEnumerable<Task> StartThreads(Channel<TMessage> dispatchChannel, CancellationToken t)
         {
             foreach (var source in _sources)
             {
-               yield return Task.Run(() => ProcessFromSource(source, dispatchQueue, t)).ContinueWith(LogException, TaskScheduler.Current);
+               yield return Task.Run(() => ProcessFromSource(source, dispatchChannel, t)).ContinueWith(LogException, TaskScheduler.Current);
             }
-            yield return Task.Run(() => DispatchResults(dispatchQueue, t)).ContinueWith(LogException, TaskScheduler.Current);
+            yield return Task.Run(() => DispatchResults(dispatchChannel, t)).ContinueWith(LogException, TaskScheduler.Current);
         }
 
         private void LogException(Task t)
@@ -99,7 +99,7 @@ namespace BlackSP.Core.Processors
             }
         }
 
-        private async Task ProcessFromSource(ISource<TMessage> source, BlockingCollection<TMessage> dispatchQueue, CancellationToken t)
+        private async Task ProcessFromSource(ISource<TMessage> source, Channel<TMessage> dispatchChannel, CancellationToken t)
         {
             try
             {
@@ -107,13 +107,13 @@ namespace BlackSP.Core.Processors
                 {
                     //take a message from the source
                     var message = await source.Take(t).ConfigureAwait(false) ?? throw new Exception($"Received null from {source.GetType()}.Take");
-                    await ProcessMessageInCriticalSection(message, dispatchQueue, t).ConfigureAwait(false);
+                    await ProcessMessageInCriticalSection(message, dispatchChannel, t).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
         }
 
-        private async Task ProcessMessageInCriticalSection(TMessage message, BlockingCollection<TMessage> dispatchQueue, CancellationToken t)
+        private async Task ProcessMessageInCriticalSection(TMessage message, Channel<TMessage> dispatchChannel, CancellationToken t)
         {
             try
             {
@@ -121,7 +121,11 @@ namespace BlackSP.Core.Processors
                 IEnumerable<TMessage> responses = await _pipeline.Process(message).ConfigureAwait(false);
                 foreach (var msg in responses)
                 {
-                    dispatchQueue.Add(msg, t);
+                    if(!await dispatchChannel.Writer.WaitToWriteAsync(t))
+                    {
+                        throw new InvalidOperationException("Dispatch channel cannot be written to");
+                    }
+                    await dispatchChannel.Writer.WriteAsync(msg, t);
                 }
             }
             finally
@@ -130,17 +134,19 @@ namespace BlackSP.Core.Processors
             }
         }
 
-        private async Task DispatchResults(BlockingCollection<TMessage> dispatchQueue, CancellationToken t)
+        private async Task DispatchResults(Channel<TMessage> dispatchChannel, CancellationToken t)
         {
             try
             {
-                
-                foreach (var message in dispatchQueue.GetConsumingEnumerable(t))
+                while (await dispatchChannel.Reader.WaitToReadAsync(t))
                 {
+                    var message = await dispatchChannel.Reader.ReadAsync(t);
                     await _dispatcher.Dispatch(message, t).ConfigureAwait(false);
                 }
             }
-            catch (OperationCanceledException) { /*silence cancellation request exceptions*/ }
+            finally
+            {
+            }
         }
 
         #region dispose support
