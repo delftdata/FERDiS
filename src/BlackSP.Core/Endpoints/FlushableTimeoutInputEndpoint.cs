@@ -14,6 +14,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.Endpoints
@@ -66,8 +67,8 @@ namespace BlackSP.Core.Endpoints
 
             using CancellationTokenSource exceptionSource = new CancellationTokenSource();
             using CancellationTokenSource callerOrExceptionSource = CancellationTokenSource.CreateLinkedTokenSource(callerToken, exceptionSource.Token);
-            using BlockingCollection<byte[]> controlMsgQueue = new BlockingCollection<byte[]>(Constants.DefaultThreadBoundaryQueueSize);
-            
+            Channel<byte[]> controlMsgChannel = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(Constants.DefaultThreadBoundaryQueueSize) { FullMode = BoundedChannelFullMode.Wait });
+
             var pipe = s.UsePipe(cancellationToken: callerToken);
             using PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
             using PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for control messages, should always flush
@@ -78,8 +79,8 @@ namespace BlackSP.Core.Endpoints
                 t.ThrowIfCancellationRequested();
                 _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} starting read & deserialize threads. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.GetRemoteInstanceName(remoteShardId)}\"");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
-                var readThread = ReadMessagesFromStream(streamReader, remoteShardId, controlMsgQueue, callerOrExceptionSource.Token);
-                var writeThread = WriteControlMessages(streamWriter, remoteShardId, controlMsgQueue, callerOrExceptionSource.Token);
+                var readThread = ReadMessagesFromStream(streamReader, remoteShardId, controlMsgChannel.Writer, callerOrExceptionSource.Token);
+                var writeThread = WriteControlMessages(streamWriter, remoteShardId, controlMsgChannel.Reader, callerOrExceptionSource.Token);
                 var exitedThread = await Task.WhenAny(readThread, writeThread).ConfigureAwait(false);
                 await exitedThread.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
             }
@@ -157,6 +158,80 @@ namespace BlackSP.Core.Endpoints
                 if(!outputQueue.TryTake(out var msg, Constants.KeepAliveIntervalSeconds * 1000, callerToken))
                 {
                     msg = ControlMessageExtensions.ConstructKeepAliveMessage();
+                }
+                await streamWriter.WriteMessage(msg, callerToken).ConfigureAwait(false);
+                var msgType = msg.IsFlushMessage() ? "flush" : "keepalive";
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent a {msgType} message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");
+
+            }
+        }
+
+        private async Task ReadMessagesFromStream(PipeStreamReader streamReader, int shardId, ChannelWriter<byte[]> controlQueue, CancellationToken callerToken)
+        {
+            var receptionQueue = _receiver.GetReceptionQueue(_endpointConfig, shardId);
+            while (!callerToken.IsCancellationRequested)
+            {
+                try
+                {
+                    using var timeoutSource = new CancellationTokenSource(1000); //to ensure at least once a second we check if flushing started
+                    using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(callerToken, timeoutSource.Token);
+                    byte[] msg;
+                    try
+                    {
+                        msg = await streamReader.ReadNextMessage(linkedSource.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
+                    {
+                        receptionQueue.ThrowIfFlushingStarted();
+                        continue;
+                    }
+
+                    if (msg.IsKeepAliveMessage())
+                    {
+                        _logger.Verbose($"Keepalive message received on input endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
+                    }
+                    else
+                    {
+                        //actual deserialization and adding to reception queue..
+                        TMessage message = await _serializer.DeserializeAsync<TMessage>(msg, callerToken).ConfigureAwait(false)
+                            ?? throw new Exception("unexpected null message from deserializer");//TODO: custom exception?
+                        receptionQueue.Add(message, callerToken);
+                    }
+                }
+                catch (FlushInProgressException)
+                {
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} started flushing");
+                    await controlQueue.WriteAsync(ControlMessageExtensions.ConstructFlushMessage(), callerToken);
+                    byte[] msg = null;
+                    while (msg == null || !msg.IsFlushMessage())
+                    {
+                        msg = await streamReader.ReadNextMessage(callerToken).ConfigureAwait(false); //keep taking until flush message returns from upstream
+                    }
+                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
+                    await receptionQueue.EndFlush().ConfigureAwait(false);
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                }
+            }
+            callerToken.ThrowIfCancellationRequested();
+        }
+
+
+        private async Task WriteControlMessages(PipeStreamWriter streamWriter, int shardId, ChannelReader<byte[]> outputQueue, CancellationToken callerToken)
+        {
+
+            while (!callerToken.IsCancellationRequested)
+            {
+                using var timeoutSource = new CancellationTokenSource(Constants.KeepAliveIntervalSeconds * 1000);
+                using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(callerToken, timeoutSource.Token);
+                byte[] msg;
+                try
+                {
+                    msg = await outputQueue.ReadAsync(linkedSource.Token);
+                } 
+                catch(OperationCanceledException) when (timeoutSource.IsCancellationRequested)
+                {
+                    msg = ControlMessageExtensions.ConstructKeepAliveMessage();
+
                 }
                 await streamWriter.WriteMessage(msg, callerToken).ConfigureAwait(false);
                 var msgType = msg.IsFlushMessage() ? "flush" : "keepalive";
