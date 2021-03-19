@@ -23,7 +23,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
     public class CoordinatedCheckpointingHandler : ForwardingPayloadHandlerBase<DataMessage, BarrierPayload>
     {
 
-        private IEnumerable<string> AllUpstreamConnectionKeys => _vertexConfiguration.InputEndpoints.Where(endpoint => !endpoint.IsControl).SelectMany(endpoint => endpoint.GetAllConnectionKeys());
+        private readonly IEnumerable<string> _allUpstreamConnectionKeys;
         
         private readonly ISource<DataMessage> _messageSource;
         private readonly IReceiver<DataMessage> _messageReceiver;
@@ -47,6 +47,9 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
 
             _blockedConnections = new List<(IEndpointConfiguration, int)>();
             _blockedConnectionKeys = new List<string>();
+
+            
+            _allUpstreamConnectionKeys = _vertexConfiguration.InputEndpoints.Where(endpoint => !endpoint.IsControl).SelectMany(endpoint => !endpoint.IsPipeline ? endpoint.GetAllConnectionKeys() : endpoint.GetConnectionKey(_vertexConfiguration.ShardId).Yield());
         }
 
         public CoordinatedCheckpointingHandler(ISource<DataMessage> messageSource,
@@ -105,7 +108,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _blockedConnections.Add((endpoint, shardId));
             _blockedConnectionKeys.Add(connectionKey);
             //if all upstream connections are blocked..
-            if (_blockedConnectionKeys.Intersect(AllUpstreamConnectionKeys).Count() == AllUpstreamConnectionKeys.Count())
+            if (_blockedConnectionKeys.Intersect(_allUpstreamConnectionKeys).Count() == _allUpstreamConnectionKeys.Count())
             {
                 //take a checkpoint
                 await TakeCheckpoint().ConfigureAwait(false);
@@ -113,7 +116,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 UnblockAllConnections();
                 //re-add the barrier to propagate it downstream
                 AssociatedMessage.AddPayload(payload);
-                _logger.Information($"Unblocked {AllUpstreamConnectionKeys.Count()} upstream connections and forwarded barrier");
+                _logger.Information($"Unblocked {_allUpstreamConnectionKeys.Count()} upstream connections and forwarded barrier");
             }
         }
 

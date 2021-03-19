@@ -161,7 +161,7 @@ namespace BlackSP.Core.Endpoints
                 var dispatchQueue = _dispatcher.GetDispatchQueue(_endpointConfig, shardId);
                 var lastPongReception = DateTimeOffset.Now;
 
-                CancellationTokenSource pongTimeoutSource = null; //to track individual pong timeouts
+                CancellationTokenSource pongTimeoutSource = null; //to track individual keepalive timeouts
                 CancellationTokenSource linkedSource = null; //to track timeouts AND caller cancellation
                 while (true)
                 {
@@ -169,7 +169,7 @@ namespace BlackSP.Core.Endpoints
                     try
                     {
                         TimeSpan timeTillNextTimeout = lastPongReception.AddSeconds(Constants.KeepAliveTimeoutSeconds) - DateTimeOffset.Now;
-                        int msTillNextTimeout = (int)timeTillNextTimeout.TotalMilliseconds; //note double truncation through int cast
+                        int msTillNextTimeout = (int)timeTillNextTimeout.TotalMilliseconds;
 
                         pongTimeoutSource = new CancellationTokenSource(Math.Max(msTillNextTimeout, 1)); //never wait negative
                         linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, pongTimeoutSource.Token);
@@ -184,7 +184,7 @@ namespace BlackSP.Core.Endpoints
                         else if(message.IsFlushMessage())
                         {
                             await queueAccess.WaitAsync(t).ConfigureAwait(false);
-                            _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                            _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
                             await dispatchQueue.EndFlush().ConfigureAwait(false);
                             await dispatchQueue.UnderlyingCollection.Writer.WriteAsync(message, t).ConfigureAwait(false); //after flush the dispatchqueue is empty, add the flush message to signal completion downstream
                             _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} ended dispatcher queue flush, flush message sent back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
@@ -198,9 +198,9 @@ namespace BlackSP.Core.Endpoints
                     }
                     catch (OperationCanceledException) when (pongTimeoutSource.IsCancellationRequested) //hitting this case means we have not received a pong before timeout
                     {
-                        _logger.Warning($"Hearbeat timeout on output {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}, initiating cancellation");
+                        _logger.Warning($"KeepAlive timeout on output {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}, initiating cancellation");
                         //there is an opening here to implement multiple timeouts before assuming actual failure.
-                        //current implementation is just pessimistic and instantly assumes failure.
+                        //current implementation is pessimistic and instantly assumes failure.
                         pongListenerTimeoutSource.Cancel();
                         throw;
                     }

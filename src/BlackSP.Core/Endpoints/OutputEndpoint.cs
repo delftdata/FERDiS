@@ -114,6 +114,7 @@ namespace BlackSP.Core.Endpoints
                 using var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
                 try
                 {
+                    //THROW? dispatchQueue.
                     var message = await dispatchQueue.UnderlyingCollection.Reader.ReadAsync(lcts.Token);
                     await writer.WriteMessage(message, t).ConfigureAwait(false);
                     if (message.IsFlushMessage())
@@ -126,8 +127,11 @@ namespace BlackSP.Core.Endpoints
                     //there was no message to dispatch before timeout
                     //flush whatever is still in the output buffer
                     await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
+                } 
+                finally
+                {
+                    queueAccess.Release();
                 }
-                queueAccess.Release();
             }
             t.ThrowIfCancellationRequested();
         }
@@ -141,21 +145,32 @@ namespace BlackSP.Core.Endpoints
                 _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} flush listener waiting for next message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
                 var message = await reader.ReadNextMessage(t).ConfigureAwait(false);
                 if (message?.IsFlushMessage() ?? false)
-                {
+                {                    
+                    _logger.Fatal($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     await queueAccess.WaitAsync(t).ConfigureAwait(false);
-                    _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
-                    await dispatchQueue.EndFlush().ConfigureAwait(false);
-                    if(!await dispatchQueue.UnderlyingCollection.Writer.WaitToWriteAsync(t))
+                    try
                     {
-                        throw new InvalidOperationException("Dispatch queue writer completed, invalid program state");
+                        await dispatchQueue.EndFlush().ConfigureAwait(false);
+                        _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} ended dispatcher queue flush");
+                        if (!await dispatchQueue.UnderlyingCollection.Writer.WaitToWriteAsync(t))
+                        {
+                            throw new InvalidOperationException("Dispatch queue writer completed, invalid program state");
+                        }
+                        if (!dispatchQueue.UnderlyingCollection.Writer.TryWrite(message)) //after flush the dispatchqueue is empty, add the flush message to signal completion downstream
+                        {
+                            throw new InvalidOperationException("Got channel write access but could not write");
+                        }
+                        _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} sent flush message back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
+
                     }
-                    await dispatchQueue.UnderlyingCollection.Writer.WriteAsync(message, t); //after flush the dispatchqueue is empty, add the flush message to signal completion downstream
-                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} ended dispatcher queue flush, flush message sent back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
-                    queueAccess.Release();
+                    finally
+                    {
+                        queueAccess.Release();
+                    }
                 }
                 else
                 {
-                    _logger.Fatal($"Output endpoint {_endpointConfig.LocalEndpointName} received invalid instruction on flush listener from instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                    _logger.Error($"Output endpoint {_endpointConfig.LocalEndpointName} received invalid instruction on flush listener from instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     throw new InvalidOperationException($"FlushRequestListener expected flush message but received: {message}");
                 }
             }

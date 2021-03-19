@@ -143,33 +143,40 @@ namespace BlackSP.Core.Sources
             var connectionKey = origin.GetConnectionKey(shardId);
 
             //perform flush checks
-            FlushPreReceptionChecks(message, connectionKey);
+            if(!FlushPreReceptionChecks(message, connectionKey)) {
+                return;
+            }
 
             //do deserialization
             var dserializedMsg = await _serializer.DeserializeAsync<TMessage>(message, t).ConfigureAwait(false);
 
             var personalAccess = _accessDictionary.Get(connectionKey);
+            List<SemaphoreSlim> accessed = new List<SemaphoreSlim>();
             try
             {            
                 //gain access to critical section
-                await personalAccess.WaitAsync().ConfigureAwait(false);
-                await _channelAccess.WaitAsync().ConfigureAwait(false);
+                await personalAccess.WaitAsync(t).ConfigureAwait(false);
+                accessed.Add(personalAccess);
+                await _channelAccess.WaitAsync(t).ConfigureAwait(false);
+                accessed.Add(_channelAccess);
                 
                 //use critical section
                 if (await _channel.Writer.WaitToWriteAsync(t))
                 {
-                    await _channel.Writer.WriteAsync((dserializedMsg, origin, shardId), t);
+                    if(!_channel.Writer.TryWrite((dserializedMsg, origin, shardId)))
+                    {
+                        throw new InvalidOperationException("Couldnt write to channel");
+                    }
                 }
-                else
-                {
-                    throw new InvalidOperationException("Tried to write to closed channel");
-                }
+
             }
             finally
             {
                 //release access to critical section
-                _channelAccess.Release();
-                personalAccess.Release();
+                foreach(var sema in accessed)
+                {
+                    sema.Release();
+                }
             }
         }
 
@@ -251,21 +258,39 @@ namespace BlackSP.Core.Sources
             
         }
 
-        private void FlushPreReceptionChecks(byte[] message, string connectionKey)
+        public void ThrowIfReceivePreconditionsNotMet(IEndpointConfiguration origin, int shardId)
         {
-            if (_flushDictionary.ContainsKey(connectionKey)) //check if flush in progress
+            _ = origin ?? throw new ArgumentNullException(nameof(origin));
+            if (_flushDictionary.ContainsKey(origin.GetConnectionKey(shardId))) //check if flush in progress
             {
-                if (message.IsFlushMessage()) //flush message returned, complete flush
-                {
+                throw new FlushInProgressException();
+            }
+        }
 
-                    _flushDictionary.Get(connectionKey).SetResult(true);
-                    _flushDictionary.Remove(connectionKey);
-                    return;
-                }
-                else //regular message reception during flush, throw
-                {
-                    throw new FlushInProgressException();
-                }
+        /// <summary>
+        /// performs flush checks
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="connectionKey"></param>
+        /// <returns>wether message can be further processed</returns>
+        private bool FlushPreReceptionChecks(byte[] message, string connectionKey)
+        {
+            if (!_flushDictionary.ContainsKey(connectionKey)) //check if flush in progress
+            {
+                return true;
+            }
+
+            if (message.IsFlushMessage()) //flush message returned, complete flush
+            {
+                _logger.Debug($"Setting flush result on {connectionKey}");
+                _flushDictionary.Get(connectionKey).SetResult(true);
+                _flushDictionary.Remove(connectionKey);
+                return false;
+            }
+            else //regular message reception during flush, throw
+            {
+                _logger.Debug($"Throwing flush in progress exception on {connectionKey}");
+                throw new FlushInProgressException();
             }
         }
 

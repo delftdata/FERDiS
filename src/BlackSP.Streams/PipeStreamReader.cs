@@ -55,7 +55,7 @@ namespace BlackSP.Streams
                 
                 if(UnreadBufferFraction < 0.1d) //less than 10% buffer left.. 
                 {
-                    await AdvanceReader(t).ConfigureAwait(false);
+                    //await AdvanceReader(t).ConfigureAwait(false);
                 }
 
                 if (_buffer.TryReadMessage(out var msgbodySequence, out var readPosition))

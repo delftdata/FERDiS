@@ -25,6 +25,13 @@ namespace BlackSP.Kernel
         Task Receive(byte[] message, IEndpointConfiguration origin, int shardId, CancellationToken t);
 
         /// <summary>
+        /// Throws implementation specific eceptions indicating unmet preconditions for reception
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="shardId"></param>
+        void ThrowIfReceivePreconditionsNotMet(IEndpointConfiguration origin, int shardId);
+
+        /// <summary>
         /// Block incoming messages from specified origin
         /// </summary>
         /// <param name="origin"></param>

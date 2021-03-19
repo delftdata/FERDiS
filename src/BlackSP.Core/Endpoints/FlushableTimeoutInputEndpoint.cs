@@ -100,48 +100,55 @@ namespace BlackSP.Core.Endpoints
 
         private async Task ReadMessagesFromStream(PipeStreamReader reader, int shardId, ChannelWriter<byte[]> controlQueue, CancellationToken callerToken)
         {
+            byte[] msg = null;
             bool hasTakenPriority = false;
             while (!callerToken.IsCancellationRequested)
             {
+                CancellationTokenSource timeoutSrc = null;
+                CancellationTokenSource lcts = null;
                 try
                 {
-                    var msg = await reader.ReadNextMessage(callerToken).ConfigureAwait(false);
-                    if (msg.IsKeepAliveMessage())
-                    {
-                        _logger.Verbose($"Keepalive message received on input endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
-                    }
-                    else
-                    {
-                        bool needsPriority = _endpointConfig.IsBackchannel && reader.UnreadBufferFraction > 0.01d; //aggressively hand priority to backchannels to prevent distributed deadlocks
-                        if (!hasTakenPriority && needsPriority)
-                        {
-                            _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} is taking priority, capacity: {reader.UnreadBufferFraction:F2}");
-                            await _receiver.TakePriority(_endpointConfig, shardId).ConfigureAwait(false);
-                            _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} has taken priority, capacity: {reader.UnreadBufferFraction:F2}");
-                        }
+                    timeoutSrc = new CancellationTokenSource(5000);
+                    lcts = CancellationTokenSource.CreateLinkedTokenSource(callerToken, timeoutSrc.Token);
 
-                        await _receiver.Receive(msg, _endpointConfig, shardId, callerToken).ConfigureAwait(false);
+                    _receiver.ThrowIfReceivePreconditionsNotMet(_endpointConfig, shardId);
+                    msg = msg ?? await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
 
-                        if (hasTakenPriority && !needsPriority)
-                        {
-                            _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} is releasing priority, capacity: {reader.UnreadBufferFraction:F2}");
-                            _receiver.ReleasePriority(_endpointConfig, shardId);
-                            _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} has released priority, capacity: {reader.UnreadBufferFraction:F2}");
-                        }
-                        hasTakenPriority = needsPriority;
+                    bool needsPriority = _endpointConfig.IsBackchannel && reader.UnreadBufferFraction > 0.1d; //aggressively hand priority to backchannels to prevent distributed deadlocks
+                    if (!hasTakenPriority && needsPriority)
+                    {
+                        _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} is taking priority, capacity: {reader.UnreadBufferFraction:F2}");
+                        await _receiver.TakePriority(_endpointConfig, shardId).ConfigureAwait(false);
+                        _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} has taken priority, capacity: {reader.UnreadBufferFraction:F2}");
                     }
+
+                    await _receiver.Receive(msg, _endpointConfig, shardId, lcts.Token).ConfigureAwait(false);
+                    msg = null;
+
+                    if (hasTakenPriority && !needsPriority)
+                    {
+                        _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} is releasing priority, capacity: {reader.UnreadBufferFraction:F2}");
+                        _receiver.ReleasePriority(_endpointConfig, shardId);
+                        _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} has released priority, capacity: {reader.UnreadBufferFraction:F2}");
+                    }
+                    hasTakenPriority = needsPriority;
+                }
+                catch (OperationCanceledException) when (timeoutSrc.IsCancellationRequested)
+                {
+                    //retry loop to check if delivery preconditions changed
+                    continue;
                 }
                 catch (FlushInProgressException)
                 {
                     _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} started flushing");
                     await controlQueue.WriteAsync(ControlMessageExtensions.ConstructFlushMessage(), callerToken);
-                    byte[] msg = null;
-                    while (msg == null || !msg.IsFlushMessage())
+                    byte[] fmsg = null;
+                    while (fmsg == null || !fmsg.IsFlushMessage())
                     {
-                        msg = await reader.ReadNextMessage(callerToken).ConfigureAwait(false); //keep taking until flush message returns from upstream
+                        fmsg = await reader.ReadNextMessage(callerToken).ConfigureAwait(false); //keep taking until flush message returns from upstream
                     }
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
-                    await _receiver.Receive(msg, _endpointConfig, shardId, callerToken).ConfigureAwait(false);
+                    await _receiver.Receive(fmsg, _endpointConfig, shardId, callerToken).ConfigureAwait(false);
                     _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
                 }
             }

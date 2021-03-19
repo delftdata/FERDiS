@@ -21,6 +21,7 @@ namespace BlackSP.Kernel.MessageProcessing
         /// </summary>
         /// <returns></returns>
         Task Flush(IEnumerable<string> upstreamInstancesToFlush);
+
     }
 
     public interface ISource<T> : ISource
