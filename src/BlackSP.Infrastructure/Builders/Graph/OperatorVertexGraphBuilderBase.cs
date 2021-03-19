@@ -60,7 +60,7 @@ namespace BlackSP.Infrastructure.Builders.Graph
                 var instanceNames = vertexBuilder.InstanceNames;
                 var targetVertices = vertexBuilder.OutgoingEdges.Select(e => e.ToVertex).Where(v => !v.VertexName.Contains("coordinator"));
 
-                var targetInstanceNames = targetVertices.SelectMany(v => v.InstanceNames);
+                //var targetInstanceNames = targetVertices.SelectMany(v => v.InstanceNames);
 
                 var fromShardId = 0;
                 foreach(var instanceName in instanceNames)
@@ -73,7 +73,7 @@ namespace BlackSP.Infrastructure.Builders.Graph
                         } 
                         else //no pipeline, there is a shuffle/mesh connection between these vertices
                         {
-                            foreach (var targetInst in targetInstanceNames)
+                            foreach (var targetInst in edge.ToVertex.InstanceNames)
                             {
                                 allConnections.Add(Tuple.Create(instanceName, targetInst));
                             }
