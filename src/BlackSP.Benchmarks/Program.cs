@@ -86,7 +86,7 @@ namespace BlackSP.Benchmarks
 
             var app = await appBuilder
                 .ConfigureLogging(new LogConfiguration(logTargets, logLevel))
-                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Uncoordinated, true, 450))
+                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.Coordinated, false, 60))
                 .ConfigureOperators(benchmark.ConfigureGraph())
                 .Build();
 

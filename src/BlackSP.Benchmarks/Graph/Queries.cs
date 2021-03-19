@@ -47,18 +47,14 @@ namespace BlackSP.Benchmarks.Graph
         public static void NHop(IVertexGraphBuilder builder)
         {
             var source = builder.AddSource<RandomEdgeSourceOperator, HopEvent>(1);
-
-            var partitionMapper = builder.AddMap<HopCountPartitionMapper, HopEvent, HopEvent>(1);
-            var repartitionMapper = builder.AddMap<HopCountRepartitionMapper, HopEvent, HopEvent>(1);
-            
+            var partitionMapper = builder.AddMap<HopCountPartitionMapper, HopEvent, HopEvent>(3);
+            var repartitionMapper = builder.AddMap<HopCountRepartitionMapper, HopEvent, HopEvent>(3);
             var sink = builder.AddSink<HopCountSinkOperator, HopEvent>(1);
 
             source.Append(partitionMapper);
             partitionMapper.Append(repartitionMapper);
             repartitionMapper.Append(partitionMapper).AsBackchannel(); 
             repartitionMapper.Append(sink);
-           
-
         }
     }
 }

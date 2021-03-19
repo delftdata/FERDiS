@@ -15,7 +15,7 @@ namespace BlackSP.Core
         /// <summary>
         /// Provides a default value for the queue size of queues on thread boundaries
         /// </summary>
-        public const int DefaultThreadBoundaryQueueSize = 1 << 14;
+        public const int DefaultThreadBoundaryQueueSize = 1 << 12;
 
         /// <summary>
         /// Interval atwhich metrics are logged
