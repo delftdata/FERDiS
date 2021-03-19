@@ -2,7 +2,6 @@
 using BlackSP.Core;
 using BlackSP.Core.MessageProcessing.Processors;
 using BlackSP.Core.Models;
-using BlackSP.Core.Pipelines;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Kernel;
 using Serilog.Events;

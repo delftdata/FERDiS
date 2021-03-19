@@ -1,7 +1,6 @@
 ﻿using Autofac;
 using BlackSP.Core.Dispatchers;
 using BlackSP.Core.Models;
-using BlackSP.Core.Pipelines;
 using BlackSP.Core.MessageProcessing;
 using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Infrastructure.Layers.Data;

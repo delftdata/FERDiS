@@ -1,7 +1,6 @@
 ﻿using Autofac;
 using BlackSP.Core.MessageProcessing.Handlers;
 using BlackSP.Core.Models;
-using BlackSP.Core.Pipelines;
 using BlackSP.Infrastructure.Extensions;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
