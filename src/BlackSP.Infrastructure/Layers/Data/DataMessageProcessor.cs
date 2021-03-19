@@ -96,10 +96,12 @@ namespace BlackSP.Infrastructure.Layers.Data
 
         public async Task Flush(IEnumerable<string> upstreamInstancesToFlush, IEnumerable<string> downstreamInstancesToFlush)
         {
+            _logger.Verbose("DataMessageProcessor starting to flush source and dispatcher");
+
             var upstreamFlush = _source.Flush(upstreamInstancesToFlush);
             var downstreamFlush = _dispatcher.Flush(downstreamInstancesToFlush);
             await Task.WhenAll(upstreamFlush, downstreamFlush).ConfigureAwait(false);
-            _logger.Verbose("DataMessageProcessor flushed input and output successfully");
+            _logger.Debug("DataMessageProcessor flushed input and output successfully");
         }
     }
 }

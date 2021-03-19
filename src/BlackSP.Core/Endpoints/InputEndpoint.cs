@@ -110,7 +110,7 @@ namespace BlackSP.Core.Endpoints
                     _receiver.ThrowIfReceivePreconditionsNotMet(_endpointConfig, shardId);
                     
                     msg = msg ?? await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
-                    hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader.UnreadBufferFraction, 0.1d).ConfigureAwait(false);
+                    hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader, 0.0d, t).ConfigureAwait(false); //note: deadlock odds increase greatly with every % the threshold is increased
                     await _receiver.Receive(msg, _endpointConfig, shardId, lcts.Token).ConfigureAwait(false);
                     msg = null;
                 }
@@ -149,8 +149,9 @@ namespace BlackSP.Core.Endpoints
         /// <param name="shardId"></param>
         /// <param name="unreadBufferFraction"></param>
         /// <returns></returns>
-        private async Task<bool> AdjustReceiverPriority(bool hadPriority, int shardId, double unreadBufferFraction, double priorityThreshold)
+        private async Task<bool> AdjustReceiverPriority(bool hadPriority, int shardId, PipeStreamReader reader, double priorityThreshold, CancellationToken t)
         {
+            var unreadBufferFraction = reader.UnreadBufferFraction;
             bool needsPriority = _endpointConfig.IsBackchannel && unreadBufferFraction > priorityThreshold; //hand priority to backchannels to prevent distributed deadlocks
             if (!hadPriority && needsPriority)
             {

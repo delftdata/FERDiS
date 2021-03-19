@@ -53,8 +53,6 @@ namespace BlackSP.Streams
             {
                 t.ThrowIfCancellationRequested();
                 
-                await BestEffortBufferCapacity(t, 100).ConfigureAwait(false);
-
                 if (_buffer.TryReadMessage(out var msgbodySequence, out var readPosition))
                 {
                     
@@ -85,28 +83,6 @@ namespace BlackSP.Streams
             _buffer = _lastRead.Buffer;
             UnreadBufferSize = TotalBufferSize = _buffer.Length;
             _didRead = true;
-        }
-
-
-        private async Task BestEffortBufferCapacity(CancellationToken t, int timeoutMs)
-        {
-            if (_didRead && UnreadBufferFraction < 0.1d) //less than 10% buffer left.. try to advance the reader within the timeout
-            {
-                var timeoutSrc = new CancellationTokenSource(timeoutMs);
-                var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSrc.Token);
-                try
-                {
-                    await AdvanceReader(lcts.Token).ConfigureAwait(false);
-                } 
-                catch(OperationCanceledException) when (timeoutSrc.IsCancellationRequested)
-                { //silence exception, if advancing did not happen within timeout --> we tried (best effort)
-                }
-                finally
-                {
-                    timeoutSrc.Dispose();
-                    lcts.Dispose();
-                }
-            }
         }
 
         #region dispose pattern
