@@ -55,6 +55,7 @@ namespace BlackSP.Core.Extensions
             }
         }
 
+        [Obsolete("This method relies on GetHashCode and should eventually be changed for a runtime agnostic implementation")]
         public static int GetPartitionKeyForInstanceName(this IVertexConfiguration vertexConfig, string instanceName)
         {
             _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
@@ -74,6 +75,7 @@ namespace BlackSP.Core.Extensions
             throw new Exception($"Could not find partitionkey for instancename: {instanceName}");
         }
 
+        [Obsolete("This method relies on GetHashCode and should eventually be changed for a runtime agnostic implementation")]
         public static string GetConnectionKeyByPartitionKey(this IVertexConfiguration vertexConfig, int partitionKey)
         {
             _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
