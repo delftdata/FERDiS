@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Extensions;
+using BlackSP.Kernel.Extensions;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using System;
@@ -7,26 +8,32 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Handlers
+namespace BlackSP.Core.MessageProcessing.Handlers
 {
     /// <summary>
     /// Base handler that attempts to extract the requested payload from a message and lets subclasses directly handle that payload.
-    /// When the payload is not present on the message, the message will be discarded.
+    /// When the payload is not present on the message it will be forwarded.
     /// </summary>
     /// <typeparam name="TPayload"></typeparam>
     /// <typeparam name="TMessage"></typeparam>
-    public abstract class DiscardingPayloadHandlerBase<TMessage, TPayload> : IHandler<TMessage>
+    public abstract class ForwardingPayloadHandlerBase<TMessage, TPayload> : IHandler<TMessage>
         where TMessage : IMessage
         where TPayload : MessagePayloadBase
     {
+
+        /// <summary>
+        /// Holds a reference to the message associated with the payload currently being processed,
+        /// It is recommended not to yield empty enumerables but instead this message.
+        /// </summary>
+        protected TMessage AssociatedMessage { get; private set; }
+
         public async Task<IEnumerable<TMessage>> Handle(TMessage message)
         {
-            _ = message ?? throw new ArgumentNullException(nameof(message));
+            AssociatedMessage = message ?? throw new ArgumentNullException(nameof(message));
             if (!message.TryExtractPayload<TPayload>(out var payload))
             {
-                return Enumerable.Empty<TMessage>();
+                return message.Yield();
             }
-
             //get results
             var results = await Handle(payload).ConfigureAwait(false);
             //only forward messages with payloads

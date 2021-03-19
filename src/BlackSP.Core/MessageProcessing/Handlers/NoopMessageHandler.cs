@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Handlers
+namespace BlackSP.Core.MessageProcessing.Handlers
 {
     public class NoopMessageHandler<TMessage> : IHandler<TMessage> where TMessage : IMessage
     {

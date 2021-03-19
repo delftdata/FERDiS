@@ -16,7 +16,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Sources
+namespace BlackSP.Core.MessageProcessing
 {
     /// <summary>
     /// Receives input from any source. Exposes received messages through the ISource interface.<br/>

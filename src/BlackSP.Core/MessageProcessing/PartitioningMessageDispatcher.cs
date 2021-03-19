@@ -15,7 +15,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Dispatchers
+namespace BlackSP.Core.MessageProcessing
 {
     /// <summary>
     /// Dispatcher capable of dispatching any implementation of IMessage. Does so by utilizing a provided IPartitioner.

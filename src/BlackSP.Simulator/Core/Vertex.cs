@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using BlackSP.Core.Processors;
+using BlackSP.Core.MessageProcessing.Processors;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Models;
 using BlackSP.Infrastructure;

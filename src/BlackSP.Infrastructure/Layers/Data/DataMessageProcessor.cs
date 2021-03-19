@@ -2,7 +2,7 @@
 using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
 using BlackSP.Core.Monitors;
-using BlackSP.Core.Processors;
+using BlackSP.Core.MessageProcessing.Processors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.MessageProcessing;

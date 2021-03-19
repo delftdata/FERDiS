@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.Handlers;
+﻿using BlackSP.Core.MessageProcessing.Handlers;
 using BlackSP.Core.Models;
 using BlackSP.Infrastructure.Layers.Data.Payloads;
 using BlackSP.Kernel.MessageProcessing;

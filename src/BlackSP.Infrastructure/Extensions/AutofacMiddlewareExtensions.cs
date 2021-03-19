@@ -7,7 +7,7 @@ using BlackSP.Infrastructure.Layers.Control.Handlers;
 using BlackSP.Infrastructure.Layers.Data.Handlers;
 using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Checkpointing;
-using BlackSP.Core.Handlers;
+using BlackSP.Core.MessageProcessing.Handlers;
 using System;
 
 namespace BlackSP.Infrastructure.Extensions

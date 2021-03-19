@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.Processors
+namespace BlackSP.Core.MessageProcessing.Processors
 {
 
     public abstract class SingleSourceProcessorBase<TMessage> 

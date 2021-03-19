@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Core.Partitioners
+namespace BlackSP.Core.MessageProcessing
 {
     /// <summary>
     /// Partitions using a simple modulo operation over the number of possible remote instances

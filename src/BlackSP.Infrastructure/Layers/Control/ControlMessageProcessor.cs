@@ -1,6 +1,6 @@
 ﻿using BlackSP.Core;
 using BlackSP.Core.Models;
-using BlackSP.Core.Processors;
+using BlackSP.Core.MessageProcessing.Processors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.MessageProcessing;
