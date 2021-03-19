@@ -108,36 +108,20 @@ namespace BlackSP.Core.Endpoints
                     lcts = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSrc.Token);
 
                     _receiver.ThrowIfReceivePreconditionsNotMet(_endpointConfig, shardId);
-                    msg = msg ?? await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
-
-                    //EXTRACT METHOD
-                    bool needsPriority = _endpointConfig.IsBackchannel && reader.UnreadBufferFraction > 0.1d; //aggressively hand priority to backchannels to prevent distributed deadlocks
-                    if (!hasTakenPriority && needsPriority)
-                    {
-                        _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} is taking priority, capacity: {reader.UnreadBufferFraction:F2}");
-                        await _receiver.TakePriority(_endpointConfig, shardId).ConfigureAwait(false);
-                        _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} has taken priority, capacity: {reader.UnreadBufferFraction:F2}");
-                    }
-                    if (hasTakenPriority && !needsPriority)
-                    {
-                        _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} is releasing priority, capacity: {reader.UnreadBufferFraction:F2}");
-                        _receiver.ReleasePriority(_endpointConfig, shardId);
-                        _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} has released priority, capacity: {reader.UnreadBufferFraction:F2}");
-                    }
-                    //EXTRACT M<ETHOD
-                    hasTakenPriority = needsPriority;
                     
+                    msg = msg ?? await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
+                    hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader.UnreadBufferFraction, 0.1d).ConfigureAwait(false);
                     await _receiver.Receive(msg, _endpointConfig, shardId, lcts.Token).ConfigureAwait(false);
                     msg = null;
                 }
                 catch(OperationCanceledException) when (timeoutSrc.IsCancellationRequested)
                 {
-                    //retry loop to check if delivery preconditions changed
+                    //retry loop to check if delivery preconditions changed (note how msg read could be skipped)
                     continue;
                 }
                 catch (FlushInProgressException)
                 {
-                    _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} started flushing");
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} started flushing");
                     await writer.WriteMessage(ControlMessageExtensions.ConstructFlushMessage(), t).ConfigureAwait(false);
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent flush message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     byte[] fmsg = null;
@@ -145,9 +129,9 @@ namespace BlackSP.Core.Endpoints
                     {
                         fmsg = await reader.ReadNextMessage(t).ConfigureAwait(false); //keep reading&discarding until flush message returns from upstream
                     }
-                    _logger.Fatal($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
                     await _receiver.Receive(fmsg, _endpointConfig, shardId, t).ConfigureAwait(false);
-                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
                 }
                 finally
                 {
@@ -156,6 +140,31 @@ namespace BlackSP.Core.Endpoints
                 }
             }
             t.ThrowIfCancellationRequested();
+        }
+
+        /// <summary>
+        /// Local subroutine that takes or releases priority with the receiver depending on the amount of unread data in the provided buffer
+        /// </summary>
+        /// <param name="hadPriority"></param>
+        /// <param name="shardId"></param>
+        /// <param name="unreadBufferFraction"></param>
+        /// <returns></returns>
+        private async Task<bool> AdjustReceiverPriority(bool hadPriority, int shardId, double unreadBufferFraction, double priorityThreshold)
+        {
+            bool needsPriority = _endpointConfig.IsBackchannel && unreadBufferFraction > priorityThreshold; //hand priority to backchannels to prevent distributed deadlocks
+            if (!hadPriority && needsPriority)
+            {
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} is taking priority, capacity: {unreadBufferFraction:F2}");
+                await _receiver.TakePriority(_endpointConfig, shardId).ConfigureAwait(false);
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} has taken priority, capacity: {unreadBufferFraction:F2}");
+            }
+            if (hadPriority && !needsPriority)
+            {
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} is releasing priority, capacity: {unreadBufferFraction:F2}");
+                _receiver.ReleasePriority(_endpointConfig, shardId);
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} has released priority, capacity: {unreadBufferFraction:F2}");
+            }
+            return needsPriority;
         }
 
         #region IDisposable Support

@@ -33,14 +33,14 @@ namespace BlackSP.Streams
             UnreadBufferSize = TotalBufferSize = 0;
         }
 
-        public PipeStreamReader(Stream source)
+        public PipeStreamReader(Stream source) : this()
         {
             _stream = source ?? throw new ArgumentNullException(nameof(source));
             _reader = _stream.UsePipeReader();
             _didRead = _disposed = false;
         }
 
-        public PipeStreamReader(PipeReader reader)
+        public PipeStreamReader(PipeReader reader) : this()
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _stream = reader.AsStream();
@@ -53,16 +53,16 @@ namespace BlackSP.Streams
             {
                 t.ThrowIfCancellationRequested();
                 
-                if(UnreadBufferFraction < 0.1d) //less than 10% buffer left.. 
-                {
-                    //await AdvanceReader(t).ConfigureAwait(false);
-                }
+                await BestEffortBufferCapacity(t, 100).ConfigureAwait(false);
 
                 if (_buffer.TryReadMessage(out var msgbodySequence, out var readPosition))
                 {
+                    
+
                     _buffer = _buffer.Slice(readPosition);
                     UnreadBufferSize = _buffer.Length;
                     var bytes = msgbodySequence.ToArray();
+
                     return bytes;
                 } 
                 else
@@ -85,6 +85,28 @@ namespace BlackSP.Streams
             _buffer = _lastRead.Buffer;
             UnreadBufferSize = TotalBufferSize = _buffer.Length;
             _didRead = true;
+        }
+
+
+        private async Task BestEffortBufferCapacity(CancellationToken t, int timeoutMs)
+        {
+            if (_didRead && UnreadBufferFraction < 0.1d) //less than 10% buffer left.. try to advance the reader within the timeout
+            {
+                var timeoutSrc = new CancellationTokenSource(timeoutMs);
+                var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSrc.Token);
+                try
+                {
+                    await AdvanceReader(lcts.Token).ConfigureAwait(false);
+                } 
+                catch(OperationCanceledException) when (timeoutSrc.IsCancellationRequested)
+                { //silence exception, if advancing did not happen within timeout --> we tried (best effort)
+                }
+                finally
+                {
+                    timeoutSrc.Dispose();
+                    lcts.Dispose();
+                }
+            }
         }
 
         #region dispose pattern
