@@ -28,7 +28,7 @@ namespace BlackSP.Kernel
         /// Block incoming messages from specified origin
         /// </summary>
         /// <param name="origin"></param>
-        void Block(IEndpointConfiguration origin, int shardId);
+        Task Block(IEndpointConfiguration origin, int shardId);
 
         /// <summary>
         /// Unblock specified origin
@@ -36,5 +36,22 @@ namespace BlackSP.Kernel
         /// <param name="origin"></param>
         void Unblock(IEndpointConfiguration origin, int shardId);
 
+       
+        /// <summary>
+        /// Gain exclusive access to the receiver, during which other connections will asynchronously wait for priority to be released.<br/>
+        /// Primary use is for processing backchannel messages which must be prioritized to ensure enough buffer capacity.
+        /// </summary>
+        /// <param name="prioOrigin"></param>
+        /// <param name="shardId"></param>
+        /// <returns></returns>
+        Task TakePriority(IEndpointConfiguration prioOrigin, int shardId);
+
+        /// <summary>
+        /// Release exclusive access to the receiver. Ensure to not call this method only after taking priority.
+        /// </summary>
+        /// <param name="prioOrigin"></param>
+        /// <param name="shardId"></param>
+        /// <returns></returns>
+        void ReleasePriority(IEndpointConfiguration prioOrigin, int shardId);
     }
 }

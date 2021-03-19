@@ -41,7 +41,7 @@ namespace BlackSP.Streams.Extensions
             msgBodySequence = buffer.Slice(4, Math.Min(buffer.Length-4, msgLength));
             if (msgBodySequence.Length != msgLength)
             {
-                throw new ReadMessageFromStreamException("Invalid message length");
+                throw new ReadMessageFromStreamException("Mismatching message length");
             }
 
             return buffer.Slice(0, msgLength+4);

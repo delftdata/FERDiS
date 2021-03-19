@@ -18,8 +18,9 @@ namespace BlackSP.Streams
         private readonly Stream _stream;
         private readonly PipeReader _reader;
 
-        private long PreviousBufferSize { get; set; }
-        private long CurrentBufferSize => _buffer.Length;
+        public double UnreadBufferFraction => (UnreadBufferSize / (double)TotalBufferSize);
+        public long UnreadBufferSize { get; private set; }
+        public long TotalBufferSize { get; private set; }
 
         private ReadResult _lastRead;
         private ReadOnlySequence<byte> _buffer;
@@ -29,7 +30,7 @@ namespace BlackSP.Streams
         private PipeStreamReader()
         {
             _didRead = _disposed = false;
-            PreviousBufferSize = 0;
+            UnreadBufferSize = TotalBufferSize = 0;
         }
 
         public PipeStreamReader(Stream source)
@@ -52,9 +53,15 @@ namespace BlackSP.Streams
             {
                 t.ThrowIfCancellationRequested();
                 
+                if(UnreadBufferFraction < 0.1d) //less than 10% buffer left.. 
+                {
+                    await AdvanceReader(t).ConfigureAwait(false);
+                }
+
                 if (_buffer.TryReadMessage(out var msgbodySequence, out var readPosition))
                 {
                     _buffer = _buffer.Slice(readPosition);
+                    UnreadBufferSize = _buffer.Length;
                     var bytes = msgbodySequence.ToArray();
                     return bytes;
                 } 
@@ -64,7 +71,7 @@ namespace BlackSP.Streams
                 }
             }
             t.ThrowIfCancellationRequested(); //if we end up here it's due to cancellation
-            throw null;//so the compiler knows we always throw here
+            throw null;//so the compiler doesnt complain about
         }
 
         public async Task AdvanceReader(CancellationToken t)
@@ -76,6 +83,7 @@ namespace BlackSP.Streams
             
             _lastRead = await _reader.ReadAsync(t).ConfigureAwait(false);
             _buffer = _lastRead.Buffer;
+            UnreadBufferSize = TotalBufferSize = _buffer.Length;
             _didRead = true;
         }
 

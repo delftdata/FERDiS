@@ -101,7 +101,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 throw new InvalidOperationException($"Received two barriers from one connection - {endpoint.RemoteVertexName} at {endpoint.GetRemoteInstanceName(shardId)} shard {shardId}");
             }
             _logger.Information($"Received barrier, proceeding to block connection to instance {endpoint.GetRemoteInstanceName(shardId)}");
-            _messageReceiver.Block(endpoint, shardId);
+            await _messageReceiver.Block(endpoint, shardId).ConfigureAwait(false);
             _blockedConnections.Add((endpoint, shardId));
             _blockedConnectionKeys.Add(connectionKey);
             //if all upstream connections are blocked..
