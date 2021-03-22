@@ -119,6 +119,8 @@ namespace BlackSP.Core.Endpoints
 
                     await _receiver.Receive(msg, _endpointConfig, shardId, lcts.Token).ConfigureAwait(false);
                     msg = null;
+                    //delivery was successfull so dont wait for timeout, only caller cancellation matters now
+                    await _receiver.WaitForNext(_endpointConfig, shardId, callerToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (timeoutSrc.IsCancellationRequested)
                 {

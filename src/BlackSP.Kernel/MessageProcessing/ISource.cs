@@ -51,6 +51,15 @@ namespace BlackSP.Kernel.MessageProcessing
         Task Receive(byte[] message, IEndpointConfiguration origin, int shardId, CancellationToken t);
 
         /// <summary>
+        /// Synchronization method, must be called after receive
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="shardId"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        Task WaitForNext(IEndpointConfiguration origin, int shardId, CancellationToken t);
+
+        /// <summary>
         /// Throws implementation specific eceptions indicating unmet preconditions for reception
         /// </summary>
         /// <param name="origin"></param>
@@ -86,5 +95,12 @@ namespace BlackSP.Kernel.MessageProcessing
         /// <param name="shardId"></param>
         /// <returns></returns>
         void ReleasePriority(IEndpointConfiguration prioOrigin, int shardId);
+
+        /// <summary>
+        /// Signal flush completion for a particular origin
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="shardId"></param>
+        void CompleteFlush(IEndpointConfiguration origin, int shardId);
     }
 }

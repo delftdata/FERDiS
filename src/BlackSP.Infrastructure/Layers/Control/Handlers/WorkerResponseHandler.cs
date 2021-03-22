@@ -27,12 +27,13 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             switch (payload.OriginalRequestType)
             {
                 case WorkerRequestType.Status:
-                    //TODO: consider what to do if the worker lost connection to some neighbours
+                    //status request currently empty..
                     break;
                 case WorkerRequestType.StartProcessing:
-                    //started, nice
+                    //worker confirmed starting..
                     break;
                 case WorkerRequestType.StopProcessing:
+                    //worker confirmed stopping..
                     _stateManager.GetWorkerStateManager(payload.OriginInstanceName).FireTrigger(WorkerStateTrigger.DataProcessorHaltCompleted);
                     break;
                 default:

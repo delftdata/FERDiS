@@ -54,6 +54,7 @@ namespace BlackSP.Core.Coordination
         private readonly ICheckpointService _checkpointService;
         private readonly IVertexGraphConfiguration _graphConfiguration;
         private readonly ILogger _logger;
+        
         private readonly IDictionary<string, WorkerStateManager> _workerStateManagers;
         private readonly StateMachine<State, Trigger> _graphStateMachine;
 

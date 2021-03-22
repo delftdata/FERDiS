@@ -146,7 +146,7 @@ namespace BlackSP.Core.Endpoints
                 var message = await reader.ReadNextMessage(t).ConfigureAwait(false);
                 if (message?.IsFlushMessage() ?? false)
                 {                    
-                    _logger.Fatal($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     await queueAccess.WaitAsync(t).ConfigureAwait(false);
                     try
                     {

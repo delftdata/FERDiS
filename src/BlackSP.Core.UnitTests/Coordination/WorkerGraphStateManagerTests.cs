@@ -29,9 +29,9 @@ namespace BlackSP.Core.UnitTests.Coordination
             cpServiceMock = new Mock<ICheckpointService>();
             var rlMock = new Mock<IRecoveryLine>();
             rlMock.Setup(rl => rl.RecoveryMap).Returns(() => new Dictionary<string, Guid>() {
-                { instanceNames.ElementAt(0), Guid.NewGuid() },
-                { instanceNames.ElementAt(1), Guid.NewGuid() },
-                { instanceNames.ElementAt(2), Guid.Empty }, //for these tests we assume one of the three instances is unaffected by the recovery line
+                { "instance1", Guid.NewGuid() },
+                { "instance2", Guid.NewGuid() },
+                { "instance3", Guid.Empty }, //for these tests we assume one of the three instances is unaffected by the recovery line
             });
             rlMock.Setup(rl => rl.AffectedWorkers).Returns(instanceNames.Take(instanceNames.Count - 2));
             cpServiceMock.Setup(serv => serv.CalculateRecoveryLine(It.IsAny<IEnumerable<string>>())).ReturnsAsync(rlMock.Object);
@@ -69,25 +69,23 @@ namespace BlackSP.Core.UnitTests.Coordination
         [Test]
         public void Failure_DuringRegularOperation_ShouldSetGraphStateToFaulted()
         {
-            var workerstateChanges = new Dictionary<string, WorkerState>();
-            foreach (var workerManager in manager.GetAllWorkerStateManagers())
-            {
-                workerManager.OnStateChange += (name, state) => workerstateChanges[name] = state;
-            }
             foreach (var workerManager in manager.GetAllWorkerStateManagers())
             {
                 workerManager.FireTrigger(WorkerStateTrigger.Startup);
             }
 
-            var failingInstance = manager.GetAllWorkerStateManagers().First();
+            var failingInstance = manager.GetWorkerStateManager("instance1");
             failingInstance.FireTrigger(WorkerStateTrigger.Failure); //fail the first instance
             Assert.AreEqual(WorkerGraphStateManager.State.Faulted, manager.CurrentState);
 
-            Assert.AreEqual(instanceNames.Count() - 1, workerstateChanges.Count);
-            
-            Assert.AreEqual("instance1", workerstateChanges.First(kv => kv.Value == WorkerState.Faulted).Key);
-            Assert.AreEqual("instance2", workerstateChanges.First(kv => kv.Value == WorkerState.Halting).Key);
-            Assert.AreEqual("instance3", workerstateChanges.First(kv => kv.Value == WorkerState.Running).Key);
+            var instance2 = manager.GetWorkerStateManager("instance2");
+            var instance3 = manager.GetWorkerStateManager("instance3");
+
+            //Assert.AreEqual(instanceNames.Count() - 1, workerstateChanges.Count);
+
+            Assert.AreEqual(WorkerState.Faulted, failingInstance.CurrentState);
+            Assert.AreEqual(WorkerState.Halting, instance2.CurrentState);
+            Assert.AreEqual(WorkerState.Running, instance3.CurrentState);
         }
 
         [Test]
@@ -96,7 +94,7 @@ namespace BlackSP.Core.UnitTests.Coordination
             var workerstateChanges = new Dictionary<string, WorkerState>();
             foreach (var workerManager in manager.GetAllWorkerStateManagers())
             {
-                workerManager.OnStateChange += (name, state) => workerstateChanges[name] = state;
+                workerManager.OnStateChangeNotificationRequired += (name, state) => workerstateChanges[name] = state;
             }
             foreach (var workerManager in manager.GetAllWorkerStateManagers())
             {
@@ -124,7 +122,7 @@ namespace BlackSP.Core.UnitTests.Coordination
             var workerstateChanges = new Dictionary<string, WorkerState>();
             foreach (var workerManager in manager.GetAllWorkerStateManagers())
             {
-                workerManager.OnStateChange += (name, state) => workerstateChanges[name] = state;
+                workerManager.OnStateChangeNotificationRequired += (name, state) => workerstateChanges[name] = state;
             }
             foreach (var workerManager in manager.GetAllWorkerStateManagers())
             {
@@ -162,19 +160,21 @@ namespace BlackSP.Core.UnitTests.Coordination
                 workerManager.FireTrigger(WorkerStateTrigger.Startup);
             }
 
-            manager.GetAllWorkerStateManagers().First().FireTrigger(WorkerStateTrigger.Failure); //fail the first instance
-            Assert.AreEqual(WorkerGraphStateManager.State.Faulted, manager.CurrentState);
-            Assert.AreEqual("instance1", workerstateChanges.First(kv => kv.Value == WorkerState.Faulted).Key);
-            Assert.AreEqual("instance2", workerstateChanges.First(kv => kv.Value == WorkerState.Halting).Key);
-            Assert.AreEqual("instance3", workerstateChanges.First(kv => kv.Value == WorkerState.Running).Key);
+            var inst1 = manager.GetWorkerStateManager("instance1");
+            var inst2 = manager.GetWorkerStateManager("instance2");
+            var inst3 = manager.GetWorkerStateManager("instance3");
 
-            manager.GetAllWorkerStateManagers().Skip(1).First().FireTrigger(WorkerStateTrigger.Failure); //fail the second instance
+            inst1.FireTrigger(WorkerStateTrigger.Failure); //fail the first instance
             Assert.AreEqual(WorkerGraphStateManager.State.Faulted, manager.CurrentState);
-            Assert.IsTrue(Enumerable.SequenceEqual(
-                new string[] { "instance1", "instance2" }, 
-                workerstateChanges.Where(kv => kv.Value == WorkerState.Faulted).Select(kv => kv.Key)
-            ));
-            Assert.AreEqual("instance3", workerstateChanges.First(kv => kv.Value == WorkerState.Running).Key);
+            Assert.AreEqual(WorkerState.Faulted, inst1.CurrentState);
+            Assert.AreEqual(WorkerState.Halting, inst2.CurrentState);
+            Assert.AreEqual(WorkerState.Running, inst3.CurrentState);
+
+            inst2.FireTrigger(WorkerStateTrigger.Failure); //fail the second instance
+            Assert.AreEqual(WorkerGraphStateManager.State.Faulted, manager.CurrentState);
+            Assert.AreEqual(WorkerState.Faulted, inst1.CurrentState);
+            Assert.AreEqual(WorkerState.Faulted, inst2.CurrentState);
+            Assert.AreEqual(WorkerState.Running, inst3.CurrentState);
         }
 
     }

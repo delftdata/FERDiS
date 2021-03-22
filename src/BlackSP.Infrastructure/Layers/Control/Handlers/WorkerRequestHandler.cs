@@ -55,8 +55,6 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             response.AddPayload(new WorkerResponsePayload()
             {
                 OriginInstanceName = _vertexConfiguration.InstanceName,
-                //UpstreamFullyConnected = upstreamFullyConnected,
-                //DownstreamFullyConnected = downstreamFullyConnected,
                 DataProcessActive = _activeThread != null,
                 OriginalRequestType = payload.RequestType
             });
@@ -98,13 +96,12 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             if (_activeThread == null)
             {
                 _ctSource = new CancellationTokenSource();
-                _activeThread = _processor.StartProcess(_ctSource.Token)
-                    .ContinueWith(LogExceptionIfFaulted, TaskScheduler.Current);
+                _activeThread = _processor.StartProcess(_ctSource.Token).ContinueWith(LogExceptionIfFaulted, TaskScheduler.Current);
                 _logger.Information($"Data processor started by coordinator instruction");
             }
             else
             {
-                _logger.Warning($"Data processor already started, cannot start again");
+                throw new InvalidOperationException($"Data processor already started, cannot start again");
             }
             return Task.CompletedTask;
         }
@@ -123,7 +120,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             }
             else
             {
-                _logger.Warning($"Data processor already stopped, cannot stop again");
+                throw new InvalidOperationException($"Data processor already stopped, cannot stop again");
             }
         }
 

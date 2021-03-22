@@ -110,13 +110,16 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             {
                 case WorkerState.Running:
                     msg.AddPayload(new WorkerRequestPayload { RequestType = WorkerRequestType.StartProcessing });
+                    _logger.Debug("Created worker request START for: " + affectedInstanceName);
                     break;
                 case WorkerState.Halting:
                     msg.AddPayload(GetWorkerRequestPayloadForHaltingInstance(affectedInstanceName));
+                    _logger.Debug("Created worker request HALT for: " + affectedInstanceName);
                     break;
                 case WorkerState.Recovering:
                     var targetCheckpointId = _graphManager.GetWorkerStateManager(affectedInstanceName).RestoringCheckpointId;
                     msg.AddPayload(new CheckpointRestoreRequestPayload(targetCheckpointId));
+                    _logger.Debug("Created worker request RECOVER for: " + affectedInstanceName);
                     break;
                 default:
                     throw new InvalidOperationException($"Attempted to determine notification message for instance {affectedInstanceName} with WorkerState {newState}, which is not implemented in {this.GetType()}");

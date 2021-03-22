@@ -75,6 +75,8 @@ namespace BlackSP.Core.Coordination
         private readonly StateMachine<WorkerState, WorkerStateTrigger>.TriggerWithParameters<Guid> _checkpointRestoreCompletionTrigger;
         private readonly StateMachine<WorkerState, WorkerStateTrigger>.TriggerWithParameters<(string[], string[])> _dataProcessorHaltTrigger;
 
+        private StateMachine<WorkerState, WorkerStateTrigger>.Transition lastTransition;
+
         public WorkerStateManager(string workerInstanceName, ILogger logger)
         {
             InstanceName = workerInstanceName ?? throw new ArgumentNullException(nameof(workerInstanceName));
@@ -87,7 +89,8 @@ namespace BlackSP.Core.Coordination
             _checkpointRestoreCompletionTrigger = machine.SetTriggerParameters<Guid>(WorkerStateTrigger.CheckpointRestoreCompleted);
             _dataProcessorHaltTrigger = machine.SetTriggerParameters<(string[], string[])>(WorkerStateTrigger.DataProcessorHalt);
             _stateMachine = ConfigureStateMachine(machine);
-            machine.OnTransitioned(OnStateTransition);
+            
+            machine.OnTransitioned(transition => lastTransition = transition);
         }
 
         /// <summary>
@@ -107,6 +110,7 @@ namespace BlackSP.Core.Coordination
             try
             {
                 _stateMachine.Fire(trigger);
+                OnStateTransition(lastTransition);
             }
             catch (InvalidOperationException e)
             {
@@ -129,6 +133,7 @@ namespace BlackSP.Core.Coordination
             try
             {
                 _stateMachine.Fire(triggerWithParam, checkpointId);
+                OnStateTransition(lastTransition);
             }
             catch (InvalidOperationException e)
             {
@@ -150,6 +155,7 @@ namespace BlackSP.Core.Coordination
             try
             {
                 _stateMachine.Fire(_dataProcessorHaltTrigger, upAndDownstreamHaltedInstances);
+                OnStateTransition(lastTransition);
             }
             catch (InvalidOperationException e)
             {
