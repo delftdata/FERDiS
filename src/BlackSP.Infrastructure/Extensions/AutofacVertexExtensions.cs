@@ -2,7 +2,7 @@
 using BlackSP.Core.Coordination;
 using BlackSP.Core.Endpoints;
 using BlackSP.Core.Monitors;
-using BlackSP.Infrastructure.Layers.Common;
+using BlackSP.Infrastructure.Factories;
 using BlackSP.Kernel.Serialization;
 using BlackSP.Serialization;
 using Microsoft.IO;
@@ -21,8 +21,6 @@ namespace BlackSP.Infrastructure.Extensions
         {
             builder.RegisterGeneric(typeof(OutputEndpoint<>)).AsSelf();
             builder.RegisterGeneric(typeof(InputEndpoint<>)).AsSelf();
-            builder.RegisterGeneric(typeof(TimeoutOutputEndpoint<>)).AsSelf();
-            builder.RegisterGeneric(typeof(TimeoutInputEndpoint<>)).AsSelf();
             builder.RegisterGeneric(typeof(FlushableTimeoutOutputEndpoint<>)).AsSelf();
             builder.RegisterGeneric(typeof(FlushableTimeoutInputEndpoint<>)).AsSelf();
             builder.RegisterType<EndpointFactory>().AsSelf();

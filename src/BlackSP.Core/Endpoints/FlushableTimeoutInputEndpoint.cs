@@ -3,6 +3,7 @@ using BlackSP.Core.Extensions;
 using BlackSP.Core.Monitors;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
 using BlackSP.Streams;
@@ -29,14 +30,14 @@ namespace BlackSP.Core.Endpoints
         /// <returns></returns>
         public delegate FlushableTimeoutInputEndpoint<TMessage> Factory(string endpointName);
 
-        private readonly IReceiver<TMessage> _receiver;
+        private readonly IReceiverSource<TMessage> _receiver;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
 
         public FlushableTimeoutInputEndpoint(string endpointName,
                              IVertexConfiguration vertexConfig,
-                             IReceiver<TMessage> receiver,
+                             IReceiverSource<TMessage> receiver,
                              ConnectionMonitor connectionMonitor,
                              ILogger logger)
         {
@@ -111,7 +112,7 @@ namespace BlackSP.Core.Endpoints
                     timeoutSrc = new CancellationTokenSource(5000);
                     lcts = CancellationTokenSource.CreateLinkedTokenSource(callerToken, timeoutSrc.Token);
 
-                    _receiver.ThrowIfReceivePreconditionsNotMet(_endpointConfig, shardId);
+                    _receiver.ThrowIfFlushInProgress(_endpointConfig, shardId);
                     msg = msg ?? await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
 
                     hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader.UnreadBufferFraction, 0.1d).ConfigureAwait(false);

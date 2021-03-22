@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Kernel.Models;
-using BlackSP.Infrastructure.Layers.Common;
+using BlackSP.Infrastructure.Factories;
 
 namespace BlackSP.Simulator.Core
 {

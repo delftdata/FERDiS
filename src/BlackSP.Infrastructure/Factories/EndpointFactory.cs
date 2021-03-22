@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Infrastructure.Layers.Common
+namespace BlackSP.Infrastructure.Factories
 {
     public class EndpointFactory
     {

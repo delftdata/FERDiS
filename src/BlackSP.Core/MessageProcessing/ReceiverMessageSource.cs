@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace BlackSP.Core.MessageProcessing
 {
@@ -22,31 +23,58 @@ namespace BlackSP.Core.MessageProcessing
     /// Receives input from any source. Exposes received messages through the ISource interface.<br/>
     /// Sorts and orders input based on message types to be consumed one-by-one.
     /// </summary>
-    public sealed class ReceiverMessageSource<TMessage> : IReceiver<TMessage>, ISource<TMessage>, IDisposable
+    public sealed class ReceiverMessageSource<TMessage> : IReceiverSource<TMessage>, IDisposable
         where TMessage : class, IMessage
     {
         public (IEndpointConfiguration, int) MessageOrigin { get; private set; }
+
 
         private readonly IObjectSerializer _serializer;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ILogger _logger;
         
+        /// <summary>
+        /// dict mapping connection keys to origin pairs
+        /// </summary>
         private IDictionary<string, (IEndpointConfiguration, int)> _originDictionary;
-        private IDictionary<string, TaskCompletionSource<bool>> _flushDictionary;
-        private IDictionary<string, SemaphoreSlim> _accessDictionary;
 
-        private SemaphoreSlim _channelAccess;
+        /// <summary>
+        /// dict mapping connection keys to flush completion sources
+        /// </summary>
+        private IDictionary<string, TaskCompletionSource<bool>> _flushDictionary;
+
+        /// <summary>
+        /// internal dict for block/unblock api
+        /// </summary>
+        private IDictionary<string, SemaphoreSlim> _blockDictionary;
+
+        /// <summary>
+        /// internal dict for blocking channels for priority management
+        /// </summary>
+        private IDictionary<string, SemaphoreSlim> _priorityAccessDictionary;
+
+        /// <summary>
+        /// internal dict for synchronization between Take and Receive calls
+        /// </summary>
+        private IDictionary<string, SemaphoreSlim> _takeBeforeDeliverDictionary;
+
+        /// <summary>
+        /// semaphore to allow a single producer to take priority
+        /// </summary>
         private SemaphoreSlim _priorityAccess;
 
         /// <summary>
-        /// Contains (a) received message(s) ready for delivery
+        /// semaphore to allow a single producer into the reception critical section
         /// </summary>
-        private Channel<(TMessage, IEndpointConfiguration, int)> _channel;
+        private SemaphoreSlim _nextMessageAccess;
 
-        //private List<string> _blockedConnections;
 
-        private readonly object lockObj;
+        private BufferBlock<(TMessage, IEndpointConfiguration, int)> _receivedMessages;
+
+
         private bool disposedValue;
+
+        private (TMessage, IEndpointConfiguration, int) _lastTake { get; set; }
 
         public ReceiverMessageSource(IObjectSerializer serializer, IVertexConfiguration vertexConfiguration, ILogger logger)
         {
@@ -56,88 +84,39 @@ namespace BlackSP.Core.MessageProcessing
             
             _originDictionary = new Dictionary<string, (IEndpointConfiguration, int)>();
             _flushDictionary = new Dictionary<string, TaskCompletionSource<bool>>();
-            _accessDictionary = new Dictionary<string, SemaphoreSlim>();
-            _channelAccess = new SemaphoreSlim(1, 1);
-            _priorityAccess = new SemaphoreSlim(1, 1);
-            InitialiseDataStructures();
             
-            lockObj = new object();
+            _blockDictionary = new Dictionary<string, SemaphoreSlim>();
+            _priorityAccessDictionary = new Dictionary<string, SemaphoreSlim>();
+            _takeBeforeDeliverDictionary = new Dictionary<string, SemaphoreSlim>();
+            _priorityAccess = new SemaphoreSlim(1, 1);
+            _nextMessageAccess = new SemaphoreSlim(1, 1);
 
-            //note single capacity
-            _channel = Channel.CreateBounded<(TMessage, IEndpointConfiguration, int)>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.Wait });
+            _receivedMessages = new BufferBlock<(TMessage, IEndpointConfiguration, int)>(new DataflowBlockOptions { BoundedCapacity = 1 });
+
+            InitialiseDataStructures();
         }
 
         public async Task<TMessage> Take(CancellationToken t)
         {
-            if(await _channel.Reader.WaitToReadAsync(t))
+            var (lMsg, lOrigin, lShard) = _lastTake;
+            if(lMsg != null)
             {
-                var (msg, origin, shard) = await _channel.Reader.ReadAsync(t);
-                MessageOrigin = (origin, shard);
-                return msg;
-            } 
-            else
-            {
-                throw new InvalidOperationException($"{nameof(ReceiverMessageSource<TMessage>)} internal channel was completed, this yields an invalid program state");
-            }
-            
-        }
-
-#if false
-        private Task<TMessage> TakeWithoutPriority(CancellationToken t)
-        {
-            var activeQueuePairs = _msgQueues.Where(kv => !_blockedConnections.Contains(kv.Key));
-
-            TMessage message = default;
-            
-            int takenIndex = BlockingCollection<TMessage>.TakeFromAny(activeQueuePairs.Select(kv => kv.Value.UnderlyingCollection).ToArray(), out message, t);
-            string takenConnectionKey = activeQueuePairs.ElementAt(takenIndex).Key;
-            
-            MessageOrigin = _originDictionary[takenConnectionKey];
-            return Task.FromResult(message);
-        }
-
-
-        private Task<TMessage> TakeWithPriority(CancellationToken t)
-        {
-            var activeQueuePairs = _msgQueues.Where(kv => !_blockedConnections.Contains(kv.Key));
-
-            var priorityConnectionKeys = _vertexConfiguration.InputEndpoints.Where(ie => ie.IsBackchannel).SelectMany(ie => ie.GetAllConnectionKeys());
-            var activePrioQueues = activeQueuePairs.Where(kv => priorityConnectionKeys.Contains(kv.Key));
-
-            TMessage message = default;
-
-            int takenIndex = -1;
-            string takenConnectionKey = string.Empty;
-            if (activePrioQueues.Select(q => q.Value.UnderlyingCollection).Any(queue => (queue.Count / (double)queue.BoundedCapacity) > 0.20d)) //any prio queue over 20% full? then take from those
-            {
-                takenIndex = BlockingCollection<TMessage>.TakeFromAny(activePrioQueues.Select(kv => kv.Value.UnderlyingCollection).ToArray(), out message, t);
-                takenConnectionKey = activePrioQueues.ElementAt(takenIndex).Key;
-            } 
-            else //else, take from any input channel
-            {
-                takenIndex = BlockingCollection<TMessage>.TakeFromAny(activeQueuePairs.Select(kv => kv.Value.UnderlyingCollection).ToArray(), out message, t);
-                takenConnectionKey = activeQueuePairs.ElementAt(takenIndex).Key;
+                _takeBeforeDeliverDictionary.Get(lOrigin.GetConnectionKey(lShard)).Release();
             }
 
-            MessageOrigin = _originDictionary[takenConnectionKey];
-            return Task.FromResult(message);
-        }
-
-        public IFlushableQueue<TMessage> GetReceptionQueue(IEndpointConfiguration origin, int shardId)
-        {
-            _ = origin ?? throw new ArgumentNullException(nameof(origin));
-            var connectionKey = origin.GetConnectionKey(shardId);
-            lock (lockObj)
+            if (!await _receivedMessages.OutputAvailableAsync(t).ConfigureAwait(false))
             {
-                return _msgQueues[connectionKey];
+                throw new InvalidOperationException("Internal reception block may not complete");
             }
+
+            var (msg, origin, shard) = _lastTake = await _receivedMessages.ReceiveAsync(t).ConfigureAwait(false);
+
+            MessageOrigin = (origin, shard);
+            return msg;
         }
-#endif
-        
         
         public async Task Receive(byte[] message, IEndpointConfiguration origin, int shardId, CancellationToken t)
         {
-
             _ = message ?? throw new ArgumentNullException(nameof(message));
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
             var connectionKey = origin.GetConnectionKey(shardId);
@@ -146,38 +125,35 @@ namespace BlackSP.Core.MessageProcessing
             if(!FlushPreReceptionChecks(message, connectionKey)) {
                 return;
             }
-
             //do deserialization
             var dserializedMsg = await _serializer.DeserializeAsync<TMessage>(message, t).ConfigureAwait(false);
 
-            var personalAccess = _accessDictionary.Get(connectionKey);
-            List<SemaphoreSlim> accessed = new List<SemaphoreSlim>();
-            try
-            {            
-                //gain access to critical section
-                await personalAccess.WaitAsync(t).ConfigureAwait(false);
-                accessed.Add(personalAccess);
-                await _channelAccess.WaitAsync(t).ConfigureAwait(false);
-                accessed.Add(_channelAccess);
-                
-                //use critical section
-                if (await _channel.Writer.WaitToWriteAsync(t))
-                {
-                    if(!_channel.Writer.TryWrite((dserializedMsg, origin, shardId)))
-                    {
-                        throw new InvalidOperationException("Couldnt write to channel");
-                    }
-                }
 
+            var accessed = new List<SemaphoreSlim>();
+
+            var prioAccess = _priorityAccessDictionary.Get(connectionKey); 
+            var blockAccess = _blockDictionary.Get(connectionKey); 
+            try
+            {
+                await prioAccess.WaitAsync(t).ConfigureAwait(false); //ensure current channel is not being out-prioritized
+                accessed.Add(prioAccess);
+                await blockAccess.WaitAsync(t).ConfigureAwait(false); //ensure current channel is not blocked
+                accessed.Add(blockAccess);
+                //acquire access to the critical section..
+                await _nextMessageAccess.WaitAsync(t).ConfigureAwait(false);
+                accessed.Add(_nextMessageAccess);
+
+
+                //use critical section
+                await _receivedMessages.SendAsync((dserializedMsg, origin, shardId), t).ConfigureAwait(false);                
             }
             finally
             {
-                //release access to critical section
-                foreach(var sema in accessed)
-                {
-                    sema.Release();
-                }
+                accessed.ForEach(sema => sema.Release()); //allow next channel into the CS
             }
+
+            await _takeBeforeDeliverDictionary[connectionKey].WaitAsync(t).ConfigureAwait(false); //wait for message to be taken before returning (prevent next delivery in case processing blocks channel)
+
         }
 
         public async Task TakePriority(IEndpointConfiguration prioOrigin, int shardId)
@@ -195,7 +171,7 @@ namespace BlackSP.Core.MessageProcessing
                 {
                     continue;
                 }
-                tasks.Add(_accessDictionary.Get(key).WaitAsync());
+                tasks.Add(_priorityAccessDictionary.Get(key).WaitAsync());
             }
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
@@ -211,7 +187,7 @@ namespace BlackSP.Core.MessageProcessing
                 {
                     continue;
                 }
-                _accessDictionary.Get(key).Release();
+                _priorityAccessDictionary.Get(key).Release();
             }
             _priorityAccess.Release();
         }
@@ -231,12 +207,20 @@ namespace BlackSP.Core.MessageProcessing
             }
             if(flushes.Count != instanceNamesToFlush.Count())
             {
-                throw new ArgumentException("Invalid instanceName in enumerable", nameof(instanceNamesToFlush));
+                throw new ArgumentException($"Invalid instanceName in enumerable: {string.Join(", ", instanceNamesToFlush)}", nameof(instanceNamesToFlush));
             }
 
-            _logger.Debug($"Receiver flushing {flushes.Count}/{_originDictionary.Count} queues");
-            await Task.WhenAll(flushes).ConfigureAwait(false);
-            _logger.Debug($"Receiver flushed {flushes.Count}/{_originDictionary.Count} queues");
+            if(flushes.Any())
+            {
+                _logger.Debug($"Receiver flushing {flushes.Count}/{_originDictionary.Count} queues");
+                await Task.WhenAll(flushes).ConfigureAwait(false);
+                _logger.Debug($"Receiver flushed {flushes.Count}/{_originDictionary.Count} queues");
+            } 
+            else
+            {
+                _logger.Debug($"Receiver did not have to flush any connections");
+            }
+            
         }
 
         public async Task Block(IEndpointConfiguration origin, int shardId)
@@ -244,8 +228,8 @@ namespace BlackSP.Core.MessageProcessing
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
             //wait associated semaphore
             var connectionKey = origin.GetConnectionKey(shardId);
-            var accessSemaphore = _accessDictionary[connectionKey];
-            await accessSemaphore.WaitAsync().ConfigureAwait(false);
+            var semaphore = _blockDictionary[connectionKey];
+            await semaphore.WaitAsync().ConfigureAwait(false);
         }
 
         public void Unblock(IEndpointConfiguration origin, int shardId)
@@ -253,12 +237,12 @@ namespace BlackSP.Core.MessageProcessing
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
             //release associated semaphore
             var connectionKey = origin.GetConnectionKey(shardId);
-            var accessSemaphore = _accessDictionary[connectionKey];
-            accessSemaphore.Release();
+            var semaphore = _blockDictionary[connectionKey];
+            semaphore.Release();
             
         }
 
-        public void ThrowIfReceivePreconditionsNotMet(IEndpointConfiguration origin, int shardId)
+        public void ThrowIfFlushInProgress(IEndpointConfiguration origin, int shardId)
         {
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
             if (_flushDictionary.ContainsKey(origin.GetConnectionKey(shardId))) //check if flush in progress
@@ -303,7 +287,9 @@ namespace BlackSP.Core.MessageProcessing
                     int shardId = i;
                     var connectionKey = config.GetConnectionKey(shardId);
                     _originDictionary[connectionKey] = (config, shardId);
-                    _accessDictionary[connectionKey] = new SemaphoreSlim(1, 1);
+                    _blockDictionary[connectionKey] = new SemaphoreSlim(1, 1);
+                    _priorityAccessDictionary[connectionKey] = new SemaphoreSlim(1, 1);
+                    _takeBeforeDeliverDictionary[connectionKey] = new SemaphoreSlim(0, 1);
                 }
             }
         }

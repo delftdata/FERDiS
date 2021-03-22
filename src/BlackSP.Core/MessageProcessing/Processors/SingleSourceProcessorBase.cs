@@ -124,11 +124,10 @@ namespace BlackSP.Core.MessageProcessing.Processors
                     {
                         message = await _source.Take(t).ConfigureAwait(false) ?? throw new Exception($"Received null from {_source.GetType()}.Take");
                     }
-                    var results = await _pipeline.Process(message).ConfigureAwait(false);
-                    foreach (var msg in results)
+
+                    foreach (var output in await _pipeline.Process(message).ConfigureAwait(false))
                     {
-                        //_logger.Verbose($"Adding message to dispatch thread queue (current queue size: {dispatchChannel.Reader.Count})");
-                        await dispatchChannel.Writer.WriteAsync(msg, t).ConfigureAwait(false);
+                        await dispatchChannel.Writer.WriteAsync(output, t).ConfigureAwait(false);
                     }
                 }
             }

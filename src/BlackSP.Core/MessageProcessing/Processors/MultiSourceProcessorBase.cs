@@ -115,9 +115,9 @@ namespace BlackSP.Core.MessageProcessing.Processors
 
         private async Task ProcessMessageInCriticalSection(TMessage message, Channel<TMessage> dispatchChannel, CancellationToken t)
         {
+            await _csSemaphore.WaitAsync(t).ConfigureAwait(false); //enter cs
             try
             {
-                await _csSemaphore.WaitAsync(t).ConfigureAwait(false); //enter cs
                 IEnumerable<TMessage> responses = await _pipeline.Process(message).ConfigureAwait(false);
                 foreach (var msg in responses)
                 {

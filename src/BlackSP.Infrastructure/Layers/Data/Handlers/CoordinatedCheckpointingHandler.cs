@@ -26,15 +26,15 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
         private readonly IEnumerable<string> _allUpstreamConnectionKeys;
         
         private readonly ISource<DataMessage> _messageSource;
-        private readonly IReceiver<DataMessage> _messageReceiver;
+        private readonly IReceiverSource<DataMessage> _messageReceiver;
         private readonly ICheckpointService _checkpointingService;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ILogger _logger;
 
         private readonly List<(IEndpointConfiguration, int)> _blockedConnections;
         private readonly List<string> _blockedConnectionKeys;
-        public CoordinatedCheckpointingHandler(ISource<DataMessage> messageSource, 
-            IReceiver<DataMessage> messageReceiver, 
+        public CoordinatedCheckpointingHandler(ISource<DataMessage> messageSource,
+            IReceiverSource<DataMessage> messageReceiver, 
             ICheckpointService checkpointingService, 
             IVertexConfiguration vertexConfiguration,
             ILogger logger)
@@ -89,7 +89,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
         }
 
         /// <summary>
-        /// Utility method that performs barrier blocking - checkpointing and barrier unblocking
+        /// Utility method that performs barrier blocking + checkpointing + barrier unblocking
         /// </summary>
         /// <param name="payload"></param>
         /// <param name="endpoint"></param>
@@ -120,6 +120,9 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             }
         }
 
+        /// <summary>
+        /// Utility method that unblocks all upstream connections
+        /// </summary>
         private void UnblockAllConnections()
         {
             foreach (var (ep, sId) in _blockedConnections)

@@ -30,14 +30,14 @@ namespace BlackSP.Core.Endpoints
         /// <returns></returns>
         public delegate InputEndpoint<TMessage> Factory(string endpointName);
 
-        private readonly IReceiver<TMessage> _receiver;
+        private readonly IReceiverSource<TMessage> _receiver;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionMonitor _connectionMonitor;
         private readonly ILogger _logger;
 
         public InputEndpoint(string endpointName,
                              IVertexConfiguration vertexConfig,
-                             IReceiver<TMessage> receiver,
+                             IReceiverSource<TMessage> receiver,
                              ConnectionMonitor connectionMonitor,
                              ILogger logger)
         {
@@ -107,7 +107,7 @@ namespace BlackSP.Core.Endpoints
                     timeoutSrc = new CancellationTokenSource(5000);
                     lcts = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSrc.Token);
 
-                    _receiver.ThrowIfReceivePreconditionsNotMet(_endpointConfig, shardId);
+                    _receiver.ThrowIfFlushInProgress(_endpointConfig, shardId);
                     
                     msg = msg ?? await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
                     hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader, 0.0d, t).ConfigureAwait(false); //note: deadlock odds increase greatly with every % the threshold is increased

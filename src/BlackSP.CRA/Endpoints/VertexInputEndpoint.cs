@@ -1,5 +1,5 @@
 ﻿using BlackSP.Core.Endpoints;
-using BlackSP.Infrastructure.Layers.Common;
+using BlackSP.Infrastructure.Factories;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
