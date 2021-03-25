@@ -1,5 +1,4 @@
-﻿using BlackSP.Checkpointing;
-using BlackSP.Kernel.Configuration;
+﻿using BlackSP.Kernel.Configuration;
 using System;
 
 namespace BlackSP.Infrastructure.Models

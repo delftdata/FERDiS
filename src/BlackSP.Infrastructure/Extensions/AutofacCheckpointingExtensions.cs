@@ -4,6 +4,7 @@ using BlackSP.Checkpointing;
 using BlackSP.Checkpointing.Core;
 using BlackSP.Checkpointing.Persistence;
 using BlackSP.Kernel.Checkpointing;
+using BlackSP.Kernel.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Text;

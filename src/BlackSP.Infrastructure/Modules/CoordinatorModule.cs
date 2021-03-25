@@ -7,6 +7,7 @@ using System;
 using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Infrastructure.Layers.Control.Sources;
 using BlackSP.Checkpointing;
+using BlackSP.Kernel.Configuration;
 
 namespace BlackSP.Infrastructure.Modules
 {

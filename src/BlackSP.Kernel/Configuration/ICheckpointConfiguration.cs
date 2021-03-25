@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Checkpointing
+namespace BlackSP.Kernel.Configuration
 {
     public enum CheckpointCoordinationMode
     {

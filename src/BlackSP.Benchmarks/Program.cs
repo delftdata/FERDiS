@@ -3,6 +3,7 @@ using BlackSP.Benchmarks.NEXMark.Generator;
 using BlackSP.Checkpointing;
 using BlackSP.Infrastructure;
 using BlackSP.Infrastructure.Models;
+using BlackSP.Kernel.Configuration;
 using Serilog.Events;
 using System;
 using System.Threading.Tasks;

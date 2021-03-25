@@ -15,6 +15,7 @@ using System.Collections.Immutable;
 using BlackSP.Kernel.Models;
 using BlackSP.Checkpointing.Models;
 using BlackSP.Kernel.Operators;
+using BlackSP.Kernel.Configuration;
 
 namespace BlackSP.Checkpointing
 {

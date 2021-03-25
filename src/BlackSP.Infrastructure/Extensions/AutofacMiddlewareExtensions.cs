@@ -9,6 +9,7 @@ using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Checkpointing;
 using BlackSP.Core.MessageProcessing.Handlers;
 using System;
+using BlackSP.Kernel.Configuration;
 
 namespace BlackSP.Infrastructure.Extensions
 {
