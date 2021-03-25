@@ -1,11 +1,9 @@
-﻿using BlackSP.Core.Extensions;
-using BlackSP.Kernel;
+﻿using BlackSP.Kernel;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Models;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace BlackSP.Core.MessageProcessing
 {

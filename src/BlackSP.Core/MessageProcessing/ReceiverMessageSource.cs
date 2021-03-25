@@ -39,6 +39,11 @@ namespace BlackSP.Core.MessageProcessing
         private IDictionary<string, (IEndpointConfiguration, int)> _originDictionary;
 
         /// <summary>
+        /// dict mapping connection keys to cancellation token sources to cancel an input
+        /// </summary>
+        private IDictionary<string, CancellationTokenSource> _connectionCancellationDictionary;
+
+        /// <summary>
         /// dict mapping connection keys to flush completion sources
         /// </summary>
         private IDictionary<string, TaskCompletionSource<bool>> _flushDictionary;
@@ -89,6 +94,7 @@ namespace BlackSP.Core.MessageProcessing
             _blockDictionary = new Dictionary<string, SemaphoreSlim>();
             _priorityAccessDictionary = new Dictionary<string, SemaphoreSlim>();
             _takeBeforeDeliverDictionary = new Dictionary<string, SemaphoreSlim>();
+            _connectionCancellationDictionary = new Dictionary<string, CancellationTokenSource>();
             _priorityAccess = new SemaphoreSlim(1, 1);
             _nextMessageAccess = new SemaphoreSlim(1, 1);
 
@@ -99,25 +105,26 @@ namespace BlackSP.Core.MessageProcessing
 
         public async Task<TMessage> Take(CancellationToken t)
         {
+
             var (lMsg, lOrigin, lShard) = _lastTake;
             if(lMsg != null)
             {
-                var nextReceptionSemaphore = _takeBeforeDeliverDictionary.Get(lOrigin.GetConnectionKey(lShard));
-                while(nextReceptionSemaphore.CurrentCount == 1) //while nobody waiting..
+                var lastDeliveryConsumed = _takeBeforeDeliverDictionary.Get(lOrigin.GetConnectionKey(lShard));
+                if(lastDeliveryConsumed.CurrentCount == 0)
                 {
-                    await Task.Delay(10).ConfigureAwait(false); //busy spin, nasty but whatever
+                    lastDeliveryConsumed.Release(); //release the task waiting on the last line of Receive(..)
+                } else
+                {
+                    _logger.Warning("Last taken message's Receive call is no longer waiting, proceeding as normal since it could be a failed channel. If this happens under failure free conditions, synchronization may go out of lockstep");
                 }
-                nextReceptionSemaphore.Release();
-                //release the task waiting on the last line of Receive(..)
             }
 
             if (!await _receivedMessages.OutputAvailableAsync(t).ConfigureAwait(false))
             {
-                throw new InvalidOperationException("Internal reception block may not complete");
+                throw new InvalidOperationException("Internal reception block may not complete during operation");
             }
 
             var (msg, origin, shard) = _lastTake = await _receivedMessages.ReceiveAsync(t).ConfigureAwait(false);
-
             MessageOrigin = (origin, shard);
             return msg;
         }
@@ -128,47 +135,128 @@ namespace BlackSP.Core.MessageProcessing
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
             var connectionKey = origin.GetConnectionKey(shardId);
 
-            //perform flush checks
-            FlushPreReceptionChecks(connectionKey);
-
-            //do deserialization
-            var dserializedMsg = await _serializer.DeserializeAsync<TMessage>(message, t).ConfigureAwait(false);
-            
             var accessed = new List<SemaphoreSlim>();
+            var lastDeliveryTakenAccess = _takeBeforeDeliverDictionary[connectionKey];
+            var ct = _connectionCancellationDictionary[connectionKey].Token;
             try
             {
+                t.ThrowIfCancellationRequested();
+                ct.ThrowIfCancellationRequested();
+                using var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, ct);
+
+                //do deserialization
+                var dserializedMsg = await _serializer.DeserializeAsync<TMessage>(message, lcts.Token).ConfigureAwait(false);
+
                 //ensure current channel is not being out-prioritized
                 var prioAccess = _priorityAccessDictionary.Get(connectionKey);
-                await prioAccess.WaitAsync(t).ConfigureAwait(false); 
+                await prioAccess.WaitAsync(lcts.Token).ConfigureAwait(false); 
                 accessed.Add(prioAccess);
 
-                //ensure current channel is not blocked
+                //ensure current channel is not blocked (lock position acceptable under assumption that a channel only blocks itself)
                 var blockAccess = _blockDictionary.Get(connectionKey);
-                await blockAccess.WaitAsync(t).ConfigureAwait(false); 
+                await blockAccess.WaitAsync(lcts.Token).ConfigureAwait(false); 
                 accessed.Add(blockAccess);
 
                 //acquire access to the critical section..
-                await _nextMessageAccess.WaitAsync(t).ConfigureAwait(false);
+                await _nextMessageAccess.WaitAsync(lcts.Token).ConfigureAwait(false);
                 accessed.Add(_nextMessageAccess);
+
+                //release blockAccess to allow self-blocking during critical section
+                blockAccess.Release();
+                accessed.Remove(blockAccess);
 
                 //use critical section
                 var triplet = (dserializedMsg, origin, shardId);
-                await _receivedMessages.SendAsync(triplet, t).ConfigureAwait(false);
-                _lastWrite = triplet;
+                await Task.WhenAny(lastDeliveryTakenAccess.WaitAsync(lcts.Token), _receivedMessages.SendAsync(triplet, lcts.Token)).ConfigureAwait(false);
+                _lastWrite = triplet;                
+            }
+            catch(OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                _logger.Debug($"Receive aborted due to flush initiation on connectionKey: {connectionKey}");
+                if(lastDeliveryTakenAccess.CurrentCount == 0)
+                {   //cancelled while waiting for Take, as it wont be taken, release
+                    lastDeliveryTakenAccess.Release();
+                }
+                ThrowIfFlushInProgress(origin, shardId);
+                throw new NotImplementedException("Cancellation for non-flushing purposes is not implemented");
             }
             finally
             {
                 //release any acquired semaphores
                 accessed.ForEach(sema => sema.Release());
             }
-            //caller is expected to use "WaitForNext" to await consumption of the delivered message
         }
 
-        public async Task WaitForNext(IEndpointConfiguration origin, int shardId, CancellationToken t)
+        public async Task Flush(IEnumerable<string> instanceNamesToFlush)
+        {
+            _ = instanceNamesToFlush ?? throw new ArgumentNullException(nameof(instanceNamesToFlush));
+            var flushes = new List<Task>();
+            foreach(var (endpoint, shardId) in _originDictionary.Values)
+            {
+                if(instanceNamesToFlush.Contains(endpoint.GetRemoteInstanceName(shardId)))
+                {
+                    var connectionKey = endpoint.GetConnectionKey(shardId);
+                    var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    _flushDictionary.Add(connectionKey, tcs);
+                    flushes.Add(tcs.Task);
+                    _connectionCancellationDictionary[connectionKey].Cancel(); //cancel any ongoing calls to the Receive method
+                }
+            }
+
+            if(flushes.Count != instanceNamesToFlush.Count())
+            {
+                throw new ArgumentException($"Invalid instanceName in enumerable: {string.Join(", ", instanceNamesToFlush)}", nameof(instanceNamesToFlush));
+            }
+
+            if(flushes.Any())
+            {
+                _logger.Debug($"Receiver flushing {flushes.Count}/{_originDictionary.Count} queues");
+                await Task.WhenAll(flushes).ConfigureAwait(false);
+                _logger.Debug($"Receiver flushed {flushes.Count}/{_originDictionary.Count} queues");
+            } 
+            else
+            {
+                _logger.Debug($"Receiver did not have to flush any connections");
+            }
+        }
+
+        public void ThrowIfFlushInProgress(IEndpointConfiguration origin, int shardId)
+        {
+            _ = origin ?? throw new ArgumentNullException(nameof(origin));
+            if (_flushDictionary.ContainsKey(origin.GetConnectionKey(shardId))) //check if flush in progress
+            {
+                throw new FlushInProgressException();
+            }
+        }
+
+        public void CompleteFlush(IEndpointConfiguration origin, int shardId)
         {
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
             var connectionKey = origin.GetConnectionKey(shardId);
-            await _takeBeforeDeliverDictionary[connectionKey].WaitAsync(t).ConfigureAwait(false);
+            _logger.Debug($"Completing flush result on {connectionKey}");
+            
+            //complete flush task so waiting Flush() call eventually returns
+            _flushDictionary.Get(connectionKey).SetResult(true);
+            _flushDictionary.Remove(connectionKey);
+
+            //reset cancellationtoken to prevent new connection auto-cancel
+            _connectionCancellationDictionary[connectionKey] = new CancellationTokenSource();
+
+            //check "last write" if it belongs to this endpoint and if so, delete it (prevent lingering message after flush)
+            var (msg, lorigin, lshard) = _lastWrite;
+            if (msg != null && lorigin.GetConnectionKey(lshard) == origin.GetConnectionKey(shardId)) {
+                //last written item was from this channel, do reset to get rid of it
+                _receivedMessages.Complete();
+                _receivedMessages = new BufferBlock<(TMessage, IEndpointConfiguration, int)>(new DataflowBlockOptions { BoundedCapacity = 1 });
+                _logger.Debug("Receiver bufferblock reset due to flush completion on connectionKey: " + origin.GetConnectionKey(shardId));
+                _lastWrite = default;
+            }
+
+            (msg, lorigin, lshard) = _lastTake;
+            if(msg != null && lorigin.GetConnectionKey(lshard) == origin.GetConnectionKey(shardId)) {
+                //last taken item was from flushed connection, so there is no task awaiting for release
+                _lastTake = default; //reset so the next Take call will not exceed this connection's "_takeBeforeDeliverDictionary" semaphore.
+            }
         }
 
         public async Task TakePriority(IEndpointConfiguration prioOrigin, int shardId)
@@ -179,10 +267,10 @@ namespace BlackSP.Core.MessageProcessing
 
             await _priorityAccess.WaitAsync().ConfigureAwait(false);
 
-            foreach(var (origin, shard) in _originDictionary.Values)
+            foreach (var (origin, shard) in _originDictionary.Values)
             {
                 var key = origin.GetConnectionKey(shard);
-                if(key == prioKey)
+                if (key == prioKey)
                 {
                     continue;
                 }
@@ -206,56 +294,6 @@ namespace BlackSP.Core.MessageProcessing
             }
             _priorityAccess.Release();
         }
-
-        public async Task Flush(IEnumerable<string> instanceNamesToFlush)
-        {
-            _ = instanceNamesToFlush ?? throw new ArgumentNullException(nameof(instanceNamesToFlush));
-            var flushes = new List<Task>();
-            foreach(var (endpoint, shardId) in _originDictionary.Values)
-            {
-                if(instanceNamesToFlush.Contains(endpoint.GetRemoteInstanceName(shardId)))
-                {
-                    var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                    _flushDictionary.Add(endpoint.GetConnectionKey(shardId), tcs);
-                    flushes.Add(tcs.Task);
-                }
-            }
-            if(flushes.Count != instanceNamesToFlush.Count())
-            {
-                throw new ArgumentException($"Invalid instanceName in enumerable: {string.Join(", ", instanceNamesToFlush)}", nameof(instanceNamesToFlush));
-            }
-
-            if(flushes.Any())
-            {
-                _logger.Debug($"Receiver flushing {flushes.Count}/{_originDictionary.Count} queues");
-                await Task.WhenAll(flushes).ConfigureAwait(false);
-                _logger.Debug($"Receiver flushed {flushes.Count}/{_originDictionary.Count} queues");
-            } 
-            else
-            {
-                _logger.Debug($"Receiver did not have to flush any connections");
-            }
-            
-        }
-
-        public void CompleteFlush(IEndpointConfiguration origin, int shardId)
-        {
-            _ = origin ?? throw new ArgumentNullException(nameof(origin));
-            var connectionKey = origin.GetConnectionKey(shardId);
-            _logger.Debug($"Completing flush result on {connectionKey}");
-            _flushDictionary.Get(connectionKey).SetResult(true);
-            _flushDictionary.Remove(connectionKey);
-
-            //TODO: consider checking "last write" if it belongs to this endpoint and if so, delete it?
-            var (_, lorigin, lshard) = _lastWrite;
-            if (lorigin.GetConnectionKey(lshard) == origin.GetConnectionKey(shardId)) {
-                //last written item was from this channel, do reset to get rid of it
-                _receivedMessages.Complete();
-                _receivedMessages = new BufferBlock<(TMessage, IEndpointConfiguration, int)>(new DataflowBlockOptions { BoundedCapacity = 1 });
-                _logger.Fatal("RESET BUFFERBLOCK CAUSE: " + origin.GetConnectionKey(shardId));
-            }
-        }
-
         public async Task Block(IEndpointConfiguration origin, int shardId)
         {
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
@@ -275,32 +313,6 @@ namespace BlackSP.Core.MessageProcessing
             
         }
 
-        public void ThrowIfFlushInProgress(IEndpointConfiguration origin, int shardId)
-        {
-            _ = origin ?? throw new ArgumentNullException(nameof(origin));
-            if (_flushDictionary.ContainsKey(origin.GetConnectionKey(shardId))) //check if flush in progress
-            {
-                throw new FlushInProgressException();
-            }
-        }
-
-        /// <summary>
-        /// performs flush checks
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="connectionKey"></param>
-        /// <returns>wether message can be further processed</returns>
-        private void FlushPreReceptionChecks(string connectionKey)
-        {
-            if (!_flushDictionary.ContainsKey(connectionKey)) //check if flush in progress
-            {
-                return;
-            }
-
-            _logger.Debug($"Throwing flush in progress exception on {connectionKey}");
-            throw new FlushInProgressException();
-        }
-
         private void InitialiseDataStructures()
         {
             foreach (var config in _vertexConfiguration.InputEndpoints)
@@ -312,7 +324,8 @@ namespace BlackSP.Core.MessageProcessing
                     _originDictionary[connectionKey] = (config, shardId);
                     _blockDictionary[connectionKey] = new SemaphoreSlim(1, 1);
                     _priorityAccessDictionary[connectionKey] = new SemaphoreSlim(1, 1);
-                    _takeBeforeDeliverDictionary[connectionKey] = new SemaphoreSlim(0, 1);
+                    _takeBeforeDeliverDictionary[connectionKey] = new SemaphoreSlim(1, 1);
+                    _connectionCancellationDictionary[connectionKey] = new CancellationTokenSource();
                 }
             }
         }

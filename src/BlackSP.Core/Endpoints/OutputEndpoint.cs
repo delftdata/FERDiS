@@ -1,4 +1,5 @@
-﻿using BlackSP.Core.Extensions;
+﻿using BlackSP.Core.Exceptions;
+using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
 using BlackSP.Core.Monitors;
 using BlackSP.Kernel;
@@ -14,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.Endpoints
@@ -66,7 +68,7 @@ namespace BlackSP.Core.Endpoints
             using CancellationTokenSource exceptionSource = new CancellationTokenSource();
             using CancellationTokenSource callerOrExceptionSource = CancellationTokenSource.CreateLinkedTokenSource(callerToken, exceptionSource.Token);
             string targetInstanceName = _endpointConfig.GetRemoteInstanceName(remoteShardId);
-            _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} starting output stream writer. Writing to vertex {_endpointConfig.RemoteVertexName} on instance {targetInstanceName} on endpoint {remoteEndpointName}");      
+            _logger.Debug($"Output endpoint{_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} starting egress.");      
             try
             {
                 var pipe = outputStream.UsePipe(cancellationToken: callerOrExceptionSource.Token);
@@ -81,12 +83,12 @@ namespace BlackSP.Core.Endpoints
             }
             catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
             {
-                _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} to {_endpointConfig.GetRemoteInstanceName(remoteShardId)} is handling cancellation request from caller side");
+                _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} is handling cancellation request from caller side");
                 throw;
             }
             catch (Exception e)
             {
-                _logger.Warning(e, $"Output endpoint {_endpointConfig.LocalEndpointName} output stream writer ran into an exception. Writing to vertex {_endpointConfig.RemoteVertexName} on instance {targetInstanceName} on endpoint {remoteEndpointName}");
+                _logger.Warning(e, $"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} egress exited with an exception.");
                 exceptionSource.Cancel();
                 throw;
             }
@@ -111,26 +113,49 @@ namespace BlackSP.Core.Endpoints
                 await queueAccess.WaitAsync(t).ConfigureAwait(false);
 
                 using var timeoutSource = new CancellationTokenSource(1000);
-                using var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
                 try
-                {
-                    //THROW? dispatchQueue.
-                    var message = await dispatchQueue.UnderlyingCollection.Reader.ReadAsync(lcts.Token);
+                {                
+                    using var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, timeoutSource.Token);
+
+                    dispatchQueue.ThrowIfFlushingStarted();
+                    byte[] message;
+                    try
+                    {
+                        message = await dispatchQueue.UnderlyingCollection.Reader.ReadAsync(lcts.Token);
+                    } 
+                    catch(ChannelClosedException)
+                    {
+                        dispatchQueue.ThrowIfFlushingStarted();
+                        throw;
+                    }
                     await writer.WriteMessage(message, t).ConfigureAwait(false);
                     if (message.IsFlushMessage())
                     {
                         await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
                     }
+                    queueAccess.Release();
+
                 }
                 catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
                 {
                     //there was no message to dispatch before timeout
                     //flush whatever is still in the output buffer
                     await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
-                } 
-                finally
-                {
                     queueAccess.Release();
+                }
+                catch (OperationCanceledException) when (t.IsCancellationRequested)
+                {
+                    //caller cancelled, leave method in consistent state .. release semaphore
+                    queueAccess.Release();
+                    throw;
+                }
+                catch (FlushInProgressException)
+                {
+                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} paused stream writer to wait for flush");
+                    var ongoingFlush = dispatchQueue.BeginFlush();
+                    queueAccess.Release();
+                    await ongoingFlush.ConfigureAwait(false); //Join the wait for flush completion.. the flushrequest listener will complete it..
+                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} unpaused stream writer after flush");
                 }
             }
             t.ThrowIfCancellationRequested();
@@ -142,11 +167,11 @@ namespace BlackSP.Core.Endpoints
             while (!t.IsCancellationRequested)
             {
                 t.ThrowIfCancellationRequested();
-                _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName} flush listener waiting for next message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} flush listener waiting for next message.");
                 var message = await reader.ReadNextMessage(t).ConfigureAwait(false);
                 if (message?.IsFlushMessage() ?? false)
                 {                    
-                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} received flush message.");
                     await queueAccess.WaitAsync(t).ConfigureAwait(false);
                     try
                     {
@@ -160,7 +185,7 @@ namespace BlackSP.Core.Endpoints
                         {
                             throw new InvalidOperationException("Got channel write access but could not write");
                         }
-                        _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} sent flush message back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                        _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} sent flush message response downstream.");
 
                     }
                     finally
@@ -170,7 +195,7 @@ namespace BlackSP.Core.Endpoints
                 }
                 else
                 {
-                    _logger.Error($"Output endpoint {_endpointConfig.LocalEndpointName} received invalid instruction on flush listener from instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                    _logger.Error($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} received unknown message type on flush listener.");
                     throw new InvalidOperationException($"FlushRequestListener expected flush message but received: {message}");
                 }
             }

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Kernel.Models
+namespace BlackSP.Kernel.Configuration
 {
     public enum VertexType
     {

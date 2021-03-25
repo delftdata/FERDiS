@@ -75,7 +75,7 @@ namespace BlackSP.Core.Endpoints
             try
             {
                 t.ThrowIfCancellationRequested();
-                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} starting read & deserialize threads. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.GetRemoteInstanceName(remoteShardId)}\"");
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} starting ingress.");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
                 var readThread = ReadMessagesFromStream(streamReader, remoteShardId, controlMsgChannel.Writer, callerOrExceptionSource.Token);
                 var writeThread = WriteControlMessages(streamWriter, remoteShardId, controlMsgChannel.Reader, callerOrExceptionSource.Token);
@@ -84,12 +84,12 @@ namespace BlackSP.Core.Endpoints
             }
             catch (OperationCanceledException) when (t.IsCancellationRequested)
             {
-                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName} is handling cancellation request from caller side");
+                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} is handling cancellation request from caller side");
                 throw;
             }
             catch (Exception e)
             {
-                _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName} read & deserialize threads ran into an exception. Reading from \"{_endpointConfig.RemoteVertexName} {remoteEndpointName}\" on instance \"{_endpointConfig.GetRemoteInstanceName(remoteShardId)}\"");
+                _logger.Warning(e, $"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} ingress exited with an exception.");
                 exceptionSource.Cancel();
                 throw;
             }
@@ -99,53 +99,49 @@ namespace BlackSP.Core.Endpoints
             }
         }
 
-        private async Task ReadMessagesFromStream(PipeStreamReader reader, int shardId, ChannelWriter<byte[]> controlQueue, CancellationToken callerToken)
+        private async Task ReadMessagesFromStream(PipeStreamReader reader, int shardId, ChannelWriter<byte[]> controlQueue, CancellationToken t)
         {
-            byte[] msg = null;
             bool hasTakenPriority = false;
-            while (!callerToken.IsCancellationRequested)
+            while (!t.IsCancellationRequested)
             {
-                CancellationTokenSource timeoutSrc = null;
-                CancellationTokenSource lcts = null;
+                using var readTimeout = new CancellationTokenSource(500); //let read attempt timeout after XXXms..
+                using var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, readTimeout.Token);
                 try
                 {
-                    timeoutSrc = new CancellationTokenSource(5000);
-                    lcts = CancellationTokenSource.CreateLinkedTokenSource(callerToken, timeoutSrc.Token);
-
-                    _receiver.ThrowIfFlushInProgress(_endpointConfig, shardId);
-                    msg = msg ?? await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
-
-                    hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader.UnreadBufferFraction, 0.1d).ConfigureAwait(false);
-
-                    await _receiver.Receive(msg, _endpointConfig, shardId, lcts.Token).ConfigureAwait(false);
-                    msg = null;
-                    //delivery was successfull so dont wait for timeout, only caller cancellation matters now
-                    await _receiver.WaitForNext(_endpointConfig, shardId, callerToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) when (timeoutSrc.IsCancellationRequested)
-                {
-                    //retry loop to check if delivery preconditions changed
-                    continue;
+                    byte[] msg;
+                    try
+                    {
+                        msg = await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
+                        hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader.UnreadBufferFraction, 0.0d).ConfigureAwait(false); //note: deadlock odds increase greatly with every % the threshold is increased
+                        await _receiver.Receive(msg, _endpointConfig, shardId, t).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (readTimeout.IsCancellationRequested)
+                    {
+                        _receiver.ThrowIfFlushInProgress(_endpointConfig, shardId);
+                    }
                 }
                 catch (FlushInProgressException)
                 {
-                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} started flushing");
-                    await controlQueue.WriteAsync(ControlMessageExtensions.ConstructFlushMessage(), callerToken);
+                    if (hasTakenPriority)
+                    {
+                        //force release priority during flush
+                        hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, -1, 0.0d).ConfigureAwait(false);
+                    }
+
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} from {_endpointConfig.GetRemoteInstanceName(shardId)} started flushing");
+                    await controlQueue.WriteAsync(ControlMessageExtensions.ConstructFlushMessage(), t).ConfigureAwait(false);
+                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent flush message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     byte[] fmsg = null;
                     while (fmsg == null || !fmsg.IsFlushMessage())
                     {
-                        fmsg = await reader.ReadNextMessage(callerToken).ConfigureAwait(false); //keep taking until flush message returns from upstream
+                        fmsg = await reader.ReadNextMessage(t).ConfigureAwait(false); //keep reading&discarding until flush message returns from upstream
                     }
-                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response");
-                    await _receiver.Receive(fmsg, _endpointConfig, shardId, callerToken).ConfigureAwait(false);
-                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
-                } finally
-                {
-                    timeoutSrc.Dispose();
-                    lcts.Dispose();
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response from {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                    _receiver.CompleteFlush(_endpointConfig, shardId);
+                    _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with upstream instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
                 }
             }
-            callerToken.ThrowIfCancellationRequested();
+            t.ThrowIfCancellationRequested();
         }
 
 

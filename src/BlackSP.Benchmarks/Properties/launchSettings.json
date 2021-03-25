@@ -26,9 +26,9 @@
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}",
         "LOG_TARGETS": "3", // 1 (console) | 2 (file) | 4 (azure blob)
-        "LOG_LEVEL": "2", //0-5
+        "LOG_LEVEL": "1", //0-5
         "BLACKSP_INFRASTRUCTURE": "0", //0 = simulator
-        "BLACKSP_BENCHMARK": "0", //0-6
+        "BLACKSP_BENCHMARK": "6", //0-6
         "PR_PAGE_COUNT": "9964",
         "PR_DAMPENING_FACTOR": "0.85"
       },
@@ -42,9 +42,9 @@
         "CRA_WORKER_DOCKER_IMAGE": "mdzwart/cra-net3.1:latest",
         "KAFKA_BROKER_DNS_TEMPLATE": "kafka-{0}.kafka.kafka.svc.cluster.local:9092",
         "LOG_TARGETS": "5", // 1 (console) || 2 (file) || 4 (azure blob)
-        "LOG_LEVEL": "2", //0-5,
+        "LOG_LEVEL": "1", //0-5,
         "BLACKSP_INFRASTRUCTURE": "1", //1 = cra
-        "BLACKSP_BENCHMARK": "0", //0-6
+        "BLACKSP_BENCHMARK": "6", //0-6
         "PR_PAGE_COUNT": "9964",
         "PR_DAMPENING_FACTOR": "0.85",
         "ENVIRONMENT_VARIABLE_KEYS_TO_CRA": "AZURE_STORAGE_CONN_STRING, KAFKA_BROKER_DNS_TEMPLATE, LOG_TARGETS, LOG_LEVEL, PR_PAGE_COUNT, PR_DAMPENING_FACTOR" //list of environment variable keys that will be forwarded to the environment in the k8s deployment

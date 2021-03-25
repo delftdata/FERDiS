@@ -46,6 +46,7 @@ namespace BlackSP.Core.Models
             if (_tcs == null)
             {
                 _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                UnderlyingCollection.Writer.Complete();
             }
             await _tcs.Task.ConfigureAwait(false);
         }
@@ -57,8 +58,8 @@ namespace BlackSP.Core.Models
                 await Task.Delay(10).ConfigureAwait(false); //spin until flush started
             }
             _tcs.SetResult(true);
-            _tcs = null;
             InitChannel();
+            _tcs = null;
         }
     }
 

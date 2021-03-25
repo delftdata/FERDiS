@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlackSP.Kernel.Endpoints
+namespace BlackSP.Kernel.Configuration
 {
     public interface IEndpointConfiguration
     {

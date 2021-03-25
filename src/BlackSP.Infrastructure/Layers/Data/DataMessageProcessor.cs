@@ -81,7 +81,7 @@ namespace BlackSP.Infrastructure.Layers.Data
             if(!connection.IsUpstream && !isactive)
             {
                 var failedInstanceName = connection.Endpoint.GetRemoteInstanceName(connection.ShardId);
-                _logger.Debug($"Failure detected in downstream instance {failedInstanceName}");
+                _logger.Information($"Failure detected in downstream instance {failedInstanceName}");
                 try
                 {
                     StopProcess().Wait();

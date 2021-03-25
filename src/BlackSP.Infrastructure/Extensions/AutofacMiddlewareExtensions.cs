@@ -40,7 +40,7 @@ namespace BlackSP.Infrastructure.Extensions
         {
             //pre operator handlers
             builder.RegisterType<MetricLoggingHandler<DataMessage>>().As<IHandler<DataMessage>>();
-            builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>();
+            builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
 
             switch(cpMode)
             {
@@ -62,7 +62,7 @@ namespace BlackSP.Infrastructure.Extensions
             builder.RegisterType<OperatorEventHandler>().As<IHandler<DataMessage>>();
 
             //post operator handlers
-            builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>();
+            builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>(); //forwards CP dependency on new CP
 
 
             return builder;
