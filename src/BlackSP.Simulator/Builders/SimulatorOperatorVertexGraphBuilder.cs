@@ -3,7 +3,7 @@ using AutofacSerilogIntegration;
 using BlackSP.Infrastructure.Builders;
 using BlackSP.Infrastructure.Builders.Graph;
 using BlackSP.Infrastructure.Models;
-using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Serialization.Extensions;
 using BlackSP.Simulator.Configuration;
 using BlackSP.Simulator.Core;

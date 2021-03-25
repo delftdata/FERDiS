@@ -4,10 +4,9 @@ using BlackSP.Infrastructure.Builders.Graph;
 using BlackSP.Infrastructure.Models;
 using BlackSP.Infrastructure.Modules;
 using BlackSP.Infrastructure.UnitTests.Events;
+using BlackSP.Kernel.Configuration;
 using BlackSP.OperatorShells;
-using Moq;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -77,7 +76,7 @@ namespace BlackSP.Infrastructure.UnitTests
                 usedNames.Add(configurator.VertexName);
             }
 
-            var coordinatorModuleType = graphBuilder.VertexBuilders.FirstOrDefault(x => x.VertexType == Kernel.Models.VertexType.Coordinator).ModuleType;
+            var coordinatorModuleType = graphBuilder.VertexBuilders.FirstOrDefault(x => x.VertexType == VertexType.Coordinator).ModuleType;
             Assert.AreEqual(typeof(CoordinatorModule), coordinatorModuleType);
 
         }

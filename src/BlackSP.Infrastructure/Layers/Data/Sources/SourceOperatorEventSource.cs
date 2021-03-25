@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using BlackSP.Infrastructure.Layers.Data.Payloads;
 using BlackSP.Kernel.Endpoints;
 using System.Collections.Generic;
+using BlackSP.Kernel.Configuration;
 
 namespace BlackSP.Infrastructure.Layers.Data.Sources
 {

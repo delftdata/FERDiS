@@ -1,9 +1,7 @@
-﻿using BlackSP.Infrastructure.Models;
-using BlackSP.Kernel;
-using BlackSP.Kernel.Models;
-using BlackSP.Kernel.Operators;
+﻿using BlackSP.Kernel.Configuration;
 using System;
 using System.Collections.Generic;
+
 
 namespace BlackSP.Infrastructure.Builders
 {

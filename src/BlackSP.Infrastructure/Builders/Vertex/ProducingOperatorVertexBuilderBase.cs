@@ -1,6 +1,8 @@
 ﻿
 using BlackSP.Infrastructure.Builders.Edge;
 using BlackSP.Infrastructure.Models;
+using BlackSP.Kernel.Configuration;
+
 using System;
 
 namespace BlackSP.Infrastructure.Builders.Vertex

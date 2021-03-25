@@ -2,6 +2,7 @@
 using BlackSP.Infrastructure.Builders.Edge;
 using BlackSP.Infrastructure.Builders.Vertex;
 using BlackSP.Infrastructure.Models;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;

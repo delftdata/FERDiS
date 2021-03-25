@@ -1,15 +1,10 @@
-﻿using BlackSP.Core.Endpoints;
-using BlackSP.Infrastructure.Factories;
+﻿using BlackSP.Infrastructure.Factories;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Endpoints;
-using BlackSP.Kernel.Models;
-using BlackSP.Kernel.Operators;
-using BlackSP.Kernel.Serialization;
 using CRA.ClientLibrary;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 

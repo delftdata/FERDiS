@@ -1,10 +1,9 @@
-﻿using BlackSP.OperatorShells;
-using BlackSP.Infrastructure.Models;
-using BlackSP.Infrastructure.Modules;
+﻿using BlackSP.Infrastructure.Modules;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
+using BlackSP.OperatorShells;
 using System;
-using System.Collections.Generic;
 
 namespace BlackSP.Infrastructure.Builders.Vertex
 {

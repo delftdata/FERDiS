@@ -1,13 +1,12 @@
 ﻿using BlackSP.Benchmarks.Graph.Events;
 using BlackSP.Benchmarks.Graph.Models;
 using BlackSP.Checkpointing;
-using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Operators;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace BlackSP.Benchmarks.Graph.Operators
 {

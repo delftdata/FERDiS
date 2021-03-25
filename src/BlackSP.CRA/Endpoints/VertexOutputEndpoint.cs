@@ -1,8 +1,6 @@
-﻿using BlackSP.Core.Endpoints;
-using BlackSP.Infrastructure.Factories;
+﻿using BlackSP.Infrastructure.Factories;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Endpoints;
-using BlackSP.Kernel.Models;
-using BlackSP.Kernel.Serialization;
 using CRA.ClientLibrary;
 using Serilog;
 using System;

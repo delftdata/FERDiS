@@ -1,12 +1,10 @@
-﻿using BlackSP.Core.Extensions;
-using BlackSP.Core.MessageProcessing.Handlers;
+﻿using BlackSP.Core.MessageProcessing.Handlers;
 using BlackSP.Infrastructure.Layers.Data.Payloads;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Checkpointing;
-using BlackSP.Kernel.Extensions;
-using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers

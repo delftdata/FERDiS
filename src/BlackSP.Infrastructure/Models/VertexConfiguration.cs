@@ -1,10 +1,7 @@
-﻿using BlackSP.Kernel;
-using BlackSP.Kernel.Endpoints;
-using BlackSP.Kernel.Models;
+﻿using BlackSP.Kernel.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace BlackSP.Infrastructure.Models
 {

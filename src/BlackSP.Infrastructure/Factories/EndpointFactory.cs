@@ -1,12 +1,10 @@
 ﻿using Autofac;
 using BlackSP.Core.Endpoints;
-using BlackSP.Core.Models;
 using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Infrastructure.Layers.Data;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Endpoints;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace BlackSP.Infrastructure.Factories
 {

@@ -1,10 +1,6 @@
-﻿using BlackSP.OperatorShells;
-using BlackSP.Kernel;
-using BlackSP.Kernel.Models;
+﻿using BlackSP.Checkpointing;
+using BlackSP.Kernel.Configuration;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using BlackSP.Checkpointing;
 
 namespace BlackSP.Infrastructure.Models
 {

@@ -1,16 +1,14 @@
 ﻿using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
 using BlackSP.Kernel;
-using BlackSP.Kernel.Endpoints;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
 using Serilog;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;

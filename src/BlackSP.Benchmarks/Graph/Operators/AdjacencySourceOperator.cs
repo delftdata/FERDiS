@@ -1,12 +1,10 @@
 ﻿using BlackSP.Benchmarks.Graph.Events;
 using BlackSP.Benchmarks.Graph.Models;
-using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Operators;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 

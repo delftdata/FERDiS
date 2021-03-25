@@ -1,5 +1,6 @@
 ﻿using BlackSP.Core.Coordination;
 using BlackSP.Kernel.Checkpointing;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Models;
 using Moq;
 using NUnit.Framework;

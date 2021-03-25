@@ -1,9 +1,8 @@
 ﻿using BlackSP.Core.UnitTests.Events;
-using BlackSP.Kernel.Extensions;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;

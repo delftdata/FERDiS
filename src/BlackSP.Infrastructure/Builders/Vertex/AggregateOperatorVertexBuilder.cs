@@ -2,6 +2,7 @@
 using BlackSP.Infrastructure.Modules;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
+using BlackSP.Kernel.Configuration;
 using System;
 
 namespace BlackSP.Infrastructure.Builders.Vertex

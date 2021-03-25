@@ -1,18 +1,11 @@
 ﻿using BlackSP.Benchmarks.Kafka;
-using BlackSP.Benchmarks.NEXMark;
 using BlackSP.Benchmarks.NEXMark.Events;
 using BlackSP.Benchmarks.NEXMark.Models;
-using BlackSP.Checkpointing;
-using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Operators;
-using Confluent.Kafka;
-using Confluent.Kafka.SyncOverAsync;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace BlackSP.Benchmarks.NEXMark.Operators

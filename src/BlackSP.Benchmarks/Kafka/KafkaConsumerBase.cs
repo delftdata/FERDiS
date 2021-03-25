@@ -1,6 +1,5 @@
-﻿using BlackSP.Benchmarks.NEXMark.Generator;
-using BlackSP.Checkpointing;
-using BlackSP.Kernel.Models;
+﻿using BlackSP.Checkpointing;
+using BlackSP.Kernel.Configuration;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Serilog;

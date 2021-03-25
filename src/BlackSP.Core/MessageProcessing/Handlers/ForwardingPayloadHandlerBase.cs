@@ -1,5 +1,5 @@
 ﻿using BlackSP.Core.Extensions;
-using BlackSP.Kernel.Extensions;
+using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using System;

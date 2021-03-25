@@ -1,8 +1,6 @@
 ﻿using BlackSP.Infrastructure.Modules;
-using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Configuration;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace BlackSP.Infrastructure.Builders.Vertex
 {

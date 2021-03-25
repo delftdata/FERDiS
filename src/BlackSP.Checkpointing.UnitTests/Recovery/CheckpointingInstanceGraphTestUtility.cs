@@ -1,11 +1,10 @@
-﻿using BlackSP.Checkpointing.Core;
-using BlackSP.Checkpointing.Models;
-using BlackSP.Kernel.Models;
+﻿using BlackSP.Checkpointing.Models;
+using BlackSP.Kernel.Configuration;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+
 
 namespace BlackSP.Checkpointing.UnitTests.Recovery
 {

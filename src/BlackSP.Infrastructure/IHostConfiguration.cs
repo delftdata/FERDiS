@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using BlackSP.Checkpointing;
+using BlackSP.Kernel.Configuration;
 
 namespace BlackSP.Infrastructure
 {

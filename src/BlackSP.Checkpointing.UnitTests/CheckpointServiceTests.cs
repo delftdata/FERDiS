@@ -4,6 +4,7 @@ using BlackSP.Checkpointing.Models;
 using BlackSP.Checkpointing.Persistence;
 using BlackSP.Checkpointing.UnitTests.Models;
 using BlackSP.Kernel.Checkpointing;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Models;
 using Moq;
 using NUnit.Framework;

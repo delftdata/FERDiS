@@ -1,5 +1,6 @@
 ﻿using BlackSP.Checkpointing.Extensions;
 using BlackSP.Checkpointing.Models;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;

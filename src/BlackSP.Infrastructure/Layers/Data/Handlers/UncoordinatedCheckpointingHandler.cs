@@ -1,14 +1,12 @@
 ﻿using BlackSP.Checkpointing;
-using BlackSP.Core.Extensions;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Checkpointing;
-using BlackSP.Kernel.Extensions;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.MessageProcessing;
-using BlackSP.Kernel.Models;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
