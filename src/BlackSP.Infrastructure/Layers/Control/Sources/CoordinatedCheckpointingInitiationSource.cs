@@ -39,6 +39,8 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         
         private bool disposedValue;
 
+        //TODO: consider building in a feedback loop to detect completion of global checkpoint
+
         public CoordinatedCheckpointingInitiationSource(WorkerGraphStateManager graphStateManager,
             IVertexGraphConfiguration graphConfiguration,
             IVertexConfiguration vertexConfiguration,

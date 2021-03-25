@@ -10,6 +10,7 @@ using BlackSP.Checkpointing;
 using BlackSP.Core.MessageProcessing.Handlers;
 using System;
 using BlackSP.Kernel.Configuration;
+using BlackSP.Checkpointing.Protocols;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -49,6 +50,7 @@ namespace BlackSP.Infrastructure.Extensions
                     builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.Coordinated:
+                    builder.RegisterType<ChandyLamportProtocol>().AsSelf();
                     builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.CommunicationInduced:
@@ -78,6 +80,7 @@ namespace BlackSP.Infrastructure.Extensions
                     builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.Coordinated:
+                    builder.RegisterType<ChandyLamportProtocol>().AsSelf();
                     builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.CommunicationInduced:

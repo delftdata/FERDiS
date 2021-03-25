@@ -16,18 +16,14 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
     /// </summary>
     public class DataLayerBarrierInjectionHandler : ForwardingPayloadHandlerBase<ControlMessage, BarrierPayload>
     {
-        private readonly IVertexConfiguration _vertexConfiguration;
         private readonly DataMessageProcessor _processor;
         private readonly ILogger _logger;
 
         public DataLayerBarrierInjectionHandler(DataMessageProcessor processor,
-                                    IVertexConfiguration vertexConfiguration,  
                                     ILogger logger)
         {            
             _processor = processor ?? throw new ArgumentNullException(nameof(processor));
-            _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
         }
 
         protected override Task<IEnumerable<ControlMessage>> Handle(BarrierPayload payload)
