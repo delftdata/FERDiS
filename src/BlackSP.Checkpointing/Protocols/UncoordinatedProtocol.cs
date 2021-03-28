@@ -29,31 +29,20 @@ namespace BlackSP.Checkpointing.Protocols
         }
 
         /// <summary>
-        /// Checks local checkpoint condition and if satisfied takes a checkpoint. 
+        /// Checks local checkpoint condition (does not take actual checkpoint)</br>
+        /// Make sure to update last checkpoint utc after taking a checkpoint
         /// </summary>
         /// <returns>Guid of new checkpoint or Guid.Empty if no checkpoint was taken</returns>
-        public async Task<Guid> CheckCheckpointCondition(DateTime processingTime)
+        public async Task<bool> CheckCheckpointCondition(DateTime processingTime)
         {
             if (_lastCheckpointUtc == default)
             {
                 _lastCheckpointUtc = DateTime.UtcNow;
             }
-
-            if (processingTime - _lastCheckpointUtc > _checkpointInterval)
-            {
-                _logger.Information($"Uncoordinated checkpoint will be taken, configured interval is {_checkpointInterval.TotalSeconds}s");
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                var cpId = await _checkpointService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
-                sw.Stop();
-                _logger.Information($"Checkpoint {cpId} has been taken in {sw.ElapsedMilliseconds}ms");
-                _lastCheckpointUtc = processingTime;
-                return cpId;
-            }
-            return Guid.Empty;
+            return processingTime - _lastCheckpointUtc > _checkpointInterval;
         }
 
-        public void OverrideLastCheckpointUtc(DateTime lastCheckpointUtc)
+        public void SetLastCheckpointUtc(DateTime lastCheckpointUtc)
         {
             if(lastCheckpointUtc == default)
             {

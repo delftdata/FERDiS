@@ -42,22 +42,14 @@ namespace BlackSP.Checkpointing.Protocols
         /// </summary>
         /// <param name="mClock"></param>
         /// <returns></returns>
-        public async Task CheckCheckpointCondition(int mClock, DateTime processingTime)
+        public bool CheckCheckpointCondition(int mClock)
         {
-            if(mClock > lClock)
+            if (mClock > lClock)
             {
                 lClock = mClock;
-                await TakeForcedCheckpoint().ConfigureAwait(false);
-                _baseProtocol.OverrideLastCheckpointUtc(processingTime);
+                return true;
             }
-            else
-            {
-                var cp = await _baseProtocol.CheckCheckpointCondition(processingTime).ConfigureAwait(false);
-                if (cp != Guid.Empty) //check if a checkpoint was taken locally
-                {
-                    lClock++;
-                }
-            }
+            return false;
         }
 
         /// <summary>
@@ -67,20 +59,6 @@ namespace BlackSP.Checkpointing.Protocols
         public int GetClockValue()
         {
             return lClock;
-        }
-
-        /// <summary>
-        /// Utility
-        /// </summary>
-        /// <returns></returns>
-        private async Task TakeForcedCheckpoint()
-        {
-            _logger.Information($"Forced checkpoint will be taken");
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            var cpId = await _checkpointService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
-            sw.Stop();
-            _logger.Information($"Forced checkpoint {cpId} has been taken in {sw.ElapsedMilliseconds}ms");
         }
     }
 }

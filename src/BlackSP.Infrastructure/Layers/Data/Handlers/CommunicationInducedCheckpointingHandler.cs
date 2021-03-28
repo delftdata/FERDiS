@@ -3,6 +3,7 @@ using BlackSP.Infrastructure.Layers.Data.Payloads;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Configuration;
+using BlackSP.Kernel.MessageProcessing;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,7 +16,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
         private readonly ICheckpointService _checkpointingService;
         private readonly IVertexConfiguration _vertexConfiguration;
 
-        public CommunicationInducedCheckpointingHandler(ICheckpointService checkpointingService, IVertexConfiguration vertexConfiguration)
+        public CommunicationInducedCheckpointingHandler(IReceiverSource<DataMessage> messageSource, ICheckpointService checkpointingService, IVertexConfiguration vertexConfiguration)
         {
             _checkpointingService = checkpointingService ?? throw new ArgumentNullException(nameof(checkpointingService));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
