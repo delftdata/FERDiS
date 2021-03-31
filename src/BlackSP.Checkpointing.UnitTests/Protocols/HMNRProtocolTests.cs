@@ -58,7 +58,7 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
         public void Inititalization_YieldsCorrectClockState_ForAnyIndex()
         {
             var instances = testInstances.Take(3).ToArray();
-            var instance = InitialiseInstance(2, testInstances);
+            var instance = InitialiseInstance(2, instances);
 
             var (clock, ckpt, taken) = instance.GetPiggybackData();
             Assert.AreEqual(instances.Length, clock.Length);
@@ -219,7 +219,7 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
         }
 
         [Test]
-        public void NonCausalZPath_ForcesCheckpoint_Holup()
+        public void NonCausalZPath_ForcesCheckpoint_2()
         {
             var instances = testInstances.Take(3).ToArray();
             var instance1 = InitialiseInstance(0, instances);
@@ -235,7 +235,8 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
             //1 sends to 2
             instance1.BeforeSend(instance2.InstanceName);
             (clock, ckpt, taken) = instance1.GetPiggybackData();
-            Assert.IsFalse(instance2.CheckCheckpointCondition(instance1.InstanceName, clock, ckpt, taken));
+            //protocol pre-emptively 
+            Assert.IsTrue(instance2.CheckCheckpointCondition(instance1.InstanceName, clock, ckpt, taken));
             instance2.BeforeDeliver(instance1.InstanceName, clock, ckpt, taken);
         }
 
@@ -299,7 +300,7 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
 
 
         [Test]
-        public void test()
+        public void Arbitrary_Scenario_Without_ZPaths_ForcedNoCheckpoints()
         {
             var instances = testInstances.Take(4).ToArray();
 
@@ -313,8 +314,6 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
             var (clock, ckpt, taken) = instance1.GetPiggybackData();
             Assert.IsFalse(instance3.CheckCheckpointCondition(instance1.InstanceName, clock, ckpt, taken));
             instance3.BeforeDeliver(instance1.InstanceName, clock, ckpt, taken);
-
-
 
             //2 checkpoints (ahead)
             instance2.BeforeCheckpoint();

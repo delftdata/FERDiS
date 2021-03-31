@@ -11,21 +11,24 @@ namespace BlackSP.Checkpointing.Protocols
 {
     public class UncoordinatedProtocol
     {
-        private readonly IVertexConfiguration _vertexConfiguration;
-        private readonly ICheckpointConfiguration _checkpointConfiguration;
-        private readonly ICheckpointService _checkpointService;
+        /// <summary>
+        /// Autofac factory for instances
+        /// </summary>
+        /// <param name="interval"></param>
+        /// <returns></returns>
+        public delegate UncoordinatedProtocol Factory(TimeSpan interval, DateTime startFrom);
+
         private readonly ILogger _logger;
 
         private DateTime _lastCheckpointUtc;
         private TimeSpan _checkpointInterval;
 
-        public UncoordinatedProtocol(ICheckpointService checkpointService, ICheckpointConfiguration checkpointConfiguration, ILogger logger)
+        public UncoordinatedProtocol(TimeSpan interval, DateTime startFrom, ILogger logger)
         {
-            _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
-            _checkpointConfiguration = checkpointConfiguration ?? throw new ArgumentNullException(nameof(checkpointConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _checkpointInterval = TimeSpan.FromSeconds(_checkpointConfiguration.CheckpointIntervalSeconds);
+            _checkpointInterval = interval;
+            _lastCheckpointUtc = startFrom;
         }
 
         /// <summary>
@@ -33,13 +36,13 @@ namespace BlackSP.Checkpointing.Protocols
         /// Make sure to update last checkpoint utc after taking a checkpoint
         /// </summary>
         /// <returns>Guid of new checkpoint or Guid.Empty if no checkpoint was taken</returns>
-        public async Task<bool> CheckCheckpointCondition(DateTime processingTime)
+        public bool CheckCheckpointCondition(DateTime processingTime)
         {
             if (_lastCheckpointUtc == default)
             {
                 _lastCheckpointUtc = DateTime.UtcNow;
             }
-            return processingTime - _lastCheckpointUtc > _checkpointInterval;
+            return processingTime - _lastCheckpointUtc >= _checkpointInterval;
         }
 
         public void SetLastCheckpointUtc(DateTime lastCheckpointUtc)

@@ -13,5 +13,14 @@ namespace BlackSP.Infrastructure.Layers.Data.Payloads
     public class CICPayload : MessagePayloadBase
     {
         public static new string MetaDataKey => "data:cic";
+
+        [ProtoMember(1)]
+        public int[] clock;
+
+        [ProtoMember(2)]
+        public int[] ckpt;
+
+        [ProtoMember(3)]
+        public bool[] taken;
     }
 }

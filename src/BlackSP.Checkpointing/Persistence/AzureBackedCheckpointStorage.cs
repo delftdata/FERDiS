@@ -153,6 +153,7 @@ namespace BlackSP.Checkpointing.Persistence
             var (blobKey, stream) = tuple;
             var blobClient = containerClient.GetBlobClient(blobKey);
             await blobClient.UploadAsync(stream);
+            //TODO: return int describing bytes uploaded
             stream.Dispose(); //ensure buffer memory is freed up
         }
         #endregion
