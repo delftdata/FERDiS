@@ -76,7 +76,11 @@ namespace BlackSP.Streams
         {
             if (_didRead)
             {
-                _reader.AdvanceTo(_buffer.Start, _buffer.End);
+                try
+                {
+                    _reader.AdvanceTo(_buffer.Start, _buffer.End);
+                }
+                catch (InvalidOperationException) { }//yeah kinda nasty but shh
             }
             
             _lastRead = await _reader.ReadAsync(t).ConfigureAwait(false);

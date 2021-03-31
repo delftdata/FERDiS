@@ -110,10 +110,11 @@ namespace BlackSP.Core.Endpoints
         private async Task WriteDispatchableMessages(PipeStreamWriter writer, int shardId, SemaphoreSlim queueAccess, CancellationToken t)
         {
             var dispatchQueue = _dispatcher.GetDispatchQueue(_endpointConfig, shardId);
+            bool hasAccess = false;
             while (!t.IsCancellationRequested)
             {
                 await queueAccess.WaitAsync(t).ConfigureAwait(false);
-
+                hasAccess = true;
                 using var timeoutSource = new CancellationTokenSource(1000);
                 try
                 {
@@ -130,12 +131,16 @@ namespace BlackSP.Core.Endpoints
                         dispatchQueue.ThrowIfFlushingStarted();
                         throw;
                     }
+                    finally
+                    {
+                        queueAccess.Release();
+                        hasAccess = false;
+                    }
                     await writer.WriteMessage(message, t).ConfigureAwait(false);
-                    if (message.IsFlushMessage())
+                    if (message.IsFlushMessage() || _endpointConfig.IsControl)
                     {
                         await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
                     }
-                    queueAccess.Release();
 
                 }
                 catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
@@ -143,7 +148,6 @@ namespace BlackSP.Core.Endpoints
                     //there was no message to dispatch before timeout
                     //flush whatever is still in the output buffer
                     await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
-                    queueAccess.Release();
                 }
                 catch (OperationCanceledException) when (t.IsCancellationRequested)
                 {
@@ -156,8 +160,17 @@ namespace BlackSP.Core.Endpoints
                     _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} paused stream writer to wait for flush");
                     var ongoingFlush = dispatchQueue.BeginFlush();
                     queueAccess.Release();
+                    hasAccess = false;
                     await ongoingFlush.ConfigureAwait(false); //Join the wait for flush completion.. the flushrequest listener will complete it..
                     _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} unpaused stream writer after flush");
+                }
+                finally
+                {
+                    if (hasAccess)
+                    {
+                        queueAccess.Release();
+                        hasAccess = false;
+                    }
                 }
             }
             t.ThrowIfCancellationRequested();
@@ -172,6 +185,7 @@ namespace BlackSP.Core.Endpoints
         /// <returns></returns>
         private CancellationToken StartControlMessageListener(PipeStreamReader reader, int shardId, SemaphoreSlim queueAccess, CancellationToken t)
         {
+            var targetInstanceName = _endpointConfig.GetRemoteInstanceName(shardId);
 #pragma warning disable CA2000 // Dispose objects before losing scope
             //object gets disposed in task continuation
             var pongListenerTimeoutSource = new CancellationTokenSource(); //manually cancelled after a timeout occurs
@@ -195,21 +209,21 @@ namespace BlackSP.Core.Endpoints
 
                         pongTimeoutSource = new CancellationTokenSource(Math.Max(msTillNextTimeout, 1)); //never wait negative
                         linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, pongTimeoutSource.Token);
-                        _logger.Verbose($"awaiting control message on output endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName} within {msTillNextTimeout}ms");
+                        _logger.Verbose($"awaiting control message on output endpoint: {_endpointConfig.LocalEndpointName} from {targetInstanceName} within {msTillNextTimeout}ms");
 
                         var message = await reader.ReadNextMessage(linkedSource.Token).ConfigureAwait(false);
                         if (message.IsKeepAliveMessage())
                         {
-                            _logger.Verbose($"Keepalive message received on output endpoint: {_endpointConfig.LocalEndpointName} from {_endpointConfig.RemoteVertexName}");
+                            _logger.Verbose($"Keepalive message received on output endpoint: {_endpointConfig.LocalEndpointName} from {targetInstanceName}");
                             lastPongReception = DateTimeOffset.Now;
                         }
                         else if(message.IsFlushMessage())
                         {
                             await queueAccess.WaitAsync(t).ConfigureAwait(false);
-                            _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                            _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} handling flush message from {targetInstanceName}");
                             await dispatchQueue.EndFlush().ConfigureAwait(false);
                             await dispatchQueue.UnderlyingCollection.Writer.WriteAsync(message, t).ConfigureAwait(false); //after flush the dispatchqueue is empty, add the flush message to signal completion downstream
-                            _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} ended dispatcher queue flush, flush message sent back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                            _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} to {targetInstanceName} ended dispatcher queue flush, flush message sent back to downstream instance: {_endpointConfig.GetRemoteInstanceName(shardId)}");
                             queueAccess.Release();
                         }
                         else
@@ -220,7 +234,7 @@ namespace BlackSP.Core.Endpoints
                     }
                     catch (OperationCanceledException) when (pongTimeoutSource.IsCancellationRequested) //hitting this case means we have not received a keepalive before timeout
                     {
-                        _logger.Warning($"KeepAlive timeout on output {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}, initiating cancellation");
+                        _logger.Warning($"KeepAlive timeout on output {_endpointConfig.LocalEndpointName} to {targetInstanceName}, initiating cancellation");
                         //there is an opening here to implement multiple timeouts before assuming actual failure.
                         //current implementation is pessimistic and instantly assumes failure.
                         pongListenerTimeoutSource.Cancel();
@@ -228,7 +242,7 @@ namespace BlackSP.Core.Endpoints
                     }
                     catch (OperationCanceledException) when (t.IsCancellationRequested) //hitting this case means we have not received a pong before timeout
                     {
-                        _logger.Information($"Caller cancellation on output {_endpointConfig.LocalEndpointName} to {_endpointConfig.RemoteVertexName}, initiating cancellation");
+                        _logger.Information($"Caller cancellation on output {_endpointConfig.LocalEndpointName} to {targetInstanceName}, initiating cancellation");
                         //there is an opening here to implement multiple timeouts before assuming actual failure.
                         //current implementation is pessimistic and instantly assumes failure.
                         pongListenerTimeoutSource.Cancel();

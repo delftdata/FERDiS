@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Checkpointing.Protocols
 {
-    public class HMNRProtocol
+    public class HMNRProtocol : ICheckpointable
     {
         public string InstanceName => currentInstance;
 
@@ -169,5 +169,24 @@ namespace BlackSP.Checkpointing.Protocols
             this.ckpt[i]++;
         }
 
+        public void OnBeforeRestore()
+        {
+            _logger.Fatal($"BEFORE");
+            _logger.Fatal($"clock: {string.Join(", ", clock)}");
+            _logger.Fatal($"ckpt: {string.Join(", ", ckpt)}");
+            _logger.Fatal($"taken: {string.Join(", ", taken)}");
+            _logger.Fatal($"min_to: {string.Join(", ", min_to)}");
+            _logger.Fatal($"sent_to: {string.Join(", ", sent_to)}");
+        }
+
+        public void OnAfterRestore()
+        {
+            _logger.Fatal($"AFTER");
+            _logger.Fatal($"clock: {string.Join(", ", clock)}");
+            _logger.Fatal($"ckpt: {string.Join(", ", ckpt)}");
+            _logger.Fatal($"taken: {string.Join(", ", taken)}");
+            _logger.Fatal($"min_to: {string.Join(", ", min_to)}");
+            _logger.Fatal($"sent_to: {string.Join(", ", sent_to)}");
+        }
     }
 }

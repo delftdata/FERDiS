@@ -21,7 +21,7 @@ namespace BlackSP.Streams.Extensions
         /// <remarks>Does not advance the PipeReader!</remarks>
         public static ReadOnlySequence<byte> ReadMessage(this ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> msgBodySequence)
         {
-            var msgLengthSequence = buffer.Slice(buffer.Start, Math.Min(buffer.Length, 4));
+            var msgLengthSequence = buffer.Slice(buffer.Start, 4);
             if (msgLengthSequence.Length != 4)
             {
                 throw new ReadMessageFromStreamException("Missing message length");
@@ -38,7 +38,7 @@ namespace BlackSP.Streams.Extensions
                 //return buffer.Slice(buffer.Start, 0);
             }
 
-            msgBodySequence = buffer.Slice(4, Math.Min(buffer.Length-4, msgLength));
+            msgBodySequence = buffer.Slice(4, msgLength);
             if (msgBodySequence.Length != msgLength)
             {
                 throw new ReadMessageFromStreamException("Mismatching message length");
@@ -64,6 +64,12 @@ namespace BlackSP.Streams.Extensions
                 result = true;
             }
             catch(ReadMessageFromStreamException)
+            {
+                msgBodySequence = buffer.Slice(buffer.Start, 0);
+                readPosition = msgBodySequence.End;
+                result = false;
+            }
+            catch (ArgumentOutOfRangeException) //buffer slice went wrong
             {
                 msgBodySequence = buffer.Slice(buffer.Start, 0);
                 readPosition = msgBodySequence.End;

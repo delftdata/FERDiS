@@ -26,7 +26,7 @@
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}",
         "LOG_TARGETS": "3", // 1 (console) | 2 (file) | 4 (azure blob)
-        "LOG_LEVEL": "2", //0-5
+        "LOG_LEVEL": "0", //0-5
         "BLACKSP_INFRASTRUCTURE": "0", //0 = simulator
         "BLACKSP_BENCHMARK": "6", //0-6
         "PR_PAGE_COUNT": "9964",

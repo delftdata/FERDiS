@@ -65,7 +65,7 @@ namespace BlackSP.Core.Endpoints
             using CancellationTokenSource exceptionSource = new CancellationTokenSource();
             using CancellationTokenSource callerOrExceptionSource = CancellationTokenSource.CreateLinkedTokenSource(callerToken, exceptionSource.Token);
             string targetInstanceName = _endpointConfig.GetRemoteInstanceName(remoteShardId);
-            _logger.Debug($"Output endpoint{_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} starting egress.");      
+            _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} starting egress.");      
             try
             {
                 var pipe = outputStream.UsePipe(cancellationToken: callerOrExceptionSource.Token);
@@ -126,7 +126,7 @@ namespace BlackSP.Core.Endpoints
                         throw;
                     }
                     await writer.WriteMessage(message, t).ConfigureAwait(false);
-                    if (message.IsFlushMessage())
+                    if (message.IsFlushMessage() || _endpointConfig.IsControl)
                     {
                         await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
                     }
@@ -160,20 +160,22 @@ namespace BlackSP.Core.Endpoints
 
         private async Task StartFlushRequestListener(PipeStreamReader reader, int shardId, SemaphoreSlim queueAccess, CancellationToken t)
         {
+            var targetInstanceName = _endpointConfig.GetRemoteInstanceName(shardId);
+
             var dispatchQueue = _dispatcher.GetDispatchQueue(_endpointConfig, shardId);
             while (!t.IsCancellationRequested)
             {
                 t.ThrowIfCancellationRequested();
-                _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} flush listener waiting for next message.");
+                _logger.Verbose($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {targetInstanceName} flush listener waiting for next message.");
                 var message = await reader.ReadNextMessage(t).ConfigureAwait(false);
                 if (message?.IsFlushMessage() ?? false)
                 {                    
-                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} received flush message.");
+                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {targetInstanceName} received flush message.");
                     await queueAccess.WaitAsync(t).ConfigureAwait(false);
                     try
                     {
                         await dispatchQueue.EndFlush().ConfigureAwait(false);
-                        _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} ended dispatcher queue flush");
+                        _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {targetInstanceName} ended dispatcher queue flush");
                         if (!await dispatchQueue.UnderlyingCollection.Writer.WaitToWriteAsync(t))
                         {
                             throw new InvalidOperationException("Dispatch queue writer completed, invalid program state");
@@ -182,7 +184,7 @@ namespace BlackSP.Core.Endpoints
                         {
                             throw new InvalidOperationException("Got channel write access but could not write");
                         }
-                        _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} sent flush message response downstream.");
+                        _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {targetInstanceName} sent flush message response downstream.");
 
                     }
                     finally
@@ -192,7 +194,7 @@ namespace BlackSP.Core.Endpoints
                 }
                 else
                 {
-                    _logger.Error($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} received unknown message type on flush listener.");
+                    _logger.Error($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {targetInstanceName} received unknown message type on flush listener.");
                     throw new InvalidOperationException($"FlushRequestListener expected flush message but received: {message}");
                 }
             }

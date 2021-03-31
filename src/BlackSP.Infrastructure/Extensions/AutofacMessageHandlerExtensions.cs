@@ -42,15 +42,17 @@ namespace BlackSP.Infrastructure.Extensions
         {
             //pre operator handlers
             builder.RegisterType<MetricLoggingHandler<DataMessage>>().As<IHandler<DataMessage>>();
-            builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
-
             switch(cpMode)
             {
                 case CheckpointCoordinationMode.Uncoordinated:
+                    builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
+
                     builder.RegisterType<UncoordinatedProtocol>().AsSelf();
                     builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.Coordinated:
+                    builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
+
                     builder.RegisterType<ChandyLamportProtocol>().AsSelf();
                     builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
@@ -58,6 +60,8 @@ namespace BlackSP.Infrastructure.Extensions
                     builder.RegisterType<UncoordinatedProtocol>().AsSelf();
                     builder.RegisterType<HMNRProtocol>().AsSelf().SingleInstance();
                     builder.RegisterType<CICPreDeliveryHandler>().As<IHandler<DataMessage>>();
+                    builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
+
                     break;
             }
 

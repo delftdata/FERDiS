@@ -69,8 +69,11 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
 
         private void RegisterEvents()
         {
-            _checkpointingService.BeforeCheckpointTaken += () => _hmnrProtocol.BeforeCheckpoint();
-            _checkpointingService.AfterCheckpointTaken += (cpId) => _hmnrProtocol.AfterCheckpoint();
+            _checkpointingService.BeforeCheckpointTaken += () =>
+            {
+                _hmnrProtocol.BeforeCheckpoint();
+                _hmnrProtocol.AfterCheckpoint(); //NOTE: invoke after checkpoint handler to include correct clock values in checkpoint and ensure post-recovery consistency
+            };
             _checkpointingService.AfterCheckpointTaken += (cpId) => _backupProtocol.SetLastCheckpointUtc(DateTime.UtcNow);
 
         }
