@@ -19,9 +19,8 @@ namespace BlackSP.Infrastructure.Extensions
         /// <param name="context"></param>
         private static void OnActivated_CheckpointServiceRegistration(object sender, IActivatedEventArgs<object> context)
         {
-            object obj = context.Instance;
-            var manager = context.Context.Resolve<ICheckpointService>();
-            manager.RegisterObject(obj);
+            var service = context.Context.Resolve<ICheckpointService>();
+            service.RegisterObject(context.Instance);
         }
 
         public static ContainerBuilder UseCheckpointingService(this ContainerBuilder builder, ICheckpointConfiguration config, bool autoRegisterComponents = false)

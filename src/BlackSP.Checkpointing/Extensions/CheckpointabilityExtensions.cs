@@ -29,7 +29,7 @@ namespace BlackSP.Checkpointing.Extensions
             }
             //checks the serializability of the field's value type, the field type itself is a bad indicator (ICollection vs List)
             //if the value is a null we cant say it is serializable so default to false
-            if (checkpointableFields.All(f => f.GetValue(o)?.GetType().IsSerializable ?? false))
+            if (checkpointableFields.All(f => f.FieldType.IsSerializable || (f.GetValue(o)?.GetType().IsSerializable ?? false)))
             {
                 return true;
             }

@@ -23,6 +23,9 @@ namespace BlackSP.Checkpointing
     public class CheckpointService : ICheckpointService
     {
 
+        public event BeforeCheckpointEvent BeforeCheckpointTaken;
+        public event AfterCheckpointEvent AfterCheckpointTaken;
+
         private readonly ObjectRegistry _register;
         private readonly CheckpointDependencyTracker _dpTracker;
         private readonly RecoveryLineCalculator.Factory _rlCalcFactory;
@@ -135,11 +138,13 @@ namespace BlackSP.Checkpointing
         ///<inheritdoc/>
         public async Task<Guid> TakeCheckpoint(string currentInstanceName)
         {
+            BeforeCheckpointTaken?.Invoke();
             var snapshots = _register.TakeObjectSnapshots();
             var metadata = new MetaData(Guid.NewGuid(), _dpTracker.Dependencies, currentInstanceName, DateTime.UtcNow);
             var checkpoint = new Checkpoint(metadata, snapshots);
             await _storage.Store(checkpoint).ConfigureAwait(false);
             _dpTracker.UpdateDependency(currentInstanceName, checkpoint.Id); //ensure next checkpoint depends on current
+            AfterCheckpointTaken?.Invoke(metadata.Id);
             return checkpoint.Id;
         }
 

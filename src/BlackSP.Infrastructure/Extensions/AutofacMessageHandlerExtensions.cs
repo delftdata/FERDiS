@@ -14,7 +14,7 @@ using BlackSP.Checkpointing.Protocols;
 
 namespace BlackSP.Infrastructure.Extensions
 {
-    public static class AutofacMiddlewareExtensions
+    public static class AutofacMessageHandlerExtensions
     {
         
 
@@ -47,6 +47,7 @@ namespace BlackSP.Infrastructure.Extensions
             switch(cpMode)
             {
                 case CheckpointCoordinationMode.Uncoordinated:
+                    builder.RegisterType<UncoordinatedProtocol>().AsSelf();
                     builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.Coordinated:
@@ -54,8 +55,9 @@ namespace BlackSP.Infrastructure.Extensions
                     builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.CommunicationInduced:
-                    //TODO: register handler for cic
-                    throw new NotImplementedException("NO CIC HANDLER REGISTRATION IMPLEMENTED");
+                    builder.RegisterType<UncoordinatedProtocol>().AsSelf();
+                    builder.RegisterType<HMNRProtocol>().AsSelf().SingleInstance();
+                    builder.RegisterType<CICPreDeliveryHandler>().As<IHandler<DataMessage>>();
                     break;
             }
 
@@ -63,6 +65,16 @@ namespace BlackSP.Infrastructure.Extensions
             builder.RegisterType<TShell>().As<IOperatorShell>();
             builder.RegisterType<TOperator>().AsImplementedInterfaces();
             builder.RegisterType<OperatorEventHandler>().As<IHandler<DataMessage>>();
+
+
+            switch (cpMode)
+            {
+                case CheckpointCoordinationMode.Uncoordinated: break;
+                case CheckpointCoordinationMode.Coordinated: break;
+                case CheckpointCoordinationMode.CommunicationInduced:
+                    builder.RegisterType<CICPostDeliveryHandler>().As<IHandler<DataMessage>>();
+                    break;
+            }
 
             //post operator handlers
             builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>(); //forwards CP dependency on new CP
@@ -77,6 +89,7 @@ namespace BlackSP.Infrastructure.Extensions
             switch (cpMode)
             {
                 case CheckpointCoordinationMode.Uncoordinated:
+                    builder.RegisterType<UncoordinatedProtocol>().AsSelf();
                     builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.Coordinated:
@@ -84,7 +97,10 @@ namespace BlackSP.Infrastructure.Extensions
                     builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.CommunicationInduced:
-                    //TODO: register handler for cic
+                    builder.RegisterType<UncoordinatedProtocol>().AsSelf();
+                    builder.RegisterType<HMNRProtocol>().AsSelf().SingleInstance();
+                    builder.RegisterType<CICPreDeliveryHandler>().As<IHandler<DataMessage>>();//passive but initialises clocks
+                    builder.RegisterType<CICPostDeliveryHandler>().As<IHandler<DataMessage>>();
                     break;
 
             }

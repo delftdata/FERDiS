@@ -1,4 +1,5 @@
 ﻿using BlackSP.Checkpointing;
+using BlackSP.Checkpointing.Protocols;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Configuration;
@@ -14,14 +15,14 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
     public class UncoordinatedCheckpointingHandler : IHandler<DataMessage>
     {
 
+        private readonly UncoordinatedProtocol _protocol;
         private readonly ICheckpointService _checkpointingService;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ICheckpointConfiguration _checkpointConfiguration;
         private readonly ILogger _logger;
-        private DateTime _lastCheckpointUtc;
-        private TimeSpan _checkpointInterval;
 
-        public UncoordinatedCheckpointingHandler(ICheckpointService checkpointingService,
+        public UncoordinatedCheckpointingHandler(UncoordinatedProtocol.Factory protocolFactory,
+            ICheckpointService checkpointingService,
             ICheckpointConfiguration checkpointConfiguration,
             IVertexConfiguration vertexConfiguration,
             ILogger logger)
@@ -31,25 +32,21 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _checkpointInterval = TimeSpan.FromSeconds(_checkpointConfiguration.CheckpointIntervalSeconds);
+            _protocol = protocolFactory?.Invoke(TimeSpan.FromSeconds(_checkpointConfiguration.CheckpointIntervalSeconds), default);
         }
 
         public async Task<IEnumerable<DataMessage>> Handle(DataMessage message)
         {
-            if(_lastCheckpointUtc == default)
-            {
-                _lastCheckpointUtc = DateTime.UtcNow;
 
-            }
-            if (DateTime.UtcNow - _lastCheckpointUtc > _checkpointInterval)
+            if (_protocol.CheckCheckpointCondition(DateTime.UtcNow))
             {
-                _logger.Information($"Uncoordinated checkpoint will be taken, configured interval is {_checkpointInterval.TotalSeconds}s");
+                _logger.Information($"Uncoordinated checkpoint will be taken, configured interval is {_checkpointConfiguration.CheckpointIntervalSeconds}s");
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 var cpId = await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
                 sw.Stop();
                 _logger.Information($"Checkpoint {cpId} has been taken in {sw.ElapsedMilliseconds}ms");
-                _lastCheckpointUtc = DateTime.UtcNow;
+                _protocol.SetLastCheckpointUtc(DateTime.UtcNow);
             }
             return message.Yield();
         }

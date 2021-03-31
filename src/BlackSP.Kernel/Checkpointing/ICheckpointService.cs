@@ -6,9 +6,13 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Kernel.Checkpointing
 {
+    public delegate void BeforeCheckpointEvent();
+    public delegate void AfterCheckpointEvent(Guid checkpointId);
+
     public interface ICheckpointService
     {
-
+        event BeforeCheckpointEvent BeforeCheckpointTaken;
+        event AfterCheckpointEvent AfterCheckpointTaken;
         /// <summary>
         /// Register an [Checkpointable] annotated class instance, will track registered object and include it in checkpoint creation and restoration<br/>
         /// Will ignore registrations with non-annotated class instances;
