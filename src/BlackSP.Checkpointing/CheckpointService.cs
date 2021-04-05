@@ -168,14 +168,18 @@ namespace BlackSP.Checkpointing
         ///<inheritdoc/>
         public async Task RestoreCheckpoint(Guid checkpointId)
         {
+            var sw = new Stopwatch();
+            sw.Start();
+
             var checkpoint = (await _storage.Retrieve(checkpointId).ConfigureAwait(false)) 
                 ?? throw new CheckpointRestorationException($"Checkpoint storage returned null for checkpoint ID: {checkpointId}");
-
-            //TODO: log how far jumped back in time..
-
             _register.RestoreCheckpoint(checkpoint);
             _dpTracker.OverwriteDependencies(checkpoint.MetaData.Dependencies);
             _dpTracker.UpdateDependency(checkpoint.MetaData.InstanceName, checkpoint.Id); //ensure next checkpoint depends on current
+
+            sw.Stop();
+            var milisecondsReverted = DateTime.UtcNow - checkpoint.MetaData.CreatedAtUtc;
+            _loggerFactory.GetRecoveryLogger().Information($"{sw.ElapsedMilliseconds}, {(int)milisecondsReverted.TotalMilliseconds}");
         }
 
     }
