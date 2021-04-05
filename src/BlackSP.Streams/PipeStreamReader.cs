@@ -75,6 +75,7 @@ namespace BlackSP.Streams
             catch (OperationCanceledException) when (t.IsCancellationRequested)
             {
                 _reader.CancelPendingRead();
+                _didRead = false;
                 throw;
             }
             

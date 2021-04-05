@@ -127,6 +127,11 @@ namespace BlackSP.Core.Endpoints
                         //wait for retry
                         await Task.Delay(500).ConfigureAwait(false);
                     }
+                    catch (ArgumentOutOfRangeException e)
+                    {
+                        //internal read message exception..
+                        _logger.Warning(e, "Exception thrown by PipeStreamReader, ignoring to see what will happen next.");
+                    }
                 }
                 catch (FlushInProgressException)
                 {

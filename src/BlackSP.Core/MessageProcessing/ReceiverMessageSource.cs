@@ -196,7 +196,6 @@ namespace BlackSP.Core.MessageProcessing
                     var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                     _flushDictionary.Add(connectionKey, tcs);
                     flushes.Add(tcs.Task);
-                    //_connectionCancellationDictionary[connectionKey].Cancel(); //cancel any ongoing calls to the Receive method (will be reset via completeflush)
                 } 
                 _connectionCancellationDictionary[connectionKey].Cancel(); //cancel any ongoing calls to the Receive method (without
             }

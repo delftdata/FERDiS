@@ -122,6 +122,11 @@ namespace BlackSP.Core.Endpoints
                         //reception was cancelled, probably to free up some critical section to allow flushing (retry in XXXms..)
                         await Task.Delay(500).ConfigureAwait(false);
                     }
+                    catch (ArgumentOutOfRangeException e)
+                    {
+                        //internal read message exception..
+                        _logger.Warning(e, "Exception thrown by PipeStreamReader, ignoring to see what will happen next.");
+                    }
                 }
                 catch (FlushInProgressException)
                 {

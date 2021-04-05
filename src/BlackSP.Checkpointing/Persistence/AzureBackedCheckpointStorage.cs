@@ -59,7 +59,6 @@ namespace BlackSP.Checkpointing.Persistence
             //ensure creation of blob container checkpoint will be stored in
             var blobContainerClient = GetBlobContainerClientForCheckpoints();
 
-            await UploadCheckpointMetaData(checkpoint, blobContainerClient).ConfigureAwait(false);
 
             //Define dataflow for checkpoint storage
             var snapshotSerializeTransform = new TransformBlock<string, Tuple<string, MemoryStream>>(
@@ -79,6 +78,10 @@ namespace BlackSP.Checkpointing.Persistence
             snapshotSerializeTransform.Complete();
             //Wait for upload completion
             await streamUploadAction.Completion;
+            
+            //upload metadata last to mark a checkpoint as 'complete' (fault during checkpointing would result in un-reloadable checkpoint)
+            await UploadCheckpointMetaData(checkpoint, blobContainerClient).ConfigureAwait(false);
+
         }
 
         
