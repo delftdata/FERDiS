@@ -35,11 +35,11 @@ namespace BlackSP.Checkpointing.Persistence
             return Task.FromResult((Checkpoint)blob.BinaryDeserialize());
         }
 
-        public Task Store(Checkpoint checkpoint)
+        public Task<long> Store(Checkpoint checkpoint)
         {
             var blob = checkpoint.BinarySerialize();
             _store.Add(checkpoint.Id, blob);
-            return Task.CompletedTask;
+            return Task.FromResult(1L);
         }
 
         public Task<IEnumerable<MetaData>> GetAllMetaData()

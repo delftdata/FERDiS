@@ -5,6 +5,7 @@ using BlackSP.Checkpointing.Persistence;
 using BlackSP.Checkpointing.UnitTests.Models;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Configuration;
+using BlackSP.Kernel.Logging;
 using BlackSP.Kernel.Models;
 using Moq;
 using NUnit.Framework;
@@ -43,7 +44,8 @@ namespace BlackSP.Checkpointing.UnitTests
         {
             instanceName = "instance01";
 
-            var loggerMock = new Mock<ILogger>();
+            var loggerMock = new Mock<ILoggerFactory>();
+            loggerMock.SetReturnsDefault(new Mock<ILogger>().Object);
             var graphConfigMock = new Mock<IVertexGraphConfiguration>();
             var cpConfigMock = new Mock<ICheckpointConfiguration>();
             var objectRegisterMock = new Mock<ObjectRegistry>();

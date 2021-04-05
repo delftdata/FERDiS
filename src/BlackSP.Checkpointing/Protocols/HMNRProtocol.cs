@@ -171,6 +171,8 @@ namespace BlackSP.Checkpointing.Protocols
 
         public void OnBeforeRestore()
         {
+            return;
+            
             _logger.Fatal($"BEFORE");
             _logger.Fatal($"clock: {string.Join(", ", clock)}");
             _logger.Fatal($"ckpt: {string.Join(", ", ckpt)}");
@@ -181,6 +183,8 @@ namespace BlackSP.Checkpointing.Protocols
 
         public void OnAfterRestore()
         {
+            return;
+
             _logger.Fatal($"AFTER");
             _logger.Fatal($"clock: {string.Join(", ", clock)}");
             _logger.Fatal($"ckpt: {string.Join(", ", ckpt)}");

@@ -91,12 +91,10 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
 
             if (_hmnrProtocol.CheckCheckpointCondition(originInstance, payload.clock, payload.ckpt, payload.taken))
             {
-                _logger.Fatal("FORCING CHECKPOINT");
-                await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
+                await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName, true).ConfigureAwait(false);
             } 
             else if(_backupProtocol.CheckCheckpointCondition(DateTime.UtcNow))
             {
-                _logger.Fatal("REGULAR CHECKPOINT");
                 await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
                 _backupProtocol.SetLastCheckpointUtc(DateTime.UtcNow);
             }

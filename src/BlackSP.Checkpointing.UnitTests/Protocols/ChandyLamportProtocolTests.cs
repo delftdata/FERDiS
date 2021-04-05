@@ -36,7 +36,7 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
                                //.Returns(); void method cannot return
 
             checkpointServiceMock = new Mock<ICheckpointService>();
-            checkpointServiceMock.Setup(service => service.TakeCheckpoint(It.IsAny<string>()))
+            checkpointServiceMock.Setup(service => service.TakeCheckpoint(It.IsAny<string>(), It.IsAny<bool>()))
                                  .ReturnsAsync(Guid.NewGuid());
 
             vertexConfigMock = new Mock<IVertexConfiguration>();
@@ -60,7 +60,7 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
             vertexConfigMock.Setup(config => config.InputEndpoints).Returns(upstreams);
             Assert.IsTrue(await instance.ReceiveBarrier(default, default));
             blockableSourceMock.Verify(source => source.Block(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Never); //ensure never blocked
-            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>()), Times.Once);
+            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
         }
 
         [Test]
@@ -107,7 +107,7 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
             //verify that block and unblock happened during this procedure
             blockableSourceMock.Verify(source => source.Block(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Once);
             blockableSourceMock.Verify(source => source.Unblock(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Once);
-            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>()), Times.Once);
+            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
         }
 
 
@@ -145,7 +145,7 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
             //verify that block and unblock happened during this procedure
             blockableSourceMock.Verify(source => source.Block(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Once);
             blockableSourceMock.Verify(source => source.Unblock(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Never);
-            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>()), Times.Never);
+            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
 
         }
 
@@ -184,7 +184,7 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
             //verify that block and unblock happened during this procedure
             blockableSourceMock.Verify(source => source.Block(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Exactly(2)); //both were blocked at one point
             blockableSourceMock.Verify(source => source.Unblock(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Exactly(2)); //both were unblocked
-            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>()), Times.Once);
+            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
         }
 
         [Test]
@@ -209,14 +209,14 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
             Assert.IsFalse(await testInstance.ReceiveBarrier(upstreams[0], 0)); //returns false indicating not-forwarding the barrier
             blockableSourceMock.Verify(source => source.Block(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Exactly(1)); //both were blocked
             blockableSourceMock.Verify(source => source.Unblock(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Never); //both were unblocked
-            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>()), Times.Never);
+            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
 
 
             Assert.IsTrue(await testInstance.ReceiveBarrier(upstreams[0], 1)); //returns false indicating not-forwarding the barrier
             //verify that block and unblock happened during this procedure
             blockableSourceMock.Verify(source => source.Block(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Exactly(2)); //both were blocked
             blockableSourceMock.Verify(source => source.Unblock(It.IsAny<IEndpointConfiguration>(), It.IsAny<int>()), Times.Exactly(2)); //both were unblocked
-            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>()), Times.Once);
+            checkpointServiceMock.Verify(serv => serv.TakeCheckpoint(It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
         }
     }
 }

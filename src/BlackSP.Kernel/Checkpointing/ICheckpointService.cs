@@ -31,7 +31,7 @@ namespace BlackSP.Kernel.Checkpointing
         /// Take a checkpoint, returns an ID useable to restore said checkpoint
         /// </summary>
         /// <returns></returns>
-        Task<Guid> TakeCheckpoint(string currentInstanceName);
+        Task<Guid> TakeCheckpoint(string currentInstanceName, bool isForced = false);
 
         /// <summary>
         /// Gets the most recently taken checkpoint's id

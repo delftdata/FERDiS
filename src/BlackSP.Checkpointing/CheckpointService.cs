@@ -16,6 +16,8 @@ using BlackSP.Kernel.Models;
 using BlackSP.Checkpointing.Models;
 using BlackSP.Kernel.Operators;
 using BlackSP.Kernel.Configuration;
+using BlackSP.Kernel.Logging;
+using System.Diagnostics;
 
 namespace BlackSP.Checkpointing
 {
@@ -31,27 +33,27 @@ namespace BlackSP.Checkpointing
         private readonly RecoveryLineCalculator.Factory _rlCalcFactory;
         private readonly ICheckpointStorage _storage;
         private readonly ICheckpointConfiguration _checkpointConfiguration;
-        private readonly ILogger _logger;
+        private readonly ILoggerFactory _loggerFactory;
 
         public CheckpointService(ObjectRegistry register, 
                                  CheckpointDependencyTracker dependencyTracker,
                                  RecoveryLineCalculator.Factory rlCalcFactory,
                                  ICheckpointStorage checkpointStorage, 
                                  ICheckpointConfiguration checkpointConfiguration,
-                                 ILogger logger)
+                                 ILoggerFactory loggerFactory)
         {
             _register = register ?? throw new ArgumentNullException(nameof(register));
             _dpTracker = dependencyTracker ?? throw new ArgumentNullException(nameof(dependencyTracker));
             _storage = checkpointStorage ?? throw new ArgumentNullException(nameof(checkpointStorage));
             _rlCalcFactory = rlCalcFactory ?? throw new ArgumentNullException(nameof(rlCalcFactory));
             _checkpointConfiguration = checkpointConfiguration ?? throw new ArgumentNullException(nameof(checkpointConfiguration));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         }
 
         ///<inheritdoc/>
         public void UpdateCheckpointDependency(string originInstanceName, Guid checkpointId)
         {
-            _logger.Debug($"Updating checkpoint dependency on instance {originInstanceName} to {checkpointId}");
+            _loggerFactory.GetDefaultLogger().Debug($"Updating checkpoint dependency on instance {originInstanceName} to {checkpointId}");
             _dpTracker.UpdateDependency(originInstanceName, checkpointId);
         }
 
@@ -128,7 +130,7 @@ namespace BlackSP.Checkpointing
             }
             if (o.AssertCheckpointability())
             {
-                _logger.Debug($"Object of type {type.Name} is registered for checkpointing with {nameof(CheckpointService)}.");
+                _loggerFactory.GetDefaultLogger().Debug($"Object of type {type.Name} is registered for checkpointing with {nameof(CheckpointService)}.");
                 _register.Add(identifier, o);
                 return true;
             }
@@ -136,25 +138,31 @@ namespace BlackSP.Checkpointing
         }
 
         ///<inheritdoc/>
-        public async Task<Guid> TakeCheckpoint(string currentInstanceName)
+        public async Task<Guid> TakeCheckpoint(string currentInstanceName, bool isForced = false)
         {
+            var sw = new Stopwatch();
+            sw.Start();
+            //- actual behavior
             BeforeCheckpointTaken?.Invoke();
             var snapshots = _register.TakeObjectSnapshots();
             var metadata = new MetaData(Guid.NewGuid(), _dpTracker.Dependencies, currentInstanceName, DateTime.UtcNow);
             var checkpoint = new Checkpoint(metadata, snapshots);
-            await _storage.Store(checkpoint).ConfigureAwait(false);
+            var size = await _storage.Store(checkpoint).ConfigureAwait(false);
             _dpTracker.UpdateDependency(currentInstanceName, checkpoint.Id); //ensure next checkpoint depends on current
             AfterCheckpointTaken?.Invoke(metadata.Id);
+            //- end of actual behavior
+            sw.Stop();
+            _loggerFactory.GetCheckpointLogger().Information($"{isForced}, {sw.ElapsedMilliseconds}, {size}");
             return checkpoint.Id;
         }
 
         public async Task ClearCheckpointStorage()
         {
-            _logger.Debug("Starting checkpoint storage clear");
+            _loggerFactory.GetDefaultLogger().Debug("Will clear checkpoint storage");
             var allCheckpointMetadatas = await _storage.GetAllMetaData().ConfigureAwait(false);
             var deleteTasks = allCheckpointMetadatas.Select(meta => _storage.Delete(meta.Id));
             await Task.WhenAll(deleteTasks).ConfigureAwait(false);
-            _logger.Debug("Checkpoint storage cleared successfully");
+            _loggerFactory.GetDefaultLogger().Debug("Checkpoint storage cleared successfully");
         }
 
         ///<inheritdoc/>
@@ -162,6 +170,9 @@ namespace BlackSP.Checkpointing
         {
             var checkpoint = (await _storage.Retrieve(checkpointId).ConfigureAwait(false)) 
                 ?? throw new CheckpointRestorationException($"Checkpoint storage returned null for checkpoint ID: {checkpointId}");
+
+            //TODO: log how far jumped back in time..
+
             _register.RestoreCheckpoint(checkpoint);
             _dpTracker.OverwriteDependencies(checkpoint.MetaData.Dependencies);
             _dpTracker.UpdateDependency(checkpoint.MetaData.InstanceName, checkpoint.Id); //ensure next checkpoint depends on current

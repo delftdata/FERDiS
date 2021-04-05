@@ -1,4 +1,5 @@
-﻿using Serilog.Events;
+﻿using BlackSP.Kernel.Configuration;
+using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Text;

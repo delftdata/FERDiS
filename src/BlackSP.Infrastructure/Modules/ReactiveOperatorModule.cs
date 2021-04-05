@@ -1,12 +1,7 @@
 ﻿using Autofac;
-using BlackSP.Core;
-using BlackSP.Core.MessageProcessing.Processors;
-using BlackSP.Core.Models;
 using BlackSP.Infrastructure.Extensions;
-using BlackSP.Kernel;
-using Serilog.Events;
+using BlackSP.Logging;
 using System;
-using BlackSP.Infrastructure.Layers.Control;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -22,7 +17,7 @@ namespace BlackSP.Infrastructure.Modules
         protected override void Load(ContainerBuilder builder)
         {
             //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
-            builder.UseSerilog(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
+            builder.UseLogging(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
             builder.UseCheckpointingService(_configuration.CheckpointingConfiguration, true);
 
             builder.UseProtobufSerializer();

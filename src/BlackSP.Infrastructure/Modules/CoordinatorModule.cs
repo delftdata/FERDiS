@@ -8,6 +8,7 @@ using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Infrastructure.Layers.Control.Sources;
 using BlackSP.Checkpointing;
 using BlackSP.Kernel.Configuration;
+using BlackSP.Logging;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -22,7 +23,7 @@ namespace BlackSP.Infrastructure.Modules
 
         protected override void Load(ContainerBuilder builder)
         {
-            builder.UseSerilog(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
+            builder.UseLogging(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
             builder.UseCheckpointingService(_configuration.CheckpointingConfiguration);
 
             builder.UseProtobufSerializer();

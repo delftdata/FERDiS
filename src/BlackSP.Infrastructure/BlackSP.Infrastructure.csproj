@@ -18,13 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="5.1.2" />
-    <PackageReference Include="AutofacSerilogIntegration" Version="3.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Serilog.Sinks.AzureBlobStorage" Version="1.4.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.RollingFile" Version="3.3.0" />
   </ItemGroup>
@@ -33,6 +30,7 @@
     <ProjectReference Include="..\BlackSP.Checkpointing\BlackSP.Checkpointing.csproj" />
     <ProjectReference Include="..\BlackSP.Core\BlackSP.Core.csproj" />
     <ProjectReference Include="..\BlackSP.Kernel\BlackSP.Kernel.csproj" />
+    <ProjectReference Include="..\BlackSP.Logging\BlackSP.Logging.csproj" />
     <ProjectReference Include="..\BlackSP.OperatorShells\BlackSP.OperatorShells.csproj" />
     <ProjectReference Include="..\BlackSP.Serialization\BlackSP.Serialization.csproj" />
   </ItemGroup>

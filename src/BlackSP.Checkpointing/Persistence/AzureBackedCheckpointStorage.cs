@@ -54,11 +54,12 @@ namespace BlackSP.Checkpointing.Persistence
             }
         }
 
-        public async Task Store(Checkpoint checkpoint)
+        public async Task<long> Store(Checkpoint checkpoint)
         {
             //ensure creation of blob container checkpoint will be stored in
             var blobContainerClient = GetBlobContainerClientForCheckpoints();
 
+            long res = 0L;
 
             //Define dataflow for checkpoint storage
             var snapshotSerializeTransform = new TransformBlock<string, Tuple<string, MemoryStream>>(
@@ -66,7 +67,7 @@ namespace BlackSP.Checkpointing.Persistence
                 _blockOptions
             );
             var streamUploadAction = new ActionBlock<Tuple<string, MemoryStream>>(
-                async tuple => await UploadStreamToBlob(tuple, blobContainerClient)
+                async tuple => res += await UploadStreamToBlob(tuple, blobContainerClient)
             );
             snapshotSerializeTransform.LinkTo(streamUploadAction, _linkOptions);
 
@@ -79,9 +80,10 @@ namespace BlackSP.Checkpointing.Persistence
             //Wait for upload completion
             await streamUploadAction.Completion;
             
+            
             //upload metadata last to mark a checkpoint as 'complete' (fault during checkpointing would result in un-reloadable checkpoint)
             await UploadCheckpointMetaData(checkpoint, blobContainerClient).ConfigureAwait(false);
-
+            return res;
         }
 
         
@@ -151,13 +153,14 @@ namespace BlackSP.Checkpointing.Persistence
             return Tuple.Create($"{checkpoint.Id}/{snapshotKey}", snapshotUploadStream);
         }
 
-        private async Task UploadStreamToBlob(Tuple<string, MemoryStream> tuple, BlobContainerClient containerClient)
+        private async Task<long> UploadStreamToBlob(Tuple<string, MemoryStream> tuple, BlobContainerClient containerClient)
         {
             var (blobKey, stream) = tuple;
+            var res = stream.Length;
             var blobClient = containerClient.GetBlobClient(blobKey);
             await blobClient.UploadAsync(stream);
-            //TODO: return int describing bytes uploaded
             stream.Dispose(); //ensure buffer memory is freed up
+            return res;
         }
         #endregion
 

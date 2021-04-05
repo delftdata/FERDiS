@@ -11,7 +11,12 @@ namespace BlackSP.Checkpointing.Persistence
     {
         Task<IEnumerable<MetaData>> GetAllMetaData();
 
-        Task Store(Checkpoint checkpoint);
+        /// <summary>
+        /// Stores a checkpoint in the storage
+        /// </summary>
+        /// <param name="checkpoint"></param>
+        /// <returns>byte size of the checkpoint</returns>
+        Task<long> Store(Checkpoint checkpoint);
 
         Task<Checkpoint> Retrieve(Guid id);
 

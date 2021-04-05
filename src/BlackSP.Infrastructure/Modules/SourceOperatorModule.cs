@@ -1,15 +1,12 @@
 ﻿using Autofac;
-using BlackSP.Core.MessageProcessing.Handlers;
-using BlackSP.Core.Models;
 using BlackSP.Infrastructure.Extensions;
-using BlackSP.Kernel;
+using BlackSP.Infrastructure.Layers.Data;
+using BlackSP.Infrastructure.Layers.Data.Sources;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
+using BlackSP.Logging;
 using System;
-using BlackSP.Infrastructure.Layers.Control;
-using BlackSP.Infrastructure.Layers.Data.Sources;
-using BlackSP.Infrastructure.Layers.Data;
 
 namespace BlackSP.Infrastructure.Modules
 {
@@ -26,7 +23,7 @@ namespace BlackSP.Infrastructure.Modules
         protected override void Load(ContainerBuilder builder)
         {
             //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
-            builder.UseSerilog(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
+            builder.UseLogging(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
             builder.UseCheckpointingService(_configuration.CheckpointingConfiguration, true);
 
             builder.UseProtobufSerializer();
