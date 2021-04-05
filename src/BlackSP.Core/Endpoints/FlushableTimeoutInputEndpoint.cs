@@ -101,20 +101,31 @@ namespace BlackSP.Core.Endpoints
             bool hasTakenPriority = false;
             while (!t.IsCancellationRequested)
             {
-                using var readTimeout = new CancellationTokenSource(500); //let read attempt timeout after XXXms..
+                byte[] msg = null;
+                using var readTimeout = new CancellationTokenSource(2500); //let read attempt timeout after XXXms..
                 using var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, readTimeout.Token);
                 try
                 {
-                    byte[] msg;
                     try
                     {
-                        msg = await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
+                        msg = msg ?? await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
                         hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader.UnreadBufferFraction, 0.0d).ConfigureAwait(false); //note: deadlock odds increase greatly with every % the threshold is increased
                         await _receiver.Receive(msg, _endpointConfig, shardId, t).ConfigureAwait(false);
+                        msg = null;
                     }
                     catch (OperationCanceledException) when (readTimeout.IsCancellationRequested)
                     {
                         _receiver.ThrowIfFlushInProgress(_endpointConfig, shardId);
+                        //force release priority if nothing left to delivery next iteration
+                        hasTakenPriority = msg == null && hasTakenPriority ? await AdjustReceiverPriority(hasTakenPriority, shardId, -1, 0.0d).ConfigureAwait(false) : hasTakenPriority;
+                    }
+                    catch (ReceptionCancelledException)
+                    {
+                        //reception was cancelled, probably to free up some critical section to allow flushing
+                        //force release priority if nothing left to delivery next iteration
+                        hasTakenPriority = msg == null && hasTakenPriority ? await AdjustReceiverPriority(hasTakenPriority, shardId, -1, 0.0d).ConfigureAwait(false) : hasTakenPriority;
+                        //wait for retry
+                        await Task.Delay(500).ConfigureAwait(false);
                     }
                 }
                 catch (FlushInProgressException)
@@ -128,10 +139,10 @@ namespace BlackSP.Core.Endpoints
                     _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} from {_endpointConfig.GetRemoteInstanceName(shardId)} started flushing");
                     await controlQueue.WriteAsync(ControlMessageExtensions.ConstructFlushMessage(), t).ConfigureAwait(false);
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent flush message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");
-                    byte[] fmsg = null;
-                    while (fmsg == null || !fmsg.IsFlushMessage())
+                    msg = null;
+                    while (msg == null || !msg.IsFlushMessage())
                     {
-                        fmsg = await reader.ReadNextMessage(t).ConfigureAwait(false); //keep reading&discarding until flush message returns from upstream
+                        msg = await reader.ReadNextMessage(t).ConfigureAwait(false); //keep reading&discarding until flush message returns from upstream
                     }
                     _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response from {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     _receiver.CompleteFlush(_endpointConfig, shardId);

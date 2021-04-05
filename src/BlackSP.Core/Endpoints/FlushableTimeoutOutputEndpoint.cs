@@ -110,11 +110,11 @@ namespace BlackSP.Core.Endpoints
         private async Task WriteDispatchableMessages(PipeStreamWriter writer, int shardId, SemaphoreSlim queueAccess, CancellationToken t)
         {
             var dispatchQueue = _dispatcher.GetDispatchQueue(_endpointConfig, shardId);
-            bool hasAccess = false;
+            //bool hasAccess = false;
             while (!t.IsCancellationRequested)
             {
                 await queueAccess.WaitAsync(t).ConfigureAwait(false);
-                hasAccess = true;
+                //hasAccess = true;
                 using var timeoutSource = new CancellationTokenSource(1000);
                 try
                 {
@@ -131,23 +131,19 @@ namespace BlackSP.Core.Endpoints
                         dispatchQueue.ThrowIfFlushingStarted();
                         throw;
                     }
-                    finally
-                    {
-                        queueAccess.Release();
-                        hasAccess = false;
-                    }
                     await writer.WriteMessage(message, t).ConfigureAwait(false);
                     if (message.IsFlushMessage() || _endpointConfig.IsControl)
                     {
                         await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
                     }
-
+                    queueAccess.Release();
                 }
                 catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
                 {
                     //there was no message to dispatch before timeout
                     //flush whatever is still in the output buffer
                     await writer.FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
+                    queueAccess.Release();
                 }
                 catch (OperationCanceledException) when (t.IsCancellationRequested)
                 {
@@ -160,18 +156,11 @@ namespace BlackSP.Core.Endpoints
                     _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} paused stream writer to wait for flush");
                     var ongoingFlush = dispatchQueue.BeginFlush();
                     queueAccess.Release();
-                    hasAccess = false;
+                    //hasAccess = false;
                     await ongoingFlush.ConfigureAwait(false); //Join the wait for flush completion.. the flushrequest listener will complete it..
                     _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {_endpointConfig.GetRemoteInstanceName(shardId)} unpaused stream writer after flush");
                 }
-                finally
-                {
-                    if (hasAccess)
-                    {
-                        queueAccess.Release();
-                        hasAccess = false;
-                    }
-                }
+                
             }
             t.ThrowIfCancellationRequested();
         }

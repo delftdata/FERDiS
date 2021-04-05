@@ -108,9 +108,10 @@ namespace BlackSP.Core.MessageProcessing
                 if(lastDeliveryConsumed.CurrentCount == 0)
                 {
                     lastDeliveryConsumed.Release(); //release the task waiting on the last line of Receive(..)
-                } else
+                } 
+                else
                 {
-                    _logger.Warning("Last taken message's Receive call is no longer waiting, proceeding as normal since it could be a failed channel. If this happens under failure free conditions, synchronization may go out of lockstep");
+                    _logger.Warning($"Reception thread from {lOrigin.GetRemoteInstanceName(lShard)} is no longer waiting, proceeding as normal since it could be a failed channel. If this happens under failure free conditions, synchronization may go out of lockstep");
                 }
             }
 
@@ -167,13 +168,13 @@ namespace BlackSP.Core.MessageProcessing
             }
             catch(OperationCanceledException) when (ct.IsCancellationRequested)
             {
-                _logger.Debug($"Receive aborted due to flush initiation on connectionKey: {connectionKey}");
+                _logger.Debug($"Receive aborted on connectionKey: {connectionKey}");
                 if(lastDeliveryTakenAccess.CurrentCount == 0)
                 {   //cancelled while waiting for Take, as it wont be taken, release
                     lastDeliveryTakenAccess.Release();
                 }
                 ThrowIfFlushInProgress(origin, shardId);
-                throw new NotImplementedException("Cancellation for non-flushing purposes is not implemented");
+                throw new ReceptionCancelledException("Message reception was cancelled, retry is allowed");
             }
             finally
             {
@@ -188,14 +189,16 @@ namespace BlackSP.Core.MessageProcessing
             var flushes = new List<Task>();
             foreach(var (endpoint, shardId) in _originDictionary.Values)
             {
-                if(instanceNamesToFlush.Contains(endpoint.GetRemoteInstanceName(shardId)))
+                var connectionKey = endpoint.GetConnectionKey(shardId);
+
+                if (instanceNamesToFlush.Contains(endpoint.GetRemoteInstanceName(shardId)))
                 {
-                    var connectionKey = endpoint.GetConnectionKey(shardId);
                     var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                     _flushDictionary.Add(connectionKey, tcs);
                     flushes.Add(tcs.Task);
-                    _connectionCancellationDictionary[connectionKey].Cancel(); //cancel any ongoing calls to the Receive method
-                }
+                    //_connectionCancellationDictionary[connectionKey].Cancel(); //cancel any ongoing calls to the Receive method (will be reset via completeflush)
+                } 
+                _connectionCancellationDictionary[connectionKey].Cancel(); //cancel any ongoing calls to the Receive method (without
             }
 
             if(flushes.Count != instanceNamesToFlush.Count())
@@ -208,6 +211,13 @@ namespace BlackSP.Core.MessageProcessing
                 _logger.Debug($"Receiver flushing {flushes.Count}/{_originDictionary.Count} queues");
                 await Task.WhenAll(flushes).ConfigureAwait(false);
                 _logger.Debug($"Receiver flushed {flushes.Count}/{_originDictionary.Count} queues");
+
+                foreach(var key in _connectionCancellationDictionary.Keys.ToArray()) //after flushing re-allow connections to call Receive
+                {
+                    var prevSource = _connectionCancellationDictionary[key];
+                    _connectionCancellationDictionary[key] = new CancellationTokenSource();
+                    prevSource.Dispose();
+                }
             } 
             else
             {
@@ -234,8 +244,8 @@ namespace BlackSP.Core.MessageProcessing
             _flushDictionary.Get(connectionKey).SetResult(true);
             _flushDictionary.Remove(connectionKey);
 
-            //reset cancellationtoken to prevent new connection auto-cancel
-            _connectionCancellationDictionary[connectionKey] = new CancellationTokenSource();
+            //reset cancellationtoken to prevent new connection auto-cancel (DONE AFTER FLUSH)
+            //_connectionCancellationDictionary[connectionKey] = new CancellationTokenSource();
 
             //check "last write" if it belongs to this endpoint and if so, delete it (prevent lingering message after flush)
             var (msg, lorigin, lshard) = _lastWrite;

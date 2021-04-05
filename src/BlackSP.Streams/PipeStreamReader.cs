@@ -49,27 +49,36 @@ namespace BlackSP.Streams
 
         public async Task<byte[]> ReadNextMessage(CancellationToken t)
         {
-            while(!t.IsCancellationRequested)
+            try
             {
-                t.ThrowIfCancellationRequested();
-                
-                if (_buffer.TryReadMessage(out var msgbodySequence, out var readPosition))
+                while (!t.IsCancellationRequested)
                 {
-                    
+                    t.ThrowIfCancellationRequested();
 
-                    _buffer = _buffer.Slice(readPosition);
-                    UnreadBufferSize = _buffer.Length;
-                    var bytes = msgbodySequence.ToArray();
+                    if (_buffer.TryReadMessage(out var msgbodySequence, out var readPosition))
+                    {
+                        _buffer = _buffer.Slice(readPosition);
+                        UnreadBufferSize = _buffer.Length;
+                        var bytes = msgbodySequence.ToArray();
+                        return bytes;
+                    }
+                    else
+                    {
+                        await AdvanceReader(t).ConfigureAwait(false);
 
-                    return bytes;
-                } 
-                else
-                {
-                    await AdvanceReader(t).ConfigureAwait(false);
+                    }
                 }
+
+                t.ThrowIfCancellationRequested(); //if we end up here it's due to cancellation
+                throw null;//so the compiler doesnt complain
             }
-            t.ThrowIfCancellationRequested(); //if we end up here it's due to cancellation
-            throw null;//so the compiler doesnt complain about
+            catch (OperationCanceledException) when (t.IsCancellationRequested)
+            {
+                _reader.CancelPendingRead();
+                throw;
+            }
+            
+            
         }
 
         public async Task AdvanceReader(CancellationToken t)
@@ -80,9 +89,10 @@ namespace BlackSP.Streams
                 {
                     _reader.AdvanceTo(_buffer.Start, _buffer.End);
                 }
-                catch (InvalidOperationException) { }//yeah kinda nasty but shh
+                finally { }
+                //catch (InvalidOperationException) { }//yeah kinda nasty but shh
+                //catch (ArgumentOutOfRangeException) { }//buffer advance went wrong.. again nasty but shh
             }
-            
             _lastRead = await _reader.ReadAsync(t).ConfigureAwait(false);
             _buffer = _lastRead.Buffer;
             UnreadBufferSize = TotalBufferSize = _buffer.Length;

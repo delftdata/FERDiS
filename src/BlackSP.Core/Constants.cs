@@ -8,7 +8,7 @@ namespace BlackSP.Core
     {
 
         public const int KeepAliveTimeoutSeconds = 15;
-        public const int KeepAliveIntervalSeconds = 5;
+        public const int KeepAliveIntervalSeconds = 1;
 
         public const int HeartbeatSeconds = 30;
 

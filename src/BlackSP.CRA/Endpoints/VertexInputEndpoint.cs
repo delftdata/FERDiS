@@ -27,10 +27,9 @@ namespace BlackSP.CRA.Endpoints
 
         public async Task FromStreamAsync(Stream stream, string otherVertex, int otherShardId, string otherEndpoint, CancellationToken token)
         {
-            //wraps overload as for input channels, we dont care which shard of other vertex it came from
             try
             {
-                //CRA invokes this method on a background thread so just invoke Ingress on current thread
+                //CRA invokes this method on the thread pool so just invoke Ingress here..
                 await _bspInputEndpoint.Ingress(stream, otherEndpoint, otherShardId, token).ConfigureAwait(false);
             }
             finally
