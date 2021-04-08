@@ -29,7 +29,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators
             UpdateOffsets(consumeResult.Partition, (int)consumeResult.Offset);
             var auction = consumeResult.Message.Value ?? throw new InvalidDataException("Received null Auction object from Kafka");
             return new AuctionEvent { 
-                Key = auction.Id.ToString(), 
+                Key = auction.Id, 
                 Auction = auction, 
                 EventTime = DateTime.Now 
             };

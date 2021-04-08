@@ -18,7 +18,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.AverageSellingPriceBySeller
             var personGroups = window.GroupBy(ev => ev.Auction.PersonId);
             return personGroups.Select(gr => new AveragePricePersonEvent
             {
-                Key = gr.Key.ToString(),
+                Key = gr.Key,
                 PersonId = gr.Key,
                 AverageSellingPrice = gr.Average(ev => ev.SellingPrice)
             });

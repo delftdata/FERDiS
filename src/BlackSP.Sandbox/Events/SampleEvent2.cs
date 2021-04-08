@@ -10,7 +10,7 @@ namespace BlackSP.Sandbox.Events
     public class SampleEvent2 : IEvent
     {
         [ProtoMember(1)]
-        public string Key { get; set; }
+        public int? Key { get; set; }
 
         [ProtoMember(2)]
         public DateTime EventTime { get; set; }
@@ -20,19 +20,12 @@ namespace BlackSP.Sandbox.Events
 
         public SampleEvent2() { }
 
-        public SampleEvent2(string key, DateTime? eventTime, int count)
+        public SampleEvent2(int? key, DateTime? eventTime, int count)
         {
             Key = key;
             EventTime = eventTime ?? throw new ArgumentNullException(nameof(eventTime));
             EventCount = count;
         }
 
-        public int GetPartitionKey()
-        {
-            MD5 md5Hasher = MD5.Create();
-            var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(Key));
-            return BitConverter.ToInt32(hashed, 0);
-            //return Key.GetHashCode();
-        }
     }
 }

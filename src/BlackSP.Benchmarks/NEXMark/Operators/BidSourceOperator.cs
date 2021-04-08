@@ -30,7 +30,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators
             var bid = consumeResult.Message.Value ?? throw new InvalidDataException("Received null Bid object from Kafka");
             //Logger.Warning($"Received bid: {bid.PersonId} offered {bid.Amount} for {bid.AuctionId}");
             return new BidEvent { 
-                Key = bid.AuctionId.ToString(), 
+                Key = bid.AuctionId, 
                 Bid = bid, 
                 EventTime = DateTime.Now };
         }

@@ -54,7 +54,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
             var page = matchB.Page;
             return new PageUpdateEvent
             {
-                Key = "",
+                Key = 0,
                 UpdatedPages = GetPages(adjacency, page).ToArray()
             };
         }

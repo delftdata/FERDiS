@@ -18,7 +18,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         {
             return new TestEvent2
             {
-                Key = $"{matchA.Key}+{matchB.Key}",
+                Key = matchA.Key+matchB.Key,
                 EventTime = matchA.EventTime,
                 Value = matchA.Value + matchB.Value
             };
@@ -51,16 +51,16 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         }
         
         [Test]
-        public async Task FilterOperator_JoinsTwoMatchingEventsInWindow()
+        public async Task JoinOperator_JoinsTwoMatchingEventsInWindow()
         {
             var output = new List<IEvent>();
 
             IList<TestEvent> events = new List<TestEvent>();
             IList<TestEvent2> events2 = new List<TestEvent2>();
 
-            events.Add(new TestEvent { Key = "KA", EventTime = _startTime.AddSeconds(1), Value = 1 });
-            events.Add(new TestEvent { Key = "KA2", EventTime = _startTime.AddSeconds(1), Value = 0 });
-            events2.Add(new TestEvent2 { Key = "KB", EventTime = _startTime.AddSeconds(1), Value = 1 });
+            events.Add(new TestEvent { Key = 1, EventTime = _startTime.AddSeconds(1), Value = 1 });
+            events.Add(new TestEvent { Key = 10, EventTime = _startTime.AddSeconds(1), Value = 0 });
+            events2.Add(new TestEvent2 { Key = 100, EventTime = _startTime.AddSeconds(1), Value = 1 });
 
             foreach(var @event in events.AsEnumerable<IEvent>().Concat(events2))
             {
@@ -72,21 +72,21 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             output.RemoveAt(0);
             Assert.IsNotNull(outputEvent);
             Assert.AreEqual(2, outputEvent.Value);
-            Assert.AreEqual("KA+KB", outputEvent.Key);
+            Assert.AreEqual(101, outputEvent.Key);
             Assert.IsEmpty(output);
         }
 
         [Test]
-        public async Task FilterOperator_JoinsAllMatchingEventsInWindow()
+        public async Task JoinOperator_JoinsAllMatchingEventsInWindow()
         {
             var output = new List<IEvent>();
             IList<IEvent> events = new List<IEvent>();
 
-            events.Add(new TestEvent { Key = "K1_A", EventTime = _startTime.AddSeconds(1), Value = 1 });
-            events.Add(new TestEvent2 { Key = "K2_A", EventTime = _startTime.AddSeconds(2), Value = 1 });
-            events.Add(new TestEvent { Key = "K1_B", EventTime = _startTime.AddSeconds(3), Value = 0 });
-            events.Add(new TestEvent2 { Key = "K2_B", EventTime = _startTime.AddSeconds(4), Value = 2 });
-            events.Add(new TestEvent2 { Key = "K2_C", EventTime = _startTime.AddSeconds(5), Value = 1 });
+            events.Add(new TestEvent { Key = 1, EventTime = _startTime.AddSeconds(1), Value = 1 });
+            events.Add(new TestEvent2 { Key = 10, EventTime = _startTime.AddSeconds(2), Value = 1 });
+            events.Add(new TestEvent { Key = 100, EventTime = _startTime.AddSeconds(3), Value = 0 });
+            events.Add(new TestEvent2 { Key = 1000, EventTime = _startTime.AddSeconds(4), Value = 2 });
+            events.Add(new TestEvent2 { Key = 10000, EventTime = _startTime.AddSeconds(5), Value = 1 });
             //matches are on value so (K1_A, K2_A) and (K2_C, K1_A)
             foreach (var @event in events)
             {
@@ -98,28 +98,28 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             output.RemoveAt(0);
             Assert.IsNotNull(outputEvent);
             Assert.AreEqual(2, outputEvent.Value);
-            Assert.AreEqual("K1_A+K2_A", outputEvent.Key);
+            Assert.AreEqual(11, outputEvent.Key);
             
             Assert.IsNotEmpty(output);
             outputEvent = output.First() as TestEvent2;
             output.RemoveAt(0);
             Assert.IsNotNull(outputEvent);
             Assert.AreEqual(2, outputEvent.Value);
-            Assert.AreEqual("K1_A+K2_C", outputEvent.Key);
+            Assert.AreEqual(10001, outputEvent.Key);
             Assert.IsEmpty(output);
 
         }
 
         [Test]
-        public async Task FilterOperator_ShouldNotJoinWithEventsOutOfWindow()
+        public async Task JoinOperator_ShouldNotJoinWithEventsOutOfWindow()
         {
             var output = new List<IEvent>();
 
-            output.AddRange(await _operator.OperateOnEvent(new TestEvent { Key = "K1_A", Value = 2 }));
+            output.AddRange(await _operator.OperateOnEvent(new TestEvent { Key = 1, Value = 2 }));
             await Task.Delay(_windowSize);
 
-            output.AddRange(await _operator.OperateOnEvent(new TestEvent2 { Key = "K2_A", Value = 2 }));
-            output.AddRange(await _operator.OperateOnEvent(new TestEvent { Key = "K1_B", Value = 2 }));
+            output.AddRange(await _operator.OperateOnEvent(new TestEvent2 { Key = 10, Value = 2 }));
+            output.AddRange(await _operator.OperateOnEvent(new TestEvent { Key = 100, Value = 2 }));
             
             //second two events happen delayed to cause the first event to go out of window 
             //so should only return one match
@@ -128,7 +128,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             var outputEvent = output.First() as TestEvent2;
             Assert.IsNotNull(outputEvent);
             Assert.AreEqual(4, outputEvent.Value);
-            Assert.AreEqual("K1_B+K2_A", outputEvent.Key);
+            Assert.AreEqual(110, outputEvent.Key);
             
             output.RemoveAt(0);
             Assert.IsEmpty(output);

@@ -19,7 +19,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.HotItem
                 .GroupBy(b => b.Bid.AuctionId)
                 .Select(group => new BidCountEvent
                 {
-                    Key = group.Key.ToString(),
+                    Key = group.Key,
                     AuctionId = group.Key,
                     Count = group.Count()
                 });

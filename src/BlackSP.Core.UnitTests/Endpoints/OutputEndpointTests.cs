@@ -49,9 +49,9 @@ namespace BlackSP.Core.UnitTests.Endpoints
             _operatorCtSource = new CancellationTokenSource();
 
             _testEvents = new List<IEvent>() {
-                new TestEvent{ Key = "test_key_0", Value = 0 },
-                new TestEvent{ Key = "test_key_1", Value = 1 },
-                new TestEvent{ Key = "test_key_2", Value = 2 },
+                new TestEvent{ Key = 0, Value = 0 },
+                new TestEvent{ Key = 1, Value = 1 },
+                new TestEvent{ Key = 2, Value = 2 },
             };
 
             var serializerMoq = MockBuilder.MockSerializer(_testEvents);

@@ -14,7 +14,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         {
             yield return new TestEvent2
             {
-                Key = $"Transformed:{@event.Key}",
+                Key = @event.Key,
                 Value = (int)@event.Value //transform value from byte to int32
             }; 
         }
@@ -35,7 +35,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             _testEvents = new List<TestEvent>();
             for(int i = 0; i < 10; i++)
             {
-                _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
+                _testEvents.Add(new TestEvent() { Key = i, Value = (byte)i });
             }
         }
 
@@ -49,7 +49,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             var transformedEvent = output.First() as TestEvent2;
             Assert.IsNotNull(transformedEvent);
 
-            Assert.IsTrue(transformedEvent.Key.StartsWith("Transformed"));
+            Assert.AreEqual(_testEvents[0].Key, transformedEvent.Key);
             Assert.AreEqual(_testEvents[0].Value, transformedEvent.Value);//byte transformed to int
         }
 
@@ -70,7 +70,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
                 output.RemoveAt(0);//dequeue
 
                 Assert.IsNotNull(transformedEvent);
-                Assert.IsTrue(transformedEvent.Key.StartsWith("Transformed"));
+                Assert.AreEqual(e.Key, transformedEvent.Key);
                 Assert.AreEqual(e.Value, transformedEvent.Value);//byte transformed to int
             }
             

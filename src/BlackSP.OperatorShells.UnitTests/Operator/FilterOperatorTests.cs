@@ -10,19 +10,19 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
 {
     class FilterOperatorConfigurationNoDoubleKeys : IFilterOperator<TestEvent>
     {
-        private IList<string> previousKeys;
+        private IList<int> previousKeys;
         public FilterOperatorConfigurationNoDoubleKeys()
         {
             //a nasty stateful operator configuration that will surely go out of memory but its fine for tests
-            previousKeys = new List<string>();
+            previousKeys = new List<int>();
         }
 
         public TestEvent Filter(TestEvent @event)
         {
-            if(previousKeys.Contains(@event.Key)) {
+            if(!@event.Key.HasValue || previousKeys.Contains(@event.Key.Value)) {
                 return null;
             }
-            previousKeys.Add(@event.Key);
+            previousKeys.Add(@event.Key.Value);
             return @event;
         }
     }
@@ -39,7 +39,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             _testEvents = new List<IEvent>();
             for(int i = 0; i < 10; i++)
             {
-                _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
+                _testEvents.Add(new TestEvent() { Key = i, Value = (byte)i });
             }
         }
 

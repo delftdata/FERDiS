@@ -25,7 +25,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
                          }) 
                          .Select(p => new PageEvent
                          {
-                             Key = p.PageId.ToString(),
+                             Key = p.PageId,
                              Page = p
                          });
         }

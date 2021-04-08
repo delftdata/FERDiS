@@ -10,7 +10,7 @@ namespace BlackSP.Serialization.UnitTests.Utilities
     public class ProtoBufTestEvent : IEvent
     {
         [ProtoMember(1)]
-        public string Key { get; set; }
+        public int? Key { get; set; }
 
         [ProtoMember(2)]
         public DateTime EventTime { get; set; }
@@ -23,7 +23,7 @@ namespace BlackSP.Serialization.UnitTests.Utilities
 
         }
 
-        public ProtoBufTestEvent(string key, DateTime? eventTime, int value)
+        public ProtoBufTestEvent(int? key, DateTime? eventTime, int value)
         {
             Key = key;
             EventTime = eventTime ?? throw new ArgumentNullException(nameof(eventTime));

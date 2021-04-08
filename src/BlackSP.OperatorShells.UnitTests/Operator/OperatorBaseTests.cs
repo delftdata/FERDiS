@@ -36,7 +36,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             _testEvents = new List<IEvent>();
             for (int i = 0; i < 10; i++)
             {
-                _testEvents.Add(new TestEvent() { Key = $"K{i}", Value = (byte)i });
+                _testEvents.Add(new TestEvent() { Key = i, Value = (byte)i });
             }
         }
 

@@ -41,7 +41,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
             {
                 //lastPage.Rank += page.Rank;
                 return new PageEvent {
-                    Key = lastPage.PageId.ToString(),
+                    Key = lastPage.PageId,
                     Page = lastPage, 
                     EventTime = @event.EventTime
                 };

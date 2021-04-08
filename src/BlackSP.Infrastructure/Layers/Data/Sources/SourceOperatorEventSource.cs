@@ -34,7 +34,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Sources
         {
             IEvent next = _source.ProduceNext(t);
             var payload = new EventPayload { Event = next };
-            var res = new DataMessage(DateTime.UtcNow, next.GetPartitionKey());
+            var res = new DataMessage(DateTime.UtcNow, next.Key);
             res.AddPayload(payload);
             return Task.FromResult(res);
         }

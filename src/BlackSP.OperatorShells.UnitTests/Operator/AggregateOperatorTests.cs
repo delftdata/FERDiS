@@ -22,7 +22,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         {
             yield return new TestEvent2
             {
-                Key = "AggregateResult",
+                Key = 999,
                 Value = window.Count()
             };
         }
@@ -51,7 +51,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             for(int i = 0; i < 10; i++)
             {
                 _testEvents.Add(new TestEvent {
-                    Key = $"K{i}", 
+                    Key = i, 
                     Value = (byte)i, 
                 });
             }
@@ -67,7 +67,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             await Task.Delay(_windowSize);
             var windowCloser = new TestEvent
             {
-                Key = "K_closer",
+                Key = 42069,
                 Value = 10,
             };
 

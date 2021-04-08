@@ -10,14 +10,14 @@ namespace BlackSP.Benchmarks.NEXMark.Events
 {
     [ProtoContract]
     [Serializable]
-    public class AuctionPersonEvent : MD5PartitionKeyEventBase
+    public class AuctionPersonEvent : IEvent
     {
 
         [ProtoMember(1)]
-        public override string Key { get; set; }
+        public int? Key { get; set; }
 
         [ProtoMember(2)]
-        public override DateTime EventTime { get; set; }
+        public DateTime EventTime { get; set; }
 
         [ProtoMember(3)]
         public Auction Auction { get; set; }

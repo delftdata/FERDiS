@@ -16,7 +16,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.LocalItem
         {
             return new AuctionPersonEvent
             {
-                Key = string.Empty,
+                Key = matchA.Auction.Id,
                 EventTime = matchA.EventTime > matchB.EventTime ? matchA.EventTime : matchB.EventTime,
                 Auction = matchA.Auction,
                 Person = matchB.Person

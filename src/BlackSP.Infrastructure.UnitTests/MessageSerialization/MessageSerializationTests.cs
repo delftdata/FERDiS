@@ -45,7 +45,7 @@ namespace BlackSP.Infrastructure.UnitTests.MessageSerialization
         public async Task ControlMessageSerializes()
         {
             MessageBase msg = new ControlMessage();
-            msg.AddPayload(new TestPayload() { Event = new TestEvent() { Key = "k", Value = 1 } });
+            msg.AddPayload(new TestPayload() { Event = new TestEvent() { Key = 0, Value = 1 } });
             msg.AddPayload(new VectorClockMessagePayload() { SeqNr = 111, Smth = "ok", SeqArr = new int[] { 1, 2, 3 } });
             
             var msgSerializer = new PooledBufferMessageSerializer(new ProtobufStreamSerializer(), new RecyclableMemoryStreamManager());
@@ -81,7 +81,7 @@ namespace BlackSP.Infrastructure.UnitTests.MessageSerialization
         public async Task DataMessageSerializes()
         {
             MessageBase msg = new DataMessage();
-            msg.AddPayload(new TestPayload() { Event = new TestEvent() { Key = "k", Value = 1 } });
+            msg.AddPayload(new TestPayload() { Event = new TestEvent() { Key = 69, Value = 1 } });
             msg.AddPayload(new VectorClockMessagePayload() { SeqNr = 111, Smth = "ok", SeqArr = new int[] { 1, 2, 3 } });
 
             var msgSerializer = new PooledBufferMessageSerializer(new ProtobufStreamSerializer(), new RecyclableMemoryStreamManager());

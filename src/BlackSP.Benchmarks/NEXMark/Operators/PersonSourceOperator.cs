@@ -31,7 +31,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators
             UpdateOffsets(consumeResult.Partition, (int)consumeResult.Offset);
             var person = consumeResult.Message.Value ?? throw new InvalidDataException("Received null Person object from Kafka");
             return new PersonEvent {
-                Key = person.Id.ToString(), 
+                Key = person.Id, 
                 Person = person, 
                 EventTime = DateTime.Now
             };

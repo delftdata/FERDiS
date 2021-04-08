@@ -20,7 +20,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.AverageSellingPriceBySeller
                 .Select(p => p.Group.FirstOrDefault(ev => ev.Bid.Amount == p.MaxBid))
                 .Select(ev => new AuctionSellingPriceEvent
                 {
-                    Key = ev.Auction.PersonId.ToString(), //Partition by person
+                    Key = ev.Auction.PersonId, //Partition by person
                     Auction = ev.Auction,
                     SellingPrice = ev.Bid.Amount
                 });

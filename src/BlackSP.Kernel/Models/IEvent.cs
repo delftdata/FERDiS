@@ -6,10 +6,10 @@ namespace BlackSP.Kernel.Models
 {
     public interface IEvent
     {
-        string Key { get; }
-
+        int? Key { get; }
+        
         DateTime EventTime { get; }
 
-        int GetPartitionKey();
+        //int Count => 1;
     }
 }

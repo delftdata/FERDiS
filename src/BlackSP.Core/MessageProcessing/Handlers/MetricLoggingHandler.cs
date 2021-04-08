@@ -26,12 +26,14 @@ namespace BlackSP.Core.MessageProcessing.Handlers
         private int _eventCountInWindow;
         private List<int> _latencyMillis;
 
+
         public MetricLoggingHandler(IMetricLogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
             _latencyMillis = new List<int>();
             _metricWindowSize = TimeSpan.FromSeconds(Constants.MetricIntervalSeconds);
+
         }
 
         public Task<IEnumerable<TMessage>> Handle(TMessage message)

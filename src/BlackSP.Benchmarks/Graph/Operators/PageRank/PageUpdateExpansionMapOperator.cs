@@ -17,7 +17,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
             {
                 yield return new PageEvent
                 {
-                    Key = page.PageId.ToString(),
+                    Key = page.PageId,
                     Page = page
                 };
             }

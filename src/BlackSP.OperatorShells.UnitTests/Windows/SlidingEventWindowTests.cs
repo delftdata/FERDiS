@@ -18,10 +18,10 @@ namespace BlackSP.Core.UnitTests.Windows
             var windowSize = TimeSpan.FromSeconds(2);
             var windowSlidingSize = TimeSpan.FromSeconds(1);
             var window = new SlidingEventWindow<TestEvent>(startTime.AddMilliseconds(-1), windowSize, windowSlidingSize);
-            var testEvent1 = new TestEvent { Key = "key1", Value = 1 };
-            var testEvent2 = new TestEvent { Key = "key2", Value = 1 };
-            var testEvent3 = new TestEvent { Key = "key3", Value = 1 };
-            var testEvent4 = new TestEvent { Key = "key4", Value = 1 };
+            var testEvent1 = new TestEvent { Key = 1, Value = 1 };
+            var testEvent2 = new TestEvent { Key = 2, Value = 1 };
+            var testEvent3 = new TestEvent { Key = 3, Value = 1 };
+            var testEvent4 = new TestEvent { Key = 4, Value = 1 };
             Assert.IsEmpty(window.Events); //assert empty on start
 
             bool didAdvance;
@@ -47,7 +47,7 @@ namespace BlackSP.Core.UnitTests.Windows
             var startTime = DateTime.Now;
             var windowSize = TimeSpan.FromSeconds(10);
             var window = new SlidingEventWindow<TestEvent>(startTime.AddMilliseconds(-1), windowSize, windowSize/2);
-            var testEvent = new TestEvent { Key = "key", Value = 1 };
+            var testEvent = new TestEvent { Key = 0, Value = 1 };
 
             Assert.IsEmpty(window.Events); //assert empty on start
             bool didAdvance;
@@ -67,8 +67,8 @@ namespace BlackSP.Core.UnitTests.Windows
             var windowSize = TimeSpan.FromSeconds(1);
             var windowSlidingSize = windowSize / 2;
             var window = new SlidingEventWindow<TestEvent>(startTime.AddMilliseconds(-1), windowSize, windowSlidingSize);
-            var testEvent = new TestEvent { Key = "key", Value = 1 };
-            var testEvent2 = new TestEvent { Key = "key", Value = 1 };
+            var testEvent = new TestEvent { Key = 0, Value = 1 };
+            var testEvent2 = new TestEvent { Key = 0, Value = 1 };
             Assert.IsEmpty(window.Events); //assert empty on start
             bool didAdvance;
 

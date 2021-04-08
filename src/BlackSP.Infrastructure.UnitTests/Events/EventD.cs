@@ -5,13 +5,8 @@ namespace BlackSP.Infrastructure.UnitTests.Events
 {
     public class EventD : IEvent
     {
-        public string Key { get; set; }
+        public int? Key { get; set; }
 
         public DateTime EventTime { get; set; }
-
-        public int GetPartitionKey()
-        {
-            return Key.GetHashCode();
-        }
     }
 }

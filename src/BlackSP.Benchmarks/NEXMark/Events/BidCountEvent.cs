@@ -3,18 +3,19 @@ using ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using BlackSP.Kernel.Models;
 
 namespace BlackSP.Benchmarks.NEXMark.Events
 {
     [ProtoContract]
     [Serializable]
-    public class BidCountEvent : MD5PartitionKeyEventBase
+    public class BidCountEvent : IEvent
     {
         [ProtoMember(1)]
-        public override string Key { get; set; }
+        public int? Key { get; set; }
 
         [ProtoMember(2)]
-        public override DateTime EventTime { get; set; }
+        public DateTime EventTime { get; set; }
 
         [ProtoMember(3)]
         public int Count { get; set; }

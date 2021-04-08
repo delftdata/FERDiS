@@ -26,9 +26,9 @@ namespace BlackSP.Serialization.UnitTests.Serialization
 
             _serializer = new ApexSerializer();
             _testEvents = new List<IEvent> {
-                new TestEvent("test_key_0", testComplexType),
-                new TestEvent("test_key_1", testComplexType),
-                new TestEvent("test_key_2", testComplexType),
+                new TestEvent(0, testComplexType),
+                new TestEvent(1, testComplexType),
+                new TestEvent(2, testComplexType),
             };
             _ctSource = new CancellationTokenSource();
         }
@@ -62,13 +62,13 @@ namespace BlackSP.Serialization.UnitTests.Serialization
         }
         private class TestEvent : IEvent
         {
-            public string Key { get; set; }
+            public int? Key { get; set; }
 
             public DateTime EventTime { get; set; }
 
             private IDictionary<string, int> _values;
 
-            public TestEvent(string key, IDictionary<string, int> values)
+            public TestEvent(int key, IDictionary<string, int> values)
             {
                 Key = key;
                 _values = values;

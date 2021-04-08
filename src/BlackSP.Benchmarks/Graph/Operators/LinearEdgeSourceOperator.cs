@@ -24,7 +24,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
 
             return new HopEvent
             {
-                Key = fromId.ToString(),
+                Key = fromId,
                 Neighbour = new Models.Neighbour
                 {
                     FromId = fromId,

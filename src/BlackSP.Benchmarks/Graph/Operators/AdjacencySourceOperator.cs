@@ -33,7 +33,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
             var adjacency = consumeResult.Message.Value ?? throw new InvalidDataException("Received null Auction object from Kafka");
             return new AdjacencyEvent
             {
-                Key = adjacency.PageId.ToString(),
+                Key = adjacency.PageId,
                 Adjacancy = adjacency,
                 EventTime = DateTime.Now
             };

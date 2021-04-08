@@ -9,7 +9,13 @@ namespace BlackSP.Benchmarks.WordCount.Events
     [ProtoContract]
     public class SentenceEvent : IEvent
     {
-        public string Key => Sentence;
+        public int? Key { 
+            get {
+                MD5 md5Hasher = MD5.Create();
+                var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(Sentence));
+                return BitConverter.ToInt32(hashed, 0);
+            } 
+        }
 
         [ProtoMember(1)]
         public DateTime EventTime { get; set; }
@@ -18,12 +24,5 @@ namespace BlackSP.Benchmarks.WordCount.Events
         public string Sentence { get; set; }
 
         public SentenceEvent() { }
-
-        public int GetPartitionKey()
-        {
-            MD5 md5Hasher = MD5.Create();
-            var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(Key));
-            return BitConverter.ToInt32(hashed, 0);
-        }
     }
 }

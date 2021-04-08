@@ -27,10 +27,10 @@ namespace BlackSP.Serialization.UnitTests.Serialization
             _serializer = new ProtobufStreamSerializer();
 
             _testEvents = new List<IEvent> {
-                new ProtoBufTestEvent("test_key_0", DateTime.Now, 420),
-                new ProtoBufTestEvent2("test_key_1", DateTime.Now, "yeah 420"),
-                new ProtoBufTestEvent("test_key_2", DateTime.Now, 420),
-                new ProtoBufTestEvent2("test_key_3", DateTime.Now, "yeah 420")
+                new ProtoBufTestEvent(0, DateTime.Now, 420),
+                new ProtoBufTestEvent2(1, DateTime.Now, "yeah 420"),
+                new ProtoBufTestEvent(2, DateTime.Now, 420),
+                new ProtoBufTestEvent2(3, DateTime.Now, "yeah 420")
             };
 
             _ctSource = new CancellationTokenSource();

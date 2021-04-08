@@ -34,7 +34,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             var events = await _operatorShell.OperateOnEvent(payload.Event, endpointConfig.IsBackchannel).ConfigureAwait(false);
             IEnumerable<DataMessage> result = events.Select(ev =>
             {
-                var res = new DataMessage(AssociatedMessage.CreatedAtUtc, AssociatedMessage.MetaData, ev.Key != null ? ev.GetPartitionKey() : (int?)null);
+                var res = new DataMessage(AssociatedMessage.CreatedAtUtc, AssociatedMessage.MetaData, ev.Key); //TODO: key ever not set?
                 res.AddPayload(new EventPayload { Event = ev });
                 return res;
             });

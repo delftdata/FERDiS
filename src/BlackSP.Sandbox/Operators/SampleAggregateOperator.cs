@@ -34,7 +34,7 @@ namespace BlackSP.Sandbox.Operators
                 _logger.Warning(msg);
                 throw new Exception(msg);
             }
-            yield return new SampleEvent2($"AggregateResult_{Counter++}", window.Max(x => x.EventTime), window.Count());
+            yield return new SampleEvent2(Counter++, window.Max(x => x.EventTime), window.Count());
         }
     }
 }

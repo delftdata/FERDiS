@@ -21,7 +21,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.AverageSellingPriceBySeller
         {
             return new BidAuctionEvent
             {
-                Key = matchB.Auction.Id.ToString(),
+                Key = matchB.Auction.Id,
                 Bid = matchA.Bid,
                 Auction = matchB.Auction
             };
