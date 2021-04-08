@@ -50,20 +50,20 @@ namespace BlackSP.Logging
             var logConfig = loggerConfig.MinimumLevel.Verbose();
             if (targetFlags.HasFlag(LogTargetFlags.Console))
             {
-                logConfig.WriteTo.Console(logLevel,
-                    outputTemplate: $"[{{Timestamp:hh:mm:ss:ffffff}}] [{instanceName} {{Level:u3}}] {{Message}}{{NewLine}}{{Exception}}",
-                    theme: AnsiConsoleTheme.Literate); //log usual format to console anyway
+                //logConfig.WriteTo.Console(logLevel,
+                //    outputTemplate: $"[{{Timestamp:hh:mm:ss:ffffff}}] [{instanceName} {{Level:u3}}] {{Message}}{{NewLine}}{{Exception}}",
+                //    theme: AnsiConsoleTheme.Literate); //log usual format to console anyway
             }
             if (targetFlags.HasFlag(LogTargetFlags.File))
             {
                 logConfig.WriteTo.RollingFile($"{AppDomain.CurrentDomain.BaseDirectory}logs/{subFolder}/{instanceName}-{{Date}}.log", logLevel,
-                    outputTemplate: $"{{Timestamp:hh:mm:ss:ffffff}}, {{Message}}{{NewLine}}");
+                    outputTemplate: $"{{Message}}{{NewLine}}");
             }
             if (targetFlags.HasFlag(LogTargetFlags.AzureBlob))
             {
                 var connectionString = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING"));
                 logConfig.WriteTo.AzureBlobStorage(connectionString, logLevel, "logs", $"{subFolder}/{instanceName}-{{yyyy}}-{{MM}}-{{dd}}.log",
-                    outputTemplate: $"{{Timestamp:hh:mm:ss:ffffff}}, {{Message}}{{NewLine}}");
+                    outputTemplate: $"{{Message}}{{NewLine}}");
             }
 
             return loggerConfig;

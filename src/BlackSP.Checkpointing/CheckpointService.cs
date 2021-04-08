@@ -33,27 +33,27 @@ namespace BlackSP.Checkpointing
         private readonly RecoveryLineCalculator.Factory _rlCalcFactory;
         private readonly ICheckpointStorage _storage;
         private readonly ICheckpointConfiguration _checkpointConfiguration;
-        private readonly ILoggerFactory _loggerFactory;
+        private readonly IMetricLogger _logger;
 
         public CheckpointService(ObjectRegistry register, 
                                  CheckpointDependencyTracker dependencyTracker,
                                  RecoveryLineCalculator.Factory rlCalcFactory,
                                  ICheckpointStorage checkpointStorage, 
                                  ICheckpointConfiguration checkpointConfiguration,
-                                 ILoggerFactory loggerFactory)
+                                 IMetricLogger logger)
         {
             _register = register ?? throw new ArgumentNullException(nameof(register));
             _dpTracker = dependencyTracker ?? throw new ArgumentNullException(nameof(dependencyTracker));
             _storage = checkpointStorage ?? throw new ArgumentNullException(nameof(checkpointStorage));
             _rlCalcFactory = rlCalcFactory ?? throw new ArgumentNullException(nameof(rlCalcFactory));
             _checkpointConfiguration = checkpointConfiguration ?? throw new ArgumentNullException(nameof(checkpointConfiguration));
-            _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         ///<inheritdoc/>
         public void UpdateCheckpointDependency(string originInstanceName, Guid checkpointId)
         {
-            _loggerFactory.GetDefaultLogger().Debug($"Updating checkpoint dependency on instance {originInstanceName} to {checkpointId}");
+            _logger.GetDefaultLogger().Debug($"Updating checkpoint dependency on instance {originInstanceName} to {checkpointId}");
             _dpTracker.UpdateDependency(originInstanceName, checkpointId);
         }
 
@@ -130,7 +130,7 @@ namespace BlackSP.Checkpointing
             }
             if (o.AssertCheckpointability())
             {
-                _loggerFactory.GetDefaultLogger().Debug($"Object of type {type.Name} is registered for checkpointing with {nameof(CheckpointService)}.");
+                _logger.GetDefaultLogger().Debug($"Object of type {type.Name} is registered for checkpointing with {nameof(CheckpointService)}.");
                 _register.Add(identifier, o);
                 return true;
             }
@@ -152,17 +152,17 @@ namespace BlackSP.Checkpointing
             AfterCheckpointTaken?.Invoke(metadata.Id);
             //- end of actual behavior
             sw.Stop();
-            _loggerFactory.GetCheckpointLogger().Information($"{isForced}, {sw.ElapsedMilliseconds}, {size}");
+            _logger.Checkpoint(size, sw.Elapsed, isForced);
             return checkpoint.Id;
         }
 
         public async Task ClearCheckpointStorage()
         {
-            _loggerFactory.GetDefaultLogger().Debug("Will clear checkpoint storage");
+            _logger.GetDefaultLogger().Debug("Will clear checkpoint storage");
             var allCheckpointMetadatas = await _storage.GetAllMetaData().ConfigureAwait(false);
             var deleteTasks = allCheckpointMetadatas.Select(meta => _storage.Delete(meta.Id));
             await Task.WhenAll(deleteTasks).ConfigureAwait(false);
-            _loggerFactory.GetDefaultLogger().Debug("Checkpoint storage cleared successfully");
+            _logger.GetDefaultLogger().Debug("Checkpoint storage cleared successfully");
         }
 
         ///<inheritdoc/>
@@ -179,7 +179,7 @@ namespace BlackSP.Checkpointing
 
             sw.Stop();
             var milisecondsReverted = DateTime.UtcNow - checkpoint.MetaData.CreatedAtUtc;
-            _loggerFactory.GetRecoveryLogger().Information($"{sw.ElapsedMilliseconds}, {(int)milisecondsReverted.TotalMilliseconds}");
+            _logger.Recovery(sw.Elapsed, milisecondsReverted);
         }
 
     }

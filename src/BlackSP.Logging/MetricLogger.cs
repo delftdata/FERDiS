@@ -7,7 +7,7 @@ using System;
 
 namespace BlackSP.Logging
 {
-    public class LoggerFactory : ILoggerFactory
+    public class MetricLogger : IMetricLogger
     {
 
         private readonly ILogConfiguration _config;
@@ -19,7 +19,7 @@ namespace BlackSP.Logging
         private ILogger _recoveryLogger;
 
 
-        public LoggerFactory(IVertexConfiguration vertexConfig, ILogConfiguration logConfig, ILogger defaultLogger)
+        public MetricLogger(IVertexConfiguration vertexConfig, ILogConfiguration logConfig, ILogger defaultLogger)
         {
             _instanceName = vertexConfig?.InstanceName ?? throw new ArgumentNullException(nameof(vertexConfig));
             _config = logConfig ?? throw new ArgumentNullException(nameof(logConfig));
@@ -29,15 +29,33 @@ namespace BlackSP.Logging
         }
 
         public ILogger GetDefaultLogger() => _defaultLogger;
-        public ILogger GetPerformanceLogger() => _performanceLogger;
-        public ILogger GetCheckpointLogger() => _checkpointLogger;
-        public ILogger GetRecoveryLogger() => _recoveryLogger;
 
+        public void Checkpoint(long bytes, TimeSpan time, bool wasForced)
+        {
+            _checkpointLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, {wasForced}, {time.TotalMilliseconds}, {bytes}");
+        }
+
+        public void Performance(int throughput, int latencyMin, int latencyAvg, int latencyMax)
+        {
+            _performanceLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, {throughput}, {latencyMin}, {latencyAvg}, {latencyMax}");
+        }
+
+        public void Recovery(TimeSpan time, TimeSpan distance)
+        {
+            _recoveryLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, {(int)time.TotalMilliseconds}, {(int)distance.TotalMilliseconds}");
+        }
+
+        /// <summary>
+        /// Init metric logger objects and write header line
+        /// </summary>
         private void InitialiseLoggers()
         {
             _performanceLogger = new LoggerConfiguration().ConfigureMetricSinks(_config.TargetFlags, _config.EventLevel, _instanceName, "performance").CreateLogger();
+            _performanceLogger.Information("timestamp, throughput, lat_min, lat_avg, lat_max");
             _checkpointLogger = new LoggerConfiguration().ConfigureMetricSinks(_config.TargetFlags, _config.EventLevel, _instanceName, "checkpoint").CreateLogger();
+            _checkpointLogger.Information("timestamp, forced, taken_ms, bytes");
             _recoveryLogger = new LoggerConfiguration().ConfigureMetricSinks(_config.TargetFlags, _config.EventLevel, _instanceName, "recovery").CreateLogger();
+            _recoveryLogger.Information("timestamp, restored_ms, rollback_ms");
         }
 
     }

@@ -18,8 +18,7 @@ namespace BlackSP.Core.MessageProcessing.Handlers
     public class MetricLoggingHandler<TMessage> : IHandler<TMessage>
         where TMessage : IMessage
     {
-        private ILogger _metricLogger => _loggerFactory.GetPerformanceLogger();
-        private readonly ILoggerFactory _loggerFactory;
+        private readonly IMetricLogger _logger;
 
         private TimeSpan _metricWindowSize;
         private DateTime _metricWindowStart;
@@ -27,9 +26,9 @@ namespace BlackSP.Core.MessageProcessing.Handlers
         private int _eventCountInWindow;
         private List<int> _latencyMillis;
 
-        public MetricLoggingHandler(ILoggerFactory loggerFactory)
+        public MetricLoggingHandler(IMetricLogger logger)
         {
-            _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
             _latencyMillis = new List<int>();
             _metricWindowSize = TimeSpan.FromSeconds(Constants.MetricIntervalSeconds);
@@ -44,7 +43,7 @@ namespace BlackSP.Core.MessageProcessing.Handlers
                 var latencyMin = _latencyMillis.Min();
                 var latencyMax = _latencyMillis.Max();
                 var latencyAvg = (int)_latencyMillis.Average();
-                _metricLogger.Information($"{_metricWindowStart:HH:mm:ss:fff}, {now:HH:mm:ss:fff}, {throughput}, {latencyMin}, {latencyAvg}, {latencyMax}");
+                _logger.Performance(throughput, latencyMin, latencyAvg, latencyMax);
                 _metricWindowStart = default;
             }
 

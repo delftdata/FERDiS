@@ -44,7 +44,7 @@ namespace BlackSP.Checkpointing.UnitTests
         {
             instanceName = "instance01";
 
-            var loggerMock = new Mock<ILoggerFactory>();
+            var loggerMock = new Mock<IMetricLogger>();
             loggerMock.SetReturnsDefault(new Mock<ILogger>().Object);
             var graphConfigMock = new Mock<IVertexGraphConfiguration>();
             var cpConfigMock = new Mock<ICheckpointConfiguration>();

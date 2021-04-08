@@ -32,7 +32,7 @@ namespace BlackSP.Logging
         {
             builder.RegisterInstance(config).AsImplementedInterfaces();
             builder.UseDefaultLogger(config, instanceName);
-            builder.RegisterType<LoggerFactory>().AsImplementedInterfaces().SingleInstance();
+            builder.RegisterType<MetricLogger>().AsImplementedInterfaces().SingleInstance();
             return builder;
         }
     }
