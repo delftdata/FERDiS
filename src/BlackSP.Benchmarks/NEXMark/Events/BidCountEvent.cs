@@ -22,5 +22,7 @@ namespace BlackSP.Benchmarks.NEXMark.Events
 
         [ProtoMember(4)]
         public int AuctionId { get; set; }
+
+        public int EventCount() => Count;
     }
 }

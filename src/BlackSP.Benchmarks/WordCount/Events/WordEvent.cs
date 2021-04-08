@@ -33,5 +33,10 @@ namespace BlackSP.Benchmarks.WordCount.Events
 
         public WordEvent() { }
 
+        [ProtoMember(4)]
+        public int EC { get; set; }
+
+        public int EventCount() => EC > 0 ? EC : 1;
+
     }
 }

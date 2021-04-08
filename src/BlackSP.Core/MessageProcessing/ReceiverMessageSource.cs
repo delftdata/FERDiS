@@ -211,16 +211,18 @@ namespace BlackSP.Core.MessageProcessing
                 await Task.WhenAll(flushes).ConfigureAwait(false);
                 _logger.Debug($"Receiver flushed {flushes.Count}/{_originDictionary.Count} queues");
 
-                foreach(var key in _connectionCancellationDictionary.Keys.ToArray()) //after flushing re-allow connections to call Receive
-                {
-                    var prevSource = _connectionCancellationDictionary[key];
-                    _connectionCancellationDictionary[key] = new CancellationTokenSource();
-                    prevSource.Dispose();
-                }
+                
             } 
             else
             {
                 _logger.Debug($"Receiver did not have to flush any connections");
+            }
+
+            foreach (var key in _connectionCancellationDictionary.Keys.ToArray()) //after flushing re-allow connections to call Receive
+            {
+                var prevSource = _connectionCancellationDictionary[key];
+                _connectionCancellationDictionary[key] = new CancellationTokenSource();
+                prevSource.Dispose();
             }
         }
 

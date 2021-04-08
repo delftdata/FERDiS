@@ -1,5 +1,5 @@
 ﻿using BlackSP.Checkpointing;
-using BlackSP.Core.Windows;
+using BlackSP.OperatorShells.Windows;
 using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
 using System;

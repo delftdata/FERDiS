@@ -10,6 +10,10 @@ namespace BlackSP.Kernel.Models
         
         DateTime EventTime { get; }
 
-        //int Count => 1;
+        /// <summary>
+        /// How many events shaped the current event<br/>
+        /// Defaults to 1 but can be overridden for Aggregate operations
+        /// </summary>
+        int EventCount() => 1;
     }
 }

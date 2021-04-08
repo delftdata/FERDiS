@@ -31,7 +31,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
 
         public SentenceEvent ProduceNext(CancellationToken t)
         {
-            if(sentencesGenerated >= defaultSentences.Length * 500000) //keep going until each sentence was sent x times
+            if(sentencesGenerated >= defaultSentences.Length * 50000) //keep going until each sentence was sent x times
             {
                 Task.Delay(Constants.WordCountAggregateWindowSizeMs*2).Wait();
                 _logger.Information($"Each sentence sent at least 500.000 times, now sending all words as one sentence");

@@ -82,8 +82,6 @@ namespace BlackSP.Infrastructure.Extensions
 
             //post operator handlers
             builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>(); //forwards CP dependency on new CP
-
-
             return builder;
         }
 

@@ -20,7 +20,9 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.AverageSellingPriceBySeller
             {
                 Key = gr.Key,
                 PersonId = gr.Key,
-                AverageSellingPrice = gr.Average(ev => ev.SellingPrice)
+                AverageSellingPrice = gr.Average(ev => ev.SellingPrice),
+                Count = gr.Count(),
+                EventTime = gr.Max(x => x.EventTime)
             });
 
         }

@@ -40,8 +40,6 @@ namespace BlackSP.OperatorShells
                 var currentWindowContent = GetWindow(typeof(TIn)).Events.Cast<TIn>();
                 return _pluggedInOperator.Aggregate(currentWindowContent);
             }
-
-
         }
     }
 }

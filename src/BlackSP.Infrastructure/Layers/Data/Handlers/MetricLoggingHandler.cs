@@ -1,4 +1,7 @@
-﻿using BlackSP.Kernel;
+﻿using BlackSP.Core;
+using BlackSP.Core.MessageProcessing.Handlers;
+using BlackSP.Infrastructure.Layers.Data.Payloads;
+using BlackSP.Kernel;
 using BlackSP.Kernel.Logging;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
@@ -8,14 +11,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlackSP.Core.MessageProcessing.Handlers
+namespace BlackSP.Infrastructure.Layers.Data.Handlers
 {
 
     /// <summary>
     /// Simple generic message handler that calculates metrics like latency and throughput and logs these
     /// </summary>
     /// <typeparam name="TMessage"></typeparam>
-    public class MetricLoggingHandler<TMessage> : IHandler<TMessage>
+    public class MetricLoggingHandler<TMessage> : ForwardingPayloadHandlerBase<TMessage, EventPayload>
         where TMessage : IMessage
     {
         private readonly IMetricLogger _logger;
@@ -36,7 +39,7 @@ namespace BlackSP.Core.MessageProcessing.Handlers
 
         }
 
-        public Task<IEnumerable<TMessage>> Handle(TMessage message)
+        protected override Task<IEnumerable<TMessage>> Handle(EventPayload payload)
         {
             var now = DateTime.UtcNow;
             if (_metricWindowStart != default && _metricWindowStart + _metricWindowSize < now) //window closes
@@ -56,11 +59,12 @@ namespace BlackSP.Core.MessageProcessing.Handlers
                 _eventCountInWindow = 0;
             }
 
-            _eventCountInWindow++;
-            var latencyMs = (int)(now - message.CreatedAtUtc).TotalMilliseconds;
+            _eventCountInWindow += payload.Event.EventCount();
+            var latencyMs = (int)(now - AssociatedMessage.CreatedAtUtc).TotalMilliseconds;
             _latencyMillis.Add(latencyMs);
-            
-            return Task.FromResult(message.Yield());
+
+            AssociatedMessage.AddPayload(payload); //re-add the payload 
+            return Task.FromResult(AssociatedMessage.Yield());
         }
     }
 }

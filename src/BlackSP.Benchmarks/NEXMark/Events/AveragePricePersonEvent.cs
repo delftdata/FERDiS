@@ -22,5 +22,10 @@ namespace BlackSP.Benchmarks.NEXMark.Events
 
         [ProtoMember(4)]
         public double AverageSellingPrice { get; set; }
+
+        [ProtoMember(5)]
+        public int Count { get; set; }
+
+        public int EventCount() => Count;
     }
 }

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BlackSP.Core.Windows
+namespace BlackSP.OperatorShells.Windows
 {
     [Serializable]
     public class SlidingEventWindow<TEvent> : EventWindowBase<TEvent>

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BlackSP.Core.Windows
+namespace BlackSP.OperatorShells.Windows
 {
     [Serializable]
     public abstract class EventWindowBase<TEvent>

@@ -21,7 +21,8 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.HotItem
                 {
                     Key = group.Key,
                     AuctionId = group.Key,
-                    Count = group.Count()
+                    Count = group.Count(),
+                    EventTime = group.Max(x => x.EventTime)
                 });
         }
     }

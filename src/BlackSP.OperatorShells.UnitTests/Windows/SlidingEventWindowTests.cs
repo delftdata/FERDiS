@@ -1,5 +1,5 @@
 ﻿using BlackSP.Core.UnitTests.Events;
-using BlackSP.Core.Windows;
+using BlackSP.OperatorShells.Windows;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
