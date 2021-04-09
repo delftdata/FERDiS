@@ -14,12 +14,12 @@ namespace BlackSP.Core.MessageProcessing
     /// <summary>
     /// 
     /// </summary>
-    public class HandlerInvocationPipeline<T> : IPipeline<T> where T : IMessage
+    public class MessageHandlerPipeline<T> : IPipeline<T> where T : IMessage
     {
 
         private readonly IEnumerable<IHandler<T>> _middlewares;
         private IVertexConfiguration _config;
-        public HandlerInvocationPipeline(IEnumerable<IHandler<T>> middlewares, IVertexConfiguration config)
+        public MessageHandlerPipeline(IEnumerable<IHandler<T>> middlewares, IVertexConfiguration config)
         {
             _middlewares = middlewares ?? throw new ArgumentNullException(nameof(middlewares));
             if(!_middlewares.Any())

@@ -1,17 +1,11 @@
 ﻿using Autofac;
-using BlackSP.Core.Dispatchers;
-using BlackSP.Core.Models;
 using BlackSP.Core.MessageProcessing;
 using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Infrastructure.Layers.Data;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
-using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Serialization;
 using BlackSP.Serialization;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -23,13 +17,14 @@ namespace BlackSP.Infrastructure.Extensions
             //processor
             builder.RegisterType<ControlMessageProcessor>().InstancePerLifetimeScope();
             //pipeline
-            builder.RegisterType<HandlerInvocationPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().InstancePerLifetimeScope();
+            builder.RegisterType<MessageHandlerPipeline<ControlMessage>>().As<IPipeline<ControlMessage>>().InstancePerLifetimeScope();
             //message source
-            builder.RegisterType<ReceiverMessageSource<ControlMessage>>().As<IReceiverSource<ControlMessage>, ISource<ControlMessage>>().AsImplementedInterfaces().InstancePerLifetimeScope();
+            builder.RegisterType<MessageReceiverSource<ControlMessage>>().As<IReceiverSource<ControlMessage>, ISource<ControlMessage>>().AsImplementedInterfaces().InstancePerLifetimeScope();
             
             //dispatcher
-            builder.RegisterType<TargetingMessageDispatcher<ControlMessage>>().As<IDispatcher<ControlMessage>>().SingleInstance();
+            builder.RegisterType<MessagePartitioningDispatcher<ControlMessage>>().As<IDispatcher<ControlMessage>>().SingleInstance();
             builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer>();
+            builder.RegisterType<MessageTargetingPartitioner<ControlMessage>>().AsImplementedInterfaces();
 
             return builder;
         }
@@ -39,19 +34,19 @@ namespace BlackSP.Infrastructure.Extensions
             //processor
             builder.RegisterType<DataMessageProcessor>().InstancePerLifetimeScope();
             //pipeline
-            builder.RegisterType<HandlerInvocationPipeline<DataMessage>>().As<IPipeline<DataMessage>>().InstancePerLifetimeScope();
+            builder.RegisterType<MessageHandlerPipeline<DataMessage>>().As<IPipeline<DataMessage>>().InstancePerLifetimeScope();
             
             if(useNetworkAsDataSource)
             {
                 //message source
-                builder.RegisterType<ReceiverMessageSource<DataMessage>>().As<IReceiverSource<DataMessage>, ISource<DataMessage>>().InstancePerLifetimeScope();
+                builder.RegisterType<MessageReceiverSource<DataMessage>>().As<IReceiverSource<DataMessage>, ISource<DataMessage>>().InstancePerLifetimeScope();
             }
             
 
             //dispatcher
-            builder.RegisterType<PartitioningMessageDispatcher<DataMessage>>().As<IDispatcher<DataMessage>>().InstancePerLifetimeScope();
+            builder.RegisterType<MessagePartitioningDispatcher<DataMessage>>().As<IDispatcher<DataMessage>>().InstancePerLifetimeScope();
             builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer>();
-            builder.RegisterType<MessageHashPartitioner>().As<IPartitioner<IMessage>>();
+            builder.RegisterType<MessageHashPartitioner<DataMessage>>().AsImplementedInterfaces();
 
             return builder;
         }

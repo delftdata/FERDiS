@@ -10,7 +10,8 @@ namespace BlackSP.Core.MessageProcessing
     /// <summary>
     /// Partitions using a simple modulo operation over the number of possible remote instances
     /// </summary>
-    public class MessageHashPartitioner : IPartitioner<IMessage>
+    public class MessageHashPartitioner<TMessage> : IPartitioner<TMessage>
+        where TMessage : class, IMessage
     {
         private readonly IVertexConfiguration _vertexConfiguration;
 
@@ -21,7 +22,7 @@ namespace BlackSP.Core.MessageProcessing
 
         
 
-        public IEnumerable<string> Partition(IMessage message)
+        public IEnumerable<string> Partition(TMessage message)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
             var targetEndpoints = _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl == message.IsControl);

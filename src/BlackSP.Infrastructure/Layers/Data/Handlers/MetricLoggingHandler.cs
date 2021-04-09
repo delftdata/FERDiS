@@ -1,11 +1,8 @@
-﻿using BlackSP.Core;
-using BlackSP.Core.MessageProcessing.Handlers;
+﻿using BlackSP.Core.MessageProcessing.Handlers;
 using BlackSP.Infrastructure.Layers.Data.Payloads;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Logging;
-using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +32,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
             _latencyMillis = new List<int>();
-            _metricWindowSize = TimeSpan.FromSeconds(Constants.MetricIntervalSeconds);
+            _metricWindowSize = TimeSpan.FromMilliseconds(Constants.MetricLoggingIntervalMs);
 
         }
 

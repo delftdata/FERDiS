@@ -18,7 +18,7 @@ namespace BlackSP.Core.MessageProcessing
     /// Receives input from any source. Exposes received messages through the ISource interface.<br/>
     /// Sorts and orders input based on message types to be consumed one-by-one.
     /// </summary>
-    public sealed class ReceiverMessageSource<TMessage> : IReceiverSource<TMessage>, IDisposable
+    public sealed class MessageReceiverSource<TMessage> : IReceiverSource<TMessage>, IDisposable
         where TMessage : class, IMessage
     {
         public (IEndpointConfiguration, int) MessageOrigin { get; private set; }
@@ -77,7 +77,7 @@ namespace BlackSP.Core.MessageProcessing
         private (TMessage, IEndpointConfiguration, int) _lastTake { get; set; }
         private (TMessage, IEndpointConfiguration, int) _lastWrite { get; set; }
 
-        public ReceiverMessageSource(IObjectSerializer serializer, IVertexConfiguration vertexConfiguration, ILogger logger)
+        public MessageReceiverSource(IObjectSerializer serializer, IVertexConfiguration vertexConfiguration, ILogger logger)
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));

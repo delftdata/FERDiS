@@ -48,8 +48,8 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             _graphConfiguration = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            messages = new BlockingCollection<ControlMessage>(Constants.DefaultThreadBoundaryQueueSize);
-            heartbeatInterval = TimeSpan.FromSeconds(Constants.HeartbeatSeconds);
+            messages = new BlockingCollection<ControlMessage>();
+            heartbeatInterval = TimeSpan.FromMilliseconds(Constants.HeartbeatIntervalMs);
             lastHeartBeat = DateTime.Now.Add(-heartbeatInterval);//make sure we start off with a heartbeat
 
             RegisterWorkerStateChangeEventHandlers();
@@ -58,6 +58,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
 
         public Task<ControlMessage> Take(CancellationToken t)
         {
+            t.ThrowIfCancellationRequested();
             var timeSinceLastHeartbeat = DateTime.Now - lastHeartBeat;
             var timeTillNextHeartbeat = timeSinceLastHeartbeat > heartbeatInterval ? TimeSpan.Zero : heartbeatInterval - timeSinceLastHeartbeat;
             var timeoutSource = new CancellationTokenSource(timeTillNextHeartbeat);
@@ -68,7 +69,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             {
                 message = messages.Take(linkedSource.Token);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
             {
                 _logger.Verbose($"No internal state changes for {heartbeatInterval.TotalSeconds} seconds, preparing status request message for all workers");
                 var msg = new ControlMessage(); //no new status-change message.. fall back to heartbeat request (note: no partitionkey as we want to broadcast this)
@@ -87,9 +88,10 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         public Task Flush(IEnumerable<string> upstreamInstancesToFlush)
         {
             messages.CompleteAdding();
-            messages = new BlockingCollection<ControlMessage>(Constants.DefaultThreadBoundaryQueueSize);
+            messages = new BlockingCollection<ControlMessage>();
             return Task.CompletedTask; //nothing to flush here
         }
+
 
         private void RegisterWorkerStateChangeEventHandlers()
         {

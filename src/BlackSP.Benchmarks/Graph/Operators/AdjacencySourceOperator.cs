@@ -22,7 +22,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
 
         public AdjacencyEvent ProduceNext(CancellationToken t)
         {
-            Task.Delay(1).Wait(); //TODO: remove nasty throttle
+            //Task.Delay(1).Wait();
             var consumeResult = Consumer.Consume(t);
             if (consumeResult.IsPartitionEOF)
             {
@@ -35,7 +35,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
             {
                 Key = adjacency.PageId,
                 Adjacancy = adjacency,
-                EventTime = DateTime.Now
+                EventTime = DateTime.UtcNow
             };
         }
     }
