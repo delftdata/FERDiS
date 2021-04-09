@@ -1,5 +1,5 @@
 ﻿using BlackSP.Core.Extensions;
-using BlackSP.Core.Monitors;
+using BlackSP.Core.Observers;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Models;
@@ -84,7 +84,7 @@ namespace BlackSP.Core.Coordination
         /// Configure graph state manager to listen to connection changes and fire network triggers on affected vertex state managers
         /// </summary>
         /// <param name="connectionMonitor"></param>
-        public void ListenTo(ConnectionMonitor connectionMonitor)
+        public void ListenTo(ConnectionObserver connectionMonitor)
         {
             _ = connectionMonitor ?? throw new ArgumentNullException(nameof(connectionMonitor));
             connectionMonitor.OnConnectionChange += ConnectionMonitor_OnConnectionChange;
@@ -151,7 +151,7 @@ namespace BlackSP.Core.Coordination
             }
         }
 
-        private void ConnectionMonitor_OnConnectionChange(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
+        private void ConnectionMonitor_OnConnectionChange(ConnectionObserver sender, ConnectionMonitorEventArgs e)
         {
             var (changedConnection, isConnected) = e.ChangedConnection;
             if (changedConnection.IsUpstream)

@@ -1,6 +1,6 @@
 ﻿using BlackSP.Checkpointing;
 using BlackSP.Core.MessageProcessing.Processors;
-using BlackSP.Core.Monitors;
+using BlackSP.Core.Observers;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Configuration;
@@ -23,7 +23,7 @@ namespace BlackSP.Infrastructure.Layers.Data
         private readonly ICheckpointService _checkpointService;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ICheckpointConfiguration _checkpointConfiguration;
-        private readonly ConnectionMonitor _connectionMonitor;
+        private readonly ConnectionObserver _connectionMonitor;
 
         private readonly ISource<DataMessage> _source;
         private readonly IDispatcher<DataMessage> _dispatcher;
@@ -32,7 +32,7 @@ namespace BlackSP.Infrastructure.Layers.Data
         public DataMessageProcessor(ICheckpointService checkpointService,
             IVertexConfiguration vertexConfiguration,
             ICheckpointConfiguration checkpointConfiguration,
-            ConnectionMonitor connectionMonitor,
+            ConnectionObserver connectionMonitor,
             ISource<DataMessage> source,
             IPipeline<DataMessage> pipeline,
             IDispatcher<DataMessage> dispatcher,
@@ -72,7 +72,7 @@ namespace BlackSP.Infrastructure.Layers.Data
             }
         }
 
-        private void ConnectionMonitor_OnConnectionFail_StopProcessAndFlushDispatcher(ConnectionMonitor sender, ConnectionMonitorEventArgs e)
+        private void ConnectionMonitor_OnConnectionFail_StopProcessAndFlushDispatcher(ConnectionObserver sender, ConnectionMonitorEventArgs e)
         {
             var (connection, isactive) = e.ChangedConnection;
             if(!connection.IsUpstream && !isactive)

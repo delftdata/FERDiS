@@ -1,7 +1,7 @@
 ﻿using Autofac;
 using BlackSP.Core.Coordination;
 using BlackSP.Core.Endpoints;
-using BlackSP.Core.Monitors;
+using BlackSP.Core.Observers;
 using BlackSP.Infrastructure.Factories;
 using BlackSP.Kernel.Serialization;
 using BlackSP.Serialization;
@@ -42,7 +42,7 @@ namespace BlackSP.Infrastructure.Extensions
 
         public static ContainerBuilder UseStatusMonitors(this ContainerBuilder builder)
         {
-            builder.RegisterType<ConnectionMonitor>().AsSelf().SingleInstance();
+            builder.RegisterType<ConnectionObserver>().AsSelf().SingleInstance();
             return builder;
         }
 

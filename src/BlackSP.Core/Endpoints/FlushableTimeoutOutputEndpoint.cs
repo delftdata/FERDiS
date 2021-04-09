@@ -1,6 +1,6 @@
 ﻿using BlackSP.Core.Exceptions;
 using BlackSP.Core.Extensions;
-using BlackSP.Core.Monitors;
+using BlackSP.Core.Observers;
 using BlackSP.Kernel;
 using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Endpoints;
@@ -29,13 +29,13 @@ namespace BlackSP.Core.Endpoints
         private readonly IDispatcher<TMessage> _dispatcher;
         private readonly IVertexConfiguration _vertexConfig;
         private readonly IEndpointConfiguration _endpointConfig;
-        private readonly ConnectionMonitor _connectionMonitor;
+        private readonly ConnectionObserver _connectionMonitor;
         private readonly ILogger _logger;
 
         public FlushableTimeoutOutputEndpoint(string endpointName,
             IDispatcher<TMessage> dispatcher,
             IVertexConfiguration vertexConfiguration,
-            ConnectionMonitor connectionMonitor,
+            ConnectionObserver connectionMonitor,
             ILogger logger)
         {
             _ = endpointName ?? throw new ArgumentNullException(nameof(endpointName));

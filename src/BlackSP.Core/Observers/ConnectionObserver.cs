@@ -3,9 +3,9 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 
-namespace BlackSP.Core.Monitors
+namespace BlackSP.Core.Observers
 {
-    public class ConnectionMonitor
+    public class ConnectionObserver
     {
 
         private readonly IVertexConfiguration _vertexConfiguration;
@@ -13,7 +13,7 @@ namespace BlackSP.Core.Monitors
         private readonly ILogger _logger;
         private readonly object _lockObj;
         
-        public ConnectionMonitor(IVertexConfiguration vertexConfiguration, ILogger logger)
+        public ConnectionObserver(IVertexConfiguration vertexConfiguration, ILogger logger)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -21,7 +21,7 @@ namespace BlackSP.Core.Monitors
             _lockObj = new object();
         }
 
-        public delegate void ConnectionChangeEventHandler(ConnectionMonitor sender, ConnectionMonitorEventArgs e);
+        public delegate void ConnectionChangeEventHandler(ConnectionObserver sender, ConnectionMonitorEventArgs e);
         public event ConnectionChangeEventHandler OnConnectionChange;
 
         //mark connected

@@ -2,7 +2,7 @@
 using BlackSP.Core.Extensions;
 using BlackSP.Core.MessageProcessing.Handlers;
 using BlackSP.Core.Models;
-using BlackSP.Core.Monitors;
+using BlackSP.Core.Observers;
 using BlackSP.Infrastructure.Layers.Control.Payloads;
 using BlackSP.Kernel.MessageProcessing;
 using Serilog;

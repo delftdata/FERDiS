@@ -1,7 +1,7 @@
 using BlackSP.Core;
 using BlackSP.Core.Coordination;
 using BlackSP.Core.Extensions;
-using BlackSP.Core.Monitors;
+using BlackSP.Core.Observers;
 using BlackSP.Infrastructure.Layers.Control.Payloads;
 using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.MessageProcessing;
@@ -38,7 +38,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         private bool disposedValue;
 
         public WorkerRequestSource(WorkerGraphStateManager graphManager, 
-            ConnectionMonitor connectionMonitor, 
+            ConnectionObserver connectionMonitor, 
             IVertexConfiguration vertexConfiguration, 
             IVertexGraphConfiguration graphConfiguration,
             ILogger logger)
