@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using BlackSP.Core.MessageProcessing;
 using BlackSP.Infrastructure.Layers.Control;
+using BlackSP.Infrastructure.Layers.Control.Sources;
 using BlackSP.Infrastructure.Layers.Data;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
@@ -21,6 +22,9 @@ namespace BlackSP.Infrastructure.Extensions
             //message source
             builder.RegisterType<MessageReceiverSource<ControlMessage>>().As<IReceiverSource<ControlMessage>, ISource<ControlMessage>>().AsImplementedInterfaces().InstancePerLifetimeScope();
             
+            //checkpoint updates..
+            builder.RegisterType<CheckpointTakenSource>().As<ISource<ControlMessage>>();
+
             //dispatcher
             builder.RegisterType<MessagePartitioningDispatcher<ControlMessage>>().As<IDispatcher<ControlMessage>>().SingleInstance();
             builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer>();

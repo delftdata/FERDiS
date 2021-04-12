@@ -6,6 +6,7 @@ using System.Text;
 
 namespace BlackSP.Core.Models
 {
+    [Serializable]
     public abstract class MessageBase : IMessage
     {
         public abstract bool IsControl { get; }

@@ -20,20 +20,18 @@ namespace BlackSP.Infrastructure.Extensions
 
         public static ContainerBuilder AddControlLayerMessageHandlersForCoordinator(this ContainerBuilder builder)
         {
-            //TODO: register coordinator control middlewares in order
             builder.RegisterType<WorkerResponseHandler>().AsImplementedInterfaces();
             builder.RegisterType<CheckpointRestoreResponseHandler>().As<IHandler<ControlMessage>>();
-
+            //TODO: checkpoint taken handler --- builder.RegisterType<>
             return builder;
         }
         
         public static ContainerBuilder AddControlLayerMessageHandlersForWorker(this ContainerBuilder builder)
         {
             builder.RegisterType<CheckpointRestoreRequestHandler>().As<IHandler<ControlMessage>>();
-            //important control middleware: controls the subprocess that processes/generates data messages
+            //important control handler: controls the subprocess that processes/generates data messages
             builder.RegisterType<WorkerRequestHandler>().As<IHandler<ControlMessage>>();
-            builder.RegisterType<DataMessageProcessor>().AsSelf();//dependency of DataProcessControllerMiddleware
-
+            builder.RegisterType<LogPruneRequestHandler>().As<IHandler<ControlMessage>>();
             builder.RegisterType<ChandyLamportBarrierInjectionHandler>().As<IHandler<ControlMessage>>();
             return builder;
         }
@@ -45,6 +43,7 @@ namespace BlackSP.Infrastructure.Extensions
             switch(cpMode)
             {
                 case CheckpointCoordinationMode.Uncoordinated:
+                    builder.RegisterType<MessageLoggingPreDeliveryHandler>().As<IHandler<DataMessage>>();
                     builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
 
                     builder.RegisterType<UncoordinatedProtocol>().AsSelf();
@@ -57,9 +56,12 @@ namespace BlackSP.Infrastructure.Extensions
                     builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.CommunicationInduced:
+                    builder.RegisterType<MessageLoggingPreDeliveryHandler>().As<IHandler<DataMessage>>();
+
                     builder.RegisterType<UncoordinatedProtocol>().AsSelf();
                     builder.RegisterType<HMNRProtocol>().AsSelf().SingleInstance();
                     builder.RegisterType<CICPreDeliveryHandler>().As<IHandler<DataMessage>>();
+                    
                     builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
 
                     break;
@@ -74,9 +76,12 @@ namespace BlackSP.Infrastructure.Extensions
             switch (cpMode)
             {
                 case CheckpointCoordinationMode.Uncoordinated: break;
-                case CheckpointCoordinationMode.Coordinated: break;
+                case CheckpointCoordinationMode.Coordinated:
+                    builder.RegisterType<MessageLoggingPostDeliveryHandler>().As<IHandler<DataMessage>>();
+                    break;
                 case CheckpointCoordinationMode.CommunicationInduced:
                     builder.RegisterType<CICPostDeliveryHandler>().As<IHandler<DataMessage>>();
+                    builder.RegisterType<MessageLoggingPostDeliveryHandler>().As<IHandler<DataMessage>>();
                     break;
             }
 
@@ -93,6 +98,7 @@ namespace BlackSP.Infrastructure.Extensions
                 case CheckpointCoordinationMode.Uncoordinated:
                     builder.RegisterType<UncoordinatedProtocol>().AsSelf();
                     builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+                    builder.RegisterType<MessageLoggingPostDeliveryHandler>().As<IHandler<DataMessage>>();
                     break;
                 case CheckpointCoordinationMode.Coordinated:
                     builder.RegisterType<ChandyLamportProtocol>().AsSelf();
@@ -103,6 +109,7 @@ namespace BlackSP.Infrastructure.Extensions
                     builder.RegisterType<HMNRProtocol>().AsSelf().SingleInstance();
                     builder.RegisterType<CICPreDeliveryHandler>().As<IHandler<DataMessage>>();//passive but initialises clocks
                     builder.RegisterType<CICPostDeliveryHandler>().As<IHandler<DataMessage>>();
+                    builder.RegisterType<MessageLoggingPostDeliveryHandler>().As<IHandler<DataMessage>>();
                     break;
 
             }

@@ -10,6 +10,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Payloads
     /// Message payload that carries information about checkpoints in other instances
     /// </summary>
     [ProtoContract]
+    [Serializable]
     public class CICPayload : MessagePayloadBase
     {
         public static new string MetaDataKey => "data:cic";

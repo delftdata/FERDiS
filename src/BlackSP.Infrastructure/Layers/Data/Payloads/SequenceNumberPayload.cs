@@ -8,6 +8,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Payloads
 {
 
     [ProtoContract]
+    [Serializable]
     public class SequenceNumberPayload : MessagePayloadBase
     {
         public static new string MetaDataKey => "data:sequence-number";

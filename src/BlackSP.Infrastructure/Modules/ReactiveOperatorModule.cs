@@ -1,5 +1,9 @@
 ﻿using Autofac;
 using BlackSP.Infrastructure.Extensions;
+using BlackSP.Infrastructure.Layers.Control;
+using BlackSP.Infrastructure.Layers.Control.Sources;
+using BlackSP.Kernel.Configuration;
+using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Logging;
 using System;
 

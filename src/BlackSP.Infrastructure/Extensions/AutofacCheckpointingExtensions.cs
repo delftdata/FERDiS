@@ -3,6 +3,7 @@ using Autofac.Core;
 using BlackSP.Checkpointing;
 using BlackSP.Checkpointing.Core;
 using BlackSP.Checkpointing.Persistence;
+using BlackSP.Infrastructure.Layers.Data;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Configuration;
 using System;
@@ -44,6 +45,8 @@ namespace BlackSP.Infrastructure.Extensions
                     e.ComponentRegistration.Activated += OnActivated_CheckpointServiceRegistration;
                 };
             }
+
+            builder.RegisterType<MessageLoggingService<DataMessage>>().As<IMessageLoggingService<DataMessage>>().SingleInstance();
 
             return builder;
         }

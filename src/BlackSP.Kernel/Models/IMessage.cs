@@ -32,6 +32,7 @@ namespace BlackSP.Kernel.Models
         void AddPayload<TPayload>(TPayload payload) where TPayload : MessagePayloadBase;
     }
 
+    [Serializable]
     public abstract class MessagePayloadBase
     {
         public static string MetaDataKey => throw new NotImplementedException();

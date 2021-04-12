@@ -8,6 +8,7 @@ using System.Text;
 namespace BlackSP.Infrastructure.Layers.Data
 {
     [ProtoContract]
+    [Serializable]
     public sealed class DataMessage : MessageBase
     {
         public override bool IsControl => false;

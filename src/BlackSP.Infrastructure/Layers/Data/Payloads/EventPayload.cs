@@ -7,6 +7,7 @@ using System.Text;
 namespace BlackSP.Infrastructure.Layers.Data.Payloads
 {
     [ProtoContract]
+    [Serializable]
     public class EventPayload : MessagePayloadBase
     {
         public static new string MetaDataKey => "data:event";
