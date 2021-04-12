@@ -21,7 +21,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
     /// <summary>
     /// Message source that targets source operators to kick off the chandy-lamport barrier-based algorithm
     /// </summary>
-    public class CoordinatedCheckpointingInitiationSource : ISource<ControlMessage>, IDisposable
+    public class ChandyLamportBarrierSource : ISource<ControlMessage>, IDisposable
     {
         public (IEndpointConfiguration, int) MessageOrigin => (null, 0);
 
@@ -41,7 +41,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
 
         //TODO: consider building in a feedback loop to detect completion of global checkpoint
 
-        public CoordinatedCheckpointingInitiationSource(WorkerGraphStateManager graphStateManager,
+        public ChandyLamportBarrierSource(WorkerGraphStateManager graphStateManager,
             IVertexGraphConfiguration graphConfiguration,
             IVertexConfiguration vertexConfiguration,
             ICheckpointConfiguration checkpointConfiguration,

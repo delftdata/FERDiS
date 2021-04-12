@@ -37,7 +37,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.RegisterType<WorkerRequestSource>().As<ISource<ControlMessage>>();
             if(_configuration.CheckpointingConfiguration.CoordinationMode == CheckpointCoordinationMode.Coordinated)
             {
-                builder.RegisterType<CoordinatedCheckpointingInitiationSource>().As<ISource<ControlMessage>>();
+                builder.RegisterType<ChandyLamportBarrierSource>().As<ISource<ControlMessage>>();
             }
             builder.AddControlLayerMessageHandlersForCoordinator();
 

@@ -56,9 +56,9 @@ namespace BlackSP.Core.MessageProcessing
 
             byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(false);
 
-            foreach(var targetConnectionKey in _partitioner.Partition(message))
+            foreach(var (config, shard) in _partitioner.Partition(message))
             {
-                var outputQueue = _outputQueues.Get(targetConnectionKey);
+                var outputQueue = _outputQueues.Get(config.GetConnectionKey(shard));
                 await outputQueue.UnderlyingCollection.Writer.WriteAsync(bytes, t);
             }
         }

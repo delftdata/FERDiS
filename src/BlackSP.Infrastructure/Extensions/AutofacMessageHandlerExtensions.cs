@@ -34,7 +34,7 @@ namespace BlackSP.Infrastructure.Extensions
             builder.RegisterType<WorkerRequestHandler>().As<IHandler<ControlMessage>>();
             builder.RegisterType<DataMessageProcessor>().AsSelf();//dependency of DataProcessControllerMiddleware
 
-            builder.RegisterType<DataLayerBarrierInjectionHandler>().As<IHandler<ControlMessage>>();
+            builder.RegisterType<ChandyLamportBarrierInjectionHandler>().As<IHandler<ControlMessage>>();
             return builder;
         }
 

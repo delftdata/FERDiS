@@ -24,12 +24,25 @@ namespace BlackSP.Core.MessageProcessing
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
         }
 
-        public IEnumerable<string> Partition(TMessage message)
+        public IEnumerable<(IEndpointConfiguration, int)> Partition(TMessage message)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
-            return !message.PartitionKey.HasValue
-                ? _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl == message.IsControl).SelectMany(e => e.GetAllConnectionKeys())
-                : _vertexConfiguration.GetConnectionKeyByPartitionKey(message.PartitionKey.Value).Yield();
+            if(!message.PartitionKey.HasValue) //no key, do broadcast
+            { 
+                foreach(var endpoint in _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl == message.IsControl))
+                {
+                    int i = 0;
+                    foreach(var _ in endpoint.RemoteInstanceNames)
+                    {
+                        yield return (endpoint, i);
+                        i++;
+                    }
+                }
+            }
+            else
+            {
+                yield return _vertexConfiguration.GetTargetPairByPartitionKey(message.PartitionKey.Value);
+            }
         }
     }
 }

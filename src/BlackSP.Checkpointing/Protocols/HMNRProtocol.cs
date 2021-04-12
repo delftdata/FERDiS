@@ -136,7 +136,6 @@ namespace BlackSP.Checkpointing.Protocols
         }
 
         /// <summary>
-        /// Idea for caller: rewrite partitioners to (config, int) pairs instead of connection keys, use that to resolve instance name
         /// </summary>
         /// <param name="targetInstance"></param>
         /// <returns>(clock, ckpt, taken)</returns>

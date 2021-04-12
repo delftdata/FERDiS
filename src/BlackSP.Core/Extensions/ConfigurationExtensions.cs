@@ -27,7 +27,7 @@ namespace BlackSP.Core.Extensions
         }
 
         [Obsolete("This method relies on GetHashCode and should eventually be changed for a runtime agnostic implementation")]
-        public static string GetConnectionKeyByPartitionKey(this IVertexConfiguration vertexConfig, int partitionKey)
+        public static (IEndpointConfiguration, int) GetTargetPairByPartitionKey(this IVertexConfiguration vertexConfig, int partitionKey)
         {
             _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
 
@@ -39,7 +39,7 @@ namespace BlackSP.Core.Extensions
                     var connectionKey = endpoint.GetConnectionKey(i);
                     if (connectionKey.GetHashCode() == partitionKey)
                     {
-                        return connectionKey;
+                        return (endpoint, i);
                     }
                     i++;
                 }

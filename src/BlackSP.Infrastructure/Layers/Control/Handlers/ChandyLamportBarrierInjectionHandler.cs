@@ -12,14 +12,14 @@ using System.Threading.Tasks;
 namespace BlackSP.Infrastructure.Layers.Control.Handlers
 {
     /// <summary>
-    /// 
+    /// Injects a barrier payload into the data layer
     /// </summary>
-    public class DataLayerBarrierInjectionHandler : ForwardingPayloadHandlerBase<ControlMessage, BarrierPayload>
+    public class ChandyLamportBarrierInjectionHandler : ForwardingPayloadHandlerBase<ControlMessage, BarrierPayload>
     {
         private readonly DataMessageProcessor _processor;
         private readonly ILogger _logger;
 
-        public DataLayerBarrierInjectionHandler(DataMessageProcessor processor,
+        public ChandyLamportBarrierInjectionHandler(DataMessageProcessor processor,
                                     ILogger logger)
         {            
             _processor = processor ?? throw new ArgumentNullException(nameof(processor));

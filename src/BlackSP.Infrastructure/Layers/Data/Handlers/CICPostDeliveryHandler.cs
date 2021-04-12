@@ -16,22 +16,26 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
     {
 
         private readonly HMNRProtocol _hmnrProtocol;
-
+        private readonly IPartitioner<DataMessage> _partitioner;
         private readonly ILogger _logger;
 
         public CICPostDeliveryHandler(
             HMNRProtocol hmnrProtocol,
-            
+            IPartitioner<DataMessage> partitioner,
             ILogger logger)
         {
             _hmnrProtocol = hmnrProtocol ?? throw new ArgumentNullException(nameof(hmnrProtocol));
-
-            
+            _partitioner = partitioner ?? throw new ArgumentNullException(nameof(partitioner));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<IEnumerable<DataMessage>> Handle(DataMessage message)
         {
+            foreach(var (endpoint, shard) in _partitioner.Partition(message))
+            {
+                _hmnrProtocol.BeforeSend(endpoint.GetRemoteInstanceName(shard));
+            }
+            
             var (clock, ckpt, taken) = _hmnrProtocol.GetPiggybackData();
             message.AddPayload(new CICPayload { clock = clock, ckpt = ckpt, taken = taken });
             return message.Yield();
