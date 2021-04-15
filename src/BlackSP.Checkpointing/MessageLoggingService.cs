@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Serilog;
 
 namespace BlackSP.Checkpointing
 {
@@ -12,6 +13,8 @@ namespace BlackSP.Checkpointing
     {
 
         public IDictionary<string, int> ReceivedSequenceNumbers => _receivedSequenceNrs;
+
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Contains message logs keyed by <b>downstream</b> instance names<br/>
@@ -26,8 +29,10 @@ namespace BlackSP.Checkpointing
         [ApplicationState]
         private readonly IDictionary<string, int> _receivedSequenceNrs;
 
-        public MessageLoggingService()
+        public MessageLoggingService(ILogger logger)
         {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             _logs = new Dictionary<string, LinkedList<(int, TMessage)>>();
             _receivedSequenceNrs = new Dictionary<string, int>();
         }
@@ -37,7 +42,9 @@ namespace BlackSP.Checkpointing
         {
             _ = downstreamInstanceNames ?? throw new ArgumentNullException(nameof(downstreamInstanceNames));
             _ = upstreamInstanceNames ?? throw new ArgumentNullException(nameof(upstreamInstanceNames));
-            
+
+            _logger.Information("Initialising message logging service");
+
             foreach(var instanceName in downstreamInstanceNames)
             {
                 _logs.Add(instanceName, new LinkedList<(int, TMessage)>());

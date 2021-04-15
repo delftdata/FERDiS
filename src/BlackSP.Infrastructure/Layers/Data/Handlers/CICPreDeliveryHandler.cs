@@ -34,7 +34,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             IVertexConfiguration vertexConfiguration,
             IVertexGraphConfiguration graphConfiguration,
             ILogger logger) : this(hmnrProtocol, backupProtocolFactory, null, checkpointingService, checkpointConfiguration, vertexConfiguration, graphConfiguration, logger)
-        {} //source only optional when vertex is a source (ie does not have input channels)
+        {} //source argument only optional when vertex is a source (ie does not have input channels)
 
         public CICPreDeliveryHandler(
             HMNRProtocol hmnrProtocol,
@@ -72,9 +72,12 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _checkpointingService.BeforeCheckpointTaken += () =>
             {
                 _hmnrProtocol.BeforeCheckpoint();
-                _hmnrProtocol.AfterCheckpoint(); //NOTE: invoke after checkpoint handler to include correct clock values in checkpoint and ensure post-recovery consistency
             };
-            _checkpointingService.AfterCheckpointTaken += (cpId) => _backupProtocol.SetLastCheckpointUtc(DateTime.UtcNow);
+            _checkpointingService.AfterCheckpointTaken += (cpId) =>
+            {
+                _hmnrProtocol.AfterCheckpoint(); //NOTE: invoke after checkpoint handler to include correct clock values in checkpoint and ensure post-recovery consistency
+                _backupProtocol.SetLastCheckpointUtc(DateTime.UtcNow);
+            };
 
         }
 
@@ -91,12 +94,10 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
 
             if (_hmnrProtocol.CheckCheckpointCondition(originInstance, payload.clock, payload.ckpt, payload.taken))
             {
-                await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName, true).ConfigureAwait(false);
-            } 
+                await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName, true).ConfigureAwait(false);            }
             else if(_backupProtocol.CheckCheckpointCondition(DateTime.UtcNow))
             {
                 await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
-                _backupProtocol.SetLastCheckpointUtc(DateTime.UtcNow);
             }
             
             //update clocks before delivery to operator handler..

@@ -219,7 +219,7 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
         }
 
         [Test]
-        public void NonCausalZPath_ForcesCheckpoint_2()
+        public void NonCausalZPath_DoesNotForcesCheckpoint_WhenNoOtherCheckpointTaken()
         {
             var instances = testInstances.Take(3).ToArray();
             var instance1 = InitialiseInstance(0, instances);
@@ -236,7 +236,7 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
             instance1.BeforeSend(instance2.InstanceName);
             (clock, ckpt, taken) = instance1.GetPiggybackData();
             //protocol pre-emptively 
-            Assert.IsTrue(instance2.CheckCheckpointCondition(instance1.InstanceName, clock, ckpt, taken));
+            Assert.IsFalse(instance2.CheckCheckpointCondition(instance1.InstanceName, clock, ckpt, taken));
             instance2.BeforeDeliver(instance1.InstanceName, clock, ckpt, taken);
         }
 

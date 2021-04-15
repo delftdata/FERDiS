@@ -17,6 +17,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Payloads
         public Guid CheckpointId { get; set; }
 
         [ProtoMember(2)]
+        public string OriginInstance { get; set; }
+
+        [ProtoMember(3)]
         public IDictionary<string, int> AssociatedSequenceNumbers { get; set; }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using BlackSP.Checkpointing.UnitTests.Models;
+using Moq;
 using NUnit.Framework;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +18,8 @@ namespace BlackSP.Checkpointing.UnitTests
         [SetUp]
         public void SetUp()
         {
-            _testService = new MessageLoggingService<TestMessage>();
+            var loggerMock = new Mock<ILogger>();
+            _testService = new MessageLoggingService<TestMessage>(loggerMock.Object);
         } 
 
         [Test]

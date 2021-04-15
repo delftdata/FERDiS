@@ -144,7 +144,7 @@ namespace BlackSP.Checkpointing.Protocols
             var k = nameToIndexDict[targetInstance];
 
             this.sent_to[k] = true;
-            this.min_to[k] = Math.Min(this.clock[k], this.clock[i]);
+            this.min_to[k] = Math.Min(this.min_to[k], this.clock[i]);
         }
 
         public (int[], int[], bool[]) GetPiggybackData()
@@ -160,11 +160,12 @@ namespace BlackSP.Checkpointing.Protocols
                 this.min_to[k] = int.MaxValue;
                 this.taken[k] = k != i;
             }
+            this.clock[i]++;
         }
 
         public void AfterCheckpoint()
         {
-            this.clock[i]++;
+            
             this.ckpt[i]++;
         }
 

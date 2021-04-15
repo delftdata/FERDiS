@@ -7,6 +7,7 @@ using System.Text;
 namespace BlackSP.Benchmarks.WordCount.Events
 {
     [ProtoContract]
+    [Serializable]
     public class SentenceEvent : IEvent
     {
         public int? Key { 

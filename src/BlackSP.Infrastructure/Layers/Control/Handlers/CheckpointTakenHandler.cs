@@ -3,6 +3,7 @@ using BlackSP.Core.MessageProcessing.Handlers;
 using BlackSP.Core.Models;
 using BlackSP.Infrastructure.Layers.Control.Payloads;
 using BlackSP.Kernel;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,20 +18,22 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
     {
 
         private readonly WorkerGraphStateManager _stateManager;
-        public CheckpointTakenHandler(WorkerGraphStateManager graphStateManager)
+        private readonly ILogger _logger;
+        public CheckpointTakenHandler(WorkerGraphStateManager graphStateManager, ILogger logger)
         {
             _stateManager = graphStateManager ?? throw new ArgumentNullException(nameof(graphStateManager));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         protected override Task<IEnumerable<ControlMessage>> Handle(CheckpointTakenPayload payload)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
-            
+
             //TODO: UPDATE LOCAL STATE WITH NEW CHECKPOINT AND ASSOCIATED SEQUENCE NRS
             //      DO RECOVERY LINE CALC
             //      GC?
             //      SEND PRUNE REQUESTS DOWNSTREAM
-
+            _logger.Information("BIEP BOOP " + payload.OriginInstance + " TOOK CP: " + payload.CheckpointId);
             return Task.FromResult(AssociatedMessage.Yield());
         }
 

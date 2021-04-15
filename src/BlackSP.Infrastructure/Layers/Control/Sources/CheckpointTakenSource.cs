@@ -26,7 +26,6 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly Channel<ControlMessage> _output;
 
-
         public CheckpointTakenSource(ICheckpointService checkpointService, 
                                      IMessageLoggingService<DataMessage> loggingService,
                                      IVertexConfiguration vertexConfiguration)
@@ -47,11 +46,13 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             var payload = new CheckpointTakenPayload
             {
                 CheckpointId = checkpointId,
+                OriginInstance = _vertexConfiguration.InstanceName,
                 AssociatedSequenceNumbers = _loggingService.ReceivedSequenceNumbers
             };
             var msg = new ControlMessage();
             msg.AddPayload(payload);
-            _output.Writer.WriteAsync(msg);
+            while(!_output.Writer.TryWrite(msg))
+            { /*try again..*/ }
         }
 
         public Task Flush(IEnumerable<string> upstreamInstancesToFlush)
