@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Core.Coordination
 {
+    public delegate void RecoveryLineEvent(IRecoveryLine recoveryLine);
+
     public class WorkerGraphStateManager
     {
         public enum State
@@ -49,6 +51,8 @@ namespace BlackSP.Core.Coordination
         }
         
         public State CurrentState => _graphStateMachine.State;
+        public event RecoveryLineEvent OnRecoveryLineRestoreStart;
+
 
         private readonly IEnumerable<string> _workerInstanceNames;
         private readonly WorkerStateManager.Factory _stateMachineFactory;
@@ -266,6 +270,8 @@ namespace BlackSP.Core.Coordination
             _ = _preparedRecoveryLine ?? throw new InvalidOperationException("Cannot recover recovery line as none had been prepared");
             
             _logger.Information("Recovery line restoration started");
+            OnRecoveryLineRestoreStart?.Invoke(_preparedRecoveryLine);
+
             foreach (var name in _preparedRecoveryLine.AffectedWorkers)
             {
                 _workerStateManagers[name].FireTrigger(WorkerStateTrigger.CheckpointRestoreStart, _preparedRecoveryLine.RecoveryMap[name]);

@@ -16,6 +16,8 @@ namespace BlackSP.Checkpointing
 
         private readonly ILogger _logger;
 
+        private readonly object _lockObj;
+
         /// <summary>
         /// Contains message logs keyed by <b>downstream</b> instance names<br/>
         /// Tuples are (seqNr, msg)
@@ -35,6 +37,7 @@ namespace BlackSP.Checkpointing
 
             _logs = new Dictionary<string, LinkedList<(int, TMessage)>>();
             _receivedSequenceNrs = new Dictionary<string, int>();
+            _lockObj = new object();
         }
 
         /// <inheritdoc/>
@@ -66,18 +69,25 @@ namespace BlackSP.Checkpointing
             {
                 throw new ArgumentException($"Logging service has not been configured for downstream instance with name {targetInstanceName}", nameof(targetInstanceName));
             }
-                
-            var log = _logs[targetInstanceName];
-            int nextSeqNr = 0;
-                
-            if(log.Any())
+            lock (_lockObj)
             {
-                var (lastSeqNr, _) = log.Last.Value;
-                nextSeqNr = lastSeqNr + 1;
-            }
+                var log = _logs[targetInstanceName];
+                int nextSeqNr = 0;
 
-            log.AddLast((nextSeqNr, message));
-            return nextSeqNr;
+                if (log.Any())
+                {
+                    var (lastSeqNr, msg) = log.Last.Value;
+                    if(msg == null)
+                    {
+                        log.RemoveLast();
+                    }
+                    nextSeqNr = lastSeqNr + 1;
+                }
+
+                log.AddLast((nextSeqNr, message));
+                return nextSeqNr;
+            }
+                
         }
 
         /// <inheritdoc/>
@@ -122,8 +132,8 @@ namespace BlackSP.Checkpointing
             var current = log.First;
             while (current != null)
             {
-                var (seqNr, _) = current.Value;
-                if (seqNr >= fromSequenceNr)
+                var (seqNr, msg) = current.Value;
+                if (seqNr >= fromSequenceNr && msg != null)
                 {
                     //need to replay from here..
                     yield return current.Value;
@@ -140,26 +150,36 @@ namespace BlackSP.Checkpointing
             {
                 throw new ArgumentException($"Logging service has not been configured for downstream instance with name {instanceName}", nameof(instanceName));
             }
-
-            var log = _logs[instanceName];
-            var current = log.First;
-            var pruneCount = 0;
-            while (current != null)
+            
+            lock(_lockObj)
             {
-                var (seqNr, _) = current.Value;
+                var log = _logs[instanceName];
+                var current = log.First;
+                var pruneCount = 0;
+                while (current != null)
+                {
+                    var (seqNr, _) = current.Value;
 
-                if (seqNr <= sequenceNr)
-                {
-                    log.RemoveFirst();
-                    current = log.First;
-                    pruneCount++;
-                } 
-                else
-                {
-                    break; //seNr > sequenceNr so the remainder of the log need not be pruned
+                    if (seqNr <= sequenceNr)
+                    {
+                        log.RemoveFirst();
+                        pruneCount++;
+
+                        if(log.First == default)
+                        {
+                            log.AddFirst((seqNr, null)); //ensure last seqnr is saved in log
+                            break;
+                        }
+                        current = log.First;
+                    }
+                    else
+                    {
+                        break; //seNr > sequenceNr so the remainder of the log need not be pruned
+                    }
                 }
+                return pruneCount;
             }
-            return pruneCount;
+            
         }
 
     }

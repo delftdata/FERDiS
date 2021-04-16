@@ -50,9 +50,8 @@ namespace BlackSP.Logging
             var logConfig = loggerConfig.MinimumLevel.Verbose();
             if (targetFlags.HasFlag(LogTargetFlags.Console))
             {
-                logConfig.WriteTo.Console(logLevel,
-                    outputTemplate: $"[{instanceName}] {{Message}}{{NewLine}}{{Exception}}",
-                    theme: AnsiConsoleTheme.Literate); //log usual format to console anyway
+                // never log metrics console
+                // logConfig.WriteTo.Console(logLevel, outputTemplate: $"[{instanceName}] {{Message}}{{NewLine}}{{Exception}}", theme: AnsiConsoleTheme.Literate); //log usual format to console anyway
             }
             if (targetFlags.HasFlag(LogTargetFlags.File))
             {

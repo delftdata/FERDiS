@@ -28,13 +28,18 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
 
         public CheckpointTakenSource(ICheckpointService checkpointService, 
                                      IMessageLoggingService<DataMessage> loggingService,
+                                     IVertexConfiguration vertexConfiguration) : this(checkpointService, vertexConfiguration)
+        {
+            _loggingService = loggingService ?? throw new ArgumentNullException(nameof(loggingService));
+            InitLoggingService();
+        }
+
+        public CheckpointTakenSource(ICheckpointService checkpointService,
                                      IVertexConfiguration vertexConfiguration)
         {
             _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
-            _loggingService = loggingService ?? throw new ArgumentNullException(nameof(loggingService));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
 
-            InitLoggingService();
 
             _output = Channel.CreateUnbounded<ControlMessage>();
 
@@ -47,7 +52,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             {
                 CheckpointId = checkpointId,
                 OriginInstance = _vertexConfiguration.InstanceName,
-                AssociatedSequenceNumbers = _loggingService.ReceivedSequenceNumbers
+                AssociatedSequenceNumbers = _loggingService?.ReceivedSequenceNumbers
             };
             var msg = new ControlMessage();
             msg.AddPayload(payload);

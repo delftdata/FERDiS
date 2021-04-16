@@ -11,7 +11,7 @@ namespace BlackSP.Kernel.Configuration
 
         /// <summary>
         /// Returns an enumerable of instancenames that lie downstream of the given instance with supplied name.<br/>
-        /// (instances are not necessarily workers only!)
+        /// (ignores coordinator)
         /// </summary>
         /// <param name="config"></param>
         /// <param name="instanceName"></param>
@@ -48,7 +48,7 @@ namespace BlackSP.Kernel.Configuration
 
         /// <summary>
         /// Returns an enumerable of instancenames that lie upstream of the given instance with supplied name.<br/>
-        /// (instances are not necessarily workers only!)
+        /// (ignores coordinator)
         /// </summary>
         /// <param name="config"></param>
         /// <param name="instanceName"></param>

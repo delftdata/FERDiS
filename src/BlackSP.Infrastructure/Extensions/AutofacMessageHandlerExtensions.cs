@@ -11,6 +11,7 @@ using BlackSP.Core.MessageProcessing.Handlers;
 using System;
 using BlackSP.Kernel.Configuration;
 using BlackSP.Checkpointing.Protocols;
+using BlackSP.Core.Coordination;
 
 namespace BlackSP.Infrastructure.Extensions
 {
@@ -22,14 +23,21 @@ namespace BlackSP.Infrastructure.Extensions
         {
             builder.RegisterType<WorkerResponseHandler>().AsImplementedInterfaces();
             builder.RegisterType<CheckpointRestoreResponseHandler>().As<IHandler<ControlMessage>>();
+
+            builder.RegisterType<MessageLoggingSequenceManager>().AsSelf().SingleInstance();
             builder.RegisterType<CheckpointTakenHandler>().As<IHandler<ControlMessage>>();
+
+            builder.RegisterType<LogReplayRequestHandler>().As<IHandler<ControlMessage>>();
             return builder;
         }
         
         public static ContainerBuilder AddControlLayerMessageHandlersForWorker(this ContainerBuilder builder)
         {
             builder.RegisterType<CheckpointRestoreRequestHandler>().As<IHandler<ControlMessage>>();
-            
+
+            //important to place before WorkerRequestHandler (to perform replays right before starting the processor)
+            builder.RegisterType<LogReplayResponseHandler>().As<IHandler<ControlMessage>>();
+
             //important control handler: controls the subprocess that processes/generates data messages
             builder.RegisterType<WorkerRequestHandler>().As<IHandler<ControlMessage>>();
             

@@ -218,16 +218,34 @@ namespace BlackSP.Checkpointing.UnitTests
             Assert.AreEqual(3, _testService.Append("d1", new TestMessage()));
             Assert.AreEqual(4, _testService.Append("d1", new TestMessage()));
 
-            Assert.AreEqual(new[] { 2, 3, 4 }, _testService.Replay("d1", 2).Select(p => p.Item1));
+            Assert.AreEqual(new[] { 2, 3, 4 }, _testService.Replay("d1", 2).Select(p => p.Item1).ToArray());
             
             Assert.AreEqual(3, _testService.Prune("d1", 2)); //prunes messages 0,1,2 (count = 3)
-            Assert.AreEqual(new[] { 3, 4 }, _testService.Replay("d1", 2).Select(p => p.Item1));
+            Assert.AreEqual(new[] { 3, 4 }, _testService.Replay("d1", 2).Select(p => p.Item1).ToArray());
             
             Assert.AreEqual(0, _testService.Prune("d1", 2)); //prunes no messages (count = 0)
-            Assert.AreEqual(new[] { 3, 4 }, _testService.Replay("d1", 2).Select(p => p.Item1));
+            Assert.AreEqual(new[] { 3, 4 }, _testService.Replay("d1", 2).Select(p => p.Item1).ToArray());
 
             Assert.AreEqual(2, _testService.Prune("d1", 5)); //prunes all remaining messages (count = 2 )
-            Assert.AreEqual(new int[] { }, _testService.Replay("d1", 0).Select(p => p.Item1)); //proof that no message can be replayed anymore, even from the start
+            Assert.AreEqual(new int[] { }, _testService.Replay("d1", 0).Select(p => p.Item1).ToArray()); //proof that no message can be replayed anymore, even from the start
+        }
+
+
+        [Test]
+        public void Prune_Emptying_Log_DoesNot_ChangeSequenceNumbers()
+        {
+            _testService.Initialize(new[] { "d1", "d2" }, new[] { "u1", "u2" });
+
+            Assert.AreEqual(0, _testService.Append("d1", new TestMessage()));
+            Assert.AreEqual(1, _testService.Append("d1", new TestMessage()));
+            Assert.AreEqual(2, _testService.Append("d1", new TestMessage()));
+            Assert.AreEqual(3, _testService.Append("d1", new TestMessage()));
+
+            //pruning removes all 4 messages
+            Assert.AreEqual(4, _testService.Prune("d1", 3));
+            
+            //but next message seqnr is still valid
+            Assert.AreEqual(4, _testService.Append("d1", new TestMessage()));
         }
     }
 }
