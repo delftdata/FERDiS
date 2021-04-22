@@ -17,9 +17,9 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
         public TestBaseOperatorShell() : base(new BaseOperator())
         {}
 
-        public override async Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
+        public override Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
         {
-            return @event.Yield(); //base operator that just passes on events
+            return Task.FromResult(@event.Yield()); //base operator that just passes on events
         }
     }
 

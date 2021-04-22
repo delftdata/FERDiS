@@ -22,7 +22,8 @@ namespace BlackSP.Core.MessageProcessing.Processors
         private readonly IPipeline<TMessage> _pipeline;
         private readonly IDispatcher<TMessage> _dispatcher;
         private readonly ILogger _logger;
-
+        
+        private SemaphoreSlim _pauseSemaphore;
         private CancellationTokenSource _processTokenSource;
         private Task _processThread;
         private TMessage _injectedMessage;
@@ -37,6 +38,9 @@ namespace BlackSP.Core.MessageProcessing.Processors
             _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            _pauseSemaphore = new SemaphoreSlim(1, 1);
+
         }
 
         /// <summary>
@@ -67,6 +71,7 @@ namespace BlackSP.Core.MessageProcessing.Processors
                 await PreStartHook(t).ConfigureAwait(false);
             }
             var channel = Channel.CreateBounded<TMessage>(new BoundedChannelOptions(Constants.DefaultThreadBoundaryQueueSize) { FullMode = BoundedChannelFullMode.Wait });
+            _pauseSemaphore = new SemaphoreSlim(1, 1);
             _processTokenSource = new CancellationTokenSource();
             using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, _processTokenSource.Token);
             try
@@ -108,6 +113,16 @@ namespace BlackSP.Core.MessageProcessing.Processors
             await _processThread.ConfigureAwait(false);
         }
 
+        public async Task Pause()
+        {
+            await _pauseSemaphore.WaitAsync().ConfigureAwait(false);
+        }
+
+        public void Unpause()
+        {
+            _pauseSemaphore.Release();
+        }
+
         private async Task ProcessFromSource(Channel<TMessage> dispatchChannel, CancellationToken t)
         {
             try
@@ -125,9 +140,17 @@ namespace BlackSP.Core.MessageProcessing.Processors
                         message = await _source.Take(t).ConfigureAwait(false) ?? throw new Exception($"Received null from {_source.GetType()}.Take");
                     }
 
-                    foreach (var output in await _pipeline.Process(message).ConfigureAwait(false))
+                    await _pauseSemaphore.WaitAsync(t).ConfigureAwait(false);
+                    try
                     {
-                        await dispatchChannel.Writer.WriteAsync(output, t).ConfigureAwait(false);
+                        foreach (var output in await _pipeline.Process(message).ConfigureAwait(false))
+                        {
+                            await dispatchChannel.Writer.WriteAsync(output, t).ConfigureAwait(false);
+                        }
+                    }
+                    finally
+                    {
+                        _pauseSemaphore.Release();
                     }
                 }
             }

@@ -10,6 +10,7 @@ namespace BlackSP.Benchmarks.Graph
     public static class Queries
     {
 
+        [Obsolete("Pagerank was deprecated due to not being true cylic streaming")]
         public static void PageRank(IVertexGraphBuilder builder)
         {
             //provides stream of vertice-neighbours pairs
@@ -44,17 +45,43 @@ namespace BlackSP.Benchmarks.Graph
             rankCollecter.Append(sink);
         }
 
-        public static void NHop(IVertexGraphBuilder builder)
-        {
-            var source = builder.AddSource<RandomEdgeSourceOperator, HopEvent>(1);
-            var partitionMapper = builder.AddMap<HopCountPartitionMapper, HopEvent, HopEvent>(3);
-            var repartitionMapper = builder.AddMap<HopCountRepartitionMapper, HopEvent, HopEvent>(3);
-            var sink = builder.AddSink<HopCountSinkOperator, HopEvent>(1);
 
-            source.Append(partitionMapper);
-            partitionMapper.Append(repartitionMapper);
-            repartitionMapper.Append(partitionMapper).AsBackchannel(); 
-            repartitionMapper.Append(sink);
+        public static Action<IVertexGraphBuilder> NHop(Size size)
+        {
+            int sourceShards = 1;
+            int partitionMapShards = 1;
+            int repartitionMapShards = 1;
+            int sinkShards = 1;
+            switch (size)
+            {
+                case Size.Small: break;
+                case Size.Medium:
+                    sourceShards = 2;
+                    partitionMapShards = 2;
+                    repartitionMapShards = 2;
+                    sinkShards = 2;
+                    break;
+                case Size.Large:
+                    sourceShards = 4;
+                    partitionMapShards = 4;
+                    repartitionMapShards = 4;
+                    sinkShards = 4;
+                    break;
+            }
+
+            return (IVertexGraphBuilder builder) =>
+            {
+                var source = builder.AddSource<RandomEdgeSourceOperator, HopEvent>(1);
+                var partitionMapper = builder.AddMap<HopCountPartitionMapper, HopEvent, HopEvent>(3);
+                var repartitionMapper = builder.AddMap<HopCountRepartitionMapper, HopEvent, HopEvent>(3);
+                var sink = builder.AddSink<HopCountSinkOperator, HopEvent>(1);
+
+                source.Append(partitionMapper);
+                partitionMapper.Append(repartitionMapper);
+                repartitionMapper.Append(partitionMapper).AsBackchannel();
+                repartitionMapper.Append(sink);
+            };
+            
         }
     }
 }

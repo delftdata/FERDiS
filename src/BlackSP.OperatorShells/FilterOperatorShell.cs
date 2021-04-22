@@ -19,12 +19,12 @@ namespace BlackSP.OperatorShells
             _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
         }
 
-        public override async Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
+        public override Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
             var typedEvent = @event as TEvent ?? throw new ArgumentException($"Argument \"{nameof(@event)}\" was of type {@event.GetType()}, expected: {typeof(TEvent)}");
             var output = _pluggedInOperator.Filter(typedEvent);
-            return output.YieldOrEmpty();
+            return Task.FromResult(output.YieldOrEmpty().Cast<IEvent>());
         }
 
     }

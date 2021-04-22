@@ -18,9 +18,10 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.AverageSellingPriceBySeller
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task Sink(AveragePricePersonEvent @event)
+        public Task Sink(AveragePricePersonEvent @event)
         {
             _logger.Information($"Person {@event.PersonId:0000} avg price {@event.AverageSellingPrice:N2}");
+            return Task.CompletedTask;
         }
     }
 }

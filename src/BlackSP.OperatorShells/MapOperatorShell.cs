@@ -2,6 +2,7 @@
 using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,11 +19,11 @@ namespace BlackSP.OperatorShells
             _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
         }
 
-        public override async Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
+        public override Task<IEnumerable<IEvent>> OperateOnEvent(IEvent @event)
         {
             _ = @event ?? throw new ArgumentNullException(nameof(@event));
             var typedEvent = @event as TIn ?? throw new ArgumentException($"Argument \"{nameof(@event)}\" was of type {@event.GetType()}, expected: {typeof(TIn)}");
-            return _pluggedInOperator.Map(typedEvent);
+            return Task.FromResult(_pluggedInOperator.Map(typedEvent).Cast<IEvent>());
         }
     }
 }

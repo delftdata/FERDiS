@@ -16,12 +16,12 @@ namespace BlackSP.Infrastructure.Layers.Data.Payloads
         public static new string MetaDataKey => "data:cic";
 
         [ProtoMember(1)]
-        public int[] clock;
+        public int[] clock { get; set; }
 
         [ProtoMember(2)]
-        public int[] ckpt;
+        public int[] ckpt { get; set; }
 
         [ProtoMember(3)]
-        public bool[] taken;
+        public bool[] taken { get; set; }
     }
 }

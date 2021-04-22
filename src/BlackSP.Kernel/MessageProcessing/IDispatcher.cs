@@ -33,5 +33,7 @@ namespace BlackSP.Kernel
         /// </summary>
         /// <returns></returns>
         Task Flush(IEnumerable<string> downstreamInstancesToFlush);
+
+
     }
 }

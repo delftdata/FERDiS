@@ -22,6 +22,8 @@ namespace BlackSP.Benchmarks.WordCount.Operators
         
         private readonly ILogger _logger;
 
+        private int MaxSentenceCount => defaultSentences.Length * 50000;
+
         public SentenceGeneratorSource(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -31,10 +33,10 @@ namespace BlackSP.Benchmarks.WordCount.Operators
 
         public SentenceEvent ProduceNext(CancellationToken t)
         {
-            if(sentencesGenerated >= defaultSentences.Length * 50000) //keep going until each sentence was sent x times
+            if(sentencesGenerated >= MaxSentenceCount) //keep going until each sentence was sent x times
             {
                 Task.Delay(Constants.WordCountAggregateWindowSizeMs*2).Wait();
-                _logger.Information($"Each sentence sent at least 500.000 times, now sending all words as one sentence");
+                _logger.Information($"Each sentence sent at least {MaxSentenceCount} times, now sending all words as one sentence");
                 return new SentenceEvent
                 {
                     Sentence = string.Join(" ", defaultSentences)

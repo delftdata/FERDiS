@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Coordination;
+using BlackSP.Core.Extensions;
 using BlackSP.Core.MessageProcessing.Handlers;
 using BlackSP.Infrastructure.Layers.Control.Payloads;
 using BlackSP.Infrastructure.Layers.Data;
@@ -17,7 +18,7 @@ using System.Threading.Tasks;
 namespace BlackSP.Infrastructure.Layers.Control.Handlers
 {
     /// <summary>
-    /// ControlMessage handler that extends worker request payload messages with log replay data
+    /// ControlMessage handler that extends worker request payload messages with log replay data (for coordinator)
     /// </summary>
     public class LogReplayRequestHandler : IHandler<ControlMessage>
     {
@@ -25,21 +26,25 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
         private readonly WorkerGraphStateManager _graphStateManager;
         private readonly IPartitioner<ControlMessage> _partitioner;
         private readonly IVertexGraphConfiguration _graphConfiguration;
+        private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ILogger _logger;
 
         private IRecoveryLine _lastRestoredRecoveryLine;
+        private IEnumerable<ControlMessage> _pendingMessages;
 
         public LogReplayRequestHandler(
             MessageLoggingSequenceManager messageLogManager,
             WorkerGraphStateManager graphStateManager,
             IPartitioner<ControlMessage> partitioner,
             IVertexGraphConfiguration graphConfiguration,  
+            IVertexConfiguration vertexConfiguration,  
             ILogger logger)
         {
             _messageLogManager = messageLogManager ?? throw new ArgumentNullException(nameof(messageLogManager));
             _graphStateManager = graphStateManager ?? throw new ArgumentNullException(nameof(graphStateManager));
             _partitioner = partitioner ?? throw new ArgumentNullException(nameof(partitioner));
             _graphConfiguration = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
+            _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             RegisterEvents();
@@ -74,9 +79,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                             //determine which checkpoints they have restored last
                             //determine sequence numbers associated with those checkpoints
                             //determine sequence numbers belonging to {targetName} in each checkpoint
-                            var replayPoint = _messageLogManager.GetPrunableSequenceNumbers(_lastRestoredRecoveryLine.RecoveryMap[downstreamName])[targetName];
+                            var replayPoint = _messageLogManager.GetPrunableSequenceNumbers(_lastRestoredRecoveryLine.RecoveryMap[downstreamName])[targetName] + 1;
                             replayDict.Add(downstreamName, replayPoint);
-                        }
+                        }                        
 
                         if(replayDict.Any())
                         {
@@ -91,14 +96,12 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                 message.AddPayload(requestPayload); //re-add payload
             }
 
-            /*
-            if (message.TryExtractPayload<CheckpointRestoreRequestPayload>(out var restorePayload))
+            if(_pendingMessages != null)
             {
-                var cpId = restorePayload.CheckpointId; //TODO: expect replay
-                //HOL UP : replay automatically expected due to state overwriting?? (NOT SURE?)
-                message.AddPayload(restorePayload); //re-add payload
+                var res = Task.FromResult(_pendingMessages.Concat(message.Yield()));
+                _pendingMessages = null;
+                return res;
             }
-            */
             return Task.FromResult(message.Yield());
         }
 
@@ -110,6 +113,43 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
         private void _graphStateManager_OnRecoveryLineRestoreStart(IRecoveryLine recoveryLine)
         {
             _lastRestoredRecoveryLine = recoveryLine ?? throw new ArgumentNullException(nameof(recoveryLine));
+            _pendingMessages = ConstructReplayMessagesForNonRecoveringWorkers(recoveryLine);
+        }
+
+        private IEnumerable<ControlMessage> ConstructReplayMessagesForNonRecoveringWorkers(IRecoveryLine recoveryLine)
+        {
+            foreach (var instanceName in _graphConfiguration.InstanceNames.Where(n => n != _vertexConfiguration.InstanceName))
+            {
+                if(recoveryLine.AffectedWorkers.Contains(instanceName)) 
+                {
+                    continue; //we're looking for non-affected workers 
+                }
+
+                var replayDict = new Dictionary<string, int>();
+
+                //for each non-affected worker..
+                foreach (var downstreamName in _graphConfiguration.GetAllInstancesDownstreamOf(instanceName, true))
+                {
+                    if (!recoveryLine.AffectedWorkers.Contains(downstreamName))
+                    {
+                        continue; //we're looking for affected downstreams
+                    }
+                    //this downstream is recovering --> send replay instruction
+
+                    replayDict.Add(downstreamName, _messageLogManager.GetPrunableSequenceNumbers(recoveryLine.RecoveryMap[downstreamName])[instanceName] + 1);
+                }
+
+                if(!replayDict.Any()) //nothing to replay, no need for a log replay request..
+                {
+                    continue;
+                }
+
+                var msg = new ControlMessage(_vertexConfiguration.GetPartitionKeyForInstanceName(instanceName));
+                var payload = new LogReplayRequestPayload { ReplayMap = replayDict };
+                _logger.Fatal($"Did build LogReplayRequest for {instanceName} - {string.Join(", ", replayDict)} (prepared)");
+                msg.AddPayload(payload);
+                yield return msg;
+            }
         }
     }
 }

@@ -94,7 +94,8 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
 
             if (_hmnrProtocol.CheckCheckpointCondition(originInstance, payload.clock, payload.ckpt, payload.taken))
             {
-                await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName, true).ConfigureAwait(false);            }
+                await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName, true).ConfigureAwait(false);            
+            }
             else if(_backupProtocol.CheckCheckpointCondition(DateTime.UtcNow))
             {
                 await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);

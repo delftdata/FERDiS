@@ -30,9 +30,10 @@ namespace BlackSP.Benchmarks
                         await ProduceNEXMarkAuctionData();
                         break;
                     case "benchmark":
-                        var infrastructure = (Infrastructure)int.Parse(Environment.GetEnvironmentVariable("BLACKSP_INFRASTRUCTURE"));
-                        var benchmark = (Benchmark)int.Parse(Environment.GetEnvironmentVariable("BLACKSP_BENCHMARK"));
-                        await RunBenchmark(infrastructure, benchmark);
+                        var infrastructure = (Infrastructure)int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_INFRA"));
+                        var benchmark = (Job)int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_JOB"));
+                        var size = (Size)int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_SIZE"));
+                        await RunBenchmark(infrastructure, benchmark, size);
                         break;
                     default:
                         break;
@@ -76,10 +77,21 @@ namespace BlackSP.Benchmarks
             }
         }
 
-        static async Task RunBenchmark(Infrastructure infrastructure, Benchmark benchmark)
+        static async Task RunBenchmark(Infrastructure infrastructure, Job job, Size size)
         {
-            var logTargets = (LogTargetFlags) int.Parse(Environment.GetEnvironmentVariable("LOG_TARGETS"));
-            var logLevel = (LogEventLevel) int.Parse(Environment.GetEnvironmentVariable("LOG_LEVEL")); ;
+            LogTargetFlags logTargets = (LogTargetFlags) int.Parse(Environment.GetEnvironmentVariable("LOG_TARGET_FLAGS"));
+            LogEventLevel logLevel = (LogEventLevel) int.Parse(Environment.GetEnvironmentVariable("LOG_EVENT_LEVEL"));
+
+            CheckpointCoordinationMode checkpointCoordinationMode = (CheckpointCoordinationMode) int.Parse(Environment.GetEnvironmentVariable("CHECKPOINT_COORDINATION_MODE"));
+            int checkpointIntervalSeconds = int.Parse(Environment.GetEnvironmentVariable("CHECKPOINT_INTERVAL_SECONDS"));
+            bool allowStateReuse = checkpointCoordinationMode != CheckpointCoordinationMode.Coordinated;
+
+            const string BOLD = "\x1B[1m";
+            const string RESET = "\x1B[0m";
+
+            Console.WriteLine($"Configuring BlackSP benchmark job {BOLD}{job}{RESET} ({BOLD}{size}{RESET}) on {BOLD}{infrastructure}{RESET} infrastructure");          
+            Console.WriteLine($"Configuring checkpointing in {BOLD}{checkpointCoordinationMode}{RESET} mode on a {BOLD}{checkpointIntervalSeconds} seconds{RESET} interval");
+            Console.WriteLine($"Configuring logging at level {BOLD}{logLevel}{RESET} to targets: {BOLD}{logTargets}{RESET}");
 
             var appBuilder = infrastructure == Infrastructure.Simulator 
                 ? Simulator.Hosting.CreateDefaultApplicationBuilder() 
@@ -87,8 +99,8 @@ namespace BlackSP.Benchmarks
 
             var app = await appBuilder
                 .ConfigureLogging(new LogConfiguration(logTargets, logLevel))
-                .ConfigureCheckpointing(new CheckpointConfiguration(CheckpointCoordinationMode.CommunicationInduced, true, 20))
-                .ConfigureOperators(benchmark.ConfigureGraph())
+                .ConfigureCheckpointing(new CheckpointConfiguration(checkpointCoordinationMode, allowStateReuse, checkpointIntervalSeconds))
+                .ConfigureOperators(job.ConfigureGraph(size))
                 .Build();
 
             await app.RunAsync();

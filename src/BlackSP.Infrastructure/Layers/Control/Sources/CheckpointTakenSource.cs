@@ -52,7 +52,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             {
                 CheckpointId = checkpointId,
                 OriginInstance = _vertexConfiguration.InstanceName,
-                AssociatedSequenceNumbers = _loggingService?.ReceivedSequenceNumbers
+                AssociatedSequenceNumbers = _loggingService != null ? new Dictionary<string, int>(_loggingService.ReceivedSequenceNumbers) : new Dictionary<string, int>()
             };
             var msg = new ControlMessage();
             msg.AddPayload(payload);

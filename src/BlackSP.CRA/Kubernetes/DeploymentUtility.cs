@@ -120,7 +120,7 @@ spec:
 
         private string GetEnvironmentSection()
         {
-            var keysToInsert = Environment.GetEnvironmentVariable("ENVIRONMENT_VARIABLE_KEYS_TO_CRA");
+            var keysToInsert = Environment.GetEnvironmentVariable("CRA_ENVIRONMENT_VARIABLE_KEYS_TO_COPY");
             var sb = new StringBuilder();
 
             foreach (var dirtyKey in keysToInsert.Split(','))

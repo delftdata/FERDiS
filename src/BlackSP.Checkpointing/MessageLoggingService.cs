@@ -130,6 +130,13 @@ namespace BlackSP.Checkpointing
 
             var log = _logs[replayInstanceName];
             var current = log.First;
+
+            var (seq, _) = current?.Value ?? (-1, null);
+            if(seq > fromSequenceNr) //go replay from 10 (problem if seq > 10 (e.g. 11 or 12)) so throw
+            {
+                throw new ArgumentException($"Cannot replay from sequence number {fromSequenceNr}, first in log is {seq}", nameof(fromSequenceNr));
+            }
+
             while (current != null)
             {
                 var (seqNr, msg) = current.Value;
@@ -165,7 +172,7 @@ namespace BlackSP.Checkpointing
                         log.RemoveFirst();
                         pruneCount++;
 
-                        if(log.First == default)
+                        if(!log.Any())
                         {
                             log.AddFirst((seqNr, null)); //ensure last seqnr is saved in log
                             break;

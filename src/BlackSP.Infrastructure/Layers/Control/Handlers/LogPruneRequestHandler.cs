@@ -42,11 +42,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             //Debug
             _logger.Fatal($"Pruned {pruneCount} messages from log to {payload.InstanceName}. Log now at seqNr: {payload.SequenceNumber}");
 
-            var response = new ControlMessage();
-            response.AddPayload(new WorkerResponsePayload()
-            {
-            });
-            return response.Yield();
+            //var response = new ControlMessage();
+            AssociatedMessage.AddPayload(new WorkerResponsePayload() { });
+            return AssociatedMessage.Yield();
         }
 
         

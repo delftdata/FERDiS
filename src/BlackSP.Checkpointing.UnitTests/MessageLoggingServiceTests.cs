@@ -247,5 +247,24 @@ namespace BlackSP.Checkpointing.UnitTests
             //but next message seqnr is still valid
             Assert.AreEqual(4, _testService.Append("d1", new TestMessage()));
         }
+
+        [Test]
+        public void Prune_MultiCall_DoesNot_MultiPrune()
+        {
+            _testService.Initialize(new[] { "d1", "d2" }, new[] { "u1", "u2" });
+
+            Assert.AreEqual(0, _testService.Append("d1", new TestMessage()));
+            Assert.AreEqual(1, _testService.Append("d1", new TestMessage()));
+            Assert.AreEqual(2, _testService.Append("d1", new TestMessage()));
+            Assert.AreEqual(3, _testService.Append("d1", new TestMessage()));
+
+            //pruning removes all 4 messages
+            Assert.AreEqual(2, _testService.Prune("d1", 1));
+            Assert.AreEqual(0, _testService.Prune("d1", 1));
+            Assert.AreEqual(2, _testService.Prune("d1", 3));
+
+            //but next message seqnr is still valid
+            Assert.AreEqual(4, _testService.Append("d1", new TestMessage()));
+        }
     }
 }
