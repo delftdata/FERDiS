@@ -29,13 +29,18 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
         {
             var targets = _partitioner.Partition(message);
 
+            var seqNrs = new List<int>();
             foreach (var (endpoint, shard) in targets)
             {
-                var seqNr = _loggingService.Append(endpoint.RemoteInstanceNames.ElementAt(shard), message);
-
-                var payload = new SequenceNumberPayload { SequenceNumber = seqNr };
-                message.AddPayload(payload);
+                seqNrs.Add(_loggingService.Append(endpoint.RemoteInstanceNames.ElementAt(shard), message));
             }
+            var seqNr = seqNrs.First();
+            if(!seqNrs.All(s => s == seqNr)) //TODO: mixing broadcasts with partition is not the issue with NHOP --> its two endpoints which both get partitioning!
+            {
+                throw new NotSupportedException("Current implementation does not support multiple output endpoints?");
+            }
+            var payload = new SequenceNumberPayload { SequenceNumber = seqNr };
+            message.AddPayload(payload);
             return Task.FromResult(message.Yield());
         }
     }

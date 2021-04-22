@@ -71,10 +71,10 @@ namespace BlackSP.Benchmarks.Graph
 
             return (IVertexGraphBuilder builder) =>
             {
-                var source = builder.AddSource<RandomEdgeSourceOperator, HopEvent>(1);
-                var partitionMapper = builder.AddMap<HopCountPartitionMapper, HopEvent, HopEvent>(3);
-                var repartitionMapper = builder.AddMap<HopCountRepartitionMapper, HopEvent, HopEvent>(3);
-                var sink = builder.AddSink<HopCountSinkOperator, HopEvent>(1);
+                var source = builder.AddSource<RandomEdgeSourceOperator, HopEvent>(sourceShards);
+                var partitionMapper = builder.AddMap<HopCountPartitionMapper, HopEvent, HopEvent>(partitionMapShards);
+                var repartitionMapper = builder.AddMap<HopCountRepartitionMapper, HopEvent, HopEvent>(repartitionMapShards);
+                var sink = builder.AddSink<HopCountSinkOperator, HopEvent>(sinkShards);
 
                 source.Append(partitionMapper);
                 partitionMapper.Append(repartitionMapper);
