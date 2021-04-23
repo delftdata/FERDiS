@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.Models;
+﻿using BlackSP.Kernel.Configuration;
+using BlackSP.Kernel.Models;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,8 @@ namespace BlackSP.Core.Models
         public abstract DateTime CreatedAtUtc { get; set; }
 
         public IEnumerable<MessagePayloadBase> Payloads => MetaData.Values;
+
+        public (IEndpointConfiguration, int)? TargetOverride { get; set; }
 
         public bool TryExtractPayload<TPayload>(out TPayload payload) where TPayload : MessagePayloadBase
         {

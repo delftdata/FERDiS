@@ -29,11 +29,11 @@
         "LOG_EVENT_LEVEL": "2", //0-5,
 
         "CHECKPOINT_COORDINATION_MODE": "2", //0 = uc, 1 = cc, 2 = cic
-        "CHECKPOINT_INTERVAL_SECONDS": "60",
+        "CHECKPOINT_INTERVAL_SECONDS": "15",
 
         "BENCHMARK_INFRA": "0", //0 = simulator, 1 = cra
         "BENCHMARK_JOB": "5", //0-5
-        "BENCHMARK_SIZE": "1", // 0 = S, 1 = M, 2 = L
+        "BENCHMARK_SIZE": "0", // 0 = S, 1 = M, 2 = L
 
         "CRA_WORKER_DOCKER_IMAGE": "mdzwart/cra-net3.1:latest",
         "CRA_ENVIRONMENT_VARIABLE_KEYS_TO_COPY": "AZURE_STORAGE_CONN_STRING, KAFKA_BROKER_DNS_TEMPLATE" //list of environment variable keys that will be forwarded to the environment in the k8s deployment

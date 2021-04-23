@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Models;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Models;
 using ProtoBuf;
 using System;
@@ -41,6 +42,20 @@ namespace BlackSP.Infrastructure.Layers.Data
             MetaData = new Dictionary<string, MessagePayloadBase>(metaData);
             PartitionKey = partitionKey;
             CreatedAtUtc = createdAtUtc;
+        }
+
+        /// <summary>
+        /// Copy-constructor
+        /// </summary>
+        /// <param name="message"></param>
+        public DataMessage(DataMessage message)
+        {
+            _ = message ?? throw new ArgumentNullException(nameof(message));
+
+            MetaData = new Dictionary<string, MessagePayloadBase>(message.MetaData);
+            PartitionKey = message.PartitionKey;
+            CreatedAtUtc = message.CreatedAtUtc;
+            TargetOverride = message.TargetOverride;
         }
     }
 }

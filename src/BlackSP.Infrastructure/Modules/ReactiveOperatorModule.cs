@@ -22,7 +22,7 @@ namespace BlackSP.Infrastructure.Modules
         {
             //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
             builder.UseLogging(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
-            builder.UseCheckpointingService(_configuration.CheckpointingConfiguration, true);
+            builder.UseCheckpointing(_configuration.CheckpointingConfiguration, true);
 
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();

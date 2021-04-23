@@ -54,30 +54,19 @@ namespace BlackSP.Infrastructure.Extensions
             {
                 case CheckpointCoordinationMode.Coordinated:
                     builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
-
-                    builder.RegisterType<ChandyLamportProtocol>().AsSelf();
                     builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
                 
                 case CheckpointCoordinationMode.Uncoordinated:
-
-                    builder.RegisterType<UncoordinatedProtocol>().AsSelf();
                     builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
-
                     builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
                     builder.RegisterType<MessageLoggingPreDeliveryHandler>().As<IHandler<DataMessage>>();
-
                     break;
                 
                 case CheckpointCoordinationMode.CommunicationInduced:
-
-                    builder.RegisterType<UncoordinatedProtocol>().AsSelf();
-                    builder.RegisterType<HMNRProtocol>().AsSelf().SingleInstance();
                     builder.RegisterType<CICPreDeliveryHandler>().As<IHandler<DataMessage>>();
-                    
                     builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
                     builder.RegisterType<MessageLoggingPreDeliveryHandler>().As<IHandler<DataMessage>>();
-
                     break;
             }
 
@@ -86,7 +75,7 @@ namespace BlackSP.Infrastructure.Extensions
             builder.RegisterType<TOperator>().AsImplementedInterfaces();
             builder.RegisterType<OperatorEventHandler>().As<IHandler<DataMessage>>();
 
-            builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>(); //forwards CP dependency on new CP
+            builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>(); //forwards CP dependency on latest CP
             switch (cpMode)
             {
                 case CheckpointCoordinationMode.Coordinated:
@@ -108,29 +97,29 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder AddDataLayerMessageHandlersForSource(this ContainerBuilder builder, CheckpointCoordinationMode cpMode)
         {
             builder.RegisterType<MetricLoggingHandler<DataMessage>>().As<IHandler<DataMessage>>();
+            builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>();
+
             switch (cpMode)
             {
-                case CheckpointCoordinationMode.Uncoordinated:
-                    builder.RegisterType<UncoordinatedProtocol>().AsSelf();
-                    builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
-                    builder.RegisterType<MessageLoggingPostDeliveryHandler>().As<IHandler<DataMessage>>();
-                    break;
                 case CheckpointCoordinationMode.Coordinated:
-                    builder.RegisterType<ChandyLamportProtocol>().AsSelf();
                     builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     break;
-                case CheckpointCoordinationMode.CommunicationInduced:
-                    builder.RegisterType<UncoordinatedProtocol>().AsSelf();
-                    builder.RegisterType<HMNRProtocol>().AsSelf().SingleInstance();
-                    builder.RegisterType<CICPreDeliveryHandler>().As<IHandler<DataMessage>>();//passive but initialises clocks
-                    builder.RegisterType<CICPostDeliveryHandler>().As<IHandler<DataMessage>>();
+
+                case CheckpointCoordinationMode.Uncoordinated:
                     builder.RegisterType<MessageLoggingPostDeliveryHandler>().As<IHandler<DataMessage>>();
+                    builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+                    break;
+                
+                case CheckpointCoordinationMode.CommunicationInduced:
+                    builder.RegisterType<MessageLoggingPostDeliveryHandler>().As<IHandler<DataMessage>>();
+
+                    builder.RegisterType<CICPreDeliveryHandler>().As<IHandler<DataMessage>>();//passive handler (no incoming CIC payloads) but initialises clocks
+                    builder.RegisterType<CICPostDeliveryHandler>().As<IHandler<DataMessage>>();
                     break;
 
             }
 
 
-            builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>();
             return builder;
         }
     }

@@ -3,6 +3,7 @@ using Autofac.Core;
 using BlackSP.Checkpointing;
 using BlackSP.Checkpointing.Core;
 using BlackSP.Checkpointing.Persistence;
+using BlackSP.Checkpointing.Protocols;
 using BlackSP.Infrastructure.Layers.Data;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Configuration;
@@ -24,7 +25,14 @@ namespace BlackSP.Infrastructure.Extensions
             service.RegisterObject(context.Instance);
         }
 
-        public static ContainerBuilder UseCheckpointingService(this ContainerBuilder builder, ICheckpointConfiguration config, bool autoRegisterComponents = false)
+        /// <summary>
+        /// Registers checkpointing service, message logging service and protocol types.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="config"></param>
+        /// <param name="autoRegisterComponents"></param>
+        /// <returns></returns>
+        public static ContainerBuilder UseCheckpointing(this ContainerBuilder builder, ICheckpointConfiguration config, bool autoRegisterComponents = false)
         {
             _ = builder ?? throw new ArgumentNullException(nameof(builder));
             _ = config ?? throw new ArgumentNullException(nameof(config));
@@ -46,7 +54,14 @@ namespace BlackSP.Infrastructure.Extensions
                 };
             }
 
+            //logging service implementation
             builder.RegisterType<MessageLoggingService<DataMessage>>().As<IMessageLoggingService<DataMessage>>().SingleInstance();
+            
+            //protocol types
+            builder.RegisterType<ChandyLamportProtocol>().AsSelf();
+            builder.RegisterType<UncoordinatedProtocol>().AsSelf();
+            builder.RegisterType<HMNRProtocol>().AsSelf().SingleInstance();
+
 
             return builder;
         }

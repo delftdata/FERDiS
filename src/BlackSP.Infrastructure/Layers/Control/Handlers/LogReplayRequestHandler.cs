@@ -79,7 +79,8 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                             //determine which checkpoints they have restored last
                             //determine sequence numbers associated with those checkpoints
                             //determine sequence numbers belonging to {targetName} in each checkpoint
-                            var replayPoint = _messageLogManager.GetPrunableSequenceNumbers(_lastRestoredRecoveryLine.RecoveryMap[downstreamName])[targetName] + 1;
+                            var prunePoints = _messageLogManager.GetPrunableSequenceNumbers(_lastRestoredRecoveryLine.RecoveryMap[downstreamName]);
+                            var replayPoint = prunePoints.ContainsKey(targetName) ? prunePoints[targetName] + 1 : 0;
                             replayDict.Add(downstreamName, replayPoint);
                         }                        
 

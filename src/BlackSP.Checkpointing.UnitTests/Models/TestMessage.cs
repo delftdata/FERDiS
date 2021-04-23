@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.Models;
+﻿using BlackSP.Kernel.Configuration;
+using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,6 +15,7 @@ namespace BlackSP.Checkpointing.UnitTests.Models
         public IEnumerable<MessagePayloadBase> Payloads { get; set; }
 
         public DateTime CreatedAtUtc { get; set; }
+        public (IEndpointConfiguration, int)? TargetOverride { get; set; }
 
         public void AddPayload<TPayload>(TPayload payload) where TPayload : MessagePayloadBase
         {

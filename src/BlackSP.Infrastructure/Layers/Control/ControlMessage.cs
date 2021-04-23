@@ -1,4 +1,5 @@
 ﻿using BlackSP.Core.Models;
+using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Models;
 using ProtoBuf;
 using System;
@@ -18,9 +19,9 @@ namespace BlackSP.Infrastructure.Layers.Control
         [ProtoMember(2)]
         public override IDictionary<string, MessagePayloadBase> MetaData { get; }
         
-        //[ProtoMember(3)] - not a protomember as its not really relevant to transfer between instances for this message type
+        //not a protomember as its not really relevant to transfer between instances for this message type
         public override DateTime CreatedAtUtc { get; set; }
-        
+
         public ControlMessage()
         {
             PartitionKey = null;

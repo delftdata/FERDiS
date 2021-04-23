@@ -21,17 +21,20 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
     {
 
         private readonly MessageLoggingSequenceManager _sequenceNrManager;
+        private readonly WorkerGraphStateManager _graphStateManager;
         private readonly ICheckpointService _checkpointService;
         private readonly IVertexGraphConfiguration _graphConfiguration;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ILogger _logger;
-        public CheckpointTakenHandler(MessageLoggingSequenceManager sequenceNrManager, 
+        public CheckpointTakenHandler(MessageLoggingSequenceManager sequenceNrManager,
+            WorkerGraphStateManager graphStateManager,
             ICheckpointService checkpointService,
             IVertexGraphConfiguration graphConfiguration,
             IVertexConfiguration vertexConfiguration,
             ILogger logger)
         {
             _sequenceNrManager = sequenceNrManager ?? throw new ArgumentNullException(nameof(sequenceNrManager));
+            _graphStateManager = graphStateManager ?? throw new ArgumentNullException(nameof(graphStateManager));
             _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
             _graphConfiguration = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
@@ -49,6 +52,11 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             {
                 //update sequencenr cache
                 _sequenceNrManager.AddCheckpoint(payload.CheckpointId, payload.AssociatedSequenceNumbers);
+            }
+
+            if(_graphStateManager.CurrentState != WorkerGraphStateManager.State.Running)
+            {
+                return AssociatedMessage.Yield(); //this corner-case ensures no messages get pruned during failure-recovery
             }
 
             //first determine recovery line under worst case failure scenario (everything fails)

@@ -92,7 +92,7 @@ namespace BlackSP.Benchmarks
             Console.WriteLine($"Configuring BlackSP benchmark job {BOLD}{job}{RESET} ({BOLD}{size}{RESET}) on {BOLD}{infrastructure}{RESET} infrastructure");          
             Console.WriteLine($"Configuring checkpointing in {BOLD}{checkpointCoordinationMode}{RESET} mode on a {BOLD}{checkpointIntervalSeconds} seconds{RESET} interval");
             Console.WriteLine($"Configuring logging at level {BOLD}{logLevel}{RESET} to targets: {BOLD}{logTargets}{RESET}");
-
+            Console.WriteLine("\n");
             var appBuilder = infrastructure == Infrastructure.Simulator 
                 ? Simulator.Hosting.CreateDefaultApplicationBuilder() 
                 : CRA.Hosting.CreateDefaultApplicationBuilder();

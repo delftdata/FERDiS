@@ -25,7 +25,7 @@ namespace BlackSP.Infrastructure.Extensions
             //checkpoint updates..
             builder.RegisterType<CheckpointTakenSource>().As<ISource<ControlMessage>>();
 
-            //dispatcher
+            //dispatcher (+serializer+partitioner)
             builder.RegisterType<MessagePartitioningDispatcher<ControlMessage>>().As<IDispatcher<ControlMessage>>().SingleInstance();
             builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer>();
             builder.RegisterType<MessageTargetingPartitioner<ControlMessage>>().AsImplementedInterfaces();
@@ -47,7 +47,7 @@ namespace BlackSP.Infrastructure.Extensions
             }
             
 
-            //dispatcher
+            //dispatcher (+serializer+partitioner)
             builder.RegisterType<MessagePartitioningDispatcher<DataMessage>>().As<IDispatcher<DataMessage>>().InstancePerLifetimeScope();
             builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer>();
             builder.RegisterType<MessageHashPartitioner<DataMessage>>().AsImplementedInterfaces();

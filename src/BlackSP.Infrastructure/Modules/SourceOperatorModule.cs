@@ -24,7 +24,7 @@ namespace BlackSP.Infrastructure.Modules
         {
             //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
             builder.UseLogging(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
-            builder.UseCheckpointingService(_configuration.CheckpointingConfiguration, true);
+            builder.UseCheckpointing(_configuration.CheckpointingConfiguration, true);
 
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();
@@ -34,7 +34,7 @@ namespace BlackSP.Infrastructure.Modules
             builder.UseControlLayer();
             builder.AddControlLayerMessageHandlersForWorker();
 
-            //data processor
+            //data processor (without network source)
             builder.UseDataLayer(false);
             //add alternative data source (local source operator)
             builder.RegisterType<TOperator>().AsImplementedInterfaces().SingleInstance();

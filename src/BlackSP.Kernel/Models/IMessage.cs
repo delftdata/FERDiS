@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BlackSP.Kernel.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -13,6 +14,12 @@ namespace BlackSP.Kernel.Models
         IEnumerable<MessagePayloadBase> Payloads { get; }
 
         DateTime CreatedAtUtc { get; }
+
+        /// <summary>
+        /// Utility property allowing the overriding of target connection where the message will be sent<br/>
+        /// Process-local property (i.e. should not be sent along with the message)
+        /// </summary>
+        (IEndpointConfiguration, int)? TargetOverride { get; set; }
 
         /// <summary>
         /// Try to extract a strongly typed MessagePayloadBase implementation<br/>

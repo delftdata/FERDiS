@@ -24,7 +24,7 @@ namespace BlackSP.Infrastructure.Modules
         protected override void Load(ContainerBuilder builder)
         {
             builder.UseLogging(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
-            builder.UseCheckpointingService(_configuration.CheckpointingConfiguration);
+            builder.UseCheckpointing(_configuration.CheckpointingConfiguration);
 
             builder.UseProtobufSerializer();
             builder.UseStreamingEndpoints();

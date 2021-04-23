@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
 {
-    public class CICPreDeliveryHandler : ForwardingPayloadHandlerBase<DataMessage, CICPayload>
+    public class CICPreDeliveryHandler : IHandler<DataMessage>
     {
 
         private readonly HMNRProtocol _hmnrProtocol;
@@ -86,7 +86,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _hmnrProtocol.InitializeClocks(_vertexConfiguration.InstanceName, _graphConfiguration.InstanceNames.Where(name => !name.Contains("coordinator")).ToArray());
         }
 
-        protected override async Task<IEnumerable<DataMessage>> Handle(CICPayload payload)
+        protected async Task HandlePayload(CICPayload payload)
         {            
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
             var (org,shard) = _source.MessageOrigin;
@@ -103,8 +103,27 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             
             //update clocks before delivery to operator handler..
             _hmnrProtocol.BeforeDeliver(originInstance, payload.clock, payload.ckpt, payload.taken);
+        }
 
-            return AssociatedMessage.Yield();
+        public async Task<IEnumerable<DataMessage>> Handle(DataMessage message)
+        {
+            _ = message ?? throw new ArgumentNullException(nameof(message));
+
+            if(_vertexConfiguration.VertexType == VertexType.Source)
+            {
+                //sources never have incoming CIC payloads.. so just check the fallback protocol instead
+                if (_backupProtocol.CheckCheckpointCondition(DateTime.UtcNow))
+                {
+                    await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
+                }
+            }
+
+            if(message.TryExtractPayload<CICPayload>(out var cicPayload))
+            {
+                await HandlePayload(cicPayload).ConfigureAwait(false);
+            }
+
+            return message.Yield();
         }
     }
 }

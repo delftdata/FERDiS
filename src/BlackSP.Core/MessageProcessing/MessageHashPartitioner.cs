@@ -23,6 +23,12 @@ namespace BlackSP.Core.MessageProcessing
         public IEnumerable<(IEndpointConfiguration, int)> Partition(TMessage message)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
+            if(message.TargetOverride.HasValue)
+            {
+                yield return message.TargetOverride.Value;
+                yield break;
+            }
+            
             var targetEndpoints = _vertexConfiguration.OutputEndpoints.Where(e => e.IsControl == message.IsControl);
             foreach (var endpoint in targetEndpoints)
             {
