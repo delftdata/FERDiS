@@ -29,7 +29,7 @@
         "LOG_EVENT_LEVEL": "2", //0-5,
 
         "CHECKPOINT_COORDINATION_MODE": "2", //0 = uc, 1 = cc, 2 = cic
-        "CHECKPOINT_INTERVAL_SECONDS": "15",
+        "CHECKPOINT_INTERVAL_SECONDS": "30",
 
         "BENCHMARK_INFRA": "0", //0 = simulator, 1 = cra
         "BENCHMARK_JOB": "5", //0-5

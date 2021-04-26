@@ -34,14 +34,26 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
         {
             var targets = _partitioner.Partition(message);
 
-            foreach (var (endpoint, shard) in targets)
+            if(targets.Count() == 1)
             {
+                var (endpoint, shard) = targets.First();
                 var targetInstance = endpoint.GetRemoteInstanceName(shard);
                 var seqNr = _loggingService.Append(targetInstance, message);
-                var payload = new SequenceNumberPayload { SequenceNumber = seqNr };
 
+                var payload = new SequenceNumberPayload { SequenceNumber = seqNr };
+                message.AddPayload(payload);
+                yield return message;
+                yield break;
+            }
+
+            foreach (var (endpoint, shard) in targets)
+            {
                 var msgCopy = new DataMessage(message);
                 msgCopy.TargetOverride = (endpoint, shard);
+
+                var targetInstance = endpoint.GetRemoteInstanceName(shard);
+                var seqNr = _loggingService.Append(targetInstance, msgCopy);
+                var payload = new SequenceNumberPayload { SequenceNumber = seqNr };
                 msgCopy.AddPayload(payload);
 
                 yield return msgCopy;

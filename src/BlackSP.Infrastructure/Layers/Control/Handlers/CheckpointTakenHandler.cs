@@ -45,8 +45,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
             
-            //verbose
-            _logger.Fatal("Handling CheckpointTakenPayload from " + payload.OriginInstance + " with checkpoint " + payload.CheckpointId);
+            _logger.Verbose("Handling CheckpointTakenPayload from " + payload.OriginInstance + " with checkpoint " + payload.CheckpointId);
 
             if(payload.AssociatedSequenceNumbers != null)
             {

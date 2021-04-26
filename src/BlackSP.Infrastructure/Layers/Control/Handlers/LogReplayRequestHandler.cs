@@ -70,8 +70,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                         //determine downstream workers
                         var downstreamNames = _graphConfiguration.GetAllInstancesDownstreamOf(targetName, true);
 
-                        //Verbose
-                        _logger.Fatal($"Building LogReplayRequest for {targetName}");
+                        _logger.Verbose($"Building LogReplayRequest for {targetName}");
 
                         var replayDict = new Dictionary<string, int>();
                         foreach(var downstreamName in downstreamNames)
@@ -88,8 +87,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                         {
                             //add replay payload
                             message.AddPayload(new LogReplayRequestPayload { ReplayMap = replayDict });
-                            //Verbose
-                            _logger.Fatal($"Did build LogReplayRequest for {targetName} - {string.Join(", ", replayDict)}");
+                            _logger.Verbose($"Requesting {targetName} to prune its logs - {string.Join(", ", replayDict)}");
                         }
                         
                     }
@@ -147,7 +145,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
                 var msg = new ControlMessage(_vertexConfiguration.GetPartitionKeyForInstanceName(instanceName));
                 var payload = new LogReplayRequestPayload { ReplayMap = replayDict };
-                _logger.Fatal($"Did build LogReplayRequest for {instanceName} - {string.Join(", ", replayDict)} (prepared)");
+                _logger.Information($"Requesting {instanceName} to prune its logs - {string.Join(", ", replayDict)} (prepared)");
                 msg.AddPayload(payload);
                 yield return msg;
             }

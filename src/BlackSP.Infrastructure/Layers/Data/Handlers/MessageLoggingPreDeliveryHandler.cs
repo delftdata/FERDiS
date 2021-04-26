@@ -35,11 +35,11 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             var origin = endpoint.GetRemoteInstanceName(shard);
             if(_loggingService.Receive(origin, payload.SequenceNumber))
             {
+                _logger.Verbose($"Received message with sequence number {payload.SequenceNumber} from {origin}");
                 return Task.FromResult(AssociatedMessage.Yield());
             } 
             
-            //DEBUG
-            _logger.Fatal($"Dropping message with sequence number {payload.SequenceNumber} (expected {_loggingService.ReceivedSequenceNumbers[origin]+1}) from {origin}");
+            _logger.Debug($"Dropping message with sequence number {payload.SequenceNumber} (expected {_loggingService.ReceivedSequenceNumbers[origin]+1}) from {origin}");
             return Task.FromResult(Enumerable.Empty<DataMessage>());
         }
     }
