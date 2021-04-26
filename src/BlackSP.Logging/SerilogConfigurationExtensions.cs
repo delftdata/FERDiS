@@ -51,7 +51,7 @@ namespace BlackSP.Logging
             if (targetFlags.HasFlag(LogTargetFlags.Console))
             {
                 // never log metrics console
-                logConfig.WriteTo.Console(logLevel, outputTemplate: $"[{instanceName}] {{Message}}{{NewLine}}{{Exception}}", theme: AnsiConsoleTheme.Literate); //log usual format to console anyway
+                //logConfig.WriteTo.Console(logLevel, outputTemplate: $"[{instanceName}] {{Message}}{{NewLine}}{{Exception}}", theme: AnsiConsoleTheme.Literate); //log usual format to console anyway
             }
             if (targetFlags.HasFlag(LogTargetFlags.File))
             {

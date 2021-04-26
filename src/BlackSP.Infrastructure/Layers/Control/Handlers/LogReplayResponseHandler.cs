@@ -50,10 +50,14 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                 {
                     //Debug
                     _logger.Fatal($"Replaying log to {entry.Key} from sequencenr {entry.Value}");
+                    var i = 0;
                     foreach (var (seqnr, msg) in _logService.Replay(entry.Key, entry.Value))
                     {
                         await _dataDispatcher.Dispatch(msg, default).ConfigureAwait(false);
+                        i++;
                     }
+                    //Debug
+                    _logger.Fatal($"Replayed log to {entry.Key} from sequencenr {entry.Value} till {entry.Value + i} ({i} messages)");
                 }
             }
             finally
