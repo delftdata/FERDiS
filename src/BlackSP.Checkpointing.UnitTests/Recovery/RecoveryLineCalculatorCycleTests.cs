@@ -31,9 +31,9 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
             utility.AddInstance(instance4);
 
             utility.AddConnection(instance1, instance2);
-            utility.AddConnection(instance2, instance3);
+            utility.AddConnection(instance2, instance3); //note: cycle between instances 2 and 3
             utility.AddConnection(instance3, instance4);
-            utility.AddConnection(instance3, instance1);
+            utility.AddConnection(instance3, instance2);
 
             initialCheckpoints = utility.instanceNames.ToDictionary(name => name, name => utility.AddCheckpoint(name, true));
         }
@@ -66,7 +66,7 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
         }
 
         [Test]
-        public void SourceFailure_ShouldRollbackToLastCheckpoint_OthersRollbackToPreventOrphans()
+        public void SourceFailure_CausesDominoInCycle()
         {
             _ = utility.AddCheckpoint(instance1);
             _ = utility.AddCheckpoint(instance2);
@@ -74,7 +74,26 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
             var latestCp2 = utility.AddCheckpoint(instance2);
             var latestCp1 = utility.AddCheckpoint(instance1);
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
-            var recoveryLine = calculator.CalculateRecoveryLine(false, instance1);
+            var recoveryLine = calculator.CalculateRecoveryLine(true, instance1);
+            
+            Assert.AreEqual(recoveryLine.AffectedWorkers.Count(), instanceCount); //in this test all instances roll back to their initial state except the source which can recover its last checkpoint
+            Assert.AreEqual(latestCp1, recoveryLine.RecoveryMap[instance1]);
+            Assert.AreEqual(initialCheckpoints[instance2], recoveryLine.RecoveryMap[instance2]);
+            Assert.AreEqual(initialCheckpoints[instance3], recoveryLine.RecoveryMap[instance3]);
+            Assert.AreEqual(initialCheckpoints[instance4], recoveryLine.RecoveryMap[instance4]);
+        }
+
+        [Test]
+        public void SourceFailure_Not_CausesDominoInCycle_WithAlignedCheckpoints()
+        {
+            _ = utility.AddCheckpoint(instance1);
+            _ = utility.AddCheckpoint(instance2); //align with cycle 
+            _ = utility.AddCheckpoint(instance1);
+            var latestCp2 = utility.ForceCheckpoint(instance2, instance3);
+            var latestCp1 = utility.AddCheckpoint(instance1);
+            var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
+            var recoveryLine = calculator.CalculateRecoveryLine(true, instance1);
+
             Assert.AreEqual(recoveryLine.AffectedWorkers.Count(), instanceCount); //in this test all instances roll back to their initial state except the source which can recover its last checkpoint
             Assert.AreEqual(latestCp1, recoveryLine.RecoveryMap[instance1]);
             Assert.AreEqual(latestCp2, recoveryLine.RecoveryMap[instance2]);
@@ -83,79 +102,86 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
         }
 
         [Test]
-        public void Instance2Failure_ShouldRollbackDownstream()
+        public void Instance2Failure_ShouldRollbackToInitialState()
         {
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
             var recoveryLine = calculator.CalculateRecoveryLine(true, instance2);
 
             Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance1]);
             Assert.AreEqual(initialCheckpoints[instance2], recoveryLine.RecoveryMap[instance2]);
-            Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance3]);
+            Assert.AreEqual(initialCheckpoints[instance3], recoveryLine.RecoveryMap[instance3]);
             Assert.AreEqual(initialCheckpoints[instance4], recoveryLine.RecoveryMap[instance4]);
             //instance 3 remains unaffected due to the recovery line being at instance 3 its initial state
         }
 
         [Test]
-        public void Instance2Failure_ShouldRecoverCheckpoints_ShouldRollbackDownstream()
+        public void Instance2Failure_CIC_CanCauseDomino()
         {
             _ = utility.AddCheckpoint(instance1);
-            var instance2LastCp = utility.AddCheckpoint(instance2);
+            _ = utility.AddCheckpoint(instance2);
             _ = utility.AddCheckpoint(instance3);
+            _ = utility.AddCheckpoint(instance4);
+
+
+            _ = utility.AddCheckpoint(instance1);
+            var instance2LastCp = utility.AddCheckpoint(instance2);
+            var instance3LastCp = utility.AddCheckpoint(instance3);
             var instance4LastCp = utility.AddCheckpoint(instance4);
 
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
             var recoveryLine = calculator.CalculateRecoveryLine(true, instance2);
 
             Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance1]);
-            Assert.AreEqual(instance2LastCp, recoveryLine.RecoveryMap[instance2]);
-            Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance3]);
-            Assert.AreNotEqual(instance4LastCp, recoveryLine.RecoveryMap[instance4]);
+            Assert.AreEqual(initialCheckpoints[instance2], recoveryLine.RecoveryMap[instance2]);
+            Assert.AreEqual(initialCheckpoints[instance3], recoveryLine.RecoveryMap[instance3]);
             Assert.AreEqual(initialCheckpoints[instance4], recoveryLine.RecoveryMap[instance4]);
             //instance 3 remains unaffected due to the recovery line being at instance 3 its initial state
         }
 
         [Test]
-        public void Instance3Failure_ShouldOnlyRollbackFailedAndSink()
+        public void Instance3Failure_CIC_PropagatesDownstream()
         {
-            utility.AddCheckpoint(instance2);
-            var instance3LatestCp = utility.AddCheckpoint(instance3);
-            var instance4LatestCp = utility.AddCheckpoint(instance4);
+            var instance2LatestCp = utility.AddCheckpoint(instance2);
+            var instance3LatestCp = utility.ForceCheckpoint(instance3, instance2);
+            var instance4LatestCp = utility.AddCheckpoint(instance4); //note dependency on inst3 latest cp.
 
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
             var recoveryLine = calculator.CalculateRecoveryLine(true, instance3);
 
-            //expect inst 1 and 2 affected, so 2 total
-            Assert.AreEqual(2, recoveryLine.AffectedWorkers.Count());
-            //instance 1 and 2 remain unaffected due to its runtime state still being valid
+            //expect inst 3 and 4 affected, but also 2 as its on a cycle with 3
+            Assert.AreEqual(3, recoveryLine.AffectedWorkers.Count());
+            //instance 1 remains unaffected due to its runtime state still being valid
             Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance1]);
-            Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance2]);
-
+            
+            Assert.AreEqual(instance2LatestCp, recoveryLine.RecoveryMap[instance2]);
             Assert.AreEqual(instance3LatestCp, recoveryLine.RecoveryMap[instance3]);
             Assert.AreEqual(initialCheckpoints[instance4], recoveryLine.RecoveryMap[instance4]);
 
         }
 
         [Test]
-        public void Instance3Failure_ShouldOnlyRollbackFailedAndSink_NoDependencyBetween4and3LastCheckpoints()
+        public void Instance3Failure_CIC_PropagatesDownstream_2()
         {
-            utility.AddCheckpoint(instance2);
-            var instance4LatestCp = utility.AddCheckpoint(instance4);
-            var instance3LatestCp = utility.AddCheckpoint(instance3);
-            
+            var instance2LatestCp = utility.AddCheckpoint(instance2);
+            var instance3LatestCp = utility.ForceCheckpoint(instance3, instance2);
+            var instance4LatestCp = utility.ForceCheckpoint(instance4, instance3);
 
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
             var recoveryLine = calculator.CalculateRecoveryLine(true, instance3);
-            //instance 1 and 2 remain unaffected due to its runtime state still being valid
+
+            //expect inst 3 and 4 affected, but also 2 as its on a cycle with 3
+            Assert.AreEqual(3, recoveryLine.AffectedWorkers.Count());
+            //instance 1 remains unaffected due to its runtime state still being valid
             Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance1]);
-            Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance2]);
 
+            Assert.AreEqual(instance2LatestCp, recoveryLine.RecoveryMap[instance2]);
             Assert.AreEqual(instance3LatestCp, recoveryLine.RecoveryMap[instance3]);
             Assert.AreEqual(instance4LatestCp, recoveryLine.RecoveryMap[instance4]);
+
         }
 
-
         [Test]
-        public void Instance1Failure_CoordinatedCheckpoints_RestoresLastRecoveryLine()
+        public void Instance1Failure_CIC_RestoresLastRecoveryLine()
         {
             _ = utility.AddCheckpoint(instance4);
             _ = utility.AddCheckpoint(instance3);
@@ -164,12 +190,12 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
 
             var instance4LatestCp = utility.AddCheckpoint(instance4);
             var instance3LatestCp = utility.AddCheckpoint(instance3);
-            var instance2LatestCp = utility.AddCheckpoint(instance2);
+            var instance2LatestCp = utility.ForceCheckpoint(instance2, instance3);
             var instance1LatestCp = utility.AddCheckpoint(instance1);
 
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
             //note: no usage of future checkpoints when having coordinated checkpoints will affect the entire graph not just downstream
-            var recoveryLine = calculator.CalculateRecoveryLine(false, instance1);
+            var recoveryLine = calculator.CalculateRecoveryLine(true, instance1);
             Assert.AreEqual(instance1LatestCp, recoveryLine.RecoveryMap[instance1]);
             Assert.AreEqual(instance2LatestCp, recoveryLine.RecoveryMap[instance2]);
             Assert.AreEqual(instance3LatestCp, recoveryLine.RecoveryMap[instance3]);
@@ -177,7 +203,7 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
         }
 
         [Test]
-        public void Instance2Failure_CoordinatedCheckpoints_RestoresLastRecoveryLine()
+        public void Instance2Failure_CIC_RestoresLastRecoveryLine()
         {
             _ = utility.AddCheckpoint(instance4);
             _ = utility.AddCheckpoint(instance3);
@@ -186,66 +212,16 @@ namespace BlackSP.Checkpointing.UnitTests.Recovery
 
             var instance4LatestCp = utility.AddCheckpoint(instance4);
             var instance3LatestCp = utility.AddCheckpoint(instance3);
-            var instance2LatestCp = utility.AddCheckpoint(instance2);
+            var instance2LatestCp = utility.ForceCheckpoint(instance2, instance3);
             var instance1LatestCp = utility.AddCheckpoint(instance1);
 
             var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
             //note: no usage of future checkpoints when having coordinated checkpoints will affect the entire graph not just downstream
-            var recoveryLine = calculator.CalculateRecoveryLine(false, instance2);
-            Assert.AreEqual(instance1LatestCp, recoveryLine.RecoveryMap[instance1]);
+            var recoveryLine = calculator.CalculateRecoveryLine(true, instance2);
+            Assert.AreEqual(Guid.Empty, recoveryLine.RecoveryMap[instance1]); //instance 1 can re-use existing state (future-checkpoint) so will not rollback
             Assert.AreEqual(instance2LatestCp, recoveryLine.RecoveryMap[instance2]);
             Assert.AreEqual(instance3LatestCp, recoveryLine.RecoveryMap[instance3]);
             Assert.AreEqual(instance4LatestCp, recoveryLine.RecoveryMap[instance4]);
-        }
-
-        [Test]
-        public void Instance2Failure_CoordinatedCheckpoints_RestoresLastCompleteRecoveryLine()
-        {
-            var instance4Cp = utility.AddCheckpoint(instance4);
-            var instance3Cp = utility.AddCheckpoint(instance3);
-            var instance2Cp = utility.AddCheckpoint(instance2);
-            var instance1Cp = utility.AddCheckpoint(instance1);
-
-            _ = utility.AddCheckpoint(instance4);
-            _ = utility.AddCheckpoint(instance3);
-            _ = utility.AddCheckpoint(instance2);
-            //var instance1LatestCp = utility.AddCheckpoint(instance1); !!! oops last checkpoint not taken, recovery line not complete
-
-            var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
-            var recoveryLine = calculator.CalculateRecoveryLine(false, instance2);
-            Assert.AreEqual(instance1Cp, recoveryLine.RecoveryMap[instance1]);
-            Assert.AreEqual(instance2Cp, recoveryLine.RecoveryMap[instance2]);
-            Assert.AreEqual(instance3Cp, recoveryLine.RecoveryMap[instance3]);
-            Assert.AreEqual(instance4Cp, recoveryLine.RecoveryMap[instance4]);
-        }
-
-        [Test]
-        public void AnyFailure_CoordinatedCheckpoints_RestoresSameRecoveryLineRegardlessOfInstanceFailure()
-        {
-            var instance4Cp = utility.AddCheckpoint(instance4);
-            var instance3Cp = utility.AddCheckpoint(instance3);
-            var instance2Cp = utility.AddCheckpoint(instance2);
-            var instance1Cp = utility.AddCheckpoint(instance1);
-
-            _ = utility.AddCheckpoint(instance4);
-            _ = utility.AddCheckpoint(instance3);
-            _ = utility.AddCheckpoint(instance2);
-            //var instance1LatestCp = utility.AddCheckpoint(instance1); !!! oops last checkpoint not taken, recovery line not complete
-
-            var calculator = new RecoveryLineCalculator(utility.GetAllCheckpointMetaData(), utility.GetGraphConfig());
-            var recoveryLine1 = calculator.CalculateRecoveryLine(false, instance1);
-            var recoveryLine2 = calculator.CalculateRecoveryLine(false, instance2);
-            var recoveryLine3 = calculator.CalculateRecoveryLine(false, instance3);
-            var recoveryLine4 = calculator.CalculateRecoveryLine(false, instance4);
-
-            var recoveryLineAllFailed = calculator.CalculateRecoveryLine(false, instance1,instance2,instance3,instance4);
-            var recoveryLineTwoFailures = calculator.CalculateRecoveryLine(false, instance1, instance4);
-            
-            Assert.AreEqual(recoveryLine1.RecoveryMap, recoveryLine2.RecoveryMap);
-            Assert.AreEqual(recoveryLine1.RecoveryMap, recoveryLine3.RecoveryMap);
-            Assert.AreEqual(recoveryLine1.RecoveryMap, recoveryLine4.RecoveryMap);
-            Assert.AreEqual(recoveryLine1.RecoveryMap, recoveryLineAllFailed.RecoveryMap);
-            Assert.AreEqual(recoveryLine1.RecoveryMap, recoveryLineTwoFailures.RecoveryMap);
         }
 
     }

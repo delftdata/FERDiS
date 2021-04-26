@@ -221,13 +221,15 @@ namespace BlackSP.Checkpointing.UnitTests
             Assert.AreEqual(new[] { 2, 3, 4 }, _testService.Replay("d1", 2).Select(p => p.Item1).ToArray());
             
             Assert.AreEqual(3, _testService.Prune("d1", 2)); //prunes messages 0,1,2 (count = 3)
-            Assert.AreEqual(new[] { 3, 4 }, _testService.Replay("d1", 2).Select(p => p.Item1).ToArray());
+            Assert.AreEqual(new[] { 3, 4 }, _testService.Replay("d1", 3).Select(p => p.Item1).ToArray());
             
             Assert.AreEqual(0, _testService.Prune("d1", 2)); //prunes no messages (count = 0)
-            Assert.AreEqual(new[] { 3, 4 }, _testService.Replay("d1", 2).Select(p => p.Item1).ToArray());
+            Assert.AreEqual(new[] { 3, 4 }, _testService.Replay("d1", 3).Select(p => p.Item1).ToArray());
 
             Assert.AreEqual(2, _testService.Prune("d1", 5)); //prunes all remaining messages (count = 2 )
-            Assert.AreEqual(new int[] { }, _testService.Replay("d1", 0).Select(p => p.Item1).ToArray()); //proof that no message can be replayed anymore, even from the start
+            Assert.Throws<ArgumentException>(() => _testService.Replay("d1", 0).ToArray()); //proof that no message can be replayed anymore, even from the start
+
+            Assert.AreEqual(new int[] { }, _testService.Replay("d1", 4).Select(p => p.Item1).ToArray()); //proof that no message can be replayed anymore, even from the start
         }
 
 
