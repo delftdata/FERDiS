@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
@@ -43,7 +44,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
         }
 
 
-        protected override async Task<IEnumerable<DataMessage>> Handle(BarrierPayload payload)
+        protected override async Task<IEnumerable<DataMessage>> Handle(BarrierPayload payload, CancellationToken t)
         {
             var (endpoint, shardId) = _messageReceiver?.MessageOrigin ?? default;
             if (await _protocol.ReceiveBarrier(endpoint, shardId).ConfigureAwait(false))

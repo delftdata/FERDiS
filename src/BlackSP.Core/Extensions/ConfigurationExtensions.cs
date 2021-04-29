@@ -47,5 +47,31 @@ namespace BlackSP.Core.Extensions
             throw new Exception($"Could not find connectionkey for partitionkey: {partitionKey}");
 
         }
+
+        /// <summary>
+        /// Only considers output endpoints!
+        /// </summary>
+        /// <param name="vertexConfig"></param>
+        /// <param name="partitionKey"></param>
+        /// <returns></returns>
+        public static (IEndpointConfiguration, int) GetTargetPairByInstanceName(this IVertexConfiguration vertexConfig, string instanceName)
+        {
+            _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
+
+            foreach (var endpoint in vertexConfig.OutputEndpoints)
+            {
+                int i = 0;
+                foreach (var remoteInstanceName in endpoint.RemoteInstanceNames)
+                {
+                    if (remoteInstanceName == instanceName)
+                    {
+                        return (endpoint, i);
+                    }
+                    i++;
+                }
+            }
+            throw new Exception($"Could not find connectionkey for instanceName: {instanceName}");
+
+        }
     }
 }

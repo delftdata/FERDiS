@@ -9,6 +9,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
@@ -105,7 +106,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _hmnrProtocol.BeforeDeliver(originInstance, payload.clock, payload.ckpt, payload.taken);
         }
 
-        public async Task<IEnumerable<DataMessage>> Handle(DataMessage message)
+        public async Task<IEnumerable<DataMessage>> Handle(DataMessage message, CancellationToken t)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
 

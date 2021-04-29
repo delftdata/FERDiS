@@ -6,6 +6,7 @@ using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.MessageProcessing.Handlers
@@ -18,7 +19,7 @@ namespace BlackSP.Core.MessageProcessing.Handlers
         {
         }
 
-        public Task<IEnumerable<TMessage>> Handle(TMessage message)
+        public Task<IEnumerable<TMessage>> Handle(TMessage message, CancellationToken t)
         {
             return Task.FromResult(new List<TMessage>() { message }.AsEnumerable());
         }

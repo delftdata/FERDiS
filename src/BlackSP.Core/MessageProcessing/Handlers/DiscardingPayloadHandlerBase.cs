@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.MessageProcessing.Handlers
@@ -19,7 +20,7 @@ namespace BlackSP.Core.MessageProcessing.Handlers
         where TMessage : IMessage
         where TPayload : MessagePayloadBase
     {
-        public async Task<IEnumerable<TMessage>> Handle(TMessage message)
+        public async Task<IEnumerable<TMessage>> Handle(TMessage message, CancellationToken t)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
             if (!message.TryExtractPayload<TPayload>(out var payload))
@@ -28,7 +29,7 @@ namespace BlackSP.Core.MessageProcessing.Handlers
             }
 
             //get results
-            var results = await Handle(payload).ConfigureAwait(false);
+            var results = await Handle(payload, t).ConfigureAwait(false);
             //only forward messages with payloads
             return results.Where(msg => msg.Payloads.Any());
         }
@@ -38,6 +39,6 @@ namespace BlackSP.Core.MessageProcessing.Handlers
         /// </summary>
         /// <param name="payload"></param>
         /// <returns></returns>
-        protected abstract Task<IEnumerable<TMessage>> Handle(TPayload payload);
+        protected abstract Task<IEnumerable<TMessage>> Handle(TPayload payload, CancellationToken t);
     }
 }

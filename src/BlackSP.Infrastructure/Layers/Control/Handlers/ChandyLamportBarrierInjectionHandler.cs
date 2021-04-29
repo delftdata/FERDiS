@@ -6,6 +6,7 @@ using BlackSP.Kernel.Configuration;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -26,7 +27,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        protected override Task<IEnumerable<ControlMessage>> Handle(BarrierPayload payload)
+        protected override Task<IEnumerable<ControlMessage>> Handle(BarrierPayload payload, CancellationToken t)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
 

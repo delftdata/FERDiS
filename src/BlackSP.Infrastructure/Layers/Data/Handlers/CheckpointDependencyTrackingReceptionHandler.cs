@@ -5,6 +5,7 @@ using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.MessageProcessing;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
@@ -25,7 +26,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _messageSource = messageSource ?? throw new ArgumentNullException(nameof(messageSource));
         }
 
-        protected override Task<IEnumerable<DataMessage>> Handle(CheckpointDependencyPayload payload)
+        protected override Task<IEnumerable<DataMessage>> Handle(CheckpointDependencyPayload payload, CancellationToken t)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
             var (endpoint, shardId) = _messageSource.MessageOrigin;

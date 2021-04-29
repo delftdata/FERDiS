@@ -5,6 +5,7 @@ using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Core.MessageProcessing
@@ -29,20 +30,20 @@ namespace BlackSP.Core.MessageProcessing
             _config = config;
         }
 
-        public Task<IEnumerable<T>> Process(T message)
+        public Task<IEnumerable<T>> Process(T message, CancellationToken t)
         {          
-            return ApplyMessageHandlers(message);           
+            return ApplyMessageHandlers(message, t);           
         }
 
-        private async Task<IEnumerable<T>> ApplyMessageHandlers(T message)
+        private async Task<IEnumerable<T>> ApplyMessageHandlers(T message, CancellationToken t)
         {
-            IEnumerable<T> results = await _middlewares.First().Handle(message).ConfigureAwait(false);
+            IEnumerable<T> results = await _middlewares.First().Handle(message, t).ConfigureAwait(false);
             foreach (var middleware in _middlewares.Skip(1))
             {
                 var propagatedMessages = new List<T>();
                 foreach(var msg in results)
                 {
-                    var nextMessages = await middleware.Handle(msg).ConfigureAwait(false) ?? throw new Exception($"Middleware of type {middleware.GetType()} returned null, expected IEnumerable");
+                    var nextMessages = await middleware.Handle(msg, t).ConfigureAwait(false) ?? throw new Exception($"Middleware of type {middleware.GetType()} returned null, expected IEnumerable");
                     propagatedMessages.AddRange(nextMessages);
                 }
                 results = propagatedMessages;

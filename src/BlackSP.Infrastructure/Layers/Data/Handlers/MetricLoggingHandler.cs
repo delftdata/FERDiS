@@ -6,6 +6,7 @@ using BlackSP.Kernel.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
@@ -36,7 +37,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
 
         }
 
-        protected override Task<IEnumerable<TMessage>> Handle(EventPayload payload)
+        protected override Task<IEnumerable<TMessage>> Handle(EventPayload payload, CancellationToken t)
         {
             var now = DateTime.UtcNow;
             if (_metricWindowStart != default && _metricWindowStart + _metricWindowSize < now) //window closes

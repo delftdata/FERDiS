@@ -6,6 +6,7 @@ using BlackSP.Kernel.Configuration;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Control.Handlers
@@ -23,14 +24,14 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        protected override async Task<IEnumerable<ControlMessage>> Handle(CheckpointRestoreRequestPayload payload)
+        protected override async Task<IEnumerable<ControlMessage>> Handle(CheckpointRestoreRequestPayload payload, CancellationToken t)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
             
             Guid checkpointId = payload.CheckpointId;
-            _logger.Information($"{_vertexConfiguration.InstanceName} - Restoring checkpoint {checkpointId}");
+            _logger.Information($"Restoring checkpoint {checkpointId}");
             await _checkpointService.RestoreCheckpoint(checkpointId).ConfigureAwait(false);
-            _logger.Information($"{_vertexConfiguration.InstanceName} - Restored checkpoint {checkpointId}");
+            _logger.Information($"Restored checkpoint {checkpointId}");
 
             var msg = new ControlMessage();
             msg.AddPayload(new CheckpointRestoreCompletionPayload()

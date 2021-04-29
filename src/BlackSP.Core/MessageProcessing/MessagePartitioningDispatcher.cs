@@ -22,6 +22,7 @@ namespace BlackSP.Core.MessageProcessing
         where TMessage : IMessage
     {
         private readonly IVertexConfiguration _vertexConfiguration;
+        private readonly ICheckpointConfiguration _checkpointConfiguration;
         private readonly IObjectSerializer _serializer;
         private readonly IPartitioner<TMessage> _partitioner;
         private readonly ILogger _logger;
@@ -29,11 +30,13 @@ namespace BlackSP.Core.MessageProcessing
         private readonly IDictionary<string, FlushableChannel<byte[]>> _outputQueues;
         private readonly IDictionary<string, (IEndpointConfiguration, int)> _originDict;
         public MessagePartitioningDispatcher(IVertexConfiguration vertexConfiguration,
+                                 ICheckpointConfiguration checkpointConfiguration,
                                  IObjectSerializer serializer,
                                  IPartitioner<TMessage> partitioner,
                                  ILogger logger)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
+            _checkpointConfiguration = checkpointConfiguration ?? throw new ArgumentNullException(nameof(checkpointConfiguration));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _partitioner = partitioner ?? throw new ArgumentNullException(nameof(serializer));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -58,6 +61,11 @@ namespace BlackSP.Core.MessageProcessing
 
             foreach(var (config, shard) in _partitioner.Partition(message))
             {
+                if(_checkpointConfiguration.CoordinationMode != CheckpointCoordinationMode.Coordinated)
+                {
+                    //TODO: log..
+                }
+
                 var outputQueue = _outputQueues.Get(config.GetConnectionKey(shard));
                 await outputQueue.UnderlyingCollection.Writer.WriteAsync(bytes, t);
             }

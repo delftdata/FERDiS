@@ -55,7 +55,7 @@ namespace BlackSP.Infrastructure.Extensions
             }
 
             //logging service implementation
-            builder.RegisterType<MessageLoggingService<DataMessage>>().As<IMessageLoggingService<DataMessage>>().SingleInstance();
+            builder.RegisterType<MessageLoggingService<byte[]>>().As<IMessageLoggingService<byte[]>>().SingleInstance();
             
             //protocol types
             builder.RegisterType<ChandyLamportProtocol>().AsSelf();

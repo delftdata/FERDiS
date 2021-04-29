@@ -8,6 +8,7 @@ using BlackSP.Kernel.MessageProcessing;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
@@ -29,7 +30,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public Task<IEnumerable<DataMessage>> Handle(DataMessage message)
+        public Task<IEnumerable<DataMessage>> Handle(DataMessage message, CancellationToken t)
         {
             foreach(var (endpoint, shard) in _partitioner.Partition(message))
             {

@@ -35,7 +35,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
         }
 
-        protected override async Task<IEnumerable<ControlMessage>> Handle(WorkerRequestPayload payload)
+        protected override async Task<IEnumerable<ControlMessage>> Handle(WorkerRequestPayload payload, CancellationToken t)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
 

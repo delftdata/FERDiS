@@ -6,6 +6,7 @@ using BlackSP.Kernel.Operators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
@@ -25,7 +26,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _messageSource = messageSource ?? throw new ArgumentNullException(nameof(messageSource));
         }
 
-        protected override async Task<IEnumerable<DataMessage>> Handle(EventPayload payload)
+        protected override async Task<IEnumerable<DataMessage>> Handle(EventPayload payload, CancellationToken t)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
 

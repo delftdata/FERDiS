@@ -25,7 +25,16 @@ namespace BlackSP.Kernel.Checkpointing
         /// <param name="message"></param>
         /// <returns>The sequence number associated with the newly added message</returns>
         int Append(string targetInstance, TMessage message);
-        
+
+
+        /// <summary>
+        /// Gets the next sequencenr for given instancename
+        /// </summary>
+        /// <param name="targetInstances"></param>
+        /// <param name="message"></param>
+        /// <returns>The sequence number associated with the newly added message</returns>
+        int GetNextOutgoingSequenceNumber(string targetInstance);
+
         /// <summary>
         /// Receive a new sequence number. May request dropping if a replay is expected
         /// </summary>

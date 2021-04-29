@@ -9,7 +9,6 @@ using Serilog;
 namespace BlackSP.Checkpointing
 {
     public class MessageLoggingService<TMessage> : IMessageLoggingService<TMessage>
-        where TMessage : class, IMessage
     {
 
         public IDictionary<string, int> ReceivedSequenceNumbers => _receivedSequenceNrs;
@@ -72,18 +71,7 @@ namespace BlackSP.Checkpointing
             lock (_lockObj)
             {
                 var log = _logs[targetInstanceName];
-                int nextSeqNr = 0;
-
-                if (log.Any())
-                {
-                    var (lastSeqNr, msg) = log.Last.Value;
-                    if(msg == null)
-                    {
-                        log.RemoveLast();
-                    }
-                    nextSeqNr = lastSeqNr + 1;
-                }
-
+                int nextSeqNr = GetNextOutgoingSequenceNumber(targetInstanceName);
                 log.AddLast((nextSeqNr, message));
                 return nextSeqNr;
             }
@@ -131,7 +119,7 @@ namespace BlackSP.Checkpointing
             var log = _logs[replayInstanceName];
             var current = log.First;
 
-            var (seq, _) = current?.Value ?? (-1, null);
+            var (seq, _) = current?.Value ?? (-1, default);
             if(seq > fromSequenceNr) //go replay from 10 (problem if seq > 10 (e.g. 11 or 12)) so throw
             {
                 throw new ArgumentException($"Cannot replay from sequence number {fromSequenceNr}, first in log is {seq}", nameof(fromSequenceNr));
@@ -174,7 +162,7 @@ namespace BlackSP.Checkpointing
 
                         if(!log.Any())
                         {
-                            log.AddFirst((seqNr, null)); //ensure last seqnr is saved in log
+                            log.AddFirst((seqNr, default)); //ensure last seqnr is saved in log
                             break;
                         }
                         current = log.First;
@@ -189,5 +177,20 @@ namespace BlackSP.Checkpointing
             
         }
 
+        public int GetNextOutgoingSequenceNumber(string targetInstance)
+        {
+            int nextSeqNr = 0;
+            var log = _logs[targetInstance];
+            if (log.Any())
+            {
+                var (lastSeqNr, msg) = log.Last.Value;
+                if (msg == null)
+                {
+                    log.RemoveLast();
+                }
+                nextSeqNr = lastSeqNr + 1;
+            }
+            return nextSeqNr;
+        }
     }
 }

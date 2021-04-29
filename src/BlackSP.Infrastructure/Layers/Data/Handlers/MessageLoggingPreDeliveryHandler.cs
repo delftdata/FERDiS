@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
@@ -15,12 +16,12 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
     public class MessageLoggingPreDeliveryHandler : ForwardingPayloadHandlerBase<DataMessage, SequenceNumberPayload>
     {
 
-        private readonly IMessageLoggingService<DataMessage> _loggingService;
+        private readonly IMessageLoggingService<byte[]> _loggingService;
         private readonly ISource<DataMessage> _source;
         private readonly ILogger _logger;
 
         public MessageLoggingPreDeliveryHandler(
-            IMessageLoggingService<DataMessage> loggingService,
+            IMessageLoggingService<byte[]> loggingService,
             ISource<DataMessage> source,
             ILogger logger)
         {
@@ -29,7 +30,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        protected override Task<IEnumerable<DataMessage>> Handle(SequenceNumberPayload payload)
+        protected override Task<IEnumerable<DataMessage>> Handle(SequenceNumberPayload payload, CancellationToken t)
         {
             var (endpoint, shard) = _source.MessageOrigin;
             var origin = endpoint.GetRemoteInstanceName(shard);
@@ -39,7 +40,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 return Task.FromResult(AssociatedMessage.Yield());
             } 
             
-            _logger.Debug($"Dropping message with sequence number {payload.SequenceNumber} (expected {_loggingService.ReceivedSequenceNumbers[origin]+1}) from {origin}");
+            _logger.Verbose($"Dropping message with sequence number {payload.SequenceNumber} (expected {_loggingService.ReceivedSequenceNumbers[origin]+1}) from {origin}");
             return Task.FromResult(Enumerable.Empty<DataMessage>());
         }
     }

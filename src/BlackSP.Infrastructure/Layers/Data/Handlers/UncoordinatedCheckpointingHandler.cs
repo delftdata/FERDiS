@@ -8,6 +8,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
@@ -35,7 +36,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _protocol = protocolFactory?.Invoke(TimeSpan.FromSeconds(_checkpointConfiguration.CheckpointIntervalSeconds), default);
         }
 
-        public async Task<IEnumerable<DataMessage>> Handle(DataMessage message)
+        public async Task<IEnumerable<DataMessage>> Handle(DataMessage message, CancellationToken t)
         {
 
             if (_protocol.CheckCheckpointCondition(DateTime.UtcNow))

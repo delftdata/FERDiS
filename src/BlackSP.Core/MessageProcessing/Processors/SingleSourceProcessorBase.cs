@@ -143,7 +143,7 @@ namespace BlackSP.Core.MessageProcessing.Processors
                     await _pauseSemaphore.WaitAsync(t).ConfigureAwait(false);
                     try
                     {
-                        foreach (var output in await _pipeline.Process(message).ConfigureAwait(false))
+                        foreach (var output in await _pipeline.Process(message, t).ConfigureAwait(false))
                         {
                             await dispatchChannel.Writer.WriteAsync(output, t).ConfigureAwait(false);
                         }

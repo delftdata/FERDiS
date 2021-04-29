@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Control.Handlers
@@ -24,7 +25,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        protected override Task<IEnumerable<ControlMessage>> Handle(CheckpointRestoreCompletionPayload payload)
+        protected override Task<IEnumerable<ControlMessage>> Handle(CheckpointRestoreCompletionPayload payload, CancellationToken t)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
             _logger.Debug($"Received checkpoint restore completion response from {payload.InstanceName} with checkpointId: {payload.CheckpointId}");

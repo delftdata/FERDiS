@@ -118,7 +118,7 @@ namespace BlackSP.Core.MessageProcessing.Processors
             await _csSemaphore.WaitAsync(t).ConfigureAwait(false); //enter cs
             try
             {
-                IEnumerable<TMessage> responses = await _pipeline.Process(message).ConfigureAwait(false);
+                IEnumerable<TMessage> responses = await _pipeline.Process(message, t).ConfigureAwait(false);
                 foreach (var msg in responses)
                 {
                     if(!await dispatchChannel.Writer.WaitToWriteAsync(t))

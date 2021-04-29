@@ -62,7 +62,7 @@ namespace BlackSP.Logging
             {
                 var connectionString = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING"));
                 logConfig.WriteTo.AzureBlobStorage(connectionString, logLevel, "logs", $"{subFolder}/{instanceName}-{{yyyy}}-{{MM}}-{{dd}}.log",
-                    outputTemplate: $"{{Message}}{{NewLine}}");
+                    outputTemplate: $"{{Message}}{{NewLine}}", writeInBatches: true);
             }
 
             return loggerConfig;

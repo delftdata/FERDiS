@@ -5,6 +5,7 @@ using BlackSP.Infrastructure.Layers.Control.Payloads;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Control.Handlers
@@ -21,7 +22,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             _stateManager = graphStateManager ?? throw new ArgumentNullException(nameof(graphStateManager));
         }
 
-        protected override Task<IEnumerable<ControlMessage>> Handle(WorkerResponsePayload payload)
+        protected override Task<IEnumerable<ControlMessage>> Handle(WorkerResponsePayload payload, CancellationToken t)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
             switch (payload.OriginalRequestType)

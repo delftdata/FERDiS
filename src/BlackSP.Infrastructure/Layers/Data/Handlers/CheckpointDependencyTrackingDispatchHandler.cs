@@ -6,6 +6,7 @@ using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.MessageProcessing;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Data.Handlers
@@ -31,7 +32,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _checkpointConfiguration = checkpointConfiguration ?? throw new ArgumentNullException(nameof(checkpointConfiguration));
         }
 
-        public Task<IEnumerable<DataMessage>> Handle(DataMessage message)
+        public Task<IEnumerable<DataMessage>> Handle(DataMessage message, CancellationToken t)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
 

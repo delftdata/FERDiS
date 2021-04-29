@@ -25,14 +25,14 @@
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
         "KAFKA_BROKER_DNS_TEMPLATE": "kafka-{0}.kafka.kafka.svc.cluster.local:9092",
 
-        "LOG_TARGET_FLAGS": "3", // 1 (console) || 2 (file) || 4 (azure blob)
-        "LOG_EVENT_LEVEL": "2", //0-5,
+        "LOG_TARGET_FLAGS": "5", // 1 (console) || 2 (file) || 4 (azure blob)
+        "LOG_EVENT_LEVEL": "1", //0-5,
 
         "CHECKPOINT_COORDINATION_MODE": "2", //0 = uc, 1 = cc, 2 = cic
         "CHECKPOINT_INTERVAL_SECONDS": "30",
 
-        "BENCHMARK_INFRA": "0", //0 = simulator, 1 = cra
-        "BENCHMARK_JOB": "5", //0-5
+        "BENCHMARK_INFRA": "1", //0 = simulator, 1 = cra
+        "BENCHMARK_JOB": "0", //0-5
         "BENCHMARK_SIZE": "0", // 0 = S, 1 = M, 2 = L
 
         "CRA_WORKER_DOCKER_IMAGE": "mdzwart/cra-net3.1:latest",

@@ -50,7 +50,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             RegisterEvents();
         }
 
-        public Task<IEnumerable<ControlMessage>> Handle(ControlMessage message)
+        public Task<IEnumerable<ControlMessage>> Handle(ControlMessage message, CancellationToken t)
         {
             _ = message ?? throw new ArgumentNullException(nameof(message));
             if(message.TryExtractPayload<WorkerRequestPayload>(out var requestPayload)) 
@@ -70,7 +70,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                         //determine downstream workers
                         var downstreamNames = _graphConfiguration.GetAllInstancesDownstreamOf(targetName, true);
 
-                        _logger.Verbose($"Building LogReplayRequest for {targetName}");
+                        _logger.Debug($"Building LogReplayRequest for {targetName}");
 
                         var replayDict = new Dictionary<string, int>();
                         foreach(var downstreamName in downstreamNames)
@@ -87,7 +87,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                         {
                             //add replay payload
                             message.AddPayload(new LogReplayRequestPayload { ReplayMap = replayDict });
-                            _logger.Verbose($"Requesting {targetName} to prune its logs - {string.Join(", ", replayDict)}");
+                            _logger.Information($"Requesting {targetName} to replay its logs - {string.Join(", ", replayDict)}");
                         }
                         
                     }
@@ -97,7 +97,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
             if(_pendingMessages != null)
             {
-                var res = Task.FromResult(_pendingMessages.Concat(message.Yield()));
+                var res = Task.FromResult(_pendingMessages.Concat(message.Yield()).ToArray().AsEnumerable());
                 _pendingMessages = null;
                 return res;
             }
@@ -117,9 +117,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
         private IEnumerable<ControlMessage> ConstructReplayMessagesForNonRecoveringWorkers(IRecoveryLine recoveryLine)
         {
-            foreach (var instanceName in _graphConfiguration.InstanceNames.Where(n => n != _vertexConfiguration.InstanceName))
+            foreach (var instanceName in _graphConfiguration.InstanceNames)
             {
-                if(recoveryLine.AffectedWorkers.Contains(instanceName)) 
+                if(recoveryLine.AffectedWorkers.Contains(instanceName) || instanceName == _vertexConfiguration.InstanceName) //the || case excludes the coordinator instance 
                 {
                     continue; //we're looking for non-affected workers 
                 }
@@ -145,7 +145,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
                 var msg = new ControlMessage(_vertexConfiguration.GetPartitionKeyForInstanceName(instanceName));
                 var payload = new LogReplayRequestPayload { ReplayMap = replayDict };
-                _logger.Information($"Requesting {instanceName} to prune its logs - {string.Join(", ", replayDict)} (prepared)");
+                _logger.Information($"Requesting {instanceName} to replay its logs - {string.Join(", ", replayDict)} (prepared)");
                 msg.AddPayload(payload);
                 yield return msg;
             }

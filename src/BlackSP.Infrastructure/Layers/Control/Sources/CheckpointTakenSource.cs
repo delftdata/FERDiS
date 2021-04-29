@@ -22,12 +22,12 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         public (IEndpointConfiguration, int) MessageOrigin => (default, default);
 
         private readonly ICheckpointService _checkpointService;
-        private readonly IMessageLoggingService<DataMessage> _loggingService;
+        private readonly IMessageLoggingService<byte[]> _loggingService;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly Channel<ControlMessage> _output;
 
         public CheckpointTakenSource(ICheckpointService checkpointService, 
-                                     IMessageLoggingService<DataMessage> loggingService,
+                                     IMessageLoggingService<byte[]> loggingService,
                                      IVertexConfiguration vertexConfiguration) : this(checkpointService, vertexConfiguration)
         {
             _loggingService = loggingService ?? throw new ArgumentNullException(nameof(loggingService));
