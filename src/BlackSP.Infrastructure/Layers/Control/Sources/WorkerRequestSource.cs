@@ -10,6 +10,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Control.Sources
@@ -32,7 +33,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         /// local list of messages ready to be taken from this ISource<br/>
         /// Note how this implementation does not allow checkpointing due to the lack of synchronisation with the primary processing thread(s)
         /// </summary>
-        private BlockingCollection<ControlMessage> messages;
+        private Channel<ControlMessage> messages;
         private DateTime lastHeartBeat;
         private TimeSpan heartbeatInterval;
         private bool disposedValue;
@@ -48,7 +49,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             _graphConfiguration = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            messages = new BlockingCollection<ControlMessage>();
+            messages = Channel.CreateUnbounded<ControlMessage>();
             heartbeatInterval = TimeSpan.FromMilliseconds(Constants.HeartbeatIntervalMs);
             lastHeartBeat = DateTime.Now.Add(-heartbeatInterval);//make sure we start off with a heartbeat
 
@@ -56,7 +57,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             _graphManager.ListenTo(connectionMonitor);
         }
 
-        public Task<ControlMessage> Take(CancellationToken t)
+        public async Task<ControlMessage> Take(CancellationToken t)
         {
             t.ThrowIfCancellationRequested();
             var timeSinceLastHeartbeat = DateTime.Now - lastHeartBeat;
@@ -67,7 +68,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             ControlMessage message;
             try
             {
-                message = messages.Take(linkedSource.Token);
+                message = await messages.Reader.ReadAsync(linkedSource.Token);
             }
             catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
             {
@@ -82,13 +83,13 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
                 timeoutSource.Dispose();
                 linkedSource.Dispose();
             }
-            return Task.FromResult(message);
+            return message;
         }
 
         public Task Flush(IEnumerable<string> upstreamInstancesToFlush)
         {
-            messages.CompleteAdding();
-            messages = new BlockingCollection<ControlMessage>();
+            messages.Writer.Complete();
+            messages = Channel.CreateUnbounded<ControlMessage>();
             return Task.CompletedTask; //nothing to flush here
         }
 
@@ -123,7 +124,10 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
                 default:
                     throw new InvalidOperationException($"Attempted to determine notification message for instance {affectedInstanceName} with WorkerState {newState}, which is not implemented in {this.GetType()}");
             }
-            messages.Add(msg);
+            if(!messages.Writer.TryWrite(msg))
+            {
+                _logger.Warning("Failed to write worker request to channel");
+            }
         }
 
         private WorkerRequestPayload GetWorkerRequestPayloadForHaltingInstance(string instanceName)
@@ -151,7 +155,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             {
                 if (disposing)
                 {
-                    messages.Dispose();
+                    
 
                 }
                 disposedValue = true;

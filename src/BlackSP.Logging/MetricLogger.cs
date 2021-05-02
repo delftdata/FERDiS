@@ -32,7 +32,7 @@ namespace BlackSP.Logging
 
         public void Checkpoint(long bytes, TimeSpan time, bool wasForced)
         {
-            _checkpointLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, {wasForced}, {time.TotalMilliseconds}, {bytes}");
+            _checkpointLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, {wasForced}, {(int)time.TotalMilliseconds}, {bytes}");
         }
 
         public void Performance(int throughput, int latencyMin, int latencyAvg, int latencyMax)

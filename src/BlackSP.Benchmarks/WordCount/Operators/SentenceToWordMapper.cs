@@ -4,11 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BlackSP.Kernel.Configuration;
 
 namespace BlackSP.Benchmarks.WordCount.Operators
 {
     class SentenceToWordMapper : IMapOperator<SentenceEvent, WordEvent>
     {
+
         public IEnumerable<WordEvent> Map(SentenceEvent @event)
         {
             return @event.Sentence.Split(" ").Select(word => new WordEvent { EventTime = @event.EventTime, Word = word, Count = 1 });

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace BlackSP.OperatorShells.UnitTests.Operator
 {
@@ -44,7 +45,7 @@ namespace BlackSP.OperatorShells.UnitTests.Operator
             {
                 WindowSize = _windowSize,
                 WindowSlideSize = _windowSize //tumbling window
-            });
+            }, new Mock<ILogger>().Object);
             _startTime = DateTime.Now;
 
             _testEvents = new List<TestEvent>();

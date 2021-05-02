@@ -10,12 +10,12 @@ namespace BlackSP.Core.MessageProcessing
     /// <summary>
     /// Partitions using a simple modulo operation over the number of possible remote instances
     /// </summary>
-    public class MessageHashPartitioner<TMessage> : IPartitioner<TMessage>
+    public class MessageModuloPartitioner<TMessage> : IPartitioner<TMessage>
         where TMessage : class, IMessage
     {
         private readonly IVertexConfiguration _vertexConfiguration;
 
-        public MessageHashPartitioner(IVertexConfiguration vertexConfiguration)
+        public MessageModuloPartitioner(IVertexConfiguration vertexConfiguration)
         {
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
         }

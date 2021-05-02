@@ -68,10 +68,12 @@ namespace BlackSP.Checkpointing
             {
                 throw new ArgumentException($"Logging service has not been configured for downstream instance with name {targetInstanceName}", nameof(targetInstanceName));
             }
+
             lock (_lockObj)
             {
                 var log = _logs[targetInstanceName];
                 int nextSeqNr = GetNextOutgoingSequenceNumber(targetInstanceName);
+
                 log.AddLast((nextSeqNr, message));
                 return nextSeqNr;
             }
@@ -178,6 +180,14 @@ namespace BlackSP.Checkpointing
         }
 
         public int GetNextOutgoingSequenceNumber(string targetInstance)
+        {
+            lock(_lockObj)
+            {
+                return GetNextOutgoingSequenceNumberInternal(targetInstance);
+            }
+        }
+
+        private int GetNextOutgoingSequenceNumberInternal(string targetInstance)
         {
             int nextSeqNr = 0;
             var log = _logs[targetInstance];

@@ -50,7 +50,7 @@ namespace BlackSP.Infrastructure.Extensions
             //dispatcher (+serializer+partitioner)
             builder.RegisterType<MessagePartitioningDispatcher<DataMessage>>().As<IDispatcher<DataMessage>>().InstancePerLifetimeScope();
             builder.RegisterType<PooledBufferMessageSerializer>().As<IObjectSerializer>();
-            builder.RegisterType<MessageHashPartitioner<DataMessage>>().AsImplementedInterfaces();
+            builder.RegisterType<MessageModuloPartitioner<DataMessage>>().AsImplementedInterfaces();
 
             return builder;
         }

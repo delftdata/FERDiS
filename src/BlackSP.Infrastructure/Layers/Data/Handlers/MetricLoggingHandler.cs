@@ -27,7 +27,8 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
         private int _eventCountInWindow;
         private List<int> _latencyMillis;
 
-
+        private Timer _timer;
+        private object _metricWindowLock;
         public MetricLoggingHandler(IMetricLogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -35,34 +36,48 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _latencyMillis = new List<int>();
             _metricWindowSize = TimeSpan.FromMilliseconds(Constants.MetricLoggingIntervalMs);
 
+            _metricWindowLock = new object();
+            _timer = new Timer(LogPerformanceMetrics, null, _metricWindowSize, _metricWindowSize);
+            ResetWindow();
+        }
+
+        private void LogPerformanceMetrics(object state)
+        {
+            lock (_metricWindowLock)
+            {
+                var throughput = (int)(_eventCountInWindow / _metricWindowSize.TotalSeconds);
+                var latencyMin = 0; 
+                var latencyMax = 0; 
+                var latencyAvg = 0; 
+                if(_latencyMillis.Any())
+                {
+                    latencyMin = _latencyMillis.Min();
+                    latencyMax = _latencyMillis.Max();
+                    latencyAvg = (int)_latencyMillis.Average();
+                }
+                _logger.Performance(throughput, latencyMin, latencyAvg, latencyMax);
+                ResetWindow();
+            }
+        }
+
+        private void ResetWindow()
+        {
+            _metricWindowStart = DateTime.UtcNow;
+            _latencyMillis = new List<int>();
+            _eventCountInWindow = 0;
         }
 
         protected override Task<IEnumerable<TMessage>> Handle(EventPayload payload, CancellationToken t)
         {
-            var now = DateTime.UtcNow;
-            if (_metricWindowStart != default && _metricWindowStart + _metricWindowSize < now) //window closes
+            lock(_metricWindowLock)
             {
-                var throughput = (int)(_eventCountInWindow / _metricWindowSize.TotalSeconds);
-                var latencyMin = _latencyMillis.Min();
-                var latencyMax = _latencyMillis.Max();
-                var latencyAvg = (int)_latencyMillis.Average();
-                _logger.Performance(throughput, latencyMin, latencyAvg, latencyMax);
-                _metricWindowStart = default;
+                _eventCountInWindow += payload.Event.EventCount();
+                var latencyMs = (int)(DateTime.UtcNow - AssociatedMessage.CreatedAtUtc).TotalMilliseconds;
+                _latencyMillis.Add(latencyMs);
+
+                AssociatedMessage.AddPayload(payload); //re-add the payload 
+                return Task.FromResult(AssociatedMessage.Yield());
             }
-
-            if (_metricWindowStart == default) //new window
-            {
-                _metricWindowStart = DateTime.UtcNow;
-                _latencyMillis = new List<int>();
-                _eventCountInWindow = 0;
-            }
-
-            _eventCountInWindow += payload.Event.EventCount();
-            var latencyMs = (int)(now - AssociatedMessage.CreatedAtUtc).TotalMilliseconds;
-            _latencyMillis.Add(latencyMs);
-
-            AssociatedMessage.AddPayload(payload); //re-add the payload 
-            return Task.FromResult(AssociatedMessage.Yield());
         }
     }
 }

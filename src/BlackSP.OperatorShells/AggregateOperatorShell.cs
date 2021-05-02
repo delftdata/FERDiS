@@ -1,7 +1,9 @@
 ﻿using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
+using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -12,10 +14,12 @@ namespace BlackSP.OperatorShells
         where TOut : class, IEvent
     {
         private readonly IAggregateOperator<TIn, TOut> _pluggedInOperator;
+        private readonly ILogger _logger;
 
-        public AggregateOperatorShell(IAggregateOperator<TIn, TOut> pluggedInOperator) : base(pluggedInOperator)
+        public AggregateOperatorShell(IAggregateOperator<TIn, TOut> pluggedInOperator, ILogger logger) : base(pluggedInOperator)
         {
             _pluggedInOperator = pluggedInOperator ?? throw new ArgumentNullException(nameof(pluggedInOperator));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             GetWindow(typeof(TIn)); //ensure window creation
         }
@@ -29,16 +33,29 @@ namespace BlackSP.OperatorShells
                 return Enumerable.Empty<IEvent>();
             }
 
-            if(_pluggedInOperator.WindowSize == _pluggedInOperator.WindowSlideSize)
+            var sw = new Stopwatch();
+            int count = 0;
+            try
             {
-                //tumbling mode
-                return _pluggedInOperator.Aggregate(closedWindow.Cast<TIn>());
-            }
-            else
+                sw.Start();
+                if (_pluggedInOperator.WindowSize == _pluggedInOperator.WindowSlideSize)
+                {
+                    //tumbling mode
+                    count = closedWindow.Count();
+                    return _pluggedInOperator.Aggregate(closedWindow.Cast<TIn>());
+                }
+                else
+                {
+                    //sliding mode
+                    var currentWindowContent = GetWindow(typeof(TIn)).Events.Cast<TIn>();
+                    count = currentWindowContent.Count();
+                    return _pluggedInOperator.Aggregate(currentWindowContent);
+                }
+            } 
+            finally
             {
-                //sliding mode
-                var currentWindowContent = GetWindow(typeof(TIn)).Events.Cast<TIn>();
-                return _pluggedInOperator.Aggregate(currentWindowContent);
+                sw.Stop();
+                _logger.Information($"Processed window of size {count} in {sw.ElapsedTicks} ticks");
             }
         }
     }
