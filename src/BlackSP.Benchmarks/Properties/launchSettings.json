@@ -3,8 +3,10 @@
     "NEXMark data to Kafka": {
       "commandName": "Project",
       "environmentVariables": {
+        "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
+        "KAFKA_BROKER_COUNT": "6",
+
         "GENERATOR_CALLS": "10000",
-        "KAFKA_BROKERLIST": "localhost:32400,localhost:32401,localhost:32402,localhost:32403,localhost:32404,localhost:32405",
         "GENERATOR_SKIP_TOPICS": "" //bids,people,auctions
       },
       "commandLineArgs": "nexmark"
@@ -13,17 +15,48 @@
     "Graph data to Kafka": {
       "commandName": "Project",
       "environmentVariables": {
-        "EDGES_FILE_LOCATION": "C:\\Users\\marcd\\Downloads\\test-edges.txt",
-        "KAFKA_BROKERLIST": "localhost:32400,localhost:32401,localhost:32402,localhost:32403,localhost:32404,localhost:32405"
+        "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
+        "KAFKA_BROKER_COUNT": "6",
+
+        "EDGES_FILE_LOCATION": "C:\\Users\\marcd\\Downloads\\test-edges.txt"
       },
       "commandLineArgs": "graph"
+    },
+
+    "Text data to Kafka": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
+        "KAFKA_BROKER_COUNT": "6"
+      },
+      "commandLineArgs": "text"
+    },
+
+    "Collect latency metrics": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
+        "KAFKA_BROKER_COUNT": "6"
+      },
+      "commandLineArgs": "latency"
+    },
+
+    "Collect throughput metrics": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
+        "KAFKA_BROKER_COUNT": "6"
+      },
+      "commandLineArgs": "throughput"
     },
 
     "Run benchmark on BlackSP": {
       "commandName": "Project",
       "environmentVariables": {
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
-        "KAFKA_BROKER_DNS_TEMPLATE": "kafka-{0}.kafka.kafka.svc.cluster.local:9092",
+
+        "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
+        "KAFKA_BROKER_COUNT": "6",
 
         "LOG_TARGET_FLAGS": "5", // 1 (console) || 2 (file) || 4 (azure blob)
         "LOG_EVENT_LEVEL": "2", //0-5,
@@ -31,12 +64,12 @@
         "CHECKPOINT_COORDINATION_MODE": "2", //0 = uc, 1 = cc, 2 = cic
         "CHECKPOINT_INTERVAL_SECONDS": "30",
 
-        "BENCHMARK_INFRA": "1", //0 = simulator, 1 = cra
+        "BENCHMARK_INFRA": "0", //0 = simulator, 1 = cra
         "BENCHMARK_JOB": "0", //0-5
         "BENCHMARK_SIZE": "1", // 0 = S, 1 = M, 2 = L
 
         "CRA_WORKER_DOCKER_IMAGE": "mdzwart/cra-net3.1:latest",
-        "CRA_ENVIRONMENT_VARIABLE_KEYS_TO_COPY": "AZURE_STORAGE_CONN_STRING, KAFKA_BROKER_DNS_TEMPLATE" //list of environment variable keys that will be forwarded to the environment in the k8s deployment
+        "CRA_ENVIRONMENT_VARIABLE_KEYS_TO_COPY": "AZURE_STORAGE_CONN_STRING, KAFKA_BROKER_DNS_TEMPLATE, KAFKA_BROKER_COUNT" //list of environment variable keys that will be forwarded to the environment in the k8s deployment
       },
       "commandLineArgs": "benchmark"
     }

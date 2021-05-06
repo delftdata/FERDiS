@@ -10,7 +10,7 @@ using System.Threading;
 
 namespace BlackSP.Benchmarks.NEXMark.Operators
 {
-    public class BidSourceOperator : KafkaConsumerBase<Bid>, ISourceOperator<BidEvent>
+    public class BidSourceOperator : KafkaSourceConsumerBase<Bid>, ISourceOperator<BidEvent>
     {
         protected override string TopicName => Bid.KafkaTopicName;
 

@@ -23,14 +23,13 @@ namespace BlackSP.Benchmarks.Graph
         /// <param name="brokerList"></param>
         /// <param name="edgeFileLocation"></param>
         /// <returns></returns>
-        public static async Task StartProductingGraphData(string brokerList, string edgeFileLocation)
+        public static async Task StartProductingGraphData(string edgeFileLocation)
         {
-            _ = brokerList ?? throw new ArgumentNullException(nameof(brokerList));
             _ = edgeFileLocation ?? throw new ArgumentNullException(nameof(edgeFileLocation));
 
             var config = new ProducerConfig
             {
-                BootstrapServers = brokerList,
+                BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
                 Partitioner = Partitioner.Consistent
             };
 

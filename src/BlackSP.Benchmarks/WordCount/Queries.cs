@@ -35,7 +35,9 @@ namespace BlackSP.Benchmarks.WordCount
 
             return (IVertexGraphBuilder graphBuilder) =>
             {
-                var source = graphBuilder.AddSource<SentenceGeneratorSource, SentenceEvent>(sourceShards);
+                //var source = graphBuilder.AddSource<TestSentenceGeneratorSource, SentenceEvent>(sourceShards);
+                var source = graphBuilder.AddSource<KafkaSentenceSource, SentenceEvent>(sourceShards);
+                
                 var mapper = graphBuilder.AddMap<SentenceToWordMapper, SentenceEvent, WordEvent>(mapShards);
                 var reducer = graphBuilder.AddAggregate<WordCountAggregator, WordEvent, WordEvent>(reducerShards);
                 var sink = graphBuilder.AddSink<WordCountLoggerSink, WordEvent>(sinkShards);

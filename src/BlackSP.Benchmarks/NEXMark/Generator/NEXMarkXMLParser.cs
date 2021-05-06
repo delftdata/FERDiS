@@ -8,18 +8,18 @@ using System.Xml.Linq;
 
 namespace BlackSP.Benchmarks.NEXMark.Generator
 {
-    public class XMLParser
+    public class NEXMarkXMLParser
     {
 
         private XDocument XDoc { get; }
 
-        public XMLParser(string xmlString)
+        public NEXMarkXMLParser(string xmlString)
         {
             _ = xmlString ?? throw new ArgumentNullException(nameof(xmlString));
             XDoc = XDocument.Parse(xmlString); 
         }
 
-        public XMLParser(XDocument xDoc)
+        public NEXMarkXMLParser(XDocument xDoc)
         {
             XDoc = xDoc ?? throw new ArgumentNullException(nameof(xDoc));
         }

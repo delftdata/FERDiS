@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Benchmarks.Graph.Operators
 {
-    public class AdjacencySourceOperator : Kafka.KafkaConsumerBase<Adjacency>, ISourceOperator<AdjacencyEvent>
+    public class AdjacencySourceOperator : Kafka.KafkaSourceConsumerBase<Adjacency>, ISourceOperator<AdjacencyEvent>
     {
         protected override string TopicName => Adjacency.KafkaTopicName;
 

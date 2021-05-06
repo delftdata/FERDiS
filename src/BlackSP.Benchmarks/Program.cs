@@ -1,5 +1,7 @@
-﻿using BlackSP.Benchmarks.NEXMark;
+﻿using BlackSP.Benchmarks.MetricCollection;
+using BlackSP.Benchmarks.NEXMark;
 using BlackSP.Benchmarks.NEXMark.Generator;
+using BlackSP.Benchmarks.WordCount.Generator;
 using BlackSP.Checkpointing;
 using BlackSP.Infrastructure;
 using BlackSP.Infrastructure.Models;
@@ -23,11 +25,20 @@ namespace BlackSP.Benchmarks
                 }
                 switch (args[0])
                 {
+                    case "text":
+                        ProduceTextData();
+                        break;
                     case "graph":
                         await ProduceGraphData();
                         break;
                     case "nexmark":
                         await ProduceNEXMarkAuctionData();
+                        break;
+                    case "throughput":
+                        CollectThroughputMetrics();
+                        break;
+                    case "latency":
+                        CollectLatencyMetrics();
                         break;
                     case "benchmark":
                         var infrastructure = (Infrastructure)int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_INFRA"));
@@ -50,10 +61,9 @@ namespace BlackSP.Benchmarks
         {
             try
             {
-                string brokerList = Environment.GetEnvironmentVariable("KAFKA_BROKERLIST") ?? string.Empty;
                 int genCalls = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_CALLS"));
                 string skipTopicList = Environment.GetEnvironmentVariable("GENERATOR_SKIP_TOPICS") ?? string.Empty;
-                await KafkaNEXMarkProducer.StartProductingAuctionData(genCalls, brokerList, skipTopicList);
+                await KafkaNEXMarkProducer.StartProductingAuctionData(genCalls, skipTopicList);
             }
             catch (Exception e)
             {
@@ -66,15 +76,38 @@ namespace BlackSP.Benchmarks
         {
             try
             {
-                string brokerList = Environment.GetEnvironmentVariable("KAFKA_BROKERLIST") ?? string.Empty;
                 string edgesFileLoc = Environment.GetEnvironmentVariable("EDGES_FILE_LOCATION");
-                await Graph.Producer.StartProductingGraphData(brokerList, edgesFileLoc);
+                await Graph.Producer.StartProductingGraphData(edgesFileLoc);
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Kafka auction data producer exited with exception");
                 Console.WriteLine(e);
             }
+        }
+
+        static void ProduceTextData()
+        {
+            try
+            {
+                LoremIpsumSentenceGenerator.GenerateSentences();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Kafka auction data producer exited with exception");
+                Console.WriteLine(e);
+            }
+        }
+
+        static void CollectThroughputMetrics()
+        {
+            throw new NotImplementedException(); //TODO: implement
+        }
+
+        static void CollectLatencyMetrics()
+        {
+            var collector = new E2ELatencyCalculatingConsumer();
+            collector.Start();
         }
 
         static async Task RunBenchmark(Infrastructure infrastructure, Job job, Size size)

@@ -15,7 +15,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
     public class KafkaNEXMarkProducer
     {
 
-        public static async Task StartProductingAuctionData(int generatorCalls, string brokerList, string skipTopicList)
+        public static async Task StartProductingAuctionData(int generatorCalls, string skipTopicList)
         {
             using var ctSource = new CancellationTokenSource();
             Console.WriteLine($"Starting generator process \"java -jar NEXMarkGenerator.jar -gen-calls {generatorCalls}\"");
@@ -26,7 +26,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
                 UseShellExecute = false
             };
             var generatorProcess = Process.Start(startInfo);
-            var outPrinter = Task.Run(() => ParseXMLAndProduceToKafka(generatorProcess.StandardOutput, generatorCalls, brokerList, skipTopicList, ctSource.Token));
+            var outPrinter = Task.Run(() => ParseXMLAndProduceToKafka(generatorProcess.StandardOutput, generatorCalls, skipTopicList, ctSource.Token));
             try
             {
                 generatorProcess.WaitForExit();
@@ -41,7 +41,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
             }
         }
 
-        static async Task ParseXMLAndProduceToKafka(StreamReader reader, int generatorCalls, string brokerList, string skipTopicList, CancellationToken token)
+        static async Task ParseXMLAndProduceToKafka(StreamReader reader, int generatorCalls, string skipTopicList, CancellationToken token)
         {
             Console.WriteLine($"Instantiating kafka producers for topics {Bid.KafkaTopicName},{Auction.KafkaTopicName},{Person.KafkaTopicName}");
             if(!string.IsNullOrEmpty(skipTopicList))
@@ -50,7 +50,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
             }
 
             var config = new ProducerConfig { 
-                BootstrapServers = brokerList, 
+                BootstrapServers = KafkaUtils.GetKafkaBrokerString(), 
                 Partitioner = Partitioner.Consistent
             };
 
@@ -94,7 +94,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
                 }
                 //XML reading end
 
-                var parser = new XMLParser($"{xmlHeader}{xmlBody}");
+                var parser = new NEXMarkXMLParser($"{xmlHeader}{xmlBody}");
                 var productTasks = new List<Task>();
                 if(!skipTopicList.Contains(Person.KafkaTopicName))
                 {

@@ -10,11 +10,16 @@ using System.Text;
 
 namespace BlackSP.Benchmarks.Kafka
 {
-    public abstract class KafkaConsumerBase<T> : ICheckpointable
+
+    /// <summary>
+    /// Intended to be used within BlackSP context (contains ApplicationState and dependencies on configuration)
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public abstract class KafkaSourceConsumerBase<T> : ICheckpointable
         where T : class
     {
-        protected readonly int PartitionCountPerTopic = 6;
-        protected readonly int BrokerCount = 6;
+        protected readonly int PartitionCountPerTopic;
+        protected readonly int BrokerCount;
         protected readonly string BrokerDomainNameTemplate;
 
         protected abstract string TopicName { get; }
@@ -26,13 +31,14 @@ namespace BlackSP.Benchmarks.Kafka
         protected ILogger Logger { get; }
         protected IVertexConfiguration VertexConfiguration { get; }
 
-        protected KafkaConsumerBase(IVertexConfiguration vertexConfig, ILogger logger)
+        protected KafkaSourceConsumerBase(IVertexConfiguration vertexConfig, ILogger logger)
         {
             VertexConfiguration = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));   
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _offsets = new Dictionary<int, int>();
 
             BrokerDomainNameTemplate = Environment.GetEnvironmentVariable("KAFKA_BROKER_DNS_TEMPLATE");
+            PartitionCountPerTopic = BrokerCount = int.Parse(Environment.GetEnvironmentVariable("KAFKA_BROKER_COUNT"));
 
             GetConsumer(); //ensure initialisation of Consumer property
         }
@@ -57,18 +63,25 @@ namespace BlackSP.Benchmarks.Kafka
 
             if(Consumer == null)
             {
-                Consumer = new ConsumerBuilder<int, T>(GetConsumerConfig(VertexConfiguration.VertexName+"wtf"))
-                    .SetValueDeserializer((new ProtoBufAsyncValueSerializer<T>() as IAsyncDeserializer<T>).AsSyncOverAsync())
+                var builder = new ConsumerBuilder<int, T>(GetConsumerConfig(VertexConfiguration.VertexName + "wtf"))
                     .SetErrorHandler((_, e) => {
-                        if (e.IsFatal) {
+                        if (e.IsFatal)
+                        {
                             Logger.Fatal($"Fatal error raised by Kafka consumer: {e}");
                             throw new KafkaException(e);
-                        } else
+                        }
+                        else
                         {
                             Logger.Warning($"Error raised by Kafka consumer: {e}");
                         }
-                    })
-                    .Build();
+                    });
+
+                if(typeof(T) != typeof(string)) //bit of a hack but whatevs
+                {
+                    builder = builder.SetValueDeserializer((new ProtoBufAsyncValueSerializer<T>() as IAsyncDeserializer<T>).AsSyncOverAsync());
+                }
+
+                Consumer = builder.Build();
 
                 var assignedPartitions = GetPartitions();
                 foreach(var partition in assignedPartitions)
@@ -109,27 +122,11 @@ namespace BlackSP.Benchmarks.Kafka
         {
             return new ConsumerConfig
             {
-                BootstrapServers = GetBrokerList(),
+                BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
                 GroupId = groupId,
                 EnableAutoCommit = false,
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
-        }
-
-        private string GetBrokerList()
-        {
-            int i = 0;
-            StringBuilder brokerList = new StringBuilder();
-            while (i < BrokerCount)
-            {
-                brokerList.Append(string.Format(BrokerDomainNameTemplate, i));
-                i++;
-                if(i < BrokerCount)
-                {
-                    brokerList.Append(",");
-                }
-            }
-            return brokerList.ToString();
         }
     }
 }

@@ -34,6 +34,6 @@ def produce_checkpoint_plot(location: str):
 
         frame.columns = ['bytes']
         print(frame)
-        plotter.add_checkpoint_data(frame)
+        plotter.add_checkpoint_data(frame.apply(lambda b: b/1000))
         plotter.show_plot()
         #plotter.save_plot(f"{location}/{experiment}-checkpoint-size")

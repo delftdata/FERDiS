@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace BlackSP.Benchmarks.WordCount.Operators
 {
-    class SentenceGeneratorSource : ISourceOperator<SentenceEvent>
+    class TestSentenceGeneratorSource : ISourceOperator<SentenceEvent>
     {
         private static string[] defaultSentences = new[] { "A", "A B", "A B C", "A B C D" };
         
@@ -24,7 +24,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
 
         private int MaxSentenceCount => defaultSentences.Length * 50000;
 
-        public SentenceGeneratorSource(ILogger logger)
+        public TestSentenceGeneratorSource(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             lastSentenceIndex = 0;

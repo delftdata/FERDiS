@@ -7,25 +7,41 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Confluent.Kafka;
+using BlackSP.Benchmarks.Kafka;
 
 namespace BlackSP.Benchmarks.WordCount.Operators
 {
-    class WordCountLoggerSink : ISinkOperator<WordEvent>
+    class WordCountLoggerSink : ISinkOperator<WordEvent>, IDisposable
     {
 
         private readonly ILogger _logger;
 
         [ApplicationState]
         private IDictionary<string, int> _wordCountMap;
-        
+
+        private IProducer<int, string> producer;
+        private bool disposedValue;
+
         public WordCountLoggerSink(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _wordCountMap = new Dictionary<string, int>();
+
+            var config = new ProducerConfig
+            {
+                BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
+                Partitioner = Partitioner.Consistent
+            };
+
+            producer = new ProducerBuilder<int, string>(config)
+                //.SetValueSerializer(new ProtoBufAsyncValueSerializer<SentenceEvent>())
+                .SetErrorHandler((prod, err) => Console.WriteLine($"Output produce error: {err}"))
+                .Build();
         }
 
-        public Task Sink(WordEvent @event)
+        public async Task Sink(WordEvent @event)
         {
             if(_wordCountMap.ContainsKey(@event.Word))
             {
@@ -40,7 +56,37 @@ namespace BlackSP.Benchmarks.WordCount.Operators
                 .ToArray();
             _logger.Information($"WordCount: {string.Join("; ", wordCountStrings)}");
 
-            return Task.CompletedTask;
+            await producer.ProduceAsync("output", new Message<int, string> { Key = 0, Timestamp = Timestamp.Default, Value = @event.EventTime.ToString()});
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                    producer.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~WordCountLoggerSink()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
