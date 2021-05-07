@@ -1,4 +1,5 @@
-﻿using BlackSP.Benchmarks.MetricCollection;
+﻿using BlackSP.Benchmarks.Kafka;
+using BlackSP.Benchmarks.MetricCollection;
 using BlackSP.Benchmarks.NEXMark;
 using BlackSP.Benchmarks.NEXMark.Generator;
 using BlackSP.Benchmarks.WordCount.Generator;
@@ -8,6 +9,9 @@ using BlackSP.Infrastructure.Models;
 using BlackSP.Kernel.Configuration;
 using Serilog.Events;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace BlackSP.Benchmarks
@@ -16,17 +20,25 @@ namespace BlackSP.Benchmarks
     {
         static async Task Main(string[] args)
         {
+            CultureInfo.CurrentCulture = CultureInfo.CreateSpecificCulture("nl-NL");
+            CultureInfo.CurrentUICulture = CultureInfo.CreateSpecificCulture("nl-NL");
+
             try
             {
                 if (args.Length < 1)
                 {
-                    Console.WriteLine("Required argument on position 0. Possible values: pagerank, nexmark, benchmark");
+                    Console.WriteLine("Required argument on position 0. Possible values: delete-topic, graph, text, nexmark, benchmark");
                     return;
                 }
                 switch (args[0])
-                {
+                {                        
+                    //TODO: add option to clear blob-storage (logs) 
+
+                    case "delete-topic":
+                        await DeleteKafkaTopics();
+                        break;
                     case "text":
-                        ProduceTextData();
+                        await ProduceTextData();
                         break;
                     case "graph":
                         await ProduceGraphData();
@@ -47,6 +59,7 @@ namespace BlackSP.Benchmarks
                         await RunBenchmark(infrastructure, benchmark, size);
                         break;
                     default:
+                        Console.WriteLine($"Unknown argument on position 0: {args[0]}. Possible values: delete-topic, graph, text, nexmark, benchmark");
                         break;
                 }
             } 
@@ -86,29 +99,46 @@ namespace BlackSP.Benchmarks
             }
         }
 
-        static void ProduceTextData()
+        static async Task ProduceTextData()
         {
             try
             {
-                LoremIpsumSentenceGenerator.GenerateSentences();
+                Console.WriteLine("Starting text data generator");
+                await LoremIpsumSentenceGenerator.GenerateSentences();
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Kafka auction data producer exited with exception");
                 Console.WriteLine(e);
+            } 
+            finally
+            {
+                Console.WriteLine("Exiting text data generator");
             }
         }
 
         static void CollectThroughputMetrics()
         {
-            throw new NotImplementedException(); //TODO: implement
+            Console.WriteLine("Starting throughput metric collection");
+            var collector = new ThroughputCalculatingConsumer();
+            collector.Start();
         }
 
         static void CollectLatencyMetrics()
         {
+            Console.WriteLine("Starting latency metric collection");
             var collector = new E2ELatencyCalculatingConsumer();
             collector.Start();
         }
+
+        static async Task DeleteKafkaTopics()
+        {
+            Console.WriteLine($"Deleting all Kafka topics");
+            await KafkaUtils.DeleteAllKafkaTopics();
+            Console.WriteLine($"Deleted all Kafka topics");
+        }
+
+
 
         static async Task RunBenchmark(Infrastructure infrastructure, Job job, Size size)
         {

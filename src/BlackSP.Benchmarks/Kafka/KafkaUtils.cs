@@ -1,6 +1,9 @@
-﻿using System;
+﻿using Confluent.Kafka;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BlackSP.Benchmarks.Kafka
 {
@@ -29,6 +32,19 @@ namespace BlackSP.Benchmarks.Kafka
         public static string GetKafkaBrokerString()
         {
             return string.Join(",", GetKafkaBrokers());
+        }
+
+        public static async Task DeleteAllKafkaTopics()
+        {
+            var adminClient = new AdminClientBuilder(new AdminClientConfig() { BootstrapServers = GetKafkaBrokerString() }).Build();
+
+            var meta = adminClient.GetMetadata(TimeSpan.FromMinutes(1));
+            var topicsThatExist = meta.Topics.Select(t => t.Topic);
+            if(!topicsThatExist.Any())
+            {
+                return; //nothing to delete..
+            }
+            await adminClient.DeleteTopicsAsync(topicsThatExist);
         }
 
     }

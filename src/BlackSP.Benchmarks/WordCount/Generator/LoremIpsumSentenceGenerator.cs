@@ -13,7 +13,7 @@ namespace BlackSP.Benchmarks.WordCount.Generator
     public class LoremIpsumSentenceGenerator
     {
 
-        public static void GenerateSentences()
+        public static async Task GenerateSentences()
         {
             var config = new ProducerConfig
             {
@@ -26,17 +26,43 @@ namespace BlackSP.Benchmarks.WordCount.Generator
                 .SetErrorHandler((prod, err) => Console.WriteLine($"Sentence produce error: {err}"))
                 .Build();
 
+            int targetThroughput = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_TARGET_THROUGHPUT"));
+
+            var windowAt = DateTime.UtcNow;
+            var produceCounter = 0;
+            //produce (c ++)
+            //if( c > target && timing?)
+            //wait remaining time
+            //c = 0
+            //new timing
+
             while(true)
             {
-                //TODO: consider throttling to specified target throughput?
+                var nextWindow = windowAt.AddMilliseconds(100);
+                var now = DateTime.UtcNow;
+                if (produceCounter > (targetThroughput/10) && nextWindow > now)
+                {
+                    Console.WriteLine($"produced {produceCounter} events, waiting for {(int)(nextWindow - now).TotalMilliseconds}ms (throttle)");
+                    await Task.Delay(nextWindow - now);
+                    producer.Flush();
+                    continue;
+                }
 
-                var sentence = Lorem.Sentence(10, 20);
-                //Console.WriteLine("GENERATED: " + sentence);
+                if (nextWindow < now)
+                {
+                    Console.WriteLine($"resetting counter {produceCounter} to 0");
+                    produceCounter = 0;
+                    windowAt = nextWindow;
+                }
+
+
+                var sentence = Lorem.Sentence(3, 10);
                 var msg = new Message<int, string> { Key = sentence[0], Value = sentence, Timestamp = Timestamp.Default };
 
-                producer.Produce("sentences", msg);
+                producer.ProduceAsync("sentences", msg);
+                produceCounter++;
             }
-            
+
 
         }
 

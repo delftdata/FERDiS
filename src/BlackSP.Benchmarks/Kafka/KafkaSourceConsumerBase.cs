@@ -20,7 +20,6 @@ namespace BlackSP.Benchmarks.Kafka
     {
         protected readonly int PartitionCountPerTopic;
         protected readonly int BrokerCount;
-        protected readonly string BrokerDomainNameTemplate;
 
         protected abstract string TopicName { get; }
         protected IConsumer<int, T> Consumer { get; private set; }
@@ -37,7 +36,6 @@ namespace BlackSP.Benchmarks.Kafka
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _offsets = new Dictionary<int, int>();
 
-            BrokerDomainNameTemplate = Environment.GetEnvironmentVariable("KAFKA_BROKER_DNS_TEMPLATE");
             PartitionCountPerTopic = BrokerCount = int.Parse(Environment.GetEnvironmentVariable("KAFKA_BROKER_COUNT"));
 
             GetConsumer(); //ensure initialisation of Consumer property

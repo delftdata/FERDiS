@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace BlackSP.Benchmarks.WordCount.Operators
 {
-    public class KafkaSentenceSource : Kafka.KafkaConsumerBase<string>, ISourceOperator<SentenceEvent>
+    public class KafkaSentenceSource : Kafka.KafkaSourceConsumerBase<string>, ISourceOperator<SentenceEvent>
     {
         protected override string TopicName => "sentences";
 

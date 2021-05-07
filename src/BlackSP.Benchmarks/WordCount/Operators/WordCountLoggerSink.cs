@@ -54,9 +54,15 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             var wordCountStrings = _wordCountMap.OrderBy(p => p.Key)
                 .Select(x => x.Key + "=" + x.Value)
                 .ToArray();
-            _logger.Information($"WordCount: {string.Join("; ", wordCountStrings)}");
-
-            await producer.ProduceAsync("output", new Message<int, string> { Key = 0, Timestamp = Timestamp.Default, Value = @event.EventTime.ToString()});
+            
+            //_logger.Information($"WordCount: {string.Join("; ", wordCountStrings)}");
+            
+            var outputValue = $"{@event.EventTime:yyyyMMddHHmmssFFFFF}${DateTime.UtcNow:yyyyMMddHHmmssFFFFF}";
+            
+            for (int i = 0; i < @event.EventCount(); i++)
+            {
+                await producer.ProduceAsync("output", new Message<int, string> { Key = 0, Value = outputValue });
+            }
         }
 
         protected virtual void Dispose(bool disposing)

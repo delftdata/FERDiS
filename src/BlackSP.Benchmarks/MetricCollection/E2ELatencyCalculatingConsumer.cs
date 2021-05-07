@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Text;
 using BlackSP.Logging;
 using Serilog.Events;
+using System.Globalization;
 
 namespace BlackSP.Benchmarks.MetricCollection
 {
@@ -29,7 +30,20 @@ namespace BlackSP.Benchmarks.MetricCollection
             latencyLogger.Information("timestamp, latency_ms");
         }
 
-        public IConsumer<int, string> InitKafka()
+        public void Start()
+        {
+            while(true)
+            {
+                var consumeRes = consumer.Consume();
+                var output = consumeRes.Message.Value.Split("$");
+                var inputTime = DateTime.ParseExact(output[0], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
+                var outputTime = DateTime.ParseExact(output[1], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
+                var latency = outputTime - inputTime;
+                latencyLogger.Information($"{outputTime:hh:mm:ss:ffffff}, {(int)latency.TotalMilliseconds}");
+            }
+        }
+
+        private IConsumer<int, string> InitKafka()
         {
             var builder = new ConsumerBuilder<int, string>(new ConsumerConfig
             {
@@ -38,17 +52,20 @@ namespace BlackSP.Benchmarks.MetricCollection
                 EnableAutoCommit = false,
                 AutoOffsetReset = AutoOffsetReset.Earliest
             });
-            
-            return builder.Build();
+
+            var consumer = builder.Build();
+            var topicPartitions = GetAssignedTopicPartitions("output");
+            consumer.Assign(topicPartitions);
+            return consumer;
         }
 
-        public void Start()
+        private IEnumerable<TopicPartitionOffset> GetAssignedTopicPartitions(string topicName)
         {
-            var consumeRes = consumer.Consume();
-            var outputTime = consumeRes.Message.Timestamp.UtcDateTime;
-            var inputTime = DateTime.Parse(consumeRes.Message.Value);
-            var latency = outputTime - inputTime;
-            latencyLogger.Information($"{outputTime:hh:mm:ss:ffffff}, {(int)latency.TotalMilliseconds}");
+            var brokerCount = int.Parse(Environment.GetEnvironmentVariable("KAFKA_BROKER_COUNT"));
+            for (int i = 0; i < brokerCount; i++)
+            {
+                yield return new TopicPartitionOffset(new TopicPartition(topicName, i), Offset.Beginning);
+            }
         }
 
     }
