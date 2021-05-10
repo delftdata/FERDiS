@@ -49,7 +49,6 @@ namespace BlackSP.Infrastructure.Extensions
         public static ContainerBuilder AddDataLayerMessageHandlersForWorker<TShell, TOperator>(this ContainerBuilder builder, CheckpointCoordinationMode cpMode)
         {
             //pre operator handlers
-            builder.RegisterType<MetricLoggingHandler<DataMessage>>().As<IHandler<DataMessage>>();
             switch(cpMode)
             {
                 case CheckpointCoordinationMode.Coordinated:
@@ -97,7 +96,6 @@ namespace BlackSP.Infrastructure.Extensions
 
         public static ContainerBuilder AddDataLayerMessageHandlersForSource(this ContainerBuilder builder, CheckpointCoordinationMode cpMode)
         {
-            builder.RegisterType<MetricLoggingHandler<DataMessage>>().As<IHandler<DataMessage>>();
             builder.RegisterType<CheckpointDependencyTrackingDispatchHandler>().As<IHandler<DataMessage>>();
 
             switch (cpMode)

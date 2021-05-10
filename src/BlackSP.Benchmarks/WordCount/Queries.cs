@@ -40,7 +40,7 @@ namespace BlackSP.Benchmarks.WordCount
                 
                 var mapper = graphBuilder.AddMap<SentenceToWordMapper, SentenceEvent, WordEvent>(mapShards);
                 var reducer = graphBuilder.AddAggregate<WordCountAggregator, WordEvent, WordEvent>(reducerShards);
-                var sink = graphBuilder.AddSink<WordCountLoggerSink, WordEvent>(sinkShards);
+                var sink = graphBuilder.AddSink<KafkaWordCountSink, WordEvent>(sinkShards);
 
                 source.Append(mapper);
                 mapper.Append(reducer);

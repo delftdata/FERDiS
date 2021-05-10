@@ -12,7 +12,7 @@ using BlackSP.Benchmarks.Kafka;
 
 namespace BlackSP.Benchmarks.WordCount.Operators
 {
-    class WordCountLoggerSink : ISinkOperator<WordEvent>, IDisposable
+    class KafkaWordCountSink : ISinkOperator<WordEvent>, IDisposable
     {
 
         private readonly ILogger _logger;
@@ -23,7 +23,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
         private IProducer<int, string> producer;
         private bool disposedValue;
 
-        public WordCountLoggerSink(ILogger logger)
+        public KafkaWordCountSink(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -37,7 +37,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
 
             producer = new ProducerBuilder<int, string>(config)
                 //.SetValueSerializer(new ProtoBufAsyncValueSerializer<SentenceEvent>())
-                .SetErrorHandler((prod, err) => Console.WriteLine($"Output produce error: {err}"))
+                .SetErrorHandler((prod, err) => logger.Warning($"Output produce error: {err}"))
                 .Build();
         }
 
@@ -61,8 +61,9 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             
             for (int i = 0; i < @event.EventCount(); i++)
             {
-                await producer.ProduceAsync("output", new Message<int, string> { Key = 0, Value = outputValue });
+                producer.ProduceAsync("output", new Message<int, string> { Key = @event.Key ?? default, Value = outputValue });
             }
+            producer.Flush();
         }
 
         protected virtual void Dispose(bool disposing)

@@ -16,6 +16,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
     /// Simple generic message handler that calculates metrics like latency and throughput and logs these
     /// </summary>
     /// <typeparam name="TMessage"></typeparam>
+    [Obsolete("Deprecated, performance metrics now calculated external to the stream processor", true)]
     public class MetricLoggingHandler<TMessage> : ForwardingPayloadHandlerBase<TMessage, EventPayload>
         where TMessage : IMessage
     {
@@ -55,7 +56,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                     latencyMax = _latencyMillis.Max();
                     latencyAvg = (int)_latencyMillis.Average();
                 }
-                _logger.Performance(throughput, latencyMin, latencyAvg, latencyMax);
+                //_logger.Performance(throughput, latencyMin, latencyAvg, latencyMax);
                 ResetWindow();
             }
         }

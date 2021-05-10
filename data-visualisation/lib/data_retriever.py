@@ -23,12 +23,29 @@ def get_checkpoint_files(location: str, folder: str):
 
 
 
-"""Reads a performance file and returns it as an untyped multi-dimensional array
+"""Reads a throughput file and returns it as an untyped multi-dimensional array
 format = timestamp, throughput, latmin, latavg, latmax
 """
-def get_performance_file_content(location: str, folder: str, filename: str):
+def get_throughput_file_content(location: str, folder: str, filename: str):
     frame = pd.read_csv(f'{location}/{folder}/performance/{filename}', sep=",")
-    frame.columns = ['timestamp', 'throughput', 'latency_min', 'latency_avg', 'latency_max']
+    frame.columns = ['timestamp', 'throughput']
+    return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
+
+"""Reads a latency file and returns it as an untyped multi-dimensional array
+format = timestamp, throughput, latmin, latavg, latmax
+"""
+def get_latency_file_content(location: str, folder: str, filename: str):
+    frame = pd.read_csv(f'{location}/{folder}/performance/{filename}', sep=",")
+    frame.columns = ['timestamp', 'latency']
+    return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
+
+"""Reads a failures file and returns it as an untyped multi-dimensional array
+format = timestamp, throughput, latmin, latavg, latmax
+"""
+def get_failure_file_content(location: str, folder: str):
+    frame = pd.read_csv(f'{location}/{folder}/failures.log', sep=",")
+    print(frame, f'{location}/{folder}/failures.log')
+    frame.columns = ['timestamp']
     return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
 
 """Reads a checkpoint file and returns it as an untyped multi-dimensional array

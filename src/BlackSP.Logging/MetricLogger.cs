@@ -14,7 +14,6 @@ namespace BlackSP.Logging
         private readonly string _instanceName;
 
         private ILogger _defaultLogger;
-        private ILogger _performanceLogger;
         private ILogger _checkpointLogger;
         private ILogger _recoveryLogger;
 
@@ -35,10 +34,6 @@ namespace BlackSP.Logging
             _checkpointLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, {wasForced}, {(int)time.TotalMilliseconds}, {bytes}");
         }
 
-        public void Performance(int throughput, int latencyMin, int latencyAvg, int latencyMax)
-        {
-            _performanceLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, {throughput}, {latencyMin}, {latencyAvg}, {latencyMax}");
-        }
 
         public void Recovery(TimeSpan time, TimeSpan distance)
         {
@@ -50,8 +45,6 @@ namespace BlackSP.Logging
         /// </summary>
         private void InitialiseLoggers()
         {
-            _performanceLogger = new LoggerConfiguration().ConfigureMetricSinks(_config.TargetFlags, _config.EventLevel, _instanceName, "performance").CreateLogger();
-            _performanceLogger.Information("timestamp, throughput, lat_min, lat_avg, lat_max");
             _checkpointLogger = new LoggerConfiguration().ConfigureMetricSinks(_config.TargetFlags, _config.EventLevel, _instanceName, "checkpoint").CreateLogger();
             _checkpointLogger.Information("timestamp, forced, taken_ms, bytes");
             _recoveryLogger = new LoggerConfiguration().ConfigureMetricSinks(_config.TargetFlags, _config.EventLevel, _instanceName, "recovery").CreateLogger();

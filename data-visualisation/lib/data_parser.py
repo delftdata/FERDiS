@@ -8,15 +8,25 @@ def parse_time_to_timestamp(timestr: str):
     millisec = dt_obj.timestamp() * 1000
     return millisec
 
-def normalize_timestamp_column(datapoints: pd.DataFrame):
-    init_ts = datapoints['timestamp'][0]
-    datapoints['timestamp'] = datapoints['timestamp'].transform(lambda dp: dp - init_ts)
+def normalize_timestamp_column(datapoints: pd.DataFrame, initialTs: float):
+    datapoints['timestamp'] = datapoints['timestamp'].transform(lambda dp: dp - initialTs)
     return datapoints
 
 
-def parse_performance_data(datapoints: pd.DataFrame):
-    datapoints = datapoints.transform([parse_time_to_timestamp, int, int, int, int])
-    datapoints.columns = ['timestamp', 'throughput', 'latency_min', 'latency_avg', 'latency_max']
+def parse_throughput_data(datapoints: pd.DataFrame):
+    datapoints = datapoints.transform([parse_time_to_timestamp, int])
+    datapoints.columns = ['timestamp', 'throughput']
+    return datapoints
+
+def parse_latency_data(datapoints: pd.DataFrame):
+    datapoints = datapoints.transform([parse_time_to_timestamp, int])
+    datapoints.columns = ['timestamp', 'latency']
+    return datapoints
+
+def parse_failures_data(datapoints: pd.DataFrame):
+    print(datapoints)
+    datapoints = datapoints.transform([parse_time_to_timestamp])
+    datapoints.columns = ['timestamp']
     return datapoints
 
 def parse_checkpoint_data(datapoints: pd.DataFrame):

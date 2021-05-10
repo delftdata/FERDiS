@@ -21,6 +21,9 @@ namespace BlackSP.Benchmarks.MetricCollection
 
         private readonly IConsumer<int, string> consumer;
         private readonly ILogger throughputLogger;
+        private readonly ILogger errorLogger;
+
+
 
         private IEnumerable<TopicPartitionOffset> assignedTopicPartitionOffsets;
 
@@ -31,9 +34,12 @@ namespace BlackSP.Benchmarks.MetricCollection
             var level = (LogEventLevel)int.Parse(Environment.GetEnvironmentVariable("LOG_EVENT_LEVEL"));
             throughputLogger = new LoggerConfiguration().ConfigureMetricSinks(targets, level, "throughput", "performance").CreateLogger();
             throughputLogger.Information("timestamp, throughput");
+
+            errorLogger = new LoggerConfiguration().ConfigureSinks(targets, level, "throughput-logger").CreateLogger();
+
         }
 
-        
+
 
         public void Start()
         {
@@ -51,6 +57,15 @@ namespace BlackSP.Benchmarks.MetricCollection
             }
 
             object lockObj = new object();
+
+            Task.Run(() =>
+            {
+                while(true)
+                {
+                    consumer.Consume(); //consume as fast as possible to keep watermarks up to date
+                }
+            });
+
 
             while (true)
             {
@@ -104,7 +119,8 @@ namespace BlackSP.Benchmarks.MetricCollection
                 GroupId = "throughput",
                 EnableAutoCommit = false,
                 AutoOffsetReset = AutoOffsetReset.Earliest
-            });
+            }).SetErrorHandler((c,e) => { errorLogger.Warning($"Kafka error: {e}"); });
+
             var consumer = builder.Build();
             var tpos = GetAssignedTopicPartitions("output");
             assignedTopicPartitionOffsets = tpos;

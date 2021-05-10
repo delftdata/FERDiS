@@ -27,14 +27,14 @@ class Plotter:
         self.c = self.c + 1
         
         plt.plot(timestamps, 
-                    throughputs, 
-                    #(0, self.c), 
-                    label=instanceName, 
-                    alpha=0.8,
-                    linestyle='-',
-                    marker='x',
-                    linewidth=1,
-                    markersize=4)
+                throughputs, 
+                #(0, self.c), 
+                label=instanceName, 
+                alpha=0.8,
+                linestyle='-',
+                marker='x',
+                linewidth=1,
+                markersize=4)
         #color='random',
         
         plt.xlabel("Experiment Time (s)")
@@ -42,11 +42,28 @@ class Plotter:
         plt.legend(prop={'size': 16})
         self.fig.tight_layout(pad=0.05)
         
+    def add_latency_data(self, timestamps: pd.DataFrame, latencies: pd.DataFrame, label: str):
+        plt.plot(timestamps, 
+                latencies, 
+                #(0, self.c), 
+                label=label, 
+                alpha=0.8,
+                linestyle='',
+                marker='x',
+                linewidth=1,
+                markersize=4)
+        #color='random',
+        
+        plt.xlabel("Experiment Time (s)")
+        plt.ylabel("Latency (ms)")
+        plt.legend(prop={'size': 16})
+        self.fig.tight_layout(pad=0.05)
 
     def add_kill_line(self, killtime, label):
         plt.axvline((killtime) / 1000, color="r", linestyle="--")
 
-    def show_plot(self):
+    def show_plot(self, title = 'plot'):
+        self.fig.canvas.set_window_title(title)
         plt.show()
         self.fig = None
 

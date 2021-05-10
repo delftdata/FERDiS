@@ -11,15 +11,6 @@ namespace BlackSP.Kernel.Logging
         ILogger GetDefaultLogger();
 
         /// <summary>
-        /// Logs performance metrics
-        /// </summary>
-        /// <param name="throughput">events per second passing through</param>
-        /// <param name="latencyMin">minimum latency observed since last log</param>
-        /// <param name="latencyAvg">avg latency observed since last log</param>
-        /// <param name="latencyMax">max latency observed since last log</param>
-        void Performance(int throughput, int latencyMin, int latencyAvg, int latencyMax);
-
-        /// <summary>
         /// Logs checkpointing metrics
         /// </summary>
         /// <param name="bytes">size of the checkpoint</param>

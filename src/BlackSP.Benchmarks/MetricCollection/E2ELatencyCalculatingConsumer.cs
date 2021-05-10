@@ -20,6 +20,7 @@ namespace BlackSP.Benchmarks.MetricCollection
 
         private readonly IConsumer<int, string> consumer;
         private readonly ILogger latencyLogger;
+        private readonly ILogger errorLogger;
         
         public E2ELatencyCalculatingConsumer()
         {
@@ -28,6 +29,9 @@ namespace BlackSP.Benchmarks.MetricCollection
             var level = (LogEventLevel)int.Parse(Environment.GetEnvironmentVariable("LOG_EVENT_LEVEL"));
             latencyLogger = new LoggerConfiguration().ConfigureMetricSinks(targets, level, "latency", "performance").CreateLogger();
             latencyLogger.Information("timestamp, latency_ms");
+
+            errorLogger = new LoggerConfiguration().ConfigureSinks(targets, level, "latency-logger").CreateLogger();
+
         }
 
         public void Start()
@@ -51,7 +55,7 @@ namespace BlackSP.Benchmarks.MetricCollection
                 GroupId = "e2e-latency",
                 EnableAutoCommit = false,
                 AutoOffsetReset = AutoOffsetReset.Earliest
-            });
+            }).SetErrorHandler((c,e) => errorLogger.Warning($"Kafka error: {e}"));
 
             var consumer = builder.Build();
             var topicPartitions = GetAssignedTopicPartitions("output");

@@ -150,6 +150,41 @@ namespace BlackSP.Checkpointing.UnitTests.Protocols
         }
 
         [Test]
+        public async Task TwoUpstreams_DifferentVertices_FirstBlocks_ThenThrows_IfReceivesTwoBarriers()
+        {
+            var upstreams = new[]
+            {
+                new TestEndpointConfiguration
+                {
+                    IsControl = false,
+                    IsBackchannel = false,
+                    IsPipeline = false,
+                    LocalEndpointName = "local-fake-endpoint-0",
+                    RemoteEndpointName = "remote-fake-endpoint-0",
+                    RemoteInstanceNames = new[] { "fake-remote-instance-0" },
+                    RemoteVertexName = "remote-vertex-1"
+                },
+
+                new TestEndpointConfiguration
+                {
+                    IsControl = false,
+                    IsBackchannel = false,
+                    IsPipeline = false,
+                    LocalEndpointName = "local-fake-endpoint-1",
+                    RemoteEndpointName = "remote-fake-endpoint-1",
+                    RemoteInstanceNames = new[] { "fake-remote-instance-1" },
+                    RemoteVertexName = "remote-vertex-2"
+                }
+            };
+            vertexConfigMock.Setup(config => config.InputEndpoints).Returns(upstreams);
+
+            var testInstance = instance;
+            Assert.IsFalse(await testInstance.ReceiveBarrier(upstreams[0], 0)); //returns false indicating not-forwarding the barrier
+            Assert.ThrowsAsync<InvalidOperationException>(() => testInstance.ReceiveBarrier(upstreams[0], 0)); //returns false indicating not-forwarding the barrier
+
+        }
+
+        [Test]
         public async Task TwoUpstreams_DifferentVertices_FirstBlocks_WithoutCheckpoint_SecondBlocks_WithCheckpointAndUnblock()
         {
             var upstreams = new[]

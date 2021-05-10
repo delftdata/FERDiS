@@ -31,7 +31,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
 
                 yield return new WordEvent
                 {
-                    EventTime = group.First().EventTime,
+                    EventTime = group.Max(e => e.EventTime),
                     Word = group.Key,
                     Count = group.Sum(ev => ev.Count),
                     EC = group.Count()
