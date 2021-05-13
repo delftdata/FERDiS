@@ -149,12 +149,10 @@ namespace BlackSP.Benchmarks
             int checkpointIntervalSeconds = int.Parse(Environment.GetEnvironmentVariable("CHECKPOINT_INTERVAL_SECONDS"));
             bool allowStateReuse = checkpointCoordinationMode != CheckpointCoordinationMode.Coordinated;
 
-            const string BOLD = "\x1B[1m";
-            const string RESET = "\x1B[0m";
 
-            Console.WriteLine($"Configuring BlackSP benchmark job {BOLD}{job}{RESET} ({BOLD}{size}{RESET}) on {BOLD}{infrastructure}{RESET} infrastructure");          
-            Console.WriteLine($"Configuring checkpointing in {BOLD}{checkpointCoordinationMode}{RESET} mode on a {BOLD}{checkpointIntervalSeconds} seconds{RESET} interval");
-            Console.WriteLine($"Configuring logging at level {BOLD}{logLevel}{RESET} to targets: {BOLD}{logTargets}{RESET}");
+            Console.WriteLine($"Configuring BlackSP benchmark job {job} ({size}) on {infrastructure} infrastructure");          
+            Console.WriteLine($"Configuring checkpointing in {checkpointCoordinationMode} mode on a {checkpointIntervalSeconds} seconds interval");
+            Console.WriteLine($"Configuring logging at level {logLevel} to targets: {logTargets}");
             Console.WriteLine("\n");
             var appBuilder = infrastructure == Infrastructure.Simulator 
                 ? Simulator.Hosting.CreateDefaultApplicationBuilder() 

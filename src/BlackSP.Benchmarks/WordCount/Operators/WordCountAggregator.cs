@@ -33,7 +33,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
                 {
                     EventTime = group.Max(e => e.EventTime),
                     Word = group.Key,
-                    Count = group.Sum(ev => ev.Count),
+                    Count = count,
                     EC = group.Count()
                 };
             }

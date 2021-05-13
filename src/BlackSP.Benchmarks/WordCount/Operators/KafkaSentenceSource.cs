@@ -27,7 +27,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
                 Sentence = msg.Value,
                 EventTime = msg.Timestamp.UtcDateTime
             };
-
+            UpdateOffsets(consumeRes.Partition, (int)consumeRes.Offset);
             return sentenceEvent;
         }
     }

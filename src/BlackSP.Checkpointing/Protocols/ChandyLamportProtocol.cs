@@ -11,8 +11,11 @@ using System.Diagnostics;
 
 namespace BlackSP.Checkpointing.Protocols
 {
-    public class ChandyLamportProtocol
+    public class ChandyLamportProtocol : ICheckpointable
     {
+
+        [ApplicationState]
+        private readonly int placeholder = 0;
 
         /// <summary>
         /// Autofac delegate factory handle
@@ -126,5 +129,12 @@ namespace BlackSP.Checkpointing.Protocols
             _logger.Information($"Checkpoint {newCpId} successfully taken in {stopwatch.ElapsedMilliseconds}ms");
         }
 
+        public void OnBeforeRestore()
+        { }
+
+        public void OnAfterRestore()
+        {
+            UnblockAllConnections();
+        }
     }
 }

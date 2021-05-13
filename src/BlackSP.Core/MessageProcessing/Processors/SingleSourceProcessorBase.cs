@@ -70,6 +70,8 @@ namespace BlackSP.Core.MessageProcessing.Processors
             {
                 await PreStartHook(t).ConfigureAwait(false);
             }
+            _injectedMessage = null; //failsafe..
+
             var channel = Channel.CreateBounded<TMessage>(new BoundedChannelOptions(Constants.DefaultThreadBoundaryQueueSize) { FullMode = BoundedChannelFullMode.Wait });
             _pauseSemaphore = new SemaphoreSlim(1, 1);
             _processTokenSource = new CancellationTokenSource();

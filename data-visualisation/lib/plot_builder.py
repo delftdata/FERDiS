@@ -7,7 +7,7 @@ class Plotter:
     #fig
 
     def start_plot(self):
-        self.fig = plt.figure()
+        self.fig = plt.figure(figsize=[8,4.5], dpi=150)
         plt.grid(axis="y")
         self.c = 0
 

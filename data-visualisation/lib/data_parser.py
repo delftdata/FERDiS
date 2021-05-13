@@ -24,19 +24,16 @@ def parse_latency_data(datapoints: pd.DataFrame):
     return datapoints
 
 def parse_failures_data(datapoints: pd.DataFrame):
-    print(datapoints)
     datapoints = datapoints.transform([parse_time_to_timestamp])
     datapoints.columns = ['timestamp']
     return datapoints
 
 def parse_checkpoint_data(datapoints: pd.DataFrame):
-    print(datapoints)
     datapoints['timestamp'] = datapoints['timestamp'].transform(parse_time_to_timestamp)
     datapoints['forced'] = datapoints['forced'].transform(lambda s: s == "True")
     datapoints['taken_ms'] = datapoints['taken_ms'].transform(float)
     datapoints['bytes'] = datapoints['bytes'].transform(int)
 
-    print(datapoints)
     return datapoints
 
 

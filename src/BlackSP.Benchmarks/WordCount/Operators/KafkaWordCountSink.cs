@@ -57,13 +57,17 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             
             //_logger.Information($"WordCount: {string.Join("; ", wordCountStrings)}");
             
-            var outputValue = $"{@event.EventTime:yyyyMMddHHmmssFFFFF}${DateTime.UtcNow:yyyyMMddHHmmssFFFFF}";
-            
-            for (int i = 0; i < @event.EventCount(); i++)
+            if(@event.EventTime - DateTime.UtcNow > TimeSpan.FromSeconds(30))
             {
-                producer.ProduceAsync("output", new Message<int, string> { Key = @event.Key ?? default, Value = outputValue });
+                //wow thats some crazy latency
+                _logger.Information("BIG LATENCY");
+                _logger.Error($"{DateTime.UtcNow:hh:mm:ss:fffff}, {@event.EventTime:hh:mm:ss:fffff}, {@event.Key}, {@event.EventCount()}");
             }
-            producer.Flush();
+
+            var outputValue = $"{@event.EventTime:yyyyMMddHHmmssFFFFF}${DateTime.UtcNow:yyyyMMddHHmmssFFFFF}${@event.EventCount()}";
+            producer.ProduceAsync("output", new Message<int, string> { Key = @event.Key ?? default, Value = outputValue });
+            
+            //producer.Flush();
         }
 
         protected virtual void Dispose(bool disposing)

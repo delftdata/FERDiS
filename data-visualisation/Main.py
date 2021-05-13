@@ -9,15 +9,18 @@ import numpy as np
 from performance_plots import produce_throughput_graph, produce_latency_graph
 from checkpoint_plots import produce_checkpoint_plot
 
+import warnings
+warnings.filterwarnings("ignore")
 
 def main():
     logfileloc = "C:/Projects/BlackSP/scripts/results"
 
-    produce_throughput_graph(logfileloc)
-    produce_latency_graph(logfileloc)
-    
+    produce_throughput_graph(logfileloc, 100, 210)
+    produce_latency_graph(logfileloc, 100, 210)
     #produce_combined_throughput_graph(logfileloc)
     #produce_checkpoint_plot(logfileloc)
+
+    print("Success")
 
 if __name__ == "__main__":
     main()

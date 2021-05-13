@@ -7,8 +7,8 @@ namespace BlackSP.Core
     public static class Constants
     {
 
-        public const int KeepAliveTimeoutSeconds = 16;
-        public const int KeepAliveIntervalSeconds = 4;
+        public const int KeepAliveTimeoutSeconds = 8;
+        public const int KeepAliveIntervalSeconds = 3;
 
         /// <summary>
         /// Provides a default value for the queue size of queues on thread boundaries

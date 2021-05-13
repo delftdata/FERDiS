@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace BlackSP.Infrastructure.Layers.Control.Sources
@@ -33,7 +34,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
 
         private readonly TimeSpan _globalCheckpointInterval;
         private readonly Timer _globalCheckpointTimer;
-        private readonly BlockingCollection<ControlMessage> _messages;
+        private readonly Channel<ControlMessage> _messages;
 
         private bool _timerActive;
         
@@ -54,7 +55,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
             _globalCheckpointInterval = TimeSpan.FromSeconds(_checkpointConfiguration.CheckpointIntervalSeconds);
-            _messages = new BlockingCollection<ControlMessage>();
+            _messages = Channel.CreateUnbounded<ControlMessage>();
             _globalCheckpointTimer = new Timer(CreateBarrierMessagesForSources, null, int.MaxValue, int.MaxValue);
             _timerActive = false;
 
@@ -69,9 +70,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             return Task.CompletedTask;
         }
 
-        public Task<ControlMessage> Take(CancellationToken t)
+        public async Task<ControlMessage> Take(CancellationToken t)
         {
-            return Task.FromResult(_messages.Take(t));
+            return await _messages.Reader.ReadAsync(t);
         }
 
         private void CreateBarrierMessagesForSources(object _)
@@ -84,7 +85,8 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             {
                 var msg = new ControlMessage(_vertexConfiguration.GetPartitionKeyForInstanceName(instanceName));
                 msg.AddPayload(new BarrierPayload());
-                _messages.Add(msg);
+                while(!_messages.Writer.TryWrite(msg))
+                {}
                 _logger.Information($"Generated barrier for source {instanceName}");
             }
         }
@@ -112,7 +114,6 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
                 if (disposing)
                 {
                     _globalCheckpointTimer?.Dispose();
-                    _messages?.Dispose();
                 }
                 disposedValue = true;
             }

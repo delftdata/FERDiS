@@ -21,6 +21,8 @@ namespace BlackSP.Benchmarks
             {
                 case Job.WordCount:
                     return WordCount.Queries.WordCount(size);
+                case Job.Projection:
+                    return WordCount.Queries.Projection(size);
                 case Job.Selection:
                     return NEXMark.Queries.Selection(size);
                 case Job.LocalItem:

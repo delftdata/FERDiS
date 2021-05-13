@@ -13,6 +13,7 @@ namespace BlackSP.Benchmarks
     public enum Job
     {
         WordCount,
+        Projection,
         Selection,
         LocalItem,
         HotItem,

@@ -96,6 +96,7 @@ namespace BlackSP.Benchmarks.MetricCollection
                             lastWmOffsets[tpo.Partition] = high;
                         });
                         throughputLogger.Information($"{printStamp:hh:mm:ss:ffffff}, {(int)(totalNew/printDelta.TotalSeconds)}");
+                        errorLogger.Information($"{printStamp:hh:mm:ss:ffffff}, {(int)(totalNew / printDelta.TotalSeconds)}, {totalNew}, {printDelta}");
                         lastWrite = printStamp;
                     } 
                     else
@@ -117,8 +118,8 @@ namespace BlackSP.Benchmarks.MetricCollection
             {
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
                 GroupId = "throughput",
-                EnableAutoCommit = false,
-                AutoOffsetReset = AutoOffsetReset.Earliest
+                EnableAutoCommit = true,
+                AutoOffsetReset = AutoOffsetReset.Latest
             }).SetErrorHandler((c,e) => { errorLogger.Warning($"Kafka error: {e}"); });
 
             var consumer = builder.Build();

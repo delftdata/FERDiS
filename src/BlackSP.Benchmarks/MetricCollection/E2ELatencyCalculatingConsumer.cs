@@ -39,9 +39,10 @@ namespace BlackSP.Benchmarks.MetricCollection
             while(true)
             {
                 var consumeRes = consumer.Consume();
+                //consumer.Seek(new TopicPartitionOffset(null, Offset.End))
                 var output = consumeRes.Message.Value.Split("$");
                 var inputTime = DateTime.ParseExact(output[0], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
-                var outputTime = DateTime.ParseExact(output[1], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
+                var outputTime = consumeRes.Message.Timestamp.UtcDateTime; // DateTime.ParseExact(output[1], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
                 var latency = outputTime - inputTime;
                 latencyLogger.Information($"{outputTime:hh:mm:ss:ffffff}, {(int)latency.TotalMilliseconds}");
             }
@@ -53,8 +54,8 @@ namespace BlackSP.Benchmarks.MetricCollection
             {
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
                 GroupId = "e2e-latency",
-                EnableAutoCommit = false,
-                AutoOffsetReset = AutoOffsetReset.Earliest
+                EnableAutoCommit = true,
+                AutoOffsetReset = AutoOffsetReset.Latest
             }).SetErrorHandler((c,e) => errorLogger.Warning($"Kafka error: {e}"));
 
             var consumer = builder.Build();
