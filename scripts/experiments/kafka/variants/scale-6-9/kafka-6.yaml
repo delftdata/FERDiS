@@ -9,10 +9,10 @@ spec:
       volumes:
       - name: data
         emptyDir:
-          medium: Memory
+          #medium: Memory
       - name: config
         emptyDir:
-          medium: Memory     
+          #medium: Memory     
       - name: extensions
         emptyDir:
-          medium: Memory     
+          #medium: Memory     

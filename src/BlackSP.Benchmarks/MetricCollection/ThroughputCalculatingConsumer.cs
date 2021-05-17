@@ -99,15 +99,7 @@ namespace BlackSP.Benchmarks.MetricCollection
                         errorLogger.Information($"{printStamp:hh:mm:ss:ffffff}, {(int)(totalNew / printDelta.TotalSeconds)}, {totalNew}, {printDelta}");
                         lastWrite = printStamp;
                     } 
-                    else
-                    {
-                        Console.WriteLine("huh");
-                    }
-
-                    //Console.WriteLine("Lag was " + lag);
                     lag -= updateInterval;
-                    //Console.WriteLine("Lag is " + lag);
-
                 }
             }
         }

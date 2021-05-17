@@ -8,6 +8,7 @@ using System.Text;
 using BlackSP.Logging;
 using Serilog.Events;
 using System.Globalization;
+using System.Threading.Tasks;
 
 namespace BlackSP.Benchmarks.MetricCollection
 {
@@ -21,7 +22,9 @@ namespace BlackSP.Benchmarks.MetricCollection
         private readonly IConsumer<int, string> consumer;
         private readonly ILogger latencyLogger;
         private readonly ILogger errorLogger;
-        
+
+        private IEnumerable<TopicPartitionOffset> assignedTopicPartitionOffsets;
+
         public E2ELatencyCalculatingConsumer()
         {
             consumer = InitKafka();
@@ -36,16 +39,36 @@ namespace BlackSP.Benchmarks.MetricCollection
 
         public void Start()
         {
-            while(true)
+            var updateInterval = TimeSpan.FromMilliseconds(333d);
+
+            var now = DateTime.UtcNow;
+            var lastNow = now;
+            TimeSpan lag = TimeSpan.Zero;
+
+            while (true)
             {
-                var consumeRes = consumer.Consume(); 
-                //consumer.Seek(new TopicPartitionOffset(null, Offset.End))
-                var output = consumeRes.Message.Value.Split("$");
-                var inputTime = DateTime.ParseExact(output[0], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
-                var outputTime = consumeRes.Message.Timestamp.UtcDateTime; // DateTime.ParseExact(output[1], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
-                var latency = outputTime - inputTime;
-                latencyLogger.Information($"{outputTime:hh:mm:ss:ffffff}, {(int)latency.TotalMilliseconds}");
+
+                now = DateTime.UtcNow;
+                var elapsed = now - lastNow;
+
+                lastNow = now;
+                lag += elapsed;
+                while (lag >= updateInterval)
+                {
+                    Parallel.ForEach(assignedTopicPartitionOffsets, tpo =>
+                    {
+                        consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, Offset.End));
+                        var consumeRes = consumer.Consume();
+                        var output = consumeRes.Message.Value.Split("$");
+                        var inputTime = DateTime.ParseExact(output[0], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
+                        var outputTime = consumeRes.Message.Timestamp.UtcDateTime; // DateTime.ParseExact(output[1], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
+                        var latency = outputTime - inputTime;
+                        latencyLogger.Information($"{outputTime:hh:mm:ss:ffffff}, {(int)latency.TotalMilliseconds}");
+                    });                    
+                    lag -= updateInterval;
+                }
             }
+
         }
 
         private IConsumer<int, string> InitKafka()
@@ -60,6 +83,7 @@ namespace BlackSP.Benchmarks.MetricCollection
 
             var consumer = builder.Build();
             var topicPartitions = GetAssignedTopicPartitions("output");
+            assignedTopicPartitionOffsets = topicPartitions;
             consumer.Assign(topicPartitions);
             return consumer;
         }

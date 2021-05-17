@@ -33,8 +33,15 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
             var dataMsg = new DataMessage();
             dataMsg.AddPayload(payload);
-            _processor.Inject(dataMsg);
-            _logger.Information("Inserted barrier in data layer");
+            try
+            {
+                _processor.Inject(dataMsg);
+                _logger.Information("Inserted barrier in data layer");
+            }
+            catch (Exception e)
+            {
+                _logger.Error("Error inserting barrier", e);
+            }
             return Task.FromResult(AssociatedMessage.Yield());
         }
 

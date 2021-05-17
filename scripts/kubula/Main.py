@@ -7,7 +7,7 @@ import subprocess
 from lib.cluster import create_cluster, test
 
 #NOTE: used in cluster naming, cluster naming is used in some DNS stage, therefore: ensure this number is unique per experiment!
-experiment_num = 4
+experiment_num = 5
 
 def main():
     #TODO: CLUSTER NAME BASED ON MAGIC NUMBER PEDRO MENTIONED
