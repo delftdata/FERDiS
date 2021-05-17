@@ -1,0 +1,36 @@
+
+CONTEXT = [
+  NETWORK = "YES",
+  SET_HOSTNAME = "kubernetes-master",
+  SSH_PUBLIC_KEY = "<$ssh_key>",
+  START_SCRIPT = "sudo mkfs.ext4 /dev/vdb && sudo mkdir -p /media/extra && sudo mount /dev/vdb /media/extra && sudo mkdir /media/extra/{0..200} && sudo chmod -R 777 /media/extra && sudo /home/ubuntu/create_cluster.sh <$cluster_name>",
+  USERNAME = "ubuntu" ]
+CPU = "<$master_cpu>"
+DISK = [
+  IMAGE = "InstakubeBase",
+  IMAGE_UNAME = "delta",
+	SIZE = 36000]
+DISK = [
+  FORMAT = "raw",
+  SIZE = "<$master_disk>",
+  TYPE = "fs" ]
+FEATURES = [
+  ACPI = "yes",
+  LOCALTIME = "no" ]
+INPUT = [
+  BUS = "usb",
+  TYPE = "tablet" ]
+NAME = "<$name>"
+LOGO = "images/logos/ubuntu.png"
+MEMORY = "<$master_memory>"
+LABELS = "Marc"
+NIC = [
+  NETWORK = "internet",
+  NETWORK_UNAME = "oneadmin" ]
+NIC = [
+  NETWORK = "camparatia-tudelft.int",
+  NETWORK_UNAME = "camparatia-asteriosk" ]
+OS = [
+  ARCH = "x86_64" ]
+VCPU = "<$master_cpu>"
+SCHED_REQUIREMENTS = "NAME = \"d-node60*\" | NAME = \"d-node61*\" | NAME = \"d-node62*\" | NAME = \"d-node63*\" | NAME = \"d-node64*\" | NAME = \"d-node65*\" | NAME = \"d-node66*\" | NAME = \"d-node67*\" | NAME = \"d-node68*\" | NAME = \"d-node69*\""
