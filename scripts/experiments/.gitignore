@@ -1,3 +1,4 @@
 *.yaml
-/bin
+*/bin
 /results
+/results.bak

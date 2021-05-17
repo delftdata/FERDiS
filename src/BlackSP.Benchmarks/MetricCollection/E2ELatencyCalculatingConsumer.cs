@@ -38,7 +38,7 @@ namespace BlackSP.Benchmarks.MetricCollection
         {
             while(true)
             {
-                var consumeRes = consumer.Consume();
+                var consumeRes = consumer.Consume(); 
                 //consumer.Seek(new TopicPartitionOffset(null, Offset.End))
                 var output = consumeRes.Message.Value.Split("$");
                 var inputTime = DateTime.ParseExact(output[0], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);

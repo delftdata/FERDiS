@@ -1,4 +1,4 @@
-$result = ./bin/BlackSP.Benchmarks.exe delete-topic *>&1
+$result = ./docker/bin/BlackSP.Benchmarks.exe benchmark *>&1
 
 # Evaluate success/failure
 if(!($LASTEXITCODE -eq 0))

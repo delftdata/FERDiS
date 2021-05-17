@@ -13,7 +13,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def main():
-    logfileloc = "C:/Projects/BlackSP/scripts/results"
+    logfileloc = "C:/Projects/BlackSP/scripts/experiments/results"
 
     produce_throughput_graph(logfileloc, 100, 210)
     produce_latency_graph(logfileloc, 100, 210)
