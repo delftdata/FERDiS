@@ -60,6 +60,8 @@ namespace BlackSP.Core.Coordination
         /// </summary>
         public event StateChangeEvent OnStateChange;
 
+        //public event StateChangeEvent OnCheckpointTaken
+
         /// <summary>
         /// Event that fires whenever a state change has happened of which the worker should receive a message/notification.
         /// For example: a state change from offline to halted does not require notifying the worker. But halted to started requires a 'start' message to be sent.

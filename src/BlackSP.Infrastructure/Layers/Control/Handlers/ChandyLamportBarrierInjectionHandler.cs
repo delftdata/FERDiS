@@ -40,7 +40,8 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             }
             catch (Exception e)
             {
-                _logger.Error("Error inserting barrier", e);
+                _logger.Error(e, "Error inserting barrier");
+                throw;
             }
             return Task.FromResult(AssociatedMessage.Yield());
         }

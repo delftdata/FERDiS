@@ -54,8 +54,12 @@ namespace BlackSP.Infrastructure.Extensions
                 };
             }
 
-            //logging service implementation
-            builder.RegisterType<MessageLoggingService<byte[]>>().As<IMessageLoggingService<byte[]>>().SingleInstance();
+            if(config.CoordinationMode != CheckpointCoordinationMode.Coordinated)
+            {
+                //logging service implementation for non coordinated checkpointing
+                builder.RegisterType<MessageLoggingService<byte[]>>().As<IMessageLoggingService<byte[]>>().SingleInstance();
+            }
+            
             
             //protocol types
             builder.RegisterType<ChandyLamportProtocol>().AsSelf();

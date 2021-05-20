@@ -55,7 +55,7 @@ namespace BlackSP.OperatorShells
             finally
             {
                 sw.Stop();
-                _logger.Information($"Processed window of size {count} in {sw.ElapsedTicks} ticks");
+                _logger.Verbose($"Processed window of size {count} in {sw.ElapsedTicks} ticks");
             }
         }
     }

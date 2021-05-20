@@ -19,29 +19,45 @@ namespace BlackSP.Infrastructure.Extensions
     {
         
 
-        public static ContainerBuilder AddControlLayerMessageHandlersForCoordinator(this ContainerBuilder builder)
+        public static ContainerBuilder AddControlLayerMessageHandlersForCoordinator(this ContainerBuilder builder, ICheckpointConfiguration checkpointConfiguration)
         {
             builder.RegisterType<WorkerResponseHandler>().AsImplementedInterfaces();
             builder.RegisterType<CheckpointRestoreResponseHandler>().As<IHandler<ControlMessage>>();
 
-            builder.RegisterType<MessageLoggingSequenceManager>().AsSelf().SingleInstance();
-            builder.RegisterType<LogPruneRequestHandler>().As<IHandler<ControlMessage>>();
+            if(checkpointConfiguration.CoordinationMode == CheckpointCoordinationMode.CommunicationInduced)
+            {
+                builder.RegisterType<MessageLoggingSequenceManager>().AsSelf().SingleInstance();
+                builder.RegisterType<LogPruneRequestHandler>().As<IHandler<ControlMessage>>();
+                builder.RegisterType<LogReplayRequestHandler>().As<IHandler<ControlMessage>>();
+            }
+            
+            if(checkpointConfiguration.CoordinationMode == CheckpointCoordinationMode.Coordinated)
+            {
+                builder.RegisterType<GlobalCheckpointTakenHandler>().As<IHandler<ControlMessage>>();
+            }
 
-            builder.RegisterType<LogReplayRequestHandler>().As<IHandler<ControlMessage>>();
+            
             return builder;
         }
         
-        public static ContainerBuilder AddControlLayerMessageHandlersForWorker(this ContainerBuilder builder)
+        public static ContainerBuilder AddControlLayerMessageHandlersForWorker(this ContainerBuilder builder, CheckpointCoordinationMode cpMode)
         {
             builder.RegisterType<CheckpointRestoreRequestHandler>().As<IHandler<ControlMessage>>();
 
-            //important to place before WorkerRequestHandler (to perform replays right before starting the processor)
-            builder.RegisterType<LogReplayResponseHandler>().As<IHandler<ControlMessage>>();
-
+            if(cpMode != CheckpointCoordinationMode.Coordinated)
+            {
+                //important to place before WorkerRequestHandler (to perform replays right before starting the processor)
+                builder.RegisterType<LogReplayResponseHandler>().As<IHandler<ControlMessage>>();
+            }
+            
             //important control handler: controls the subprocess that processes/generates data messages
             builder.RegisterType<WorkerRequestHandler>().As<IHandler<ControlMessage>>();
-            
-            builder.RegisterType<LogPruneResponseHandler>().As<IHandler<ControlMessage>>();
+
+            if (cpMode != CheckpointCoordinationMode.Coordinated)
+            {
+                builder.RegisterType<LogPruneResponseHandler>().As<IHandler<ControlMessage>>();
+            }
+
             builder.RegisterType<ChandyLamportBarrierInjectionHandler>().As<IHandler<ControlMessage>>();
             return builder;
         }
@@ -53,7 +69,7 @@ namespace BlackSP.Infrastructure.Extensions
             {
                 case CheckpointCoordinationMode.Coordinated:
                     builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
-                    builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+                    builder.RegisterType<ChandyLamportBarrierHandler>().As<IHandler<DataMessage>>();
                     break;
                 
                 case CheckpointCoordinationMode.Uncoordinated:
@@ -101,7 +117,7 @@ namespace BlackSP.Infrastructure.Extensions
             switch (cpMode)
             {
                 case CheckpointCoordinationMode.Coordinated:
-                    builder.RegisterType<CoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
+                    builder.RegisterType<ChandyLamportBarrierHandler>().As<IHandler<DataMessage>>();
                     builder.RegisterType<DefaultPostDeliveryHandler>().As<IHandler<DataMessage>>();
                     break;
 

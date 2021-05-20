@@ -35,10 +35,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
                 Partitioner = Partitioner.Consistent
             };
 
-            producer = new ProducerBuilder<int, string>(config)
-                //.SetValueSerializer(new ProtoBufAsyncValueSerializer<SentenceEvent>())
-                .SetErrorHandler((prod, err) => logger.Warning($"Output produce error: {err}"))
-                .Build();
+            producer = new ProducerBuilder<int, string>(config).SetErrorHandler((prod, err) => logger.Warning($"Output produce error: {err}")).Build();
         }
 
         public async Task Sink(WordEvent @event)
@@ -55,7 +52,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
                 .Select(x => x.Key + "=" + x.Value)
                 .ToArray();
             
-            //_logger.Information($"WordCount: {string.Join("; ", wordCountStrings)}");
+            _logger.Debug($"WordCount: {string.Join("; ", wordCountStrings)}");
             
             if(@event.EventTime - DateTime.UtcNow > TimeSpan.FromSeconds(30))
             {

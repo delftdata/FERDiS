@@ -20,6 +20,8 @@ namespace BlackSP.Infrastructure.Modules
 
         protected override void Load(ContainerBuilder builder)
         {
+            var cpMode = _configuration.CheckpointingConfiguration.CoordinationMode;
+
             //_ = Configuration ?? throw new NullReferenceException($"property {nameof(Configuration)} has not been set");
             builder.UseLogging(_configuration.LogConfiguration, _configuration.VertexConfiguration.InstanceName);
             builder.UseCheckpointing(_configuration.CheckpointingConfiguration, true);
@@ -30,11 +32,11 @@ namespace BlackSP.Infrastructure.Modules
 
             //control processor
             builder.UseControlLayer();
-            builder.AddControlLayerMessageHandlersForWorker();
+            builder.AddControlLayerMessageHandlersForWorker(cpMode);
 
             //data processor
             builder.UseDataLayer();
-            builder.AddDataLayerMessageHandlersForWorker<TShell, TOperator>(_configuration.CheckpointingConfiguration.CoordinationMode);
+            builder.AddDataLayerMessageHandlersForWorker<TShell, TOperator>(cpMode);
 
             base.Load(builder);
         }

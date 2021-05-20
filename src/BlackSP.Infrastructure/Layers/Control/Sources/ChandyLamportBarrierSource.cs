@@ -32,6 +32,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         private readonly ICheckpointConfiguration _checkpointConfiguration;
         private readonly ILogger _logger;
 
+        private DateTime lastCheckpointUtc;
         private readonly TimeSpan _globalCheckpointInterval;
         private readonly Timer _globalCheckpointTimer;
         private readonly Channel<ControlMessage> _messages;
@@ -85,27 +86,47 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             {
                 var msg = new ControlMessage(_vertexConfiguration.GetPartitionKeyForInstanceName(instanceName));
                 msg.AddPayload(new BarrierPayload());
-                while(!_messages.Writer.TryWrite(msg))
-                {}
+                while(!_messages.Writer.TryWrite(msg)){}
                 _logger.Information($"Generated barrier for source {instanceName}");
             }
+            CheckpointTimer(false);
+            lastCheckpointUtc = DateTime.UtcNow;
         }
 
         private void WorkerStateManager_OnStateChange(string affectedInstanceName, WorkerState newState)
         {
             if (_timerActive && !_graphStateManager.AreAllWorkersInState(WorkerState.Running))
             {   //not all workers are running, temporarily suspend global checkpoint timer
-                _logger.Information("Suspending global checkpoint timer, not all workers are operational");
-                _globalCheckpointTimer.Change(int.MaxValue, int.MaxValue);
-                _timerActive = false;
+                CheckpointTimer(false);
             }
             else if(!_timerActive && _graphStateManager.AreAllWorkersInState(WorkerState.Running))
             {
-                _logger.Information("Resuming global checkpoint timer, all workers are operational");
-                _globalCheckpointTimer.Change(_globalCheckpointInterval, _globalCheckpointInterval);
+                if(lastCheckpointUtc == default)
+                {
+                    lastCheckpointUtc = DateTime.UtcNow;
+                }
+                CheckpointTimer(true);
+            }
+        }
+
+        public void CheckpointTimer(bool enable)
+        {
+            if(!enable)
+            {
+                _logger.Information("Suspending global checkpoint timer");
+                _globalCheckpointTimer.Change(int.MaxValue, int.MaxValue);
+                _timerActive = false;
+            } 
+            else
+            {
+                var timeSinceLastCp = DateTime.UtcNow - lastCheckpointUtc;
+                var nextCPDue = timeSinceLastCp < _globalCheckpointInterval ? _globalCheckpointInterval - timeSinceLastCp : _globalCheckpointInterval;
+                _logger.Information($"Resuming global checkpoint timer, due in {nextCPDue.TotalSeconds} seconds");
+                _globalCheckpointTimer.Change(nextCPDue, _globalCheckpointInterval);
                 _timerActive = true;
             }
         }
+
 
         protected virtual void Dispose(bool disposing)
         {

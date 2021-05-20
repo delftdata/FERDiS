@@ -56,7 +56,7 @@ namespace BlackSP.Benchmarks.WordCount.Generator
                 }
 
 
-                var sentence = Lorem.Sentence(3, 10);
+                var sentence = Lorem.Sentence(1, 3);
                 var msg = new Message<int, string> { Key = sentence[0], Value = sentence, Timestamp = Timestamp.Default };
 
                 producer.ProduceAsync("sentences", msg);

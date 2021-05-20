@@ -36,7 +36,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             if(sentencesGenerated >= MaxSentenceCount) //keep going until each sentence was sent x times
             {
                 Task.Delay(Constants.WordCountAggregateWindowSizeMs*2).Wait();
-                _logger.Information($"Each sentence sent at least {MaxSentenceCount} times, now sending all words as one sentence");
+                //_logger.Information($"Each sentence sent at least {MaxSentenceCount} times, now sending all words as one sentence");
                 return new SentenceEvent
                 {
                     Sentence = string.Join(" ", defaultSentences)

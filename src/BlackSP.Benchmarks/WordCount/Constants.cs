@@ -7,7 +7,7 @@ namespace BlackSP.Benchmarks.WordCount
     public class Constants
     {
 
-        public static readonly int WordCountAggregateWindowSizeMs = 250;
+        public static readonly int WordCountAggregateWindowSizeMs = 1000;
 
     }
 }
