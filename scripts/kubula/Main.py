@@ -7,11 +7,10 @@ import subprocess
 from lib.cluster import create_cluster, test
 
 #NOTE: used in cluster naming, cluster naming is used in some DNS stage, therefore: ensure this number is unique per experiment!
-experiment_num = 5
+experiment_num = 100
 
 def main():
-    #TODO: CLUSTER NAME BASED ON MAGIC NUMBER PEDRO MENTIONED
-    # create_cluster and join_cluster scripts
+    # create_cluster and join_cluster scripts in instakubebase image may be relevant (@Pedro)
     #
     cred = json.load(open('credentials.json')) # username, password, endpoint, ssh_key
     conf = json.load(open('cluster-config.json')) #master/slave_cpu, _memory, _disk + num_slaves + cluster_name

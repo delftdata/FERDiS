@@ -1,12 +1,12 @@
 
-$experimentKey = "projection-1-cc-30-500-surfsara"
+$experimentKey = "projection-1-cc-30-2400-surfsara-8-slaves"
 
 $localKafkaDnsTemplate = 'localhost:3240{0}'
 $clusterKafkaDnsTemplate = 'kafka-{0}.kafka.kafka.svc.cluster.local:9092'
 $kafkaBrokerCount = 6
 $kafkaKustomizationPath = '.\kafka\variants\scale-6-9'
 
-$generatorStartDelayMs = 120000
+$generatorStartDelayMs = 90000
 $preFailureSleepMs = 120000 #180000
 $postFailureSleepMs = 210000 #180000
 $metricTearDownDelayMs = 10000 #the amount of delay betwean tearing down the workers+generators and the  metric collectors
@@ -21,8 +21,8 @@ Write-Output "Starting experiment $($experimentKey)"
 Write-Output "Setting up environment variables"
 .\lib\env\env-checkpoint.ps1 1 30
 .\lib\env\env-log 5 2
-.\lib\env\env-benchmark.ps1 1 1 1 #infra + job + size
-.\lib\env\env-generator.ps1 100 100 #throughput + gencalls
+.\lib\env\env-benchmark.ps1 1 1 #job + size
+.\lib\env\env-generator.ps1 400 100 #throughput + gencalls
 
 .\lib\env\env-kafka.ps1 $localKafkaDnsTemplate $kafkaBrokerCount
 
@@ -35,6 +35,7 @@ Write-Output "Setting up environment variables"
 
 #first delete any remaining topics from kafka..
 Write-Output "Deploying kafka"
+kubectl create namespace kafka
 kubectl apply -k $kafkaKustomizationPath
 $kafkaStartTime = Get-Date
 
@@ -51,7 +52,7 @@ Write-Output "Preparing deployment file for metric nodes"
 .\lib\metric-deployment.ps1
 #prepare generator deployment
 Write-Output "Preparing deployment file for generator nodes"
-.\lib\generator-deployment.ps1 'text' 5 #BIG NOTE: CURRENTLY HARDCODED TO TEXT DATA GENERATION!!
+.\lib\generator-deployment.ps1 'text' 6 #BIG NOTE: CURRENTLY HARDCODED TO TEXT DATA GENERATION!!
 
 $kafkaInitSleepMs = 60*1000 - (New-TimeSpan -Start $kafkaStartTime -End (Get-Date)).TotalMilliseconds;
 Write-Output "Waiting for $($kafkaInitSleepMs/1000) seconds for kafka to initialise"
@@ -103,6 +104,7 @@ kubectl delete -f .\metric-loggers.yaml
 
 Write-Output "Tearing kafka down"
 kubectl delete -k $kafkaKustomizationPath
+kubectl delete namespace kafka
 
 #deployment deleted..
 Write-Output "Teardown completed." 

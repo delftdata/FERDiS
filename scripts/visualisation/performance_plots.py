@@ -7,7 +7,7 @@ import os
 import numpy as np
 
 from lib.data_retriever import get_experiments_at_location, get_performance_files, get_throughput_file_content, get_latency_file_content, get_failure_file_content, get_init_ts
-from lib.data_parser import normalize_timestamp_column, parse_throughput_data, parse_latency_data, parse_failures_data, parse_time_to_timestamp
+from lib.data_parser import normalize_timestamp_column, parse_throughput_data, parse_latency_data, parse_failures_data, parse_time_to_timestamp, lowpass, savitzky_golay
 from lib.plot_builder import Plotter
 
 
@@ -26,8 +26,10 @@ def produce_throughput_graph(location: str, fromSec: int = 0, toSec: int = 9999)
 
 
             data = normalize_timestamp_column(parsedData, initialTs)
+            data['throughput'] = savitzky_golay(data['throughput'], 19, 2);
+            data['throughput'] = data['throughput'].apply(lambda x: 0 if x < 0 else x)
             data = data[data["timestamp"] > fromSec*1000][data["timestamp"] < toSec*1000]
-
+            data = data.reset_index()
             #print(data)
             #add to plot
             plotter.add_throughput_data(data['timestamp'].apply(lambda x: (x/1000)), data['throughput'], baseName)
