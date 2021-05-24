@@ -9,6 +9,7 @@ using BlackSP.Logging;
 using Serilog.Events;
 using System.Globalization;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace BlackSP.Benchmarks.MetricCollection
 {
@@ -31,7 +32,8 @@ namespace BlackSP.Benchmarks.MetricCollection
             var targets = (LogTargetFlags)int.Parse(Environment.GetEnvironmentVariable("LOG_TARGET_FLAGS"));
             var level = (LogEventLevel)int.Parse(Environment.GetEnvironmentVariable("LOG_EVENT_LEVEL"));
             latencyLogger = new LoggerConfiguration().ConfigureMetricSinks(targets, level, "latency", "performance").CreateLogger();
-            latencyLogger.Information("timestamp, latency_ms");
+            latencyLogger.Information("timestamp, latency_ms, shardId");
+            latencyLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, NaN, 0");
 
             errorLogger = new LoggerConfiguration().ConfigureSinks(targets, level, "latency-logger").CreateLogger();
 
@@ -55,18 +57,42 @@ namespace BlackSP.Benchmarks.MetricCollection
                 lag += elapsed;
                 while (lag >= updateInterval)
                 {
+                    var timeoutSource = new CancellationTokenSource(updateInterval/2);
                     Parallel.ForEach(assignedTopicPartitionOffsets, tpo =>
                     {
-                        consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, Offset.End));
-                        var consumeRes = consumer.Consume();
-                        var output = consumeRes.Message.Value.Split("$");
-                        var inputTime = DateTime.ParseExact(output[0], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
-                        var outputTime = consumeRes.Message.Timestamp.UtcDateTime; // DateTime.ParseExact(output[1], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
-                        var latency = outputTime - inputTime;
-                        latencyLogger.Information($"{outputTime:hh:mm:ss:ffffff}, {(int)latency.TotalMilliseconds}");
-                    });                    
+                        TimeSpan latency = TimeSpan.FromMilliseconds(-1);
+                        try
+                        {
+                            var consumeRes = consumer.Consume(timeoutSource.Token);
+                            var output = consumeRes.Message.Value.Split("$");
+                            var inputTime = DateTime.ParseExact(output[0], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
+                            var outputTime = consumeRes.Message.Timestamp.UtcDateTime; // DateTime.ParseExact(output[1], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
+                            latency = outputTime - inputTime;
+                            consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, Offset.End));
+                        }
+                        catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested) { } //shh
+                        catch (Exception e) //log other exception types without stopping..
+                        {
+                            errorLogger.Warning(e, "Error while consuming from kafka topic");
+                        }
+                        latencyLogger.Information($"{now:hh:mm:ss:ffffff}, {(latency.TotalMilliseconds > 0 ? (object)latency.TotalMilliseconds : "NaN")}, {tpo.Partition.Value}");
+                    });
                     lag -= updateInterval;
                 }
+                /*
+                Parallel.ForEach(assignedTopicPartitionOffsets, tpo =>
+                {
+                    try
+                    {
+                        //consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, consumer.Position(tpo.TopicPartition) - 1));
+                    } 
+                    catch(Exception e)
+                    {
+                        errorLogger.Warning(e, "Error while seeking kafka topic");
+
+                    }
+                });
+                */
             }
 
         }

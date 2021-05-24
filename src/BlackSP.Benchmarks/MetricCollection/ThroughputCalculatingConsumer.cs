@@ -34,6 +34,7 @@ namespace BlackSP.Benchmarks.MetricCollection
             var level = (LogEventLevel)int.Parse(Environment.GetEnvironmentVariable("LOG_EVENT_LEVEL"));
             throughputLogger = new LoggerConfiguration().ConfigureMetricSinks(targets, level, "throughput", "performance").CreateLogger();
             throughputLogger.Information("timestamp, throughput");
+            throughputLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, 0");
 
             errorLogger = new LoggerConfiguration().ConfigureSinks(targets, level, "throughput-logger").CreateLogger();
 
@@ -96,7 +97,7 @@ namespace BlackSP.Benchmarks.MetricCollection
                             lastWmOffsets[tpo.Partition] = high;
                         });
                         throughputLogger.Information($"{printStamp:hh:mm:ss:ffffff}, {(int)(totalNew/printDelta.TotalSeconds)}");
-                        errorLogger.Information($"{printStamp:hh:mm:ss:ffffff}, {(int)(totalNew / printDelta.TotalSeconds)}, {totalNew}, {printDelta}");
+                        //errorLogger.Information($"{printStamp:hh:mm:ss:ffffff}, {(int)(totalNew / printDelta.TotalSeconds)}, {totalNew}, {printDelta}");
                         lastWrite = printStamp;
                     } 
                     lag -= updateInterval;

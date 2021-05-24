@@ -53,7 +53,7 @@
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
         "KAFKA_BROKER_COUNT": "6",
 
-        "LOG_TARGET_FLAGS": "1", // 1 (console) || 2 (file) || 4 (azure blob)
+        "LOG_TARGET_FLAGS": "3", // 1 (console) || 2 (file) || 4 (azure blob)
         "LOG_EVENT_LEVEL": "2" //0-5,
       },
       "commandLineArgs": "latency"
@@ -84,7 +84,7 @@
         "LOG_TARGET_FLAGS": "1", // 1 (console) || 2 (file) || 4 (azure blob)
         "LOG_EVENT_LEVEL": "2", //0-5,
 
-        "CHECKPOINT_COORDINATION_MODE": "1", //0 = uc, 1 = cc, 2 = cic
+        "CHECKPOINT_COORDINATION_MODE": "0", //0 = uc, 1 = cc, 2 = cic
         "CHECKPOINT_INTERVAL_SECONDS": "30",
 
         "BENCHMARK_INFRA": "0", //0 = simulator, 1 = cra

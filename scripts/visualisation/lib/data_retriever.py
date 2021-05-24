@@ -36,7 +36,7 @@ format = timestamp, throughput, latmin, latavg, latmax
 """
 def get_latency_file_content(location: str, folder: str, filename: str):
     frame = pd.read_csv(f'{location}/{folder}/performance/{filename}', sep=",")
-    frame.columns = ['timestamp', 'latency']
+    frame.columns = ['timestamp', 'latency', 'shard']
     return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
 
 """Reads a failures file and returns it as an untyped multi-dimensional array

@@ -32,7 +32,7 @@ class Plotter:
                 label=instanceName, 
                 alpha=0.8,
                 linestyle='-',
-                marker='x',
+                marker='.',
                 linewidth=1,
                 markersize=4)
         #color='random',
@@ -49,7 +49,7 @@ class Plotter:
                 label=label, 
                 alpha=0.8,
                 linestyle='',
-                marker='x',
+                marker='.',
                 linewidth=1,
                 markersize=4)
         #color='random',

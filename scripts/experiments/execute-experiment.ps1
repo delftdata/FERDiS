@@ -1,10 +1,12 @@
 
-$experimentKey = "projection-1-cc-30-2400-surfsara-8-slaves"
+$experimentKey = "projection-1-uc-30-2000-surfsara"
 
 $localKafkaDnsTemplate = 'localhost:3240{0}'
 $clusterKafkaDnsTemplate = 'kafka-{0}.kafka.kafka.svc.cluster.local:9092'
-$kafkaBrokerCount = 6
-$kafkaKustomizationPath = '.\kafka\variants\scale-6-9'
+$kafkaBrokerCount = 4
+$kafkaKustomizationPath = '.\kafka\variants\scale-4-2'
+
+$generatorShards = 4
 
 $generatorStartDelayMs = 90000
 $preFailureSleepMs = 120000 #180000
@@ -19,10 +21,10 @@ $failureTimes += "`n"
 Write-Output "Starting experiment $($experimentKey)"
 
 Write-Output "Setting up environment variables"
-.\lib\env\env-checkpoint.ps1 1 30
+.\lib\env\env-checkpoint.ps1 0 30
 .\lib\env\env-log 5 2
 .\lib\env\env-benchmark.ps1 1 1 #job + size
-.\lib\env\env-generator.ps1 400 100 #throughput + gencalls
+.\lib\env\env-generator.ps1 500 100 #throughput + gencalls
 
 .\lib\env\env-kafka.ps1 $localKafkaDnsTemplate $kafkaBrokerCount
 
@@ -52,7 +54,7 @@ Write-Output "Preparing deployment file for metric nodes"
 .\lib\metric-deployment.ps1
 #prepare generator deployment
 Write-Output "Preparing deployment file for generator nodes"
-.\lib\generator-deployment.ps1 'text' 6 #BIG NOTE: CURRENTLY HARDCODED TO TEXT DATA GENERATION!!
+.\lib\generator-deployment.ps1 'text' $generatorShards #BIG NOTE: CURRENTLY HARDCODED TO TEXT DATA GENERATION!!
 
 $kafkaInitSleepMs = 60*1000 - (New-TimeSpan -Start $kafkaStartTime -End (Get-Date)).TotalMilliseconds;
 Write-Output "Waiting for $($kafkaInitSleepMs/1000) seconds for kafka to initialise"
@@ -119,3 +121,7 @@ Rename-Item ./results/logs $experimentKey
 
 Write-Output "Deleting deployment files from disk"
 Remove-Item -path .\* -include *.yaml
+
+[console]::beep(700,500)
+[console]::beep(700,500)
+[console]::beep(700,500)

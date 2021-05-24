@@ -1,0 +1,67 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: outside-0
+  namespace: kafka
+spec:
+  externalTrafficPolicy: Local
+  selector:
+    app: kafka
+    kafka-broker-id: "0"
+  ports:
+  - protocol: TCP
+    targetPort: 9094
+    port: 32400
+    nodePort: 32400
+  type: LoadBalancer
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: outside-1
+  namespace: kafka
+spec:
+  externalTrafficPolicy: Local
+  selector:
+    app: kafka
+    kafka-broker-id: "1"
+  ports:
+  - protocol: TCP
+    targetPort: 9094
+    port: 32401
+    nodePort: 32401
+  type: LoadBalancer
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: outside-2
+  namespace: kafka
+spec:
+  externalTrafficPolicy: Local
+  selector:
+    app: kafka
+    kafka-broker-id: "2"
+  ports:
+  - protocol: TCP
+    targetPort: 9094
+    port: 32402
+    nodePort: 32402
+  type: LoadBalancer
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: outside-3
+  namespace: kafka
+spec:
+  externalTrafficPolicy: Local
+  selector:
+    app: kafka
+    kafka-broker-id: "3"
+  ports:
+  - protocol: TCP
+    targetPort: 9094
+    port: 32403
+    nodePort: 32403
+  type: LoadBalancer

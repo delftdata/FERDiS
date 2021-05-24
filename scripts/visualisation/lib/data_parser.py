@@ -63,7 +63,6 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     import numpy as np
     from math import factorial
     
-    print("WAUWIE", y)
     y[-1] = 0
     try:
         window_size = np.abs(np.int(window_size))
@@ -103,8 +102,15 @@ def parse_throughput_data(datapoints: pd.DataFrame):
     return datapoints
 
 def parse_latency_data(datapoints: pd.DataFrame):
-    datapoints = datapoints.transform([parse_time_to_timestamp, int])
-    datapoints.columns = ['timestamp', 'latency']
+    #print(datapoints)
+    #datapoints = datapoints.transform([parse_time_to_timestamp, str, int])
+    #print(datapoints)
+
+    datapoints['timestamp'] = datapoints['timestamp'].transform(parse_time_to_timestamp)
+    datapoints['latency'] = datapoints['latency'].apply(lambda x: float(str(x).strip()))
+    datapoints['shard'] = datapoints['shard'].transform(int)
+
+    datapoints.columns = ['timestamp', 'latency', 'shard']
     return datapoints
 
 def parse_failures_data(datapoints: pd.DataFrame):

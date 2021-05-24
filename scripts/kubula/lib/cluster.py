@@ -49,7 +49,7 @@ def create_cluster(credentials: dict, config: dict):
     
     master_ip = master.TEMPLATE['CONTEXT']['ETH0_IP']
     print("Master running @ "+master_ip)
-    time.sleep(30)#wait an extra 30 seconds for kube config init..
+    time.sleep(45)#wait an extra 45 seconds for kube config init..
     print("Copying kube config from master")
     kubeconfig_loc = os.path.join(home, ".kube", "config")
     p = subprocess.call(['scp', '-o', 'StrictHostKeyChecking=no', 'ubuntu@' + master_ip + ':/home/ubuntu/.kube/config', kubeconfig_loc])
@@ -66,7 +66,7 @@ def create_cluster(credentials: dict, config: dict):
     #dump deployment info on disk
     deployment_info = {"master_id": master_id, "slave_ids": slave_ids}
     print("Deployment info", deployment_info)
-    with open(str(os.path.join(home, "." + config['cluster_name'])), 'w+') as deployment_file:
+    with open(str(os.path.join(home, "kubula" ,"." + config['cluster_name'])), 'w+') as deployment_file:
         json.dump(deployment_info, deployment_file)
 
     print("Waiting for slaves to register with the kubernetes cluster")

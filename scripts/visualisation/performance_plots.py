@@ -22,8 +22,7 @@ def produce_throughput_graph(location: str, fromSec: int = 0, toSec: int = 9999)
 
 
             parsedData = parse_throughput_data(get_throughput_file_content(location, experiment, perf_file))
-            initialTs = parsedData['timestamp'][0]
-
+            initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
 
             data = normalize_timestamp_column(parsedData, initialTs)
             data['throughput'] = savitzky_golay(data['throughput'], 19, 2);
@@ -35,12 +34,11 @@ def produce_throughput_graph(location: str, fromSec: int = 0, toSec: int = 9999)
             plotter.add_throughput_data(data['timestamp'].apply(lambda x: (x/1000)), data['throughput'], baseName)
 
 
-            try:
-                initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
-                print(experiment)
-            except Exception as e:
-                print(experiment, "fail", e)
-                initialTs = parsedData['timestamp'][0]
+            #try:
+            #    initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
+            #except Exception as e:
+            #    initialTs = parsedData['timestamp'][0]
+
             #add failure-lines
             failures = parse_failures_data(get_failure_file_content(location, experiment))
             failures['timestamp'] = failures['timestamp'].transform(lambda t: t - initialTs)
@@ -52,7 +50,7 @@ def produce_throughput_graph(location: str, fromSec: int = 0, toSec: int = 9999)
         plotter.save_plot(f"{location}/{experiment}-throughput")
 
 
-def produce_latency_graph(location: str, fromSec: int = 0, toSec: int = 9999):
+def produce_latency_graph(location: str, plotPerShard: bool = False, plotMeanPerTime = False, fromSec: int = 0, toSec: int = 9999):
     for experiment in get_experiments_at_location(location):
         plotter = Plotter()
         plotter.start_plot()
@@ -63,20 +61,31 @@ def produce_latency_graph(location: str, fromSec: int = 0, toSec: int = 9999):
 
             parsedData = parse_latency_data(get_latency_file_content(location, experiment, perf_file).drop_duplicates())
             
-            initialTs = parsedData['timestamp'][0]
+            initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
+            #initialTs = parsedData['timestamp'][0]
             
             data = normalize_timestamp_column(parsedData, initialTs)
             data = data[data["timestamp"] > fromSec*1000][data["timestamp"] < toSec*1000]
 
-            #add to plot
-            plotter.add_latency_data(data['timestamp'].apply(lambda x: x/1000), data['latency'], baseName)
+            if(plotPerShard):
+                #add to plot per shard
+                for key, values in data.groupby(["shard"]):
+                    values = values.reset_index()
+                    values['latency'] = savitzky_golay(values['latency'], 19, 2);
+                    plotter.add_latency_data(values['timestamp'].apply(lambda x: x/1000), values['latency'], "shard-"+str(key))
+            elif(plotMeanPerTime):
+                #add to plot averaged among shards
+                data = data.groupby(["timestamp"]).mean()
+                data = data.reset_index()
+                data['latency'] = savitzky_golay(data['latency'], 19, 2);
+                plotter.add_latency_data(data['timestamp'].apply(lambda x: x/1000), data['latency'], baseName)
+            else:
+                plotter.add_latency_data(data['timestamp'].apply(lambda x: x/1000), data['latency'], baseName)
 
-            try:
-                initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
-                print(experiment)
-            except Exception as e:
-                print(experiment, "fail", e)
-                initialTs = parsedData['timestamp'][0]
+            #try:
+            #    initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
+            #except Exception as e:
+            #    initialTs = parsedData['timestamp'][0]
 
             #add failure-lines
             failures = parse_failures_data(get_failure_file_content(location, experiment))

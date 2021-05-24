@@ -12,11 +12,14 @@ from checkpoint_plots import produce_checkpoint_plot
 import warnings
 warnings.filterwarnings("ignore")
 
+fromSecond = 60
+toSecond = 300
+
 def main():
     logfileloc = "C:/Projects/BlackSP/scripts/experiments/results"
 
-    produce_throughput_graph(logfileloc, 0, 999)
-    produce_latency_graph(logfileloc, 0, 999)
+    produce_throughput_graph(logfileloc, fromSec=fromSecond, toSec=toSecond,)
+    produce_latency_graph(logfileloc, fromSec=fromSecond, toSec=toSecond, plotMeanPerTime=True)
     #produce_combined_throughput_graph(logfileloc)
     #produce_checkpoint_plot(logfileloc)
 

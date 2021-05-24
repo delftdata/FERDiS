@@ -24,7 +24,7 @@ namespace BlackSP.Infrastructure.Extensions
             builder.RegisterType<WorkerResponseHandler>().AsImplementedInterfaces();
             builder.RegisterType<CheckpointRestoreResponseHandler>().As<IHandler<ControlMessage>>();
 
-            if(checkpointConfiguration.CoordinationMode == CheckpointCoordinationMode.CommunicationInduced)
+            if(checkpointConfiguration.CoordinationMode == CheckpointCoordinationMode.CommunicationInduced || checkpointConfiguration.CoordinationMode == CheckpointCoordinationMode.Uncoordinated)
             {
                 builder.RegisterType<MessageLoggingSequenceManager>().AsSelf().SingleInstance();
                 builder.RegisterType<LogPruneRequestHandler>().As<IHandler<ControlMessage>>();
