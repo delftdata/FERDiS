@@ -74,9 +74,7 @@ namespace BlackSP.Benchmarks
         {
             try
             {
-                int genCalls = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_CALLS"));
-                string skipTopicList = Environment.GetEnvironmentVariable("GENERATOR_SKIP_TOPICS") ?? string.Empty;
-                await KafkaNEXMarkProducer.StartProductingAuctionData(genCalls, skipTopicList);
+                await KafkaNEXMarkProducer.StartProductingAuctionData();
             }
             catch (Exception e)
             {

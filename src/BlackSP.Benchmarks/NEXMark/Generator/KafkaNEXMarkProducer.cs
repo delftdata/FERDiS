@@ -15,8 +15,13 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
     public class KafkaNEXMarkProducer
     {
 
-        public static async Task StartProductingAuctionData(int generatorCalls, string skipTopicList)
+        public static async Task StartProductingAuctionData()
         {
+            int generatorCalls = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_CALLS"));
+            int targetThroughput = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_TARGET_THROUGHPUT"));
+            string skipTopicList = Environment.GetEnvironmentVariable("GENERATOR_SKIP_TOPICS") ?? string.Empty;
+
+
             using var ctSource = new CancellationTokenSource();
             Console.WriteLine($"Starting generator process \"java -jar NEXMarkGenerator.jar -gen-calls {generatorCalls}\"");
             var startInfo = new ProcessStartInfo("java", $"-jar NEXMarkGenerator.jar -gen-calls {generatorCalls} -prettyprint false")
@@ -26,7 +31,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
                 UseShellExecute = false
             };
             var generatorProcess = Process.Start(startInfo);
-            var outPrinter = Task.Run(() => ParseXMLAndProduceToKafka(generatorProcess.StandardOutput, generatorCalls, skipTopicList, ctSource.Token));
+            var outPrinter = Task.Run(() => ParseXMLAndProduceToKafka(generatorProcess.StandardOutput, generatorCalls, targetThroughput, skipTopicList, ctSource.Token));
             try
             {
                 generatorProcess.WaitForExit();
@@ -41,7 +46,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
             }
         }
 
-        static async Task ParseXMLAndProduceToKafka(StreamReader reader, int generatorCalls, string skipTopicList, CancellationToken token)
+        static async Task ParseXMLAndProduceToKafka(StreamReader reader, int generatorCalls, int targetThroughput, string skipTopicList, CancellationToken token)
         {
             Console.WriteLine($"Instantiating kafka producers for topics {Bid.KafkaTopicName},{Auction.KafkaTopicName},{Person.KafkaTopicName}");
             if(!string.IsNullOrEmpty(skipTopicList))
@@ -78,9 +83,30 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
             int auctionCount = 0;
 
             Console.WriteLine("Beginning to parse generator data and produce it to kafka topics");
+            var windowAt = DateTime.UtcNow;
+            var produceCounter = 0;
             int i = 0;
             while (!reader.EndOfStream)
             {
+                //throttling begin
+                var nextWindow = windowAt.AddMilliseconds(100);
+                var now = DateTime.UtcNow;
+                if (produceCounter > (targetThroughput / 10) && nextWindow > now)
+                {
+                    Console.WriteLine($"produced {produceCounter} events, waiting for {(int)(nextWindow - now).TotalMilliseconds}ms (throttle)");
+                    await Task.Delay(nextWindow - now);
+                    continue;
+                }
+
+                if (nextWindow < now)
+                {
+                    Console.WriteLine($"resetting counter {produceCounter} to 0");
+                    produceCounter = 0;
+                    windowAt = nextWindow;
+                }
+                //throttling end
+
+
                 //XML reading begin
                 var xmlHeader = reader.ReadLine();
                 if (string.IsNullOrEmpty(xmlHeader))
@@ -94,14 +120,16 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
                 }
                 //XML reading end
 
+
+                //data producing begin
                 var parser = new NEXMarkXMLParser($"{xmlHeader}{xmlBody}");
-                var productTasks = new List<Task>();
+                var produceTasks = new List<Task>();
                 if(!skipTopicList.Contains(Person.KafkaTopicName))
                 {
                     foreach (var person in parser.GetPeople())
                     {
                         var message = new Message<int, Person> { Key = person.Id, Value = person };
-                        productTasks.Add(peopleProducer.ProduceAsync(Person.KafkaTopicName, message, token));
+                        produceTasks.Add(peopleProducer.ProduceAsync(Person.KafkaTopicName, message, token));
                         peopleCount++;
                     }
                 }
@@ -111,7 +139,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
                     foreach (var bid in parser.GetBids())
                     {
                         var message = new Message<int, Bid> { Key = bid.AuctionId, Value = bid };
-                        productTasks.Add(bidProducer.ProduceAsync(Bid.KafkaTopicName, message, token));
+                        produceTasks.Add(bidProducer.ProduceAsync(Bid.KafkaTopicName, message, token));
                         bidCount++;
                     }
                 }
@@ -120,12 +148,18 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
                     foreach (var auction in parser.GetAuctions())
                     {
                         var message = new Message<int, Auction> { Key = auction.Id, Value = auction };
-                        productTasks.Add(auctionProducer.ProduceAsync(Auction.KafkaTopicName, message, token));
+                        produceTasks.Add(auctionProducer.ProduceAsync(Auction.KafkaTopicName, message, token));
                         auctionCount++;
                     }
                 }
-                await Task.WhenAll(productTasks); //wait for all at once to allow higher throughput
 
+                produceCounter += produceTasks.Count;
+                //dont actually await producetasks
+                //data producing end
+
+
+
+                //some progress tracking
                 var auctionPercent = (int)Math.Round(auctionCount / expectedAuctionCount * 100);
                 var peoplePercent = (int)Math.Round(peopleCount / expectedPeopleCount * 100);
                 var bidPercent = (int)Math.Round(bidCount / expectedBidCount * 100);

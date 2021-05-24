@@ -19,7 +19,7 @@ namespace BlackSP.Benchmarks.Graph
         /// <summary>
         /// The N in N-hop neighbours
         /// </summary>
-        public static readonly int HopCountMax = 3;
+        public static readonly int HopCountMax = 2;
 
         /// <summary>
         /// Wether to show nhop result tuples in the logs
@@ -29,11 +29,13 @@ namespace BlackSP.Benchmarks.Graph
         /// <summary>
         /// The maximum amount of epochs any streaming pagerank element will make
         /// </summary>
+        [Obsolete("pagerank will be removed")]
         public static readonly int MaxEpochCount = 100;
 
         /// <summary>
         /// The amount of epochs to pass before sinking a new pagerank, useful for reducing the amount of sink output
         /// </summary>
+        [Obsolete("pagerank will be removed")]
         public static readonly int EpochSinkInterval = 5;
 
     }

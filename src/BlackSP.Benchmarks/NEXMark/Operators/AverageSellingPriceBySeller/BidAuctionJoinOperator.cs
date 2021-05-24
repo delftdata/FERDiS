@@ -23,7 +23,8 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.AverageSellingPriceBySeller
             {
                 Key = matchB.Auction.Id,
                 Bid = matchA.Bid,
-                Auction = matchB.Auction
+                Auction = matchB.Auction,
+                EventTime = matchA.EventTime > matchB.EventTime ? matchA.EventTime : matchB.EventTime,
             };
         }
 

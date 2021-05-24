@@ -32,8 +32,8 @@ namespace BlackSP.Benchmarks.NEXMark.Operators
             var person = consumeResult.Message.Value ?? throw new InvalidDataException("Received null Person object from Kafka");
             return new PersonEvent {
                 Key = person.Id, 
-                Person = person, 
-                EventTime = DateTime.Now
+                Person = person,
+                EventTime = consumeResult.Message.Timestamp.UtcDateTime
             };
         }
 

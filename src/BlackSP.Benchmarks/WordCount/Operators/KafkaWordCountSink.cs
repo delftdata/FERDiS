@@ -34,8 +34,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
                 Partitioner = Partitioner.Consistent
             };
-
-            //producer = new ProducerBuilder<int, string>(config).SetErrorHandler((prod, err) => logger.Warning($"Output produce error: {err}")).Build();
+            producer = new ProducerBuilder<int, string>(config).SetErrorHandler((prod, err) => logger.Warning($"Output produce error: {err}")).Build();
         }
 
         public async Task Sink(WordEvent @event)
@@ -62,7 +61,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             }
 
             var outputValue = $"{@event.EventTime:yyyyMMddHHmmssFFFFF}${DateTime.UtcNow:yyyyMMddHHmmssFFFFF}${@event.EventCount()}";
-            //producer.ProduceAsync("output", new Message<int, string> { Key = @event.Key ?? default, Value = outputValue });
+            producer.ProduceAsync("output", new Message<int, string> { Key = @event.Key ?? default, Value = outputValue });
             
             //producer.Flush();
         }

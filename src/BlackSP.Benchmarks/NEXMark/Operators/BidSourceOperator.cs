@@ -31,8 +31,9 @@ namespace BlackSP.Benchmarks.NEXMark.Operators
             //Logger.Warning($"Received bid: {bid.PersonId} offered {bid.Amount} for {bid.AuctionId}");
             return new BidEvent { 
                 Key = bid.AuctionId, 
-                Bid = bid, 
-                EventTime = DateTime.Now };
+                Bid = bid,
+                EventTime = consumeResult.Message.Timestamp.UtcDateTime
+            };
         }
 
         

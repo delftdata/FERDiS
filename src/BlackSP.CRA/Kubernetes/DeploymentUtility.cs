@@ -113,7 +113,9 @@ spec:
               env:
 {GetEnvironmentSection()}
               args: [""{instanceName}"", ""1500""] #CRA instance name {instanceName}, exposed on port 1500
-              #resources: #requests #cpu ""500m"" #hotfix to prevent two instances on the same node (assuming 1m cpu total)
+              resources: 
+                requests:
+                    cpu: 500m #best-effort attempt at spreading instances over cpus
 ---
 ";
         }

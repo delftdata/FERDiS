@@ -11,7 +11,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.LocalItem
         public PersonEvent Filter(PersonEvent @event)
         {
             var address = @event.Person.Address;
-            return address != null && (address.Province == "Washington" || address.Province == "New York" || address.Province == "Montana") 
+            return address != null && address.Province.Length > 0 && address.Province[0] % 2 == 0
                 ? @event 
                 : null;
         }

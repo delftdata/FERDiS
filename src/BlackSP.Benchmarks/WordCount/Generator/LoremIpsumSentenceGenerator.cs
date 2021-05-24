@@ -30,12 +30,6 @@ namespace BlackSP.Benchmarks.WordCount.Generator
 
             var windowAt = DateTime.UtcNow;
             var produceCounter = 0;
-            //produce (c ++)
-            //if( c > target && timing?)
-            //wait remaining time
-            //c = 0
-            //new timing
-
             while(true)
             {
                 var nextWindow = windowAt.AddMilliseconds(100);

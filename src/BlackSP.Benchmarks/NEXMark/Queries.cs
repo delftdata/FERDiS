@@ -20,7 +20,7 @@ namespace BlackSP.Benchmarks.NEXMark
             {
                 case Size.Small: break;
                 case Size.Medium:
-                    sourceShards = 2;
+                    sourceShards = 4;
                     filterShards = 4;
                     sinkShards = 2;
                     break;

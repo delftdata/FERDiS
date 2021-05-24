@@ -31,7 +31,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators
             return new AuctionEvent { 
                 Key = auction.Id, 
                 Auction = auction, 
-                EventTime = DateTime.Now 
+                EventTime = consumeResult.Message.Timestamp.UtcDateTime
             };
         }
 

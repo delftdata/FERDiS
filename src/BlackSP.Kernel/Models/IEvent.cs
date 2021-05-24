@@ -14,6 +14,6 @@ namespace BlackSP.Kernel.Models
         /// How many events shaped the current event<br/>
         /// Defaults to 1 but can be overridden for Aggregate operations
         /// </summary>
-        int EventCount() => 1;
+        public int EventCount() => 1;
     }
 }

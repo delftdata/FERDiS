@@ -20,5 +20,6 @@ namespace BlackSP.Benchmarks.NEXMark.Events
 
         [ProtoMember(3)]
         public Bid Bid { get; set; }
+
     }
 }

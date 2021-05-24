@@ -11,7 +11,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.LocalItem
         public AuctionEvent Filter(AuctionEvent @event)
         {
             int categoryId = @event.Auction.CategoryId;
-            return categoryId < 50 ? @event : null;
+            return categoryId % 2 !=0 ? @event : null;
         }
     }
 }

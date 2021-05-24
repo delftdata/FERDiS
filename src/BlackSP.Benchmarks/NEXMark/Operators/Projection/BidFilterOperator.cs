@@ -10,7 +10,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.Projection
     {
         public BidEvent Filter(BidEvent @event)
         {
-            if(@event.Bid.AuctionId > 20 || @event.Bid.AuctionId < 40)
+            if(@event.Bid.AuctionId % 2 != 0) //filter out uneven auctionIds
             {
                 return @event;
             }
