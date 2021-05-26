@@ -24,6 +24,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
 
             using var ctSource = new CancellationTokenSource();
             Console.WriteLine($"Starting generator process \"java -jar NEXMarkGenerator.jar -gen-calls {generatorCalls}\"");
+            //C:/Program Files/Java/jdk-16.0.1/bin/
             var startInfo = new ProcessStartInfo("java", $"-jar NEXMarkGenerator.jar -gen-calls {generatorCalls} -prettyprint false")
             {
                 RedirectStandardError = true,
@@ -89,9 +90,9 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
             while (!reader.EndOfStream)
             {
                 //throttling begin
-                var nextWindow = windowAt.AddMilliseconds(100);
+                var nextWindow = windowAt.AddMilliseconds(1000);
                 var now = DateTime.UtcNow;
-                if (produceCounter > (targetThroughput / 10) && nextWindow > now)
+                if (produceCounter > (targetThroughput) && nextWindow > now)
                 {
                     Console.WriteLine($"produced {produceCounter} events, waiting for {(int)(nextWindow - now).TotalMilliseconds}ms (throttle)");
                     await Task.Delay(nextWindow - now);
@@ -165,7 +166,7 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
                 var bidPercent = (int)Math.Round(bidCount / expectedBidCount * 100);
                 if(i % (generatorCalls/100) == 0)
                 {
-                    Console.WriteLine($"Auctions at ~{auctionPercent}%, People at ~{peoplePercent}%, Bids at ~{bidPercent}%");
+                    //Console.WriteLine($"Auctions at ~{auctionPercent}%, People at ~{peoplePercent}%, Bids at ~{bidPercent}%");
                 }
                 i++;
             }

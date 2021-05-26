@@ -4,9 +4,10 @@
       "commandName": "Project",
       "environmentVariables": {
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
-        "KAFKA_BROKER_COUNT": "6",
+        "KAFKA_BROKER_COUNT": "4",
 
-        "GENERATOR_CALLS": "10000",
+        "GENERATOR_TARGET_THROUGHPUT": "999999",
+        "GENERATOR_CALLS": "99999999",
         "GENERATOR_SKIP_TOPICS": "" //bids,people,auctions
       },
       "commandLineArgs": "nexmark"
@@ -16,7 +17,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
-        "KAFKA_BROKER_COUNT": "6",
+        "KAFKA_BROKER_COUNT": "4",
 
         "EDGES_FILE_LOCATION": "C:\\Users\\marcd\\Downloads\\test-edges.txt"
       },
@@ -27,9 +28,9 @@
       "commandName": "Project",
       "environmentVariables": {
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
-        "KAFKA_BROKER_COUNT": "6",
+        "KAFKA_BROKER_COUNT": "4",
 
-        "GENERATOR_TARGET_THROUGHPUT": "10"
+        "GENERATOR_TARGET_THROUGHPUT": "999999"
       },
       "commandLineArgs": "text"
     },
@@ -43,6 +44,15 @@
         "KAFKA_TOPICS_TO_DELETE": "sentences, bids, people, auctions, adjacency, output"
       },
       "commandLineArgs": "delete-topic"
+    },
+
+    "Test Consume From Kafka": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
+        "KAFKA_BROKER_COUNT": "4",
+      },
+      "commandLineArgs": "consume"
     },
 
     "Collect latency metrics": {

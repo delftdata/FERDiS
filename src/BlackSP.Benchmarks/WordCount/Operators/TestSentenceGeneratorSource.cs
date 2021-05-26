@@ -22,7 +22,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
         
         private readonly ILogger _logger;
 
-        private int MaxSentenceCount => defaultSentences.Length * 50000;
+        private int MaxSentenceCount => int.MaxValue;// defaultSentences.Length * 50000;
 
         public TestSentenceGeneratorSource(ILogger logger)
         {
@@ -52,7 +52,8 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             //_logger.Debug($"Sending {defaultSentences[i]} ({i} , {lastSentenceIndex})");
             return new SentenceEvent
             {
-                Sentence = defaultSentences[i]
+                Sentence = defaultSentences[i],
+                EventTime = DateTime.UtcNow
             };
         }
     }

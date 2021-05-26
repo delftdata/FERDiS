@@ -75,7 +75,7 @@ namespace BlackSP.Benchmarks.MetricCollection
                         {
                             errorLogger.Warning(e, "Error while consuming from kafka topic");
                         }
-                        latencyLogger.Information($"{now:hh:mm:ss:ffffff}, {(latency.TotalMilliseconds > 0 ? (object)latency.TotalMilliseconds : "NaN")}, {tpo.Partition.Value}");
+                        latencyLogger.Information($"{now:hh:mm:ss:ffffff}, {(latency.TotalMilliseconds > 0 ? (object)(int)latency.TotalMilliseconds : "NaN")}, {tpo.Partition.Value}");
                     });
                     lag -= updateInterval;
                 }

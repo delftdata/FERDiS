@@ -58,6 +58,9 @@ namespace BlackSP.Benchmarks
                         var size = (Size)int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_SIZE"));
                         await RunBenchmark(infrastructure, benchmark, size);
                         break;
+                    case "consume":
+                        new TestConsumer().Consume();
+                        break;
                     default:
                         Console.WriteLine($"Unknown argument on position 0: {args[0]}. Possible values: delete-topic, graph, text, nexmark, benchmark");
                         break;

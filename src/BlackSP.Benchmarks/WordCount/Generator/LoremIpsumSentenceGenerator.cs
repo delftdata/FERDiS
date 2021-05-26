@@ -18,10 +18,15 @@ namespace BlackSP.Benchmarks.WordCount.Generator
             var config = new ProducerConfig
             {
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
-                Partitioner = Partitioner.Consistent
+                Partitioner = Partitioner.Consistent,
+                //Debug = "msg"
             };
 
-            using var producer = new ProducerBuilder<int, string>(config)
+            using var producer = new ProducerBuilder<int, string>(config).SetStatisticsHandler((p, s) =>
+            {
+                Console.WriteLine(p);
+                Console.WriteLine(s);
+            })
                 //.SetValueSerializer(new ProtoBufAsyncValueSerializer<SentenceEvent>())
                 .SetErrorHandler((prod, err) => Console.WriteLine($"Sentence produce error: {err}"))
                 .Build();
@@ -32,9 +37,9 @@ namespace BlackSP.Benchmarks.WordCount.Generator
             var produceCounter = 0;
             while(true)
             {
-                var nextWindow = windowAt.AddMilliseconds(100);
+                var nextWindow = windowAt.AddMilliseconds(1000);
                 var now = DateTime.UtcNow;
-                if (produceCounter > (targetThroughput/10) && nextWindow > now)
+                if (produceCounter > (targetThroughput) && nextWindow > now)
                 {
                     Console.WriteLine($"produced {produceCounter} events, waiting for {(int)(nextWindow - now).TotalMilliseconds}ms (throttle)");
                     await Task.Delay(nextWindow - now);
