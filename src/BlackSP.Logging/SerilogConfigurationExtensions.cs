@@ -1,5 +1,6 @@
 ﻿using BlackSP.Kernel.Configuration;
 using Microsoft.Azure.Storage;
+using Microsoft.Azure.Storage.Blob;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -28,7 +29,7 @@ namespace BlackSP.Logging
             }
             if (targetFlags.HasFlag(LogTargetFlags.AzureBlob))
             {
-                var connectionString = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING"));
+                var connectionString = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING"));
                 logConfig.WriteTo.AzureBlobStorage(connectionString, logLevel, "logs", $"{instanceName}-{{yyyy}}-{{MM}}-{{dd}}.log",
                     outputTemplate: $"[{{Timestamp:hh:mm:ss:ffffff}}] [{instanceName} {{Level:u3}}] {{Message}}{{NewLine}}{{Exception}}");
             }
@@ -60,7 +61,8 @@ namespace BlackSP.Logging
             }
             if (targetFlags.HasFlag(LogTargetFlags.AzureBlob))
             {
-                var connectionString = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING"));
+                var connectionString = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING"));
+                
                 logConfig.WriteTo.AzureBlobStorage(connectionString, logLevel, "logs", $"{subFolder}/{instanceName}-{{yyyy}}-{{MM}}-{{dd}}.log",
                     outputTemplate: $"{{Message}}{{NewLine}}", writeInBatches: true);
             }

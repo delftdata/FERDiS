@@ -20,8 +20,8 @@ spec:
             - name: latency-logger
               image: mdzwart/benchmarks-net3.1:latest
               env:
-              - name: AZURE_STORAGE_CONN_STRING
-                value: "$($env:AZURE_STORAGE_CONN_STRING)"
+              - name: AZURE_STORAGE_CONNECTION_STRING
+                value: "$($env:AZURE_STORAGE_CONNECTION_STRING)"
               - name: KAFKA_BROKER_DNS_TEMPLATE
                 value: "$($env:KAFKA_BROKER_DNS_TEMPLATE)"
               - name: KAFKA_BROKER_COUNT
@@ -53,8 +53,8 @@ spec:
             - name: throughput-logger
               image: mdzwart/benchmarks-net3.1:latest
               env:
-              - name: AZURE_STORAGE_CONN_STRING
-                value: "$($env:AZURE_STORAGE_CONN_STRING)"
+              - name: AZURE_STORAGE_CONNECTION_STRING
+                value: "$($env:AZURE_STORAGE_CONNECTION_STRING)"
               - name: KAFKA_BROKER_DNS_TEMPLATE
                 value: "$($env:KAFKA_BROKER_DNS_TEMPLATE)"
               - name: KAFKA_BROKER_COUNT

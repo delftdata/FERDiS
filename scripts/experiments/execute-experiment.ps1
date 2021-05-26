@@ -1,9 +1,10 @@
 
 #unique identifier for the experiment
-$experimentKey = "avgsellpricebyseller-s-uc-30-4x10000"
+$experimentKey = "projection-s-uc-30-1x2500"
 
-#SAS for the azure log blob container
-$azureSasUrl = 'https://vertexstore.blob.core.windows.net/logs?sp=rdl&st=2021-05-17T20:48:50Z&se=2102-05-18T20:48:00Z&sv=2020-02-10&sr=c&sig=gm1ptYoKffPKOtw2HtFM%2BaNOyYNslmws8TD2T1qljPY%3D'
+#SAS for the azure log blob container (SET PUBLIC IN STORAGE EXPLORER)
+$azureSasUrl = 'http://127.0.0.1:10000/devstoreaccount1/logs'
+
 
 #kafka settings
 $localKafkaDnsTemplate = 'localhost:3240{0}'
@@ -12,9 +13,9 @@ $kafkaBrokerCount = 4
 $kafkaKustomizationPath = '.\kafka\variants\scale-4-2'
 
 #generator settings
-$generatorShards = 4
-$generatorThroughput = 10000
-$generatorType = 'nexmark' #possible types: 'text', 'graph', 'nexmark'
+$generatorShards = 1
+$generatorThroughput = 2500
+$generatorType = 'text' #possible types: 'text', 'graph', 'nexmark'
 $generatorNexmarkGenCalls = 9999999 #...
 
 #checkpoint settings
@@ -22,7 +23,7 @@ $checkpointMode = 0 #0 = uc, 1 = cc, 2 = cic
 $checkpointIntervalSec = 30
 
 #job settings
-$jobType = 5 #0-6
+$jobType = 1 #0-6
 $jobSize = 0 #0-2
 
 #log settings
@@ -60,8 +61,10 @@ $kafkaStartTime = Get-Date
 
 
 
-Write-Output "Deleting remaining log files from blob storage"
-azcopy rm $azureSasUrl --recursive
+#Write-Output "Deleting remaining log files from blob storage"
+#azcopy rm $azureSasUrl --recursive
+
+
 
 #prepare cra deployment (yields k8s yaml)
 Write-Output "Preparing deployment file for BlackSP nodes"
@@ -136,7 +139,7 @@ Start-Sleep -m 1000 #fixed one second sleep to ensure all log files have indeed 
 
 Write-Output "Downloading log files" 
 #download log files
-azcopy copy $azureSasUrl './results/' --recursive
+azcopy copy $azureSasUrl './results/' --recursive --from-to BlobLocal
 $failureTimes | Out-File ./results/logs/failures.log -Encoding "UTF8"
 $startTime | Out-File ./results/logs/init_timestamp.log -Encoding "UTF8"
 Rename-Item ./results/logs $experimentKey

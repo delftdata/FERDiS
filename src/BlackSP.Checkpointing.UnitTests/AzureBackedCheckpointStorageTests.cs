@@ -27,7 +27,7 @@ namespace BlackSP.Checkpointing.UnitTests
         [SetUp]
         public void SetUp()
         {
-            Environment.SetEnvironmentVariable("AZURE_STORAGE_CONN_STRING", AzureStorageConnectionString);
+            Environment.SetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING", AzureStorageConnectionString);
 
             instanceName = "instance01";
             checkpointStorage = new AzureBackedCheckpointStorage();

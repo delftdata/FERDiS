@@ -87,6 +87,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
+        "AZURE_STORAGE_CONNECTION_STRING": "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;",
 
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //"kafka-{0}.kafka.kafka.svc.cluster.local:9092"
         "KAFKA_BROKER_COUNT": "6",
@@ -97,12 +98,12 @@
         "CHECKPOINT_COORDINATION_MODE": "0", //0 = uc, 1 = cc, 2 = cic
         "CHECKPOINT_INTERVAL_SECONDS": "30",
 
-        "BENCHMARK_INFRA": "0", //0 = simulator, 1 = cra
+        "BENCHMARK_INFRA": "1", //0 = simulator, 1 = cra
         "BENCHMARK_JOB": "0", //0-5
         "BENCHMARK_SIZE": "1", // 0 = S, 1 = M, 2 = L
 
         "CRA_WORKER_DOCKER_IMAGE": "mdzwart/cra-net3.1:latest",
-        "CRA_ENVIRONMENT_VARIABLE_KEYS_TO_COPY": "AZURE_STORAGE_CONN_STRING, KAFKA_BROKER_DNS_TEMPLATE, KAFKA_BROKER_COUNT" //list of environment variable keys that will be forwarded to the environment in the k8s deployment
+        "CRA_ENVIRONMENT_VARIABLE_KEYS_TO_COPY": "AZURE_STORAGE_CONN_STRING, AZURE_STORAGE_CONNECTION_STRING, KAFKA_BROKER_DNS_TEMPLATE, KAFKA_BROKER_COUNT" //list of environment variable keys that will be forwarded to the environment in the k8s deployment
       },
       "commandLineArgs": "benchmark"
     }
