@@ -53,13 +53,15 @@ namespace BlackSP.Benchmarks.Kafka
 
         protected IConsumer<int, T> GetConsumer(bool forceCreate = false)
         {
+            Logger.Information($"GetConsumer for topic {TopicName}, force: {forceCreate}, didInit: {Consumer != null}");
+
             if (forceCreate && Consumer != null)
             {
                 Consumer.Dispose();
                 Consumer = null;
             }
-
-            if(Consumer == null)
+            
+            if (Consumer == null)
             {
                 var builder = new ConsumerBuilder<int, T>(GetConsumerConfig(VertexConfiguration.VertexName + "wtf"))
                     .SetErrorHandler((_, e) => {
@@ -88,6 +90,7 @@ namespace BlackSP.Benchmarks.Kafka
                     {
                         _offsets.Add(partition, (int)Offset.Beginning);
                     }
+                    Logger.Information("Assigned kafka partition: " + partition);
                 }
                 var tpos = assignedPartitions
                     .Select(p => new TopicPartition(TopicName, p))
@@ -122,8 +125,10 @@ namespace BlackSP.Benchmarks.Kafka
             {
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
                 GroupId = groupId,
-                EnableAutoCommit = false,
-                AutoOffsetReset = AutoOffsetReset.Earliest
+                EnableAutoCommit = true,
+                AutoOffsetReset = AutoOffsetReset.Earliest,
+                Debug= "fetch",
+                AllowAutoCreateTopics = true,
             };
         }
     }

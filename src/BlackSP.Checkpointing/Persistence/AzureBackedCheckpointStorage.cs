@@ -33,7 +33,7 @@ namespace BlackSP.Checkpointing.Persistence
 
         private BlobContainerClient GetBlobContainerClientForCheckpoints()
         {
-            var connectionString = Environment.GetEnvironmentVariable("AZURE_STORAGE_CONN_STRING");
+            var connectionString = Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING");
             BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
             BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient($"checkpoints");
             containerClient.CreateIfNotExists();

@@ -17,7 +17,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Confluent.Kafka" Version="1.5.2" />
+    <PackageReference Include="Confluent.Kafka" Version="1.7.0" />
     <PackageReference Include="Lorem.NET" Version="1.0.6" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="6.1.1" />
   </ItemGroup>
