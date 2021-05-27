@@ -13,7 +13,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
 
         public IEnumerable<WordEvent> Map(SentenceEvent @event)
         {
-            return @event.Sentence.Replace(',', ' ').Replace('.', ' ').Split(" ").Select(word => new WordEvent { EventTime = @event.EventTime, Word = word, Count = 1 });
+            return @event.Sentence.Replace(',', ' ').Replace('.', ' ').Split(" ").Where(s => s.Length > 0).Select(word => new WordEvent { EventTime = @event.EventTime, Word = word, Count = 1 });
         }
     }
 }

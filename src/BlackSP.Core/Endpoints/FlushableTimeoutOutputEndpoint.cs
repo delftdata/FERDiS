@@ -248,15 +248,15 @@ namespace BlackSP.Core.Endpoints
             {
                 if (pongTask.IsFaulted)
                 {
-                    _logger.Warning(pongTask.Exception, $"Output endpoint {_endpointConfig.LocalEndpointName} keepalive listener exited with exception");
+                    _logger.Warning(pongTask.Exception, $"Output endpoint {_endpointConfig.LocalEndpointName} to {targetInstanceName} keepalive listener exited with exception");
                 }
                 else if (pongTask.IsCanceled)
                 {
-                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} keepalive listener exited due to cancellation");
+                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} to {targetInstanceName} keepalive listener exited due to cancellation");
                 }
                 else
                 {
-                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} keepalive listener exited gracefully");
+                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName} to {targetInstanceName} keepalive listener exited gracefully");
                 }
 
                 pongListenerTimeoutSource.Dispose();

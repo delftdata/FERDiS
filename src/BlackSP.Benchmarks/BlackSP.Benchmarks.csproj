@@ -9,6 +9,12 @@
     <None Remove="lib\NEXMarkGenerator.jar" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <DefineConstants>TRACE</DefineConstants>
+	<DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
   <ItemGroup>
     <ContentWithTargetPath Include="lib\NEXMarkGenerator.jar">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

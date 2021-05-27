@@ -87,7 +87,7 @@ namespace BlackSP.Benchmarks.MetricCollection
                         Parallel.ForEach(assignedTopicPartitionOffsets, tpo =>
                         {
                             var wmOffsets = consumer.GetWatermarkOffsets(tpo.TopicPartition);
-                            var high = wmOffsets.High == Offset.Unset ? 0 : wmOffsets.High;
+                            var high = wmOffsets.High == Offset.Unset ? lastWmOffsets[tpo.Partition] : wmOffsets.High;
 
                             var delta = high - lastWmOffsets[tpo.Partition];
                             lock (lockObj) //not best performing solution but its good enough

@@ -37,9 +37,9 @@ namespace BlackSP.Benchmarks.WordCount.Generator
             var produceCounter = 0;
             while(true)
             {
-                var nextWindow = windowAt.AddMilliseconds(1000);
+                var nextWindow = windowAt.AddMilliseconds(1000/10);
                 var now = DateTime.UtcNow;
-                if (produceCounter > (targetThroughput) && nextWindow > now)
+                if (produceCounter > (targetThroughput/10) && nextWindow > now)
                 {
                     Console.WriteLine($"produced {produceCounter} events, waiting for {(int)(nextWindow - now).TotalMilliseconds}ms (throttle)");
                     await Task.Delay(nextWindow - now);
@@ -56,6 +56,7 @@ namespace BlackSP.Benchmarks.WordCount.Generator
 
 
                 var sentence = Lorem.Sentence(1, 3);
+                //Console.WriteLine(sentence);
                 var msg = new Message<int, string> { Key = sentence[0], Value = sentence, Timestamp = Timestamp.Default };
 
                 producer.ProduceAsync("sentences", msg);

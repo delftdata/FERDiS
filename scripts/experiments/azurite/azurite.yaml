@@ -41,4 +41,6 @@ spec:
   selector:
     app: storage-azurite
   type: LoadBalancer
+  externalIPs:
+  - 145.100.59.40
 

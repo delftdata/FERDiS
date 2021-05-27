@@ -32,7 +32,9 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             var config = new ProducerConfig
             {
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
-                Partitioner = Partitioner.Consistent
+                Partitioner = Partitioner.Consistent,
+                LingerMs = 10,//high linger to reduce overhead,
+                
             };
             producer = new ProducerBuilder<int, string>(config).SetErrorHandler((prod, err) => logger.Warning($"Output produce error: {err}")).Build();
         }
@@ -47,19 +49,9 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             {
                 _wordCountMap.Add(@event.Word, @event.Count);
             }
-            var wordCountStrings = _wordCountMap.OrderBy(p => p.Key)
-                .Select(x => x.Key + "=" + x.Value)
-                .ToArray();
+            //var wordCountStrings = _wordCountMap.OrderBy(p => p.Key).Select(x => x.Key + "=" + x.Value).ToArray();
+            //_logger.Debug($"WordCount: {string.Join("; ", wordCountStrings)}");
             
-            _logger.Debug($"WordCount: {string.Join("; ", wordCountStrings)}");
-            
-            if(@event.EventTime - DateTime.UtcNow > TimeSpan.FromSeconds(30))
-            {
-                //wow thats some crazy latency
-                _logger.Information("BIG LATENCY");
-                _logger.Error($"{DateTime.UtcNow:hh:mm:ss:fffff}, {@event.EventTime:hh:mm:ss:fffff}, {@event.Key}, {@event.EventCount()}");
-            }
-
             var outputValue = $"{@event.EventTime:yyyyMMddHHmmssFFFFF}${DateTime.UtcNow:yyyyMMddHHmmssFFFFF}${@event.EventCount()}";
             producer.ProduceAsync("output", new Message<int, string> { Key = @event.Key ?? default, Value = outputValue });
             

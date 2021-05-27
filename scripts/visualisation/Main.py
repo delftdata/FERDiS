@@ -12,7 +12,7 @@ from checkpoint_plots import produce_checkpoint_plot
 import warnings
 warnings.filterwarnings("ignore")
 
-fromSecond = 60
+fromSecond = 0
 toSecond = 300
 
 def main():

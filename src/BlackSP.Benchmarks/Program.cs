@@ -23,6 +23,20 @@ namespace BlackSP.Benchmarks
             CultureInfo.CurrentCulture = CultureInfo.CreateSpecificCulture("nl-NL");
             CultureInfo.CurrentUICulture = CultureInfo.CreateSpecificCulture("nl-NL");
 
+#if TRACE && false
+            Environment.SetEnvironmentVariable("AZURE_STORAGE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net");
+            Environment.SetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING", "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;");
+            Environment.SetEnvironmentVariable("KAFKA_BROKER_DNS_TEMPLATE", "localhost:3240{0}");
+            Environment.SetEnvironmentVariable("KAFKA_BROKER_COUNT", "4");
+            Environment.SetEnvironmentVariable("LOG_TARGET_FLAGS", "1");
+            Environment.SetEnvironmentVariable("LOG_EVENT_LEVEL", "2");
+            Environment.SetEnvironmentVariable("CHECKPOINT_COORDINATION_MODE", "0");
+            Environment.SetEnvironmentVariable("CHECKPOINT_INTERVAL_SECONDS", "30");
+            Environment.SetEnvironmentVariable("BENCHMARK_INFRA", "0");
+            Environment.SetEnvironmentVariable("BENCHMARK_JOB", "1");
+            Environment.SetEnvironmentVariable("BENCHMARK_SIZE", "0");
+#endif
+
             try
             {
                 if (args.Length < 1)

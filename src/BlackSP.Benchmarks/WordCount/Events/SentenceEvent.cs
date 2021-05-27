@@ -12,9 +12,7 @@ namespace BlackSP.Benchmarks.WordCount.Events
     {
         public int? Key { 
             get {
-                MD5 md5Hasher = MD5.Create();
-                var hashed = md5Hasher.ComputeHash(Encoding.UTF8.GetBytes(Sentence));
-                return BitConverter.ToInt32(hashed, 0);
+                return Sentence != null ? (int?)Sentence[0] : null;
             } 
         }
 

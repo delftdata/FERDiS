@@ -1,6 +1,9 @@
-﻿using BlackSP.Benchmarks.WordCount.Events;
+﻿using BlackSP.Benchmarks.Kafka;
+using BlackSP.Benchmarks.WordCount.Events;
 using BlackSP.Kernel.Configuration;
+using BlackSP.Kernel.Models;
 using BlackSP.Kernel.Operators;
+using Confluent.Kafka;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -13,9 +16,17 @@ namespace BlackSP.Benchmarks.WordCount.Operators
     {
         protected override string TopicName => "sentences";
 
+        private IProducer<int, string> producer;
+
+
         public KafkaSentenceSource(IVertexConfiguration vertexConfig, ILogger logger): base(vertexConfig, logger)
         {
-
+            var config = new ProducerConfig
+            {
+                BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
+                Partitioner = Partitioner.Consistent
+            };
+            producer = new ProducerBuilder<int, string>(config).SetErrorHandler((prod, err) => logger.Warning($"Output produce error: {err}")).Build();
         }
 
         public SentenceEvent ProduceNext(CancellationToken t)
@@ -27,7 +38,11 @@ namespace BlackSP.Benchmarks.WordCount.Operators
                 Sentence = msg.Value,
                 EventTime = msg.Timestamp.UtcDateTime
             };
-            UpdateOffsets(consumeRes.Partition, (int)consumeRes.Offset);
+
+            //var outputValue = $"{sentenceEvent.EventTime:yyyyMMddHHmmssFFFFF}${DateTime.UtcNow:yyyyMMddHHmmssFFFFF}${((IEvent)sentenceEvent).EventCount()}";
+            //producer.ProduceAsync("output", new Message<int, string> { Key = sentenceEvent.Key ?? default, Value = outputValue });
+
+            UpdateOffsets(consumeRes.Partition, consumeRes.Offset);
             return sentenceEvent;
         }
     }

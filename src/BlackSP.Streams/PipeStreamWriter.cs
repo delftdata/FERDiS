@@ -12,6 +12,8 @@ namespace BlackSP.Streams
 {
     public class PipeStreamWriter : IDisposable
     {
+        private int DefaultOutputStreamBufferSize { get; set; }    
+
         private int writtenBytes;
         private Stream stream;
         private PipeWriter writer;
@@ -19,7 +21,13 @@ namespace BlackSP.Streams
         private bool alwaysFlush;
         private bool disposed;
 
-        public PipeStreamWriter(Stream outputStream, bool flushAfterEveryMessage)
+        private PipeStreamWriter()
+        {
+            var env = Environment.GetEnvironmentVariable("BLACKSP_STREAM_BUFFER_BYTES");
+            DefaultOutputStreamBufferSize = env == null ? 32768 : int.Parse(env);
+        }
+
+        public PipeStreamWriter(Stream outputStream, bool flushAfterEveryMessage) : this()
         {
             writtenBytes = 0;
             stream = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
@@ -33,7 +41,7 @@ namespace BlackSP.Streams
             disposed = false;
         }
 
-        public PipeStreamWriter(PipeWriter pipeWriter, bool flushAfterEveryMessage)
+        public PipeStreamWriter(PipeWriter pipeWriter, bool flushAfterEveryMessage) : this()
         {
             writtenBytes = 0;
             writer = pipeWriter ?? throw new ArgumentNullException(nameof(pipeWriter));
@@ -72,8 +80,12 @@ namespace BlackSP.Streams
             return writtenBytes;
         }
 
-        public async Task FlushAndRefreshBuffer(int newBufferSize = 4096, CancellationToken t = default)
+        public async Task FlushAndRefreshBuffer(int newBufferSize = -1, CancellationToken t = default)
         {
+            if(newBufferSize == -1)
+            {
+                newBufferSize = DefaultOutputStreamBufferSize;
+            }
             writer.Advance(writtenBytes);
             await writer.FlushAsync(t);
             writtenBytes = 0;
@@ -87,7 +99,7 @@ namespace BlackSP.Streams
                 return;
             }
             //the writebuffer is about to overflow, flush first
-            await FlushAndRefreshBuffer(bytesToWrite, t).ConfigureAwait(false);
+            await FlushAndRefreshBuffer(t: t).ConfigureAwait(false);
         }
 
         protected virtual void Dispose(bool disposing)

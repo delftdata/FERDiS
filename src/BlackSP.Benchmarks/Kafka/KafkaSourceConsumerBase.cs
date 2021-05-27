@@ -25,7 +25,7 @@ namespace BlackSP.Benchmarks.Kafka
         protected IConsumer<int, T> Consumer { get; private set; }
 
         [ApplicationState]
-        private IDictionary<int, int> _offsets;
+        private IDictionary<int, long> _offsets;
 
         protected ILogger Logger { get; }
         protected IVertexConfiguration VertexConfiguration { get; }
@@ -34,7 +34,7 @@ namespace BlackSP.Benchmarks.Kafka
         {
             VertexConfiguration = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));   
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _offsets = new Dictionary<int, int>();
+            _offsets = new Dictionary<int, long>();
 
             PartitionCountPerTopic = BrokerCount = int.Parse(Environment.GetEnvironmentVariable("KAFKA_BROKER_COUNT"));
 
@@ -45,7 +45,7 @@ namespace BlackSP.Benchmarks.Kafka
 
         public void OnAfterRestore() => GetConsumer(true);
 
-        protected void UpdateOffsets(int tp, int offset)
+        protected void UpdateOffsets(int tp, long offset)
         {
             if(offset < 0) { offset = 0; }
             _offsets[tp] = offset;
@@ -63,7 +63,7 @@ namespace BlackSP.Benchmarks.Kafka
             
             if (Consumer == null)
             {
-                var builder = new ConsumerBuilder<int, T>(GetConsumerConfig(VertexConfiguration.VertexName + "wtf"))
+                var builder = new ConsumerBuilder<int, T>(GetConsumerConfig(VertexConfiguration.VertexName + "rnd"))
                     .SetErrorHandler((_, e) => {
                         if (e.IsFatal)
                         {
@@ -88,7 +88,7 @@ namespace BlackSP.Benchmarks.Kafka
                 {
                     if(!_offsets.ContainsKey(partition))
                     {
-                        _offsets.Add(partition, (int)Offset.Beginning);
+                        _offsets.Add(partition, Offset.Beginning);
                     }
                     Logger.Information("Assigned kafka partition: " + partition);
                 }
@@ -127,7 +127,7 @@ namespace BlackSP.Benchmarks.Kafka
                 GroupId = groupId,
                 EnableAutoCommit = true,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
-                Debug= "fetch",
+                //Debug= "fetch",
                 AllowAutoCreateTopics = true,
             };
         }

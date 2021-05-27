@@ -34,6 +34,10 @@ namespace BlackSP.Benchmarks.Kafka
                 }
 
                 var res = consumer.Consume();
+                if(res.Message.Value == "biep")
+                {
+                    Console.WriteLine("boop");
+                }
                 c++;
             }
         }
