@@ -104,7 +104,7 @@ namespace BlackSP.Core.MessageProcessing
             var (lMsg, lOrigin, lShard) = _lastTake;
             if(lMsg != null)
             {
-                var lastDeliveryConsumed = _takeBeforeDeliverDictionary.Get(lOrigin.GetConnectionKey(lShard));
+                var lastDeliveryConsumed = _takeBeforeDeliverDictionary[lOrigin.GetConnectionKey(lShard)];
                 if(lastDeliveryConsumed.CurrentCount == 0)
                 {
                     lastDeliveryConsumed.Release(); //release the task waiting on the last line of Receive(..)
@@ -148,6 +148,10 @@ namespace BlackSP.Core.MessageProcessing
                 await prioAccess.WaitAsync(lcts.Token).ConfigureAwait(false); 
                 accessed.Add(prioAccess);
 
+                _logger.Verbose($"Acquiring block access for upstream instance: {origin.GetRemoteInstanceName(shardId)}");
+                
+                await lastDeliveryTakenAccess.WaitAsync(lcts.Token).ConfigureAwait(false);
+
                 //ensure current channel is not blocked (lock position acceptable under assumption that a channel only blocks itself)
                 var blockAccess = _blockDictionary.Get(connectionKey);
                 await blockAccess.WaitAsync(lcts.Token).ConfigureAwait(false); 
@@ -160,10 +164,12 @@ namespace BlackSP.Core.MessageProcessing
                 //release blockAccess to allow self-blocking during critical section
                 blockAccess.Release();
                 accessed.Remove(blockAccess);
+                _logger.Verbose($"Released block access for upstream instance: {origin.GetRemoteInstanceName(shardId)}");
 
                 //use critical section
                 var triplet = (dserializedMsg, origin, shardId);
-                await Task.WhenAny(lastDeliveryTakenAccess.WaitAsync(lcts.Token), _receivedMessages.SendAsync(triplet, lcts.Token)).ConfigureAwait(false);
+                await _receivedMessages.SendAsync(triplet, lcts.Token).ConfigureAwait(false);
+                _logger.Debug($"Delivered input from upstream instance: {origin.GetRemoteInstanceName(shardId)}");
                 _lastWrite = triplet;                
             }
             catch(OperationCanceledException) when (ct.IsCancellationRequested)
@@ -306,7 +312,9 @@ namespace BlackSP.Core.MessageProcessing
             //wait associated semaphore
             var connectionKey = origin.GetConnectionKey(shardId);
             var semaphore = _blockDictionary[connectionKey];
+            _logger.Debug($"Blocking input from upstream instance: {origin.GetRemoteInstanceName(shardId)}");
             await semaphore.WaitAsync().ConfigureAwait(false);
+            _logger.Debug($"Blocked input from upstream instance: {origin.GetRemoteInstanceName(shardId)}");
         }
 
         public void Unblock(IEndpointConfiguration origin, int shardId)
@@ -315,8 +323,9 @@ namespace BlackSP.Core.MessageProcessing
             //release associated semaphore
             var connectionKey = origin.GetConnectionKey(shardId);
             var semaphore = _blockDictionary[connectionKey];
+            _logger.Debug($"Unblocking input from upstream instance: {origin.GetRemoteInstanceName(shardId)}");
             semaphore.Release();
-            
+            _logger.Debug($"Unblocked input from upstream instance: {origin.GetRemoteInstanceName(shardId)}");
         }
 
         private void InitialiseDataStructures()

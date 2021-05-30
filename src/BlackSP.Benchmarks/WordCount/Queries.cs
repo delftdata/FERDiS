@@ -60,13 +60,13 @@ namespace BlackSP.Benchmarks.WordCount
                 case Size.Small: break;
                 case Size.Medium:
                     sourceShards = 2;
-                    mapShards = 3;
-                    sinkShards = 3;
+                    mapShards = 2;
+                    sinkShards = 2;
                     break;
                 case Size.Large:
                     sourceShards = 4;
-                    mapShards = 6;
-                    sinkShards = 6;
+                    mapShards = 4;
+                    sinkShards = 4;
                     break;
             }
 

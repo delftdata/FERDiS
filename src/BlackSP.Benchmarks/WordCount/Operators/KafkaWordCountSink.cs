@@ -33,13 +33,12 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             {
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
                 Partitioner = Partitioner.Consistent,
-                LingerMs = 10,//high linger to reduce overhead,
-                
+                LingerMs = 10,//high linger can improve throughput
             };
             producer = new ProducerBuilder<int, string>(config).SetErrorHandler((prod, err) => logger.Warning($"Output produce error: {err}")).Build();
         }
 
-        public async Task Sink(WordEvent @event)
+        public Task Sink(WordEvent @event)
         {
             if(_wordCountMap.ContainsKey(@event.Word))
             {
@@ -52,9 +51,9 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             //var wordCountStrings = _wordCountMap.OrderBy(p => p.Key).Select(x => x.Key + "=" + x.Value).ToArray();
             //_logger.Debug($"WordCount: {string.Join("; ", wordCountStrings)}");
             
-            var outputValue = $"{@event.EventTime:yyyyMMddHHmmssFFFFF}${DateTime.UtcNow:yyyyMMddHHmmssFFFFF}${@event.EventCount()}";
-            producer.ProduceAsync("output", new Message<int, string> { Key = @event.Key ?? default, Value = outputValue });
-            
+            var outputValue = @event.EventTime.ToString("yyyyMMddHHmmssFFFFF")+"$"+DateTime.UtcNow.ToString("yyyyMMddHHmmssFFFFF")+"$"+@event.EventCount();
+            producer.Produce("output", new Message<int, string> { Key = @event.Key ?? default, Value = outputValue });
+            return Task.CompletedTask;
             //producer.Flush();
         }
 

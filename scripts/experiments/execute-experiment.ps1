@@ -1,9 +1,9 @@
 
 #unique identifier for the experiment
-$experimentKey = "performance-test-small-4x8cores-2x10000tp-coordinated-45s-4k-internal-buffers"
+$experimentKey = "barrier-choke-test-ss-sharded(2)"
 
 #SAS for the azure log blob container
-$azureSasUrl = 'http://145.100.59.40:10000/devstoreaccount1/logs'
+$azureSasUrl = 'http://145.100.59.144:10000/devstoreaccount1/logs'
 
 #kafka settings
 $localKafkaDnsTemplate = 'localhost:3240{0}'
@@ -13,14 +13,14 @@ $kafkaKustomizationPath = '.\kafka\variants\scale-4-2'
 $kafkaInitSeconds = 60
 
 #generator settings
-$generatorShards = 3
+$generatorShards = 1
 $generatorThroughput = 10000
 $generatorType = 'text' #possible types: 'text', 'graph', 'nexmark'
 $generatorNexmarkGenCalls = 9999999 #...
 
 #checkpoint settings
 $checkpointMode = 1 #0 = uc, 1 = cc, 2 = cic
-$checkpointIntervalSec = 45
+$checkpointIntervalSec = 30
 
 #job settings
 $jobType = 1 #0-6
@@ -32,8 +32,8 @@ $logLevel = 2 #0-5 (Verbose-Debug-Information-Warning-Error-Fatal)
 
 
 #experiment execution timing settings
-$generatorStartDelayMs = 15000#90000
-$preFailureSleepMs = 120000#120000 
+$generatorStartDelayMs = 30000#90000
+$preFailureSleepMs = 180000#120000 
 $postFailureSleepMs = 0#210000 
 $metricTearDownDelayMs = 10000 #the amount of delay betwean tearing down the workers+generators and the  metric collectors
 

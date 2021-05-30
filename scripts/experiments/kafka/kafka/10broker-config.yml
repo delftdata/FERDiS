@@ -58,7 +58,7 @@ data:
     # The default number of log partitions per topic. More partitions allow greater
     # parallelism for consumption, but this will also result in more files across
     # the brokers.
-    num.partitions=4
+    num.partitions=10
 
     default.replication.factor=1
 

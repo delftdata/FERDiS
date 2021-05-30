@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.Extensions;
+using BlackSP.Core.Extensions;
 using BlackSP.Core.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;

@@ -63,6 +63,10 @@ namespace BlackSP.Benchmarks.MetricCollection
             {
                 while(true)
                 {
+                    foreach (var tpo in assignedTopicPartitionOffsets)
+                    {
+                        consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, Offset.End));
+                    }
                     consumer.Consume(); //consume as fast as possible to keep watermarks up to date
                 }
             });

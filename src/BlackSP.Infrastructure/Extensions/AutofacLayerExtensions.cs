@@ -1,4 +1,4 @@
-﻿using Autofac;
+using Autofac;
 using BlackSP.Core.MessageProcessing;
 using BlackSP.Infrastructure.Layers.Control;
 using BlackSP.Infrastructure.Layers.Control.Sources;

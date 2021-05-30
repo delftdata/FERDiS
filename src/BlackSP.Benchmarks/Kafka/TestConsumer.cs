@@ -11,10 +11,19 @@ namespace BlackSP.Benchmarks.Kafka
     {
 
         IConsumer<int, string> consumer;
+        private IProducer<int, string> producer;
 
         internal TestConsumer()
         {
             consumer = InitKafka();
+
+            var config = new ProducerConfig
+            {
+                BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
+                Partitioner = Partitioner.Random,
+                //LingerMs = 100
+            };
+            producer = new ProducerBuilder<int, string>(config).SetErrorHandler((prod, err) => Console.WriteLine($"Output produce error: {err}")).Build();
         }
 
         public void Consume()
@@ -39,6 +48,9 @@ namespace BlackSP.Benchmarks.Kafka
                     Console.WriteLine("boop");
                 }
                 c++;
+
+                var outputValue = $"{res.Message.Timestamp.UtcDateTime:yyyyMMddHHmmssFFFFF}${DateTime.UtcNow:yyyyMMddHHmmssFFFFF}$1";
+                producer.Produce("output", new Message<int, string> { Key = res.Message.Value[0], Value = outputValue });
             }
         }
 
@@ -62,7 +74,7 @@ namespace BlackSP.Benchmarks.Kafka
 
         private IEnumerable<TopicPartitionOffset> GetAssignedTopicPartitions(string topicName)
         {
-            var brokerCount = int.Parse(Environment.GetEnvironmentVariable("KAFKA_BROKER_COUNT"));
+            var brokerCount = int.Parse(Environment.GetEnvironmentVariable("KAFKA_TOPIC_PARTITION_COUNT"));
             for (int i = 0; i < brokerCount; i++)
             {
                 yield return new TopicPartitionOffset(new TopicPartition(topicName, i), Offset.Beginning);

@@ -40,7 +40,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             };
 
             //var outputValue = $"{sentenceEvent.EventTime:yyyyMMddHHmmssFFFFF}${DateTime.UtcNow:yyyyMMddHHmmssFFFFF}${((IEvent)sentenceEvent).EventCount()}";
-            //producer.ProduceAsync("output", new Message<int, string> { Key = sentenceEvent.Key ?? default, Value = outputValue });
+            //producer.Produce("output", new Message<int, string> { Key = sentenceEvent.Key ?? default, Value = outputValue });
 
             UpdateOffsets(consumeRes.Partition, consumeRes.Offset);
             return sentenceEvent;

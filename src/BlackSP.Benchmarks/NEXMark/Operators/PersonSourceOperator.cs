@@ -28,7 +28,7 @@ namespace BlackSP.Benchmarks.NEXMark.Operators
                 throw new InvalidOperationException($"Unexpected EOF while consuming kafka topic {TopicName} on partition {consumeResult.Partition}");
             }
             //ensure local offset is stored before returning msg
-            UpdateOffsets(consumeResult.Partition, (int)consumeResult.Offset);
+            UpdateOffsets(consumeResult.Partition, consumeResult.Offset);
             var person = consumeResult.Message.Value ?? throw new InvalidDataException("Received null Person object from Kafka");
             return new PersonEvent {
                 Key = person.Id, 

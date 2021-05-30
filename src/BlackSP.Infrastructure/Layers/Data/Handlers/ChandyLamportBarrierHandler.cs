@@ -59,6 +59,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
         protected override async Task<IEnumerable<DataMessage>> Handle(BarrierPayload payload, CancellationToken t)
         {
             var (endpoint, shardId) = _messageReceiver?.MessageOrigin ?? default;
+            _logger.Information($"Handling barrier from upstream instance: {endpoint?.GetRemoteInstanceName(shardId)}");
             if (await _protocol.ReceiveBarrier(endpoint, shardId).ConfigureAwait(false))
             {
                 AssociatedMessage.AddPayload(payload); //re-add payload if protocol indicates the value must be returned
@@ -66,6 +67,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 msg.AddPayload(new CheckpointTakenPayload { OriginInstance = _vertexConfiguration.InstanceName });
                 /*await */_controlDispatcher.Dispatch(msg, t); //explicitly do not wait for this task to avoid slowing the rate of processing
             }
+            _logger.Information($"Handled barrier from upstream instance: {endpoint?.GetRemoteInstanceName(shardId)}");
             return AssociatedMessage.Yield();
         }
     }

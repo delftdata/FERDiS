@@ -101,7 +101,7 @@ namespace BlackSP.Core.MessageProcessing
 
         public async Task<TMessage> Take(CancellationToken t)
         {
-            var (msg, origin, shard) = _lastTake = await _messages.Reader.ReadAsync(t).ConfigureAwait(false);
+            var (msg, origin, shard) = await _messages.Reader.ReadAsync(t).ConfigureAwait(false);
             MessageOrigin = (origin, shard);
             return msg;
         }
@@ -124,28 +124,9 @@ namespace BlackSP.Core.MessageProcessing
                 //do deserialization
                 var dserializedMsg = await _serializer.DeserializeAsync<TMessage>(message, lcts.Token).ConfigureAwait(false);
 
-                //ensure current channel is not being out-prioritized
-                var prioAccess = _priorityAccessDictionary.Get(connectionKey);
-                await prioAccess.WaitAsync(lcts.Token).ConfigureAwait(false); 
-                accessed.Add(prioAccess);
-
-                //ensure current channel is not blocked (lock position acceptable under assumption that a channel only blocks itself)
-                var blockAccess = _blockDictionary.Get(connectionKey);
-                await blockAccess.WaitAsync(lcts.Token).ConfigureAwait(false); 
-                accessed.Add(blockAccess);
-
-                //acquire access to the critical section..
-                await _nextMessageAccess.WaitAsync(lcts.Token).ConfigureAwait(false);
-                accessed.Add(_nextMessageAccess);
-
-                //release blockAccess to allow self-blocking during critical section
-                blockAccess.Release();
-                accessed.Remove(blockAccess);
-
                 //use critical section
                 var triplet = (dserializedMsg, origin, shardId);
-                await Task.WhenAny(lastDeliveryTakenAccess.WaitAsync(lcts.Token), _messages.Writer.WriteAsync(triplet, lcts.Token).AsTask()).ConfigureAwait(false);
-                _lastWrite = triplet;                
+                await _messages.Writer.WriteAsync(triplet, lcts.Token);
             }
             catch(OperationCanceledException) when (ct.IsCancellationRequested)
             {
