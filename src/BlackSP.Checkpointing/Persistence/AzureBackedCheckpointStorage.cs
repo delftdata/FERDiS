@@ -102,7 +102,8 @@ namespace BlackSP.Checkpointing.Persistence
                 _blockOptions
             );
             var streamDeserializationAction = new ActionBlock<Tuple<string, MemoryStream>>(
-                tuple => DeserializeToDictionary(tuple, snapshots)
+                tuple => DeserializeToDictionary(tuple, snapshots),
+                _blockOptions
             );
             blobDownloadToStreamTransform.LinkTo(streamDeserializationAction, _linkOptions);
             //Feed blobs to dataflow

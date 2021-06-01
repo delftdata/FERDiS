@@ -18,7 +18,7 @@ namespace BlackSP.Benchmarks.WordCount.Generator
             var config = new ProducerConfig
             {
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
-                Partitioner = Partitioner.Consistent,
+                Partitioner = Partitioner.Random,
                 //Debug = "msg"
             };
 

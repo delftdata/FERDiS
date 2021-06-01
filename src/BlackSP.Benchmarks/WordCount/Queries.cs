@@ -1,4 +1,4 @@
-﻿using BlackSP.Infrastructure.Builders;
+using BlackSP.Infrastructure.Builders;
 using BlackSP.Benchmarks.WordCount.Events;
 using BlackSP.Benchmarks.WordCount.Operators;
 using System;
@@ -21,15 +21,15 @@ namespace BlackSP.Benchmarks.WordCount
                 case Size.Small: break;
                 case Size.Medium:
                     sourceShards = 2;
-                    mapShards = 3;
-                    reducerShards = 3;
-                    sinkShards = 3;
+                    mapShards = 2;
+                    reducerShards = 2;
+                    sinkShards = 2;
                     break;
                 case Size.Large:
                     sourceShards = 4;
-                    mapShards = 6;
-                    reducerShards = 6;
-                    sinkShards = 6;
+                    mapShards = 4;
+                    reducerShards = 4;
+                    sinkShards = 4;
                     break;
             }
 

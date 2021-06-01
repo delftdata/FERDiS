@@ -32,7 +32,7 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             var config = new ProducerConfig
             {
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
-                Partitioner = Partitioner.Consistent,
+                Partitioner = Partitioner.Random,
                 LingerMs = 10,//high linger can improve throughput
             };
             producer = new ProducerBuilder<int, string>(config).SetErrorHandler((prod, err) => logger.Warning($"Output produce error: {err}")).Build();

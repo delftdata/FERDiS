@@ -26,6 +26,8 @@ spec:
                   value: "$($env:KAFKA_BROKER_DNS_TEMPLATE)"
                 - name: KAFKA_BROKER_COUNT
                   value: "$($env:KAFKA_BROKER_COUNT)"
+                - name: KAFKA_TOPIC_PARTITION_COUNT
+                  value: "$($env:KAFKA_TOPIC_PARTITION_COUNT)"
                 - name: GENERATOR_TARGET_THROUGHPUT
                   value: "$($env:GENERATOR_TARGET_THROUGHPUT)"
                 - name: GENERATOR_CALLS

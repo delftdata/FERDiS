@@ -46,7 +46,7 @@ data:
     [ $? -eq 0 ] && mv /etc/kafka/server.properties.tmp /etc/kafka/server.properties
     ln -s /etc/kafka/server.properties /etc/kafka/server.properties.$POD_NAME
     
-    sleep 60s #best effort at making sure zookeeper startup completed..
+    sleep 15s #best effort at making sure zookeeper startup completed..
 
   server.properties: |-
     ############################# Log Basics #############################
@@ -58,7 +58,7 @@ data:
     # The default number of log partitions per topic. More partitions allow greater
     # parallelism for consumption, but this will also result in more files across
     # the brokers.
-    num.partitions=10
+    num.partitions=12
 
     default.replication.factor=1
 

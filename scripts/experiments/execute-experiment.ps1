@@ -1,6 +1,6 @@
 
 #unique identifier for the experiment
-$experimentKey = "barrier-choke-test-ss-sharded(2)"
+$experimentKey = "projection-xxlarge-4x8cores-4x5k-gen-6-9-kafka"
 
 #SAS for the azure log blob container
 $azureSasUrl = 'http://145.100.59.144:10000/devstoreaccount1/logs'
@@ -8,13 +8,14 @@ $azureSasUrl = 'http://145.100.59.144:10000/devstoreaccount1/logs'
 #kafka settings
 $localKafkaDnsTemplate = 'localhost:3240{0}'
 $clusterKafkaDnsTemplate = 'kafka-{0}.kafka.kafka.svc.cluster.local:9092'
-$kafkaBrokerCount = 4
-$kafkaKustomizationPath = '.\kafka\variants\scale-4-2'
-$kafkaInitSeconds = 60
+$kafkaBrokerCount = 6
+$kafkaTopicPartitionCount = 12
+$kafkaKustomizationPath = '.\kafka\variants\scale-6-9'
+$kafkaInitSeconds = 30
 
 #generator settings
-$generatorShards = 1
-$generatorThroughput = 10000
+$generatorShards = 4
+$generatorThroughput = 5000
 $generatorType = 'text' #possible types: 'text', 'graph', 'nexmark'
 $generatorNexmarkGenCalls = 9999999 #...
 
@@ -24,7 +25,7 @@ $checkpointIntervalSec = 30
 
 #job settings
 $jobType = 1 #0-6
-$jobSize = 0 #0-2
+$jobSize = 2 #0-2
 
 #log settings
 $logTargets = 5 #flags (1 = console, 2 = file, 4 = azure blob)
@@ -45,7 +46,7 @@ Write-Output "Setting up environment variables"
 .\lib\env\env-log $logTargets $logLevel
 .\lib\env\env-benchmark.ps1 $jobType $jobSize #job + size
 .\lib\env\env-generator.ps1 $generatorThroughput $generatorNexmarkGenCalls #throughput + gencalls
-.\lib\env\env-kafka.ps1 $clusterKafkaDnsTemplate $kafkaBrokerCount
+.\lib\env\env-kafka.ps1 $clusterKafkaDnsTemplate $kafkaBrokerCount $kafkaTopicPartitionCount
 
 .\lib\env\env-azure-default.ps1
 .\lib\env\env-cra-default.ps1

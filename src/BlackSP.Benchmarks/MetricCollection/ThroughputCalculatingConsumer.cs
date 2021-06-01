@@ -128,10 +128,10 @@ namespace BlackSP.Benchmarks.MetricCollection
 
         private IEnumerable<TopicPartitionOffset> GetAssignedTopicPartitions(string topicName)
         {
-            var brokerCount = int.Parse(Environment.GetEnvironmentVariable("KAFKA_BROKER_COUNT"));
-            for (int i = 0; i < brokerCount; i++)
+            var partitionCount = int.Parse(Environment.GetEnvironmentVariable("KAFKA_TOPIC_PARTITION_COUNT"));
+            for (int i = 0; i < partitionCount; i++)
             {
-                yield return new TopicPartitionOffset(new TopicPartition(topicName, i), Offset.Beginning);
+                yield return new TopicPartitionOffset(new TopicPartition(topicName, i), Offset.End);
             }
         }
 

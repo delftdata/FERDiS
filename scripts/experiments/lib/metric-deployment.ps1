@@ -26,6 +26,8 @@ spec:
                 value: "$($env:KAFKA_BROKER_DNS_TEMPLATE)"
               - name: KAFKA_BROKER_COUNT
                 value: "$($env:KAFKA_BROKER_COUNT)"
+              - name: KAFKA_TOPIC_PARTITION_COUNT
+                value: "$($env:KAFKA_TOPIC_PARTITION_COUNT)"
               - name: LOG_EVENT_LEVEL
                 value: "$($env:LOG_EVENT_LEVEL)"
               - name: LOG_TARGET_FLAGS
@@ -59,6 +61,8 @@ spec:
                 value: "$($env:KAFKA_BROKER_DNS_TEMPLATE)"
               - name: KAFKA_BROKER_COUNT
                 value: "$($env:KAFKA_BROKER_COUNT)"
+              - name: KAFKA_TOPIC_PARTITION_COUNT
+                value: "$($env:KAFKA_TOPIC_PARTITION_COUNT)"
               - name: LOG_EVENT_LEVEL
                 value: "$($env:LOG_EVENT_LEVEL)"
               - name: LOG_TARGET_FLAGS
