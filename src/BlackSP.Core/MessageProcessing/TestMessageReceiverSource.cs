@@ -322,6 +322,11 @@ namespace BlackSP.Core.MessageProcessing
             GC.SuppressFinalize(this);
         }
 
-#endregion
+        public Task Receive(TMessage message, IEndpointConfiguration origin, int shardId, CancellationToken t)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
     }
 }

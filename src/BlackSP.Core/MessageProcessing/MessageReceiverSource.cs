@@ -127,6 +127,12 @@ namespace BlackSP.Core.MessageProcessing
 
         public async Task Receive(byte[] message, IEndpointConfiguration origin, int shardId, CancellationToken t)
         {
+            var deserializedMsg = await _serializer.DeserializeAsync<TMessage>(message, t);
+            await Receive(deserializedMsg, origin, shardId, t);
+        }
+
+        public async Task Receive(TMessage message, IEndpointConfiguration origin, int shardId, CancellationToken t)
+        {
             _ = message ?? throw new ArgumentNullException(nameof(message));
             _ = origin ?? throw new ArgumentNullException(nameof(origin));
             var connectionKey = origin.GetConnectionKey(shardId);
@@ -140,21 +146,18 @@ namespace BlackSP.Core.MessageProcessing
                 ct.ThrowIfCancellationRequested();
                 using var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, ct);
 
-                //do deserialization
-                var dserializedMsg = await _serializer.DeserializeAsync<TMessage>(message, lcts.Token).ConfigureAwait(false);
-
                 //ensure current channel is not being out-prioritized
                 var prioAccess = _priorityAccessDictionary.Get(connectionKey);
-                await prioAccess.WaitAsync(lcts.Token).ConfigureAwait(false); 
+                await prioAccess.WaitAsync(lcts.Token).ConfigureAwait(false);
                 accessed.Add(prioAccess);
 
                 _logger.Verbose($"Acquiring block access for upstream instance: {origin.GetRemoteInstanceName(shardId)}");
-                
+
                 await lastDeliveryTakenAccess.WaitAsync(lcts.Token).ConfigureAwait(false);
 
                 //ensure current channel is not blocked (lock position acceptable under assumption that a channel only blocks itself)
                 var blockAccess = _blockDictionary.Get(connectionKey);
-                await blockAccess.WaitAsync(lcts.Token).ConfigureAwait(false); 
+                await blockAccess.WaitAsync(lcts.Token).ConfigureAwait(false);
                 accessed.Add(blockAccess);
 
                 //acquire access to the critical section..
@@ -167,15 +170,15 @@ namespace BlackSP.Core.MessageProcessing
                 _logger.Verbose($"Released block access for upstream instance: {origin.GetRemoteInstanceName(shardId)}");
 
                 //use critical section
-                var triplet = (dserializedMsg, origin, shardId);
+                var triplet = (message, origin, shardId);
                 await _receivedMessages.SendAsync(triplet, lcts.Token).ConfigureAwait(false);
                 _logger.Debug($"Delivered input from upstream instance: {origin.GetRemoteInstanceName(shardId)}");
-                _lastWrite = triplet;                
+                _lastWrite = triplet;
             }
-            catch(OperationCanceledException) when (ct.IsCancellationRequested)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
                 _logger.Debug($"Receive aborted on connectionKey: {connectionKey}");
-                if(lastDeliveryTakenAccess.CurrentCount == 0)
+                if (lastDeliveryTakenAccess.CurrentCount == 0)
                 {   //cancelled while waiting for Take, as it wont be taken, release
                     lastDeliveryTakenAccess.Release();
                 }

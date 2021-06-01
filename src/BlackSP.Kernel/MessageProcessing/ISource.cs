@@ -82,7 +82,16 @@ namespace BlackSP.Kernel.MessageProcessing
         /// <returns></returns>
         Task Receive(byte[] message, IEndpointConfiguration origin, int shardId, CancellationToken t);
 
-        
+        /// <summary>
+        /// Receive a message
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="origin"></param>
+        /// <param name="shardId"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        Task Receive(TMessage message, IEndpointConfiguration origin, int shardId, CancellationToken t);
+
 
         /// <summary>
         /// Signal flush completion for a particular origin

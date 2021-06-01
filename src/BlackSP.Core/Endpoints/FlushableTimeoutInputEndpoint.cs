@@ -5,6 +5,7 @@ using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Serialization;
 using BlackSP.Streams;
 using Nerdbank.Streams;
 using Serilog;
@@ -14,6 +15,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace BlackSP.Core.Endpoints
 {
@@ -28,6 +30,7 @@ namespace BlackSP.Core.Endpoints
         public delegate FlushableTimeoutInputEndpoint<TMessage> Factory(string endpointName);
 
         private readonly IReceiverSource<TMessage> _receiver;
+        private readonly IObjectSerializer _serializer;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionObserver _connectionMonitor;
         private readonly ILogger _logger;
@@ -35,10 +38,12 @@ namespace BlackSP.Core.Endpoints
         public FlushableTimeoutInputEndpoint(string endpointName,
                              IVertexConfiguration vertexConfig,
                              IReceiverSource<TMessage> receiver,
-                             ConnectionObserver connectionMonitor,
+                             IObjectSerializer serializer,
+                            ConnectionObserver connectionMonitor,
                              ILogger logger)
         {
             _receiver = receiver ?? throw new ArgumentNullException(nameof(receiver));
+            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
 
             _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
             _endpointConfig = vertexConfig.InputEndpoints.FirstOrDefault(x => x.LocalEndpointName == endpointName);
@@ -98,6 +103,9 @@ namespace BlackSP.Core.Endpoints
 
         private async Task ReadMessagesFromStream(PipeStreamReader reader, int shardId, ChannelWriter<byte[]> controlQueue, CancellationToken t)
         {
+            var dataflow = BuildDeserializationDataflow(shardId, t); //TODO: check flush stuff
+
+
             bool hasTakenPriority = false;
             while (!t.IsCancellationRequested)
             {
@@ -110,8 +118,18 @@ namespace BlackSP.Core.Endpoints
                     {
                         msg = msg ?? await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
                         hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader.UnreadBufferFraction, 0.0d).ConfigureAwait(false); //note: deadlock odds increase greatly with every % the threshold is increased
-                        await _receiver.Receive(msg, _endpointConfig, shardId, t).ConfigureAwait(false);
-                        msg = null;
+
+                        //send to dataflow
+                        if(await dataflow.SendAsync(msg))
+                        {
+                            msg = null;
+                        } 
+                        else
+                        {
+                            _logger.Warning("Input endpoint {_endpointConfig.LocalEndpointName}${shardId} from {_endpointConfig.GetRemoteInstanceName(shardId)} couldnt put message in deserialization-flow, retrying");
+                        }
+
+                        //await _receiver.Receive(msg, _endpointConfig, shardId, t).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException) when (readTimeout.IsCancellationRequested)
                     {
@@ -152,6 +170,9 @@ namespace BlackSP.Core.Endpoints
                     _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response from {_endpointConfig.GetRemoteInstanceName(shardId)}");
                     _receiver.CompleteFlush(_endpointConfig, shardId);
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with upstream instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
+
+                    //reset dataflow to clear them buffers
+                    dataflow = BuildDeserializationDataflow(shardId, t);
                 }
             }
             t.ThrowIfCancellationRequested();
@@ -180,6 +201,46 @@ namespace BlackSP.Core.Endpoints
                 _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent a {msgType} message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");
 
             }
+        }
+        
+        
+
+        private ITargetBlock<byte[]> BuildDeserializationDataflow(int shardId, CancellationToken t)
+        {
+
+            var serializationBlockOptions = new ExecutionDataflowBlockOptions
+            {
+                BoundedCapacity = 1 << 12,
+                EnsureOrdered = true,
+                MaxDegreeOfParallelism = Environment.ProcessorCount
+            };
+
+            var receiveBlockOptions = new ExecutionDataflowBlockOptions
+            {
+                BoundedCapacity = 1 << 12,
+                EnsureOrdered = true,
+                MaxDegreeOfParallelism = 1
+            };
+
+
+            //var snapshots = new ConcurrentDictionary<string, ObjectSnapshot>();
+            var deserialization = new TransformBlock<byte[], TMessage>(
+                async message => await _serializer.DeserializeAsync<TMessage>(message, t),
+                serializationBlockOptions
+            );
+            var reception = new ActionBlock<TMessage>(
+                async message => await _receiver.Receive(message, _endpointConfig, shardId, t),
+                receiveBlockOptions
+            );
+
+            var linkOptions = new DataflowLinkOptions
+            {
+                PropagateCompletion = true
+            };
+
+            deserialization.LinkTo(reception, linkOptions);
+
+            return deserialization;
         }
 
         /// <summary>

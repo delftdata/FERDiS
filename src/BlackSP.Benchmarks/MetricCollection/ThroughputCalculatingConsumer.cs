@@ -59,17 +59,7 @@ namespace BlackSP.Benchmarks.MetricCollection
 
             object lockObj = new object();
 
-            Task.Run(() =>
-            {
-                while(true)
-                {
-                    foreach (var tpo in assignedTopicPartitionOffsets)
-                    {
-                        consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, Offset.End));
-                    }
-                    consumer.Consume(); //consume as fast as possible to keep watermarks up to date
-                }
-            });
+            
 
 
             while (true)
@@ -88,23 +78,34 @@ namespace BlackSP.Benchmarks.MetricCollection
                     var printDelta = printStamp - lastWrite;
                     if(printDelta > TimeSpan.Zero)
                     {
+                        var commits = new List<TopicPartitionOffset>();
                         Parallel.ForEach(assignedTopicPartitionOffsets, tpo =>
                         {
-                            var wmOffsets = consumer.GetWatermarkOffsets(tpo.TopicPartition);
+                            //consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, Offset.End));
+                            var wmOffsets = consumer.QueryWatermarkOffsets(tpo.TopicPartition, TimeSpan.FromSeconds(60));
                             var high = wmOffsets.High == Offset.Unset ? lastWmOffsets[tpo.Partition] : wmOffsets.High;
-
+                            //commits.Add(new TopicPartitionOffset(tpo.TopicPartition, wmOffsets.High));
                             var delta = high - lastWmOffsets[tpo.Partition];
                             lock (lockObj) //not best performing solution but its good enough
                             {
                                 totalNew += delta;
                             }
                             lastWmOffsets[tpo.Partition] = high;
+                            try
+                            {
+                                consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, wmOffsets.High));
+                            } catch(Exception e)
+                            {
+                                errorLogger.Warning(e, "Could not seek");
+                            }
                         });
                         throughputLogger.Information($"{printStamp:hh:mm:ss:ffffff}, {(int)(totalNew/printDelta.TotalSeconds)}");
                         //errorLogger.Information($"{printStamp:hh:mm:ss:ffffff}, {(int)(totalNew / printDelta.TotalSeconds)}, {totalNew}, {printDelta}");
                         lastWrite = printStamp;
+                        
                     } 
                     lag -= updateInterval;
+                    //consumer.Consume();
                 }
             }
         }
@@ -116,7 +117,8 @@ namespace BlackSP.Benchmarks.MetricCollection
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
                 GroupId = "throughput",
                 EnableAutoCommit = true,
-                AutoOffsetReset = AutoOffsetReset.Latest
+                AutoOffsetReset = AutoOffsetReset.Latest,
+                FetchWaitMaxMs = 100
             }).SetErrorHandler((c,e) => { errorLogger.Warning($"Kafka error: {e}"); });
 
             var consumer = builder.Build();
