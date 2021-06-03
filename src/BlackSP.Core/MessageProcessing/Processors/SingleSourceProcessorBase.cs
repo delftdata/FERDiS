@@ -3,6 +3,7 @@ using BlackSP.Core.Models;
 using BlackSP.Kernel;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
+using BlackSP.Kernel.Serialization;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
@@ -11,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace BlackSP.Core.MessageProcessing.Processors
 {
@@ -72,19 +74,14 @@ namespace BlackSP.Core.MessageProcessing.Processors
             }
             _injectedMessage = null; //failsafe..
 
-            var channel = Channel.CreateBounded<TMessage>(new BoundedChannelOptions(Constants.DefaultThreadBoundaryQueueSize) { FullMode = BoundedChannelFullMode.Wait });
+            //var channel = Channel.CreateBounded<TMessage>(new BoundedChannelOptions(Constants.DefaultThreadBoundaryQueueSize) { FullMode = BoundedChannelFullMode.Wait });
             _pauseSemaphore = new SemaphoreSlim(1, 1);
             _processTokenSource = new CancellationTokenSource();
             using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(t, _processTokenSource.Token);
             try
             {                
-                var deliveryThread = Task.Run(() => ProcessFromSource(channel, linkedSource.Token));
-                var dispatchThread = Task.Run(() => DispatchResults(channel, linkedSource.Token));
-                _processThread = Task.WhenAll(deliveryThread, dispatchThread);
-                var exitedTask = await Task.WhenAny(deliveryThread, dispatchThread).ConfigureAwait(false);
-                _processTokenSource.Cancel();
-                await _processThread.ConfigureAwait(false);
-                await exitedTask.ConfigureAwait(false);
+                _processThread = Task.Run(() => ProcessFromSource(linkedSource.Token));
+                await _processThread;
                 t.ThrowIfCancellationRequested();
                 _logger.Information("Processor exited gracefully");
             }
@@ -125,56 +122,33 @@ namespace BlackSP.Core.MessageProcessing.Processors
             _pauseSemaphore.Release();
         }
 
-        private async Task ProcessFromSource(Channel<TMessage> dispatchChannel, CancellationToken t)
+        private async Task ProcessFromSource(CancellationToken t)
         {
-            try
+            while (!t.IsCancellationRequested)
             {
-                while (!t.IsCancellationRequested)
+                TMessage message;
+                if (_injectedMessage != null)
                 {
-                    TMessage message;
-                    if (_injectedMessage != null)
-                    {
-                        message = _injectedMessage;
-                        _injectedMessage = null;
-                    }
-                    else
-                    {
-                        message = await _source.Take(t).ConfigureAwait(false) ?? throw new Exception($"Received null from {_source.GetType()}.Take");
-                    }
+                    message = _injectedMessage;
+                    _injectedMessage = null;
+                }
+                else
+                {
+                    message = await _source.Take(t).ConfigureAwait(false) ?? throw new Exception($"Received null from {_source.GetType()}.Take");
+                }
 
-                    await _pauseSemaphore.WaitAsync(t).ConfigureAwait(false);
-                    try
+                await _pauseSemaphore.WaitAsync(t).ConfigureAwait(false);
+                try
+                {
+                    foreach (var output in await _pipeline.Process(message, t).ConfigureAwait(false))
                     {
-                        foreach (var output in await _pipeline.Process(message, t).ConfigureAwait(false))
-                        {
-                            await dispatchChannel.Writer.WriteAsync(output, t).ConfigureAwait(false);
-                        }
-                    }
-                    finally
-                    {
-                        _pauseSemaphore.Release();
+                        await _dispatcher.Dispatch(output, t);
                     }
                 }
-            }
-            finally
-            {
-                //note: not starting flushing on source as this is requested by a checkpoint restore request
-                dispatchChannel.Writer.Complete();
-            }
-        }
-
-        private async Task DispatchResults(Channel<TMessage> dispatchChannel, CancellationToken t)
-        {
-            try
-            {
-                while (await dispatchChannel.Reader.WaitToReadAsync(t))
+                finally
                 {
-                    var message = await dispatchChannel.Reader.ReadAsync(t);
-                    await _dispatcher.Dispatch(message, t).ConfigureAwait(false);
+                    _pauseSemaphore.Release();
                 }
-            }
-            finally
-            {
             }
         }
 

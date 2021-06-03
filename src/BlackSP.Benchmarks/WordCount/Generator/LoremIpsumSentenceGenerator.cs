@@ -59,7 +59,7 @@ namespace BlackSP.Benchmarks.WordCount.Generator
                 //Console.WriteLine(sentence);
                 var msg = new Message<int, string> { Key = sentence[0], Value = sentence, Timestamp = Timestamp.Default };
 
-                producer.ProduceAsync("sentences", msg);
+                producer.Produce("sentences", msg);
                 produceCounter++;
             }
 

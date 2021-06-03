@@ -1,4 +1,4 @@
-﻿using BlackSP.Core.Exceptions;
+using BlackSP.Core.Exceptions;
 using BlackSP.Core.Extensions;
 using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.MessageProcessing;
@@ -115,10 +115,10 @@ namespace BlackSP.Core.MessageProcessing
                 }
             }
 
-            if (!await _receivedMessages.OutputAvailableAsync(t).ConfigureAwait(false))
-            {
-                throw new InvalidOperationException("Internal reception block may not complete during operation");
-            }
+            //if (!await _receivedMessages.OutputAvailableAsync(t).ConfigureAwait(false))
+            //{
+            //    throw new InvalidOperationException("Internal reception block may not complete during operation");
+            //}
 
             var (msg, origin, shard) = _lastTake = await _receivedMessages.ReceiveAsync(t).ConfigureAwait(false);
             MessageOrigin = (origin, shard);
@@ -219,8 +219,6 @@ namespace BlackSP.Core.MessageProcessing
                 _logger.Debug($"Receiver flushing {flushes.Count}/{_originDictionary.Count} queues");
                 await Task.WhenAll(flushes).ConfigureAwait(false);
                 _logger.Debug($"Receiver flushed {flushes.Count}/{_originDictionary.Count} queues");
-
-                
             } 
             else
             {

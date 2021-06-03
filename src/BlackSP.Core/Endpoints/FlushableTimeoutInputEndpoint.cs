@@ -103,7 +103,7 @@ namespace BlackSP.Core.Endpoints
 
         private async Task ReadMessagesFromStream(PipeStreamReader reader, int shardId, ChannelWriter<byte[]> controlQueue, CancellationToken t)
         {
-            var dataflow = BuildDeserializationDataflow(shardId, t); //TODO: check flush stuff
+            var dataflow = BuildDeserializationDataflow(shardId, t);
 
 
             bool hasTakenPriority = false;

@@ -1,21 +1,21 @@
 
 #unique identifier for the experiment
-$experimentKey = "projection-xxlarge-4x8cores-4x5k-gen-6-9-kafka"
+$experimentKey = "ss-proj-24x24x24-shuffle-pipe-80k-CC-XLKafka"
 
 #SAS for the azure log blob container
-$azureSasUrl = 'http://145.100.59.144:10000/devstoreaccount1/logs'
+$azureSasUrl = 'http://145.100.59.191:10000/devstoreaccount1/logs'#145.100.59.144
 
 #kafka settings
 $localKafkaDnsTemplate = 'localhost:3240{0}'
 $clusterKafkaDnsTemplate = 'kafka-{0}.kafka.kafka.svc.cluster.local:9092'
-$kafkaBrokerCount = 6
-$kafkaTopicPartitionCount = 12
-$kafkaKustomizationPath = '.\kafka\variants\scale-6-9'
-$kafkaInitSeconds = 30
+$kafkaBrokerCount = 4
+$kafkaTopicPartitionCount = 24
+$kafkaKustomizationPath = '.\kafka\variants\scale-4-2'
+$kafkaInitSeconds = 0
 
 #generator settings
-$generatorShards = 4
-$generatorThroughput = 5000
+$generatorShards = 8
+$generatorThroughput = 10000
 $generatorType = 'text' #possible types: 'text', 'graph', 'nexmark'
 $generatorNexmarkGenCalls = 9999999 #...
 
@@ -28,12 +28,12 @@ $jobType = 1 #0-6
 $jobSize = 2 #0-2
 
 #log settings
-$logTargets = 5 #flags (1 = console, 2 = file, 4 = azure blob)
-$logLevel = 2 #0-5 (Verbose-Debug-Information-Warning-Error-Fatal)
+$logTargets = 5 # flags (1 = console, 2 = file, 4 = azure blob)
+$logLevel = 2 # 0-5 (Verbose-Debug-Information-Warning-Error-Fatal)
 
 
 #experiment execution timing settings
-$generatorStartDelayMs = 30000#90000
+$generatorStartDelayMs = 120000
 $preFailureSleepMs = 180000#120000 
 $postFailureSleepMs = 0#210000 
 $metricTearDownDelayMs = 10000 #the amount of delay betwean tearing down the workers+generators and the  metric collectors

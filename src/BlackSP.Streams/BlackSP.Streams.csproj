@@ -11,5 +11,10 @@
     </PackageReference>
     <PackageReference Include="Nerdbank.Streams" Version="2.6.81" />
   </ItemGroup>
-
+  
+  <PropertyGroup Condition=" '$(Configuration)' == 'Trace' ">
+    <DefineConstants>TRACE</DefineConstants>
+	<DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
 </Project>

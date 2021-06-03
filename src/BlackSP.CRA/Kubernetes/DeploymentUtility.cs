@@ -115,7 +115,9 @@ spec:
               args: [""{instanceName}"", ""1500""] #CRA instance name {instanceName}, exposed on port 1500
               resources: 
                 requests:
-                    cpu: 500m #best-effort attempt at spreading instances over cpus
+                  cpu: ""500m""
+                limits:
+                  cpu: ""8000m""
 ---
 ";
         }

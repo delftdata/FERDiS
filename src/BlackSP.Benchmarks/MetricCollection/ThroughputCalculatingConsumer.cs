@@ -59,8 +59,8 @@ namespace BlackSP.Benchmarks.MetricCollection
 
             object lockObj = new object();
 
-            
 
+            Task.Run(() => { while (true) { consumer.Consume(); } });//consume messages in the background as fast as possible
 
             while (true)
             {
@@ -82,7 +82,7 @@ namespace BlackSP.Benchmarks.MetricCollection
                         Parallel.ForEach(assignedTopicPartitionOffsets, tpo =>
                         {
                             //consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, Offset.End));
-                            var wmOffsets = consumer.QueryWatermarkOffsets(tpo.TopicPartition, TimeSpan.FromSeconds(60));
+                            var wmOffsets = consumer.GetWatermarkOffsets(tpo.TopicPartition);
                             var high = wmOffsets.High == Offset.Unset ? lastWmOffsets[tpo.Partition] : wmOffsets.High;
                             //commits.Add(new TopicPartitionOffset(tpo.TopicPartition, wmOffsets.High));
                             var delta = high - lastWmOffsets[tpo.Partition];
@@ -96,7 +96,7 @@ namespace BlackSP.Benchmarks.MetricCollection
                                 consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, wmOffsets.High));
                             } catch(Exception e)
                             {
-                                errorLogger.Warning(e, "Could not seek");
+                                errorLogger.Warning(e, "Could not seek " + tpo);
                             }
                         });
                         throughputLogger.Information($"{printStamp:hh:mm:ss:ffffff}, {(int)(totalNew/printDelta.TotalSeconds)}");
@@ -105,7 +105,6 @@ namespace BlackSP.Benchmarks.MetricCollection
                         
                     } 
                     lag -= updateInterval;
-                    //consumer.Consume();
                 }
             }
         }

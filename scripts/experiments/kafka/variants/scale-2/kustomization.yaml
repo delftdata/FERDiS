@@ -3,6 +3,8 @@ bases:
 patchesStrategicMerge:
 - kafka.yaml
 - zookeeper.yaml
+resources:
+- expose-kafka.yaml
 patchesJson6902:
 - target:
     group: apps
