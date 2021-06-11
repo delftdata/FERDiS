@@ -159,7 +159,7 @@ namespace BlackSP.Checkpointing
         public async Task ClearCheckpointStorage()
         {
             _logger.GetDefaultLogger().Debug("Will clear checkpoint storage");
-            var allCheckpointMetadatas = await _storage.GetAllMetaData().ConfigureAwait(false);
+            var allCheckpointMetadatas = await _storage.GetAllMetaData(true).ConfigureAwait(false);
             var deleteTasks = allCheckpointMetadatas.Select(meta => _storage.Delete(meta.Id));
             await Task.WhenAll(deleteTasks).ConfigureAwait(false);
             _logger.GetDefaultLogger().Debug("Checkpoint storage cleared successfully");

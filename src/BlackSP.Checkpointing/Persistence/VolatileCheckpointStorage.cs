@@ -42,7 +42,7 @@ namespace BlackSP.Checkpointing.Persistence
             return Task.FromResult(1L);
         }
 
-        public Task<IEnumerable<MetaData>> GetAllMetaData()
+        public Task<IEnumerable<MetaData>> GetAllMetaData(bool forcepull = false)
         {
             var metadatas = new List<MetaData>(_store.Count);
             foreach(var blob in _store.Values)
@@ -51,6 +51,16 @@ namespace BlackSP.Checkpointing.Persistence
                 metadatas.Add(checkpoint.MetaData);
             }
             return Task.FromResult((IEnumerable<MetaData>)metadatas);
+        }
+
+        public void AddMetaData(MetaData meta)
+        {
+            throw new NotImplementedException();
+        }
+
+        public MetaData GetMetaData(Guid id)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -19,6 +19,9 @@ namespace BlackSP.Checkpointing.Persistence
 
         private readonly ExecutionDataflowBlockOptions _blockOptions;
         private readonly DataflowLinkOptions _linkOptions;
+
+        private readonly ICollection<MetaData> _checkpointMetaData;
+
         public AzureBackedCheckpointStorage()
         {
             _blockOptions = new ExecutionDataflowBlockOptions
@@ -29,6 +32,8 @@ namespace BlackSP.Checkpointing.Persistence
             {
                 PropagateCompletion = true
             };
+
+            _checkpointMetaData = new List<MetaData>();
         }
 
         private BlobContainerClient GetBlobContainerClientForCheckpoints()
@@ -83,6 +88,7 @@ namespace BlackSP.Checkpointing.Persistence
             
             //upload metadata last to mark a checkpoint as 'complete' (fault during checkpointing would result in un-reloadable checkpoint)
             await UploadCheckpointMetaData(checkpoint, blobContainerClient).ConfigureAwait(false);
+            _checkpointMetaData.Add(checkpoint.MetaData);
             return res;
         }
 
@@ -198,8 +204,22 @@ namespace BlackSP.Checkpointing.Persistence
             return dependencies;
         }
 
-        public async Task<IEnumerable<MetaData>> GetAllMetaData()
+        public void AddMetaData(MetaData meta)
         {
+            _checkpointMetaData.Add(meta);
+        }
+
+        public MetaData GetMetaData(Guid id)
+        {
+            return _checkpointMetaData.FirstOrDefault(m => m.Id == id);
+        }
+
+        public async Task<IEnumerable<MetaData>> GetAllMetaData(bool forcePull = false)
+        {
+            if(!forcePull)
+            {
+                return _checkpointMetaData.AsEnumerable();
+            }
             var blobContainerClient = GetBlobContainerClientForCheckpoints();
             //Define dataflow for metadata retrieval
             var metadatas = new ConcurrentBag<MetaData>();

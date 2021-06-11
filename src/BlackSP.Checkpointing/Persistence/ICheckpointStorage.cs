@@ -9,7 +9,11 @@ namespace BlackSP.Checkpointing.Persistence
 {
     public interface ICheckpointStorage
     {
-        Task<IEnumerable<MetaData>> GetAllMetaData();
+        Task<IEnumerable<MetaData>> GetAllMetaData(bool forcePull = false);
+
+        void AddMetaData(MetaData meta);
+
+        MetaData GetMetaData(Guid id);
 
         /// <summary>
         /// Stores a checkpoint in the storage
