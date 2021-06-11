@@ -40,7 +40,7 @@ namespace BlackSP.Checkpointing.Protocols
         {
             if (_lastCheckpointUtc == default)
             {
-                _lastCheckpointUtc = DateTime.UtcNow;
+                _lastCheckpointUtc = DateTime.UtcNow + new TimeSpan(new Random().Next(0, (int)_checkpointInterval.Ticks));
             }
             return processingTime - _lastCheckpointUtc >= _checkpointInterval;
         }
