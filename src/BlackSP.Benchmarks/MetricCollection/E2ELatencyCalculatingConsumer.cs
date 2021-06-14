@@ -10,6 +10,7 @@ using Serilog.Events;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Linq;
 
 namespace BlackSP.Benchmarks.MetricCollection
 {
@@ -41,59 +42,55 @@ namespace BlackSP.Benchmarks.MetricCollection
 
         public void Start()
         {
+            var fixedLag = TimeSpan.FromSeconds(5); //continuously lag behind by 5 seconds (we fetch specific offset at specific times instead of attempting real-time)
+            
             var updateInterval = TimeSpan.FromMilliseconds(333d);
+            
 
-            var now = DateTime.UtcNow;
-            var lastNow = now;
-            TimeSpan lag = TimeSpan.Zero;
-
+            var laggingNow = DateTime.UtcNow - fixedLag;
+            var lastPrint = laggingNow;
+            
             while (true)
             {
-
-                now = DateTime.UtcNow;
-                var elapsed = now - lastNow;
-
-                lastNow = now;
-                lag += elapsed;
-                while (lag >= updateInterval)
+                laggingNow = DateTime.UtcNow - fixedLag;
+                var elapsed = laggingNow - lastPrint;
+                if(elapsed < updateInterval) //busy spin until next print moment is reached
                 {
-                    var timeoutSource = new CancellationTokenSource(100);
-                    Parallel.ForEach(assignedTopicPartitionOffsets, tpo =>
+                    continue;
+                }
+
+                var timeoutSource = new CancellationTokenSource(1000); //TODO: consider increasing? may start lagging harder, not a real issue tho
+
+                //fetch the next offsets that were delivered after the 'nextTs'
+                var nextTs = new Timestamp(lastPrint, TimestampType.CreateTime);
+                var tposForPrint = consumer.OffsetsForTimes(assignedTopicPartitionOffsets.Select(tpo => new TopicPartitionTimestamp(tpo.TopicPartition, nextTs)), TimeSpan.FromMilliseconds(60000));
+                foreach(var tpo in tposForPrint)
+                {
+                    TimeSpan latency = TimeSpan.FromMilliseconds(-1);
+                    try
                     {
-                        TimeSpan latency = TimeSpan.FromMilliseconds(-1);
-                        try
+                        if(tpo.Offset != Offset.End) //no delivery after this offset, no need to calculate latency, its not there
                         {
+                            consumer.Seek(tpo);// new TopicPartitionOffset(tpo.TopicPartition, tpo.Offset - 1));
                             var consumeRes = consumer.Consume(timeoutSource.Token);
                             var output = consumeRes.Message.Value.Split("$");
                             var inputTime = DateTime.ParseExact(output[0], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
                             var outputTime = consumeRes.Message.Timestamp.UtcDateTime; // DateTime.ParseExact(output[1], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
                             latency = outputTime - inputTime;
-                            consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, Offset.End));
-                            //consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, consumer.Position(tpo.TopicPartition) - 1));
-                        }
-                        catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested) { } //shh
-                        catch (Exception e) //log other exception types without stopping..
-                        {
-                            errorLogger.Warning(e, "Error while consuming from kafka topic");
-                        }
-                        latencyLogger.Information($"{now:hh:mm:ss:ffffff}, {(latency.TotalMilliseconds > 0 ? (object)(int)latency.TotalMilliseconds : "NaN")}, {tpo.Partition.Value}");
-                    });
-                    lag -= updateInterval;
-                }
-                /*
-                Parallel.ForEach(assignedTopicPartitionOffsets, tpo =>
-                {
-                    try
-                    {
-                        //consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, consumer.Position(tpo.TopicPartition) - 1));
-                    } 
-                    catch(Exception e)
-                    {
-                        errorLogger.Warning(e, "Error while seeking kafka topic");
-
+                        }                        
                     }
-                });
-                */
+                    catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested) {
+                    } //shh
+                    catch (Exception e) //log other exception types without stopping..
+                    {
+                        errorLogger.Warning(e, "Error while consuming from kafka topic");
+                    }
+                    //Console.WriteLine($"{DateTime.UtcNow:hh:mm:ss:ffffff}");
+                    latencyLogger.Information($"{lastPrint:hh:mm:ss:ffffff}, {(latency.TotalMilliseconds > 0 ? (object)(int)latency.TotalMilliseconds : "NaN")}, {tpo.Partition.Value}");
+                }
+
+                lastPrint += updateInterval;
+
             }
 
         }

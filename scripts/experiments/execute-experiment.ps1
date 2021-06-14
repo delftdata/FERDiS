@@ -1,6 +1,6 @@
 
 #unique identifier for the experiment
-$experimentKey = "job-1-uc-20s-40k-sink-fail-azure(1)"
+$experimentKey = "job-1-uc-20s-1k-sink-fail-local(0)"
 
 #SAS for the azure log blob container
 $azureSasUrl = 'https://vertexstore.blob.core.windows.net/logs?sp=radl&st=2021-06-14T10:23:01Z&se=2022-06-15T10:23:00Z&sv=2020-02-10&sr=c&sig=0Z6EJSlBYm4J3jHXLEmrfZVUnccT%2FDTfAqDLL0Dkxyc%3D'#'http://145.100.57.248:10000/devstoreaccount1/logs'#145.100.59.144
@@ -14,8 +14,8 @@ $kafkaKustomizationPath = '.\kafka\variants\scale-1'
 $kafkaInitSeconds = 45
 
 #generator settings
-$generatorShards = 4
-$generatorThroughput = 10000
+$generatorShards = 1
+$generatorThroughput = 1000
 $generatorType = 'text' #possible types: 'text', 'graph', 'nexmark'
 $generatorNexmarkGenCalls = 9999999 #...
 
@@ -25,7 +25,7 @@ $checkpointIntervalSec = 20
 
 #job settings
 $jobType = 1 #0-6
-$jobSize = 1 #0-2
+$jobSize = 0 #0-2
 
 #log settings
 $logTargets = 4 # flags (1 = console, 2 = file, 4 = azure blob)

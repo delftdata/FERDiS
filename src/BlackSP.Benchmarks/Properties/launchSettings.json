@@ -28,9 +28,9 @@
       "commandName": "Project",
       "environmentVariables": {
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
-        "KAFKA_BROKER_COUNT": "4",
+        "KAFKA_BROKER_COUNT": "1",
 
-        "GENERATOR_TARGET_THROUGHPUT": "999999"
+        "GENERATOR_TARGET_THROUGHPUT": "100"
       },
       "commandLineArgs": "text"
     },
@@ -62,9 +62,10 @@
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
 
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
-        "KAFKA_BROKER_COUNT": "6",
+        "KAFKA_BROKER_COUNT": "1",
+        "KAFKA_TOPIC_PARTITION_COUNT": "24",
 
-        "LOG_TARGET_FLAGS": "3", // 1 (console) || 2 (file) || 4 (azure blob)
+        "LOG_TARGET_FLAGS": "1", // 1 (console) || 2 (file) || 4 (azure blob)
         "LOG_EVENT_LEVEL": "2" //0-5,
       },
       "commandLineArgs": "latency"
@@ -76,8 +77,8 @@
         "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
 
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
-        "KAFKA_BROKER_COUNT": "4",
-        "KAFKA_TOPIC_PARTITION_COUNT": "10",
+        "KAFKA_BROKER_COUNT": "1",
+        "KAFKA_TOPIC_PARTITION_COUNT": "24",
 
         "LOG_TARGET_FLAGS": "1", // 1 (console) || 2 (file) || 4 (azure blob)
         "LOG_EVENT_LEVEL": "2" //0-5,
