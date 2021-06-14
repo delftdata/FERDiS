@@ -1,4 +1,5 @@
-﻿using BlackSP.Kernel.Models;
+﻿using BlackSP.Checkpointing.Models;
+using BlackSP.Kernel.Models;
 using ProtoBuf;
 using System;
 using System.Collections.Generic;
@@ -21,5 +22,8 @@ namespace BlackSP.Infrastructure.Layers.Control.Payloads
 
         [ProtoMember(3)]
         public IDictionary<string, int> AssociatedSequenceNumbers { get; set; }
+
+        [ProtoMember(4)]
+        public MetaData MetaData { get; set; }
     }
 }

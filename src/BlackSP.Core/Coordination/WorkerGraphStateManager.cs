@@ -298,7 +298,8 @@ namespace BlackSP.Core.Coordination
                 FireWorkerHaltTriggers(_preparedRecoveryLine?.AffectedWorkers ?? Enumerable.Empty<string>());
 
             }).ContinueWith(LogException, TaskScheduler.Current);
-            t.Wait(); //wait for async operation to complete before returning
+            // no need to wait for gc, may cause race condition if all workers recover before gc completes where state machine doesnt advance to next state
+            //t.Wait(); //wait for async operation to complete before returning
 
             
         }

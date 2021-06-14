@@ -65,7 +65,7 @@ namespace BlackSP.Core.Endpoints
             try
             {
                 callerOrExceptionSource.Token.ThrowIfCancellationRequested();
-                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} starting ingress.");
+                _logger.Information($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} starting ingress.");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
 
                 IDuplexPipe pipe = s.UsePipe(cancellationToken: callerOrExceptionSource.Token);
@@ -73,7 +73,7 @@ namespace BlackSP.Core.Endpoints
             }
             catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
             {
-                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} is handling cancellation request from caller side");
+                _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} is handling cancellation request from caller side");
                 throw;
             }
             catch (Exception e)

@@ -1,41 +1,41 @@
 
 #unique identifier for the experiment
-$experimentKey = "ss-proj-24x24x24-shuffle-pipe-80k-CC-XLKafka"
+$experimentKey = "job-1-uc-20s-40k-sink-fail-azure(1)"
 
 #SAS for the azure log blob container
-$azureSasUrl = 'http://145.100.59.191:10000/devstoreaccount1/logs'#145.100.59.144
+$azureSasUrl = 'https://vertexstore.blob.core.windows.net/logs?sp=radl&st=2021-06-14T10:23:01Z&se=2022-06-15T10:23:00Z&sv=2020-02-10&sr=c&sig=0Z6EJSlBYm4J3jHXLEmrfZVUnccT%2FDTfAqDLL0Dkxyc%3D'#'http://145.100.57.248:10000/devstoreaccount1/logs'#145.100.59.144
 
 #kafka settings
 $localKafkaDnsTemplate = 'localhost:3240{0}'
 $clusterKafkaDnsTemplate = 'kafka-{0}.kafka.kafka.svc.cluster.local:9092'
-$kafkaBrokerCount = 4
+$kafkaBrokerCount = 1
 $kafkaTopicPartitionCount = 24
-$kafkaKustomizationPath = '.\kafka\variants\scale-4-2'
-$kafkaInitSeconds = 0
+$kafkaKustomizationPath = '.\kafka\variants\scale-1'
+$kafkaInitSeconds = 45
 
 #generator settings
-$generatorShards = 8
+$generatorShards = 4
 $generatorThroughput = 10000
 $generatorType = 'text' #possible types: 'text', 'graph', 'nexmark'
 $generatorNexmarkGenCalls = 9999999 #...
 
 #checkpoint settings
-$checkpointMode = 1 #0 = uc, 1 = cc, 2 = cic
-$checkpointIntervalSec = 30
+$checkpointMode = 0 #0 = uc, 1 = cc, 2 = cic
+$checkpointIntervalSec = 20
 
 #job settings
 $jobType = 1 #0-6
-$jobSize = 2 #0-2
+$jobSize = 1 #0-2
 
 #log settings
-$logTargets = 5 # flags (1 = console, 2 = file, 4 = azure blob)
+$logTargets = 4 # flags (1 = console, 2 = file, 4 = azure blob)
 $logLevel = 2 # 0-5 (Verbose-Debug-Information-Warning-Error-Fatal)
 
 
 #experiment execution timing settings
-$generatorStartDelayMs = 120000
-$preFailureSleepMs = 180000#120000 
-$postFailureSleepMs = 0#210000 
+$generatorStartDelayMs = 30000
+$preFailureSleepMs = 90000 #120000 
+$postFailureSleepMs = 180000 
 $metricTearDownDelayMs = 10000 #the amount of delay betwean tearing down the workers+generators and the  metric collectors
 
 #-----------------------------------start script-------------------------------------------
@@ -56,12 +56,11 @@ Write-Output "Setting up environment variables"
 # First 
 #.\lib\env\env-kafka.ps1 $localKafkaDnsTemplate $kafkaBrokerCount
 Write-Output "Deploying kafka"
-kubectl create namespace kafka
 kubectl apply -k $kafkaKustomizationPath
 $kafkaStartTime = Get-Date
 
-Write-Output "Deploying Azurite"
-kubectl apply -f .\azurite\azurite.yaml
+#Write-Output "Deploying Azurite"
+#kubectl apply -f .\azurite\azurite.yaml
 
 #Write-Output "Deleting remaining log files from blob storage"
 #azcopy rm $azureSasUrl --recursive
@@ -110,7 +109,11 @@ $failureTimes = 'timestamp';
 $failureTimes += "`n"
 $failureTimes += (Get-Date).ToUniversalTime().ToString("hh:mm:ss:ffffff");
 $failureTimes += "`n"
-kubectl delete pod crainst03-0
+#kubectl delete pod crainst03-0
+#kubectl scale statefulsets crainst03 --replicas=0
+#kubectl scale statefulsets crainst03 --replicas=1
+#kubectl rollout restart statefulset crainst13
+kubectl exec -it crainst28-0 -c crainst28 -- /bin/sh -c "kill 1"
 [console]::beep(700,500) 
 [console]::beep(700,500) # BEEP BEEP - failure inserted
 
@@ -131,7 +134,6 @@ kubectl delete -f .\metric-loggers.yaml
 
 Write-Output "Tearing kafka down"
 kubectl delete -k $kafkaKustomizationPath
-kubectl delete namespace kafka
 
 #deployment deleted..
 Write-Output "Teardown completed." 
@@ -140,9 +142,9 @@ Start-Sleep -m 1000 #fixed one second sleep to ensure all log files have indeed 
 Write-Output "Downloading log files" 
 #download log files
 New-Item -Path './results/' -Name "logs" -ItemType "directory" #ensure folder creation even if azcopy fails
-azcopy copy $azureSasUrl './results/' --recursive --from-to BlobLocal
 $failureTimes | Out-File ./results/logs/failures.log -Encoding "UTF8"
 $startTime | Out-File ./results/logs/init_timestamp.log -Encoding "UTF8"
+azcopy copy $azureSasUrl './results/' --recursive --from-to BlobLocal
 Rename-Item ./results/logs $experimentKey
 
 Write-Output "Deleting deployment files from disk"

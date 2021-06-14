@@ -98,15 +98,15 @@
         "LOG_TARGET_FLAGS": "3", // 1 (console) || 2 (file) || 4 (azure blob)
         "LOG_EVENT_LEVEL": "2", //0-5,
 
-        "CHECKPOINT_COORDINATION_MODE": "1", //0 = uc, 1 = cc, 2 = cic
-        "CHECKPOINT_INTERVAL_SECONDS": "150",
+        "CHECKPOINT_COORDINATION_MODE": "0", //0 = uc, 1 = cc, 2 = cic
+        "CHECKPOINT_INTERVAL_SECONDS": "5",
 
         "BENCHMARK_INFRA": "0", //0 = simulator, 1 = cra
         "BENCHMARK_JOB": "1", //0-5
-        "BENCHMARK_SIZE": "1", // 0 = S, 1 = M, 2 = L
+        "BENCHMARK_SIZE": "0", // 0 = S, 1 = M, 2 = L
 
         "CRA_WORKER_DOCKER_IMAGE": "mdzwart/cra-net3.1:latest",
-        "CRA_ENVIRONMENT_VARIABLE_KEYS_TO_COPY": "AZURE_STORAGE_CONN_STRING, AZURE_STORAGE_CONNECTION_STRING, KAFKA_BROKER_DNS_TEMPLATE, KAFKA_BROKER_COUNT" //list of environment variable keys that will be forwarded to the environment in the k8s deployment
+        "CRA_ENVIRONMENT_VARIABLE_KEYS_TO_COPY": "AZURE_STORAGE_CONN_STRING, AZURE_STORAGE_CONNECTION_STRING, KAFKA_BROKER_DNS_TEMPLATE, KAFKA_BROKER_COUNT, LOG_EVENT_LEVEL, LOG_TARGET_FLAGS" //list of environment variable keys that will be forwarded to the environment in the k8s deployment
       },
       "commandLineArgs": "benchmark"
     }

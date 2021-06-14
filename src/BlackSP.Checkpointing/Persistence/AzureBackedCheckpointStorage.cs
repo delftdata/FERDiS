@@ -218,7 +218,7 @@ namespace BlackSP.Checkpointing.Persistence
         {
             if(!forcePull)
             {
-                return _checkpointMetaData.AsEnumerable();
+                return _checkpointMetaData.ToArray();
             }
             var blobContainerClient = GetBlobContainerClientForCheckpoints();
             //Define dataflow for metadata retrieval

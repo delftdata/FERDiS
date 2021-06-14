@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: storage-azurite-container
-        image: mcr.microsoft.com/azure-storage/azurite
+        image: mcr.microsoft.com/azure-storage/azurite:3.12.0
         ports:
         - containerPort: 10000
         - containerPort: 10001
@@ -42,5 +42,5 @@ spec:
     app: storage-azurite
   type: LoadBalancer
   externalIPs:
-  - 145.100.59.191
+  - 145.100.57.248
 

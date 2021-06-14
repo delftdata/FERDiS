@@ -116,8 +116,10 @@ spec:
               resources: 
                 requests:
                   cpu: ""500m""
+                  memory: ""1000Mi""
                 limits:
                   cpu: ""8000m""
+                  #memory: ""8000Mi""
 ---
 ";
         }

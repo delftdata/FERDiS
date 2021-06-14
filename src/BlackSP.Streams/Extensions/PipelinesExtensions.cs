@@ -1,4 +1,4 @@
-﻿using BlackSP.Streams.Exceptions;
+using BlackSP.Streams.Exceptions;
 using System;
 using System.Buffers;
 using System.Collections.Generic;

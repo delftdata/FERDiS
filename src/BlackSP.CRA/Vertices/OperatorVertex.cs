@@ -30,6 +30,8 @@ namespace BlackSP.CRA.Vertices
         public OperatorVertex()
         {
             _ctSource = new CancellationTokenSource();
+
+            //ClientLibrary.CreateVertexAsync()
         }
         
         ~OperatorVertex() {

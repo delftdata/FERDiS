@@ -9,7 +9,7 @@ import sys
 from lib.cluster import create_cluster, wait_for_kubernetes_slaves, get_deployment_info, find_missing_ips
 
 #NOTE: used in cluster naming, cluster naming is used in some DNS stage, therefore: ensure this number is unique per experiment!
-experiment_num = 438
+experiment_num = 446
 
 def main():
     args = sys.argv[1:]
@@ -52,8 +52,9 @@ def trigger_rejoin(ip, cluster_name):
 def add_docker_pull_service_account():
     print("adding pubregcred serviceaccount to kubernetes") #allows utilising the unlimited docker pulls from a docker hub subscription
     subprocess.call(['kubectl', 'apply', '-f', "./pubregcred.yaml"])
-    subprocess.Popen('kubectl patch serviceaccount default -p \'{"imagePullSecrets": [{"name": "pubregcred"}]}\'',
-                     shell=True, stdout=open(os.devnull, 'wb'), stderr=subprocess.STDOUT, close_fds=True)
+    subprocess.call(['kubectl', 'patch', 'serviceaccount', 'default', '-p', '{"imagePullSecrets": [{"name": "pubregcred"}]}'])
+    subprocess.call(['kubectl', 'create', 'namespace', "kafka"])
+    subprocess.call(['kubectl', 'patch', 'serviceaccount', 'default', '-p', '{"imagePullSecrets": [{"name": "pubregcred"}]}', '-n', 'kafka'])
 
 if __name__ == "__main__":
     main()

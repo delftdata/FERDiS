@@ -59,9 +59,9 @@ namespace BlackSP.Benchmarks.WordCount
             {
                 case Size.Small: break;
                 case Size.Medium:
-                    sourceShards = 2;
-                    mapShards = 2;
-                    sinkShards = 2;
+                    sourceShards = 12;
+                    mapShards = 12;
+                    sinkShards = 12;
                     break;
                 case Size.Large:
                     sourceShards = 24;

@@ -5,7 +5,6 @@ using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Endpoints;
 using BlackSP.Kernel.MessageProcessing;
 using BlackSP.Kernel.Models;
-using BlackSP.Kernel.Serialization;
 using BlackSP.Streams;
 using Nerdbank.Streams;
 using Serilog;
@@ -15,22 +14,20 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 
 namespace BlackSP.Core.Endpoints
 {
     public class FlushableTimeoutInputEndpoint<TMessage> : IInputEndpoint, IDisposable
         where TMessage : IMessage
     {
-        /// <summary>
-        /// Autofac delegate factory
-        /// </summary>
-        /// <param name="endpointName"></param>
-        /// <returns></returns>
+        /// <summary> 
+        /// Autofac delegate factory 
+        /// </summary> 
+        /// <param name="endpointName"></param> 
+        /// <returns></returns> 
         public delegate FlushableTimeoutInputEndpoint<TMessage> Factory(string endpointName);
 
         private readonly IReceiverSource<TMessage> _receiver;
-        private readonly IObjectSerializer _serializer;
         private readonly IEndpointConfiguration _endpointConfig;
         private readonly ConnectionObserver _connectionMonitor;
         private readonly ILogger _logger;
@@ -38,12 +35,10 @@ namespace BlackSP.Core.Endpoints
         public FlushableTimeoutInputEndpoint(string endpointName,
                              IVertexConfiguration vertexConfig,
                              IReceiverSource<TMessage> receiver,
-                             IObjectSerializer serializer,
-                            ConnectionObserver connectionMonitor,
+                             ConnectionObserver connectionMonitor,
                              ILogger logger)
         {
             _receiver = receiver ?? throw new ArgumentNullException(nameof(receiver));
-            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
 
             _ = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
             _endpointConfig = vertexConfig.InputEndpoints.FirstOrDefault(x => x.LocalEndpointName == endpointName);
@@ -52,12 +47,12 @@ namespace BlackSP.Core.Endpoints
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <summary>
-        /// Starts reading from the inputstream and storing results in local inputqueue.
-        /// This method will block, ensure it is running on a background thread.
-        /// </summary>
-        /// <param name="s"></param>
-        /// <param name="t"></param>
+        /// <summary> 
+        /// Starts reading from the inputstream and storing results in local inputqueue. 
+        /// This method will block, ensure it is running on a background thread. 
+        /// </summary> 
+        /// <param name="s"></param> 
+        /// <param name="t"></param> 
         public async Task Ingress(Stream s, string remoteEndpointName, int remoteShardId, CancellationToken callerToken)
         {
             if (_endpointConfig.RemoteEndpointName != remoteEndpointName)
@@ -71,22 +66,34 @@ namespace BlackSP.Core.Endpoints
 
             var pipe = s.UsePipe(cancellationToken: callerToken);
             using PipeStreamReader streamReader = new PipeStreamReader(pipe.Input);
-            using PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for control messages, should always flush
-            
+            using PipeStreamWriter streamWriter = new PipeStreamWriter(pipe.Output, true); //backchannel for control messages, should always flush 
+
             var t = callerOrExceptionSource.Token;
             try
             {
                 t.ThrowIfCancellationRequested();
-                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} starting ingress.");
+                _logger.Information($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} starting ingress.");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
+
+                var initmsg = await streamReader.ReadNextMessage(t);
+                if(initmsg.IsKeepAliveMessage())
+                {
+                    _logger.Information($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} got init message.");
+                } else
+                {
+                    _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} did not get init message.");
+                }
+
+
+
                 var readThread = ReadMessagesFromStream(streamReader, remoteShardId, controlMsgChannel.Writer, callerOrExceptionSource.Token);
                 var writeThread = WriteControlMessages(streamWriter, remoteShardId, controlMsgChannel.Reader, callerOrExceptionSource.Token);
                 var exitedThread = await Task.WhenAny(readThread, writeThread).ConfigureAwait(false);
-                await exitedThread.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown
+                await exitedThread.ConfigureAwait(false); //await the exited thread so any thrown exception will be rethrown 
             }
             catch (OperationCanceledException) when (t.IsCancellationRequested)
             {
-                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} is handling cancellation request from caller side");
+                _logger.Warning($"Input endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} from {_endpointConfig.GetRemoteInstanceName(remoteShardId)} is handling cancellation request from caller side");
                 throw;
             }
             catch (Exception e)
@@ -103,51 +110,38 @@ namespace BlackSP.Core.Endpoints
 
         private async Task ReadMessagesFromStream(PipeStreamReader reader, int shardId, ChannelWriter<byte[]> controlQueue, CancellationToken t)
         {
-            var dataflow = BuildDeserializationDataflow(shardId, t);
-
-
             bool hasTakenPriority = false;
             while (!t.IsCancellationRequested)
             {
                 byte[] msg = null;
-                using var readTimeout = new CancellationTokenSource(2500); //let read attempt timeout after XXXms..
+                using var readTimeout = new CancellationTokenSource(2500); //let read attempt timeout after XXXms.. 
                 using var lcts = CancellationTokenSource.CreateLinkedTokenSource(t, readTimeout.Token);
                 try
                 {
                     try
                     {
                         msg = msg ?? await reader.ReadNextMessage(lcts.Token).ConfigureAwait(false);
-                        hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader.UnreadBufferFraction, 0.0d).ConfigureAwait(false); //note: deadlock odds increase greatly with every % the threshold is increased
-
-                        //send to dataflow
-                        if(await dataflow.SendAsync(msg))
-                        {
-                            msg = null;
-                        } 
-                        else
-                        {
-                            _logger.Warning("Input endpoint {_endpointConfig.LocalEndpointName}${shardId} from {_endpointConfig.GetRemoteInstanceName(shardId)} couldnt put message in deserialization-flow, retrying");
-                        }
-
-                        //await _receiver.Receive(msg, _endpointConfig, shardId, t).ConfigureAwait(false);
+                        hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, reader.UnreadBufferFraction, 0.0d).ConfigureAwait(false); //note: deadlock odds increase greatly with every % the threshold is increased 
+                        await _receiver.Receive(msg, _endpointConfig, shardId, t).ConfigureAwait(false);
+                        msg = null;
                     }
                     catch (OperationCanceledException) when (readTimeout.IsCancellationRequested)
                     {
                         _receiver.ThrowIfFlushInProgress(_endpointConfig, shardId);
-                        //force release priority if nothing left to delivery next iteration
+                        //force release priority if nothing left to delivery next iteration 
                         hasTakenPriority = msg == null && hasTakenPriority ? await AdjustReceiverPriority(hasTakenPriority, shardId, -1, 0.0d).ConfigureAwait(false) : hasTakenPriority;
                     }
                     catch (ReceptionCancelledException)
                     {
-                        //reception was cancelled, probably to free up some critical section to allow flushing
-                        //force release priority if nothing left to delivery next iteration
+                        //reception was cancelled, probably to free up some critical section to allow flushing 
+                        //force release priority if nothing left to delivery next iteration 
                         hasTakenPriority = msg == null && hasTakenPriority ? await AdjustReceiverPriority(hasTakenPriority, shardId, -1, 0.0d).ConfigureAwait(false) : hasTakenPriority;
-                        //wait for retry
+                        //wait for retry 
                         await Task.Delay(500).ConfigureAwait(false);
                     }
                     catch (ArgumentOutOfRangeException e)
                     {
-                        //internal read message exception..
+                        //internal read message exception.. 
                         _logger.Warning(e, "Exception thrown by PipeStreamReader, ignoring to see what will happen next.");
                     }
                 }
@@ -155,7 +149,7 @@ namespace BlackSP.Core.Endpoints
                 {
                     if (hasTakenPriority)
                     {
-                        //force release priority during flush
+                        //force release priority during flush 
                         hasTakenPriority = await AdjustReceiverPriority(hasTakenPriority, shardId, -1, 0.0d).ConfigureAwait(false);
                     }
 
@@ -165,14 +159,11 @@ namespace BlackSP.Core.Endpoints
                     msg = null;
                     while (msg == null || !msg.IsFlushMessage())
                     {
-                        msg = await reader.ReadNextMessage(t).ConfigureAwait(false); //keep reading&discarding until flush message returns from upstream
+                        msg = await reader.ReadNextMessage(t).ConfigureAwait(false); //keep reading&discarding until flush message returns from upstream 
                     }
-                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response from {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                    _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} received flush message response from {_endpointConfig.GetRemoteInstanceName(shardId)}"); 
                     _receiver.CompleteFlush(_endpointConfig, shardId);
                     _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} completed flushing connection with upstream instance {_endpointConfig.GetRemoteInstanceName(shardId)}");
-
-                    //reset dataflow to clear them buffers
-                    dataflow = BuildDeserializationDataflow(shardId, t);
                 }
             }
             t.ThrowIfCancellationRequested();
@@ -190,69 +181,29 @@ namespace BlackSP.Core.Endpoints
                 try
                 {
                     msg = await outputQueue.ReadAsync(linkedSource.Token);
-                } 
-                catch(OperationCanceledException) when (timeoutSource.IsCancellationRequested)
+                }
+                catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested)
                 {
                     msg = ControlMessageExtensions.ConstructKeepAliveMessage();
 
                 }
                 await streamWriter.WriteMessage(msg, callerToken).ConfigureAwait(false);
                 var msgType = msg.IsFlushMessage() ? "flush" : "keepalive";
-                _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent a {msgType} message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");
+                _logger.Verbose($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} sent a {msgType} message upstream to {_endpointConfig.GetRemoteInstanceName(shardId)}");
 
             }
         }
-        
-        
 
-        private ITargetBlock<byte[]> BuildDeserializationDataflow(int shardId, CancellationToken t)
-        {
-
-            var serializationBlockOptions = new ExecutionDataflowBlockOptions
-            {
-                BoundedCapacity = 1 << 12,
-                EnsureOrdered = true,
-                MaxDegreeOfParallelism = Environment.ProcessorCount
-            };
-
-            var receiveBlockOptions = new ExecutionDataflowBlockOptions
-            {
-                BoundedCapacity = 1 << 12,
-                EnsureOrdered = true,
-                MaxDegreeOfParallelism = 1
-            };
-
-
-            //var snapshots = new ConcurrentDictionary<string, ObjectSnapshot>();
-            var deserialization = new TransformBlock<byte[], TMessage>(
-                async message => await _serializer.DeserializeAsync<TMessage>(message, t),
-                serializationBlockOptions
-            );
-            var reception = new ActionBlock<TMessage>(
-                async message => await _receiver.Receive(message, _endpointConfig, shardId, t),
-                receiveBlockOptions
-            );
-
-            var linkOptions = new DataflowLinkOptions
-            {
-                PropagateCompletion = true
-            };
-
-            deserialization.LinkTo(reception, linkOptions);
-
-            return deserialization;
-        }
-
-        /// <summary>
-        /// Local subroutine that takes or releases priority with the receiver depending on the amount of unread data in the provided buffer
-        /// </summary>
-        /// <param name="hadPriority"></param>
-        /// <param name="shardId"></param>
-        /// <param name="unreadBufferFraction"></param>
-        /// <returns></returns>
+        /// <summary> 
+        /// Local subroutine that takes or releases priority with the receiver depending on the amount of unread data in the provided buffer 
+        /// </summary> 
+        /// <param name="hadPriority"></param> 
+        /// <param name="shardId"></param> 
+        /// <param name="unreadBufferFraction"></param> 
+        /// <returns></returns> 
         private async Task<bool> AdjustReceiverPriority(bool hadPriority, int shardId, double unreadBufferFraction, double priorityThreshold)
         {
-            bool needsPriority = _endpointConfig.IsBackchannel && unreadBufferFraction > priorityThreshold; //hand priority to backchannels to prevent distributed deadlocks
+            bool needsPriority = _endpointConfig.IsBackchannel && unreadBufferFraction > priorityThreshold; //hand priority to backchannels to prevent distributed deadlocks 
             if (!hadPriority && needsPriority)
             {
                 _logger.Debug($"Input endpoint {_endpointConfig.LocalEndpointName}${shardId} is taking priority, capacity: {unreadBufferFraction:F2}");
@@ -268,8 +219,8 @@ namespace BlackSP.Core.Endpoints
             return needsPriority;
         }
 
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        #region IDisposable Support 
+        private bool disposedValue = false; // To detect redundant calls 
 
         protected virtual void Dispose(bool disposing)
         {
@@ -285,7 +236,7 @@ namespace BlackSP.Core.Endpoints
 
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above. 
             Dispose(true);
             GC.SuppressFinalize(this);
         }

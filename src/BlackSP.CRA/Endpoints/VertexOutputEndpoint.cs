@@ -21,7 +21,7 @@ namespace BlackSP.CRA.Endpoints
         {
             _ = config ?? throw new ArgumentNullException(nameof(config));
             _ = endpointFactory ?? throw new ArgumentNullException(nameof(endpointFactory));
-            _bspOutputEndpoint = endpointFactory.ConstructOutputEndpoint(config);
+            _bspOutputEndpoint = endpointFactory.ConstructOutputEndpoint(config, true);
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -35,7 +35,7 @@ namespace BlackSP.CRA.Endpoints
             finally
             {
                 _logger.Debug($"Stopped egressing data to vertex {otherVertex}${otherShardId} on endpoint {otherEndpoint}");
-
+                await stream.DisposeAsync();
             }
             token.ThrowIfCancellationRequested();
         }

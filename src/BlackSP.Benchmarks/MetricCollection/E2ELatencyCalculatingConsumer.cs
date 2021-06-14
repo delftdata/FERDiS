@@ -57,7 +57,7 @@ namespace BlackSP.Benchmarks.MetricCollection
                 lag += elapsed;
                 while (lag >= updateInterval)
                 {
-                    var timeoutSource = new CancellationTokenSource(updateInterval/2);
+                    var timeoutSource = new CancellationTokenSource(100);
                     Parallel.ForEach(assignedTopicPartitionOffsets, tpo =>
                     {
                         TimeSpan latency = TimeSpan.FromMilliseconds(-1);
@@ -69,6 +69,7 @@ namespace BlackSP.Benchmarks.MetricCollection
                             var outputTime = consumeRes.Message.Timestamp.UtcDateTime; // DateTime.ParseExact(output[1], "yyyyMMddHHmmssFFFFF", null, DateTimeStyles.None);
                             latency = outputTime - inputTime;
                             consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, Offset.End));
+                            //consumer.Seek(new TopicPartitionOffset(tpo.TopicPartition, consumer.Position(tpo.TopicPartition) - 1));
                         }
                         catch (OperationCanceledException) when (timeoutSource.IsCancellationRequested) { } //shh
                         catch (Exception e) //log other exception types without stopping..

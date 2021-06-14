@@ -134,8 +134,16 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                         continue; //we're looking for affected downstreams
                     }
                     //this downstream is recovering --> send replay instruction
-
-                    replayDict.Add(downstreamName, _messageLogManager.GetPrunableSequenceNumbers(recoveryLine.RecoveryMap[downstreamName])[instanceName] + 1);
+                    int replaySeqNr = -1;
+                    try
+                    {
+                        replaySeqNr = _messageLogManager.GetPrunableSequenceNumbers(recoveryLine.RecoveryMap[downstreamName])[instanceName];
+                    } 
+                    catch(KeyNotFoundException)
+                    {
+                        //couldnt find replay point, restart from -1.
+                    }
+                    replayDict.Add(downstreamName, replaySeqNr + 1);
                 }
 
                 if(!replayDict.Any()) //nothing to replay, no need for a log replay request..

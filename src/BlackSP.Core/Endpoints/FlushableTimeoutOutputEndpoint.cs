@@ -73,13 +73,17 @@ namespace BlackSP.Core.Endpoints
             try
             {
                 using CancellationTokenSource callerExceptionOrTimeoutSource = CancellationTokenSource.CreateLinkedTokenSource(callerOrExceptionSource.Token, pongTimeoutToken);
-                _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} starting egress.");
+                _logger.Information($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} starting egress.");
                 _connectionMonitor.MarkConnected(_endpointConfig, remoteShardId);
+
+                await writer.WriteMessage(ControlMessageExtensions.ConstructKeepAliveMessage(), callerToken);//test: start by writing one message to ensure live network
+                _logger.Information($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} wrote init message.");
+
                 await WriteDispatchableMessages(writer, remoteShardId, queueAccess, callerExceptionOrTimeoutSource.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
             {
-                _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} is handling cancellation request from caller side");
+                _logger.Warning($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} is handling cancellation request from caller side");
                 throw;
             }
             catch (OperationCanceledException) when (pongTimeoutToken.IsCancellationRequested)
@@ -182,6 +186,8 @@ namespace BlackSP.Core.Endpoints
 
             _ = Task.Run(async () =>
             {
+                //await Task.Delay(Constants.KeepAliveTimeoutSeconds); //attempt to fix timeout shortly after connection establishment
+
                 var dispatchQueue = _dispatcher.GetDispatchQueue(_endpointConfig, shardId);
                 var lastPongReception = DateTimeOffset.Now;
 
@@ -229,7 +235,7 @@ namespace BlackSP.Core.Endpoints
                         pongListenerTimeoutSource.Cancel();
                         throw;
                     }
-                    catch (OperationCanceledException) when (t.IsCancellationRequested) //hitting this case means we have not received a pong before timeout
+                    catch (OperationCanceledException) when (t.IsCancellationRequested) //hitting this case means the caller canceled
                     {
                         _logger.Information($"Caller cancellation on output {_endpointConfig.LocalEndpointName} to {targetInstanceName}, initiating cancellation");
                         //there is an opening here to implement multiple timeouts before assuming actual failure.

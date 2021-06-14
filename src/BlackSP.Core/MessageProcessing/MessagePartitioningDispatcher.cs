@@ -61,13 +61,11 @@ namespace BlackSP.Core.MessageProcessing
 
             foreach(var (config, shard) in _partitioner.Partition(message))
             {
-                if(_checkpointConfiguration.CoordinationMode != CheckpointCoordinationMode.Coordinated)
-                {
-                    //TODO: log..
-                }
-
                 var outputQueue = _outputQueues.Get(config.GetConnectionKey(shard));
+                _logger.Verbose($"Dispatching message to {config.GetRemoteInstanceName(shard)} @ {bytes.Length} bytes");
                 await outputQueue.UnderlyingCollection.Writer.WriteAsync(bytes, t);
+                _logger.Debug($"Dispatched message to {config.GetRemoteInstanceName(shard)} @ {bytes.Length} bytes");
+
             }
         }
 

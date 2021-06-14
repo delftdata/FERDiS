@@ -21,7 +21,7 @@ namespace BlackSP.CRA.Endpoints
         {
             _ = config ?? throw new ArgumentNullException(nameof(config));
             _ = endpointFactory ?? throw new ArgumentNullException(nameof(endpointFactory));
-            _bspInputEndpoint = endpointFactory.ConstructInputEndpoint(config);
+            _bspInputEndpoint = endpointFactory.ConstructInputEndpoint(config, true);
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -35,6 +35,7 @@ namespace BlackSP.CRA.Endpoints
             finally
             {
                 _logger.Debug($"Stopped ingressing data from vertex {otherVertex}${otherShardId} from endpoint {otherEndpoint}");
+                await stream.DisposeAsync();
             }
             token.ThrowIfCancellationRequested();
         }

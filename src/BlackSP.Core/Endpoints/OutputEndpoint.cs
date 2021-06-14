@@ -65,7 +65,7 @@ namespace BlackSP.Core.Endpoints
             using CancellationTokenSource exceptionSource = new CancellationTokenSource();
             using CancellationTokenSource callerOrExceptionSource = CancellationTokenSource.CreateLinkedTokenSource(callerToken, exceptionSource.Token);
             string targetInstanceName = _endpointConfig.GetRemoteInstanceName(remoteShardId);
-            _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} starting egress.");      
+            _logger.Information($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} starting egress.");      
             try
             {
                 var pipe = outputStream.UsePipe(cancellationToken: callerOrExceptionSource.Token);
@@ -80,7 +80,7 @@ namespace BlackSP.Core.Endpoints
             }
             catch (OperationCanceledException) when (callerToken.IsCancellationRequested)
             {
-                _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} is handling cancellation request from caller side");
+                _logger.Warning($"Output endpoint {_endpointConfig.LocalEndpointName}${remoteShardId} to {targetInstanceName} is handling cancellation request from caller side");
                 throw;
             }
             catch (Exception e)
@@ -170,7 +170,7 @@ namespace BlackSP.Core.Endpoints
                 var message = await reader.ReadNextMessage(t).ConfigureAwait(false);
                 if (message?.IsFlushMessage() ?? false)
                 {                    
-                    _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {targetInstanceName} received flush message.");
+                    _logger.Information($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {targetInstanceName} received flush message.");
                     await queueAccess.WaitAsync(t).ConfigureAwait(false);
                     try
                     {
@@ -184,7 +184,7 @@ namespace BlackSP.Core.Endpoints
                         {
                             throw new InvalidOperationException("Got channel write access but could not write");
                         }
-                        _logger.Debug($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {targetInstanceName} sent flush message response downstream.");
+                        _logger.Information($"Output endpoint {_endpointConfig.LocalEndpointName}${shardId} to {targetInstanceName} sent flush message response downstream.");
 
                     }
                     finally
