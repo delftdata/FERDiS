@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Serilog;
+using System.Threading;
 
 namespace BlackSP.Checkpointing
 {
@@ -15,8 +16,7 @@ namespace BlackSP.Checkpointing
 
         private readonly ILogger _logger;
 
-        private readonly object _lockObj;
-
+        private readonly SemaphoreSlim semaphore;
         /// <summary>
         /// Contains message logs keyed by <b>downstream</b> instance names<br/>
         /// Tuples are (seqNr, msg)
@@ -30,13 +30,16 @@ namespace BlackSP.Checkpointing
         [ApplicationState]
         private readonly IDictionary<string, int> _receivedSequenceNrs;
 
-        public MessageLoggingService(ILogger logger)
+        public MessageLoggingService(ICheckpointService checkpointService, ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _ = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
 
             _logs = new Dictionary<string, LinkedList<(int, TMessage)>>();
             _receivedSequenceNrs = new Dictionary<string, int>();
-            _lockObj = new object();
+            semaphore = new SemaphoreSlim(1, 1);
+            checkpointService.BeforeCheckpointTaken += () => semaphore.Wait();
+            checkpointService.AfterCheckpointTaken += (cpId) => semaphore.Release();
         }
 
         /// <inheritdoc/>
@@ -68,16 +71,15 @@ namespace BlackSP.Checkpointing
             {
                 throw new ArgumentException($"Logging service has not been configured for downstream instance with name {targetInstanceName}", nameof(targetInstanceName));
             }
+            semaphore.Wait();
+            var log = _logs[targetInstanceName];
+            int nextSeqNr = GetNextOutgoingSequenceNumberInternal(targetInstanceName);
 
-            lock (_lockObj)
-            {
-                var log = _logs[targetInstanceName];
-                int nextSeqNr = GetNextOutgoingSequenceNumber(targetInstanceName);
+            log.AddLast((nextSeqNr, message));
+            semaphore.Release();
+            return nextSeqNr;
 
-                log.AddLast((nextSeqNr, message));
-                return nextSeqNr;
-            }
-                
+
         }
 
         /// <inheritdoc/>
@@ -147,44 +149,42 @@ namespace BlackSP.Checkpointing
             {
                 throw new ArgumentException($"Logging service has not been configured for downstream instance with name {instanceName}", nameof(instanceName));
             }
-            
-            lock(_lockObj)
+
+            semaphore.Wait();
+            var log = _logs[instanceName];
+            var current = log.First;
+            var pruneCount = 0;
+            while (current != null)
             {
-                var log = _logs[instanceName];
-                var current = log.First;
-                var pruneCount = 0;
-                while (current != null)
+                var (seqNr, _) = current.Value;
+
+                if (seqNr <= sequenceNr)
                 {
-                    var (seqNr, _) = current.Value;
+                    log.RemoveFirst();
+                    pruneCount++;
 
-                    if (seqNr <= sequenceNr)
+                    if(!log.Any())
                     {
-                        log.RemoveFirst();
-                        pruneCount++;
-
-                        if(!log.Any())
-                        {
-                            log.AddFirst((seqNr, default)); //ensure last seqnr is saved in log
-                            break;
-                        }
-                        current = log.First;
+                        log.AddFirst((seqNr, default)); //ensure last seqnr is saved in log
+                        break;
                     }
-                    else
-                    {
-                        break; //seNr > sequenceNr so the remainder of the log need not be pruned
-                    }
+                    current = log.First;
                 }
-                return pruneCount;
+                else
+                {
+                    break; //seNr > sequenceNr so the remainder of the log need not be pruned
+                }
             }
-            
+            semaphore.Release();
+            return pruneCount;            
         }
 
         public int GetNextOutgoingSequenceNumber(string targetInstance)
         {
-            lock(_lockObj)
-            {
-                return GetNextOutgoingSequenceNumberInternal(targetInstance);
-            }
+            semaphore.Wait();
+            var res = GetNextOutgoingSequenceNumberInternal(targetInstance);
+            semaphore.Release();
+            return res;
         }
 
         private int GetNextOutgoingSequenceNumberInternal(string targetInstance)

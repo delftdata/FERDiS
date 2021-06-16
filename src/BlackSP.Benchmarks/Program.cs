@@ -7,6 +7,7 @@ using BlackSP.Checkpointing;
 using BlackSP.Infrastructure;
 using BlackSP.Infrastructure.Models;
 using BlackSP.Kernel.Configuration;
+using CRA.ClientLibrary;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
@@ -77,6 +78,7 @@ namespace BlackSP.Benchmarks
                         new TestConsumer().Consume();
                         break;
                     default:
+                        CRA.Hosting.StartWorker(args);
                         Console.WriteLine($"Unknown argument on position 0: {args[0]}. Possible values: delete-topic, graph, text, nexmark, benchmark");
                         break;
                 }

@@ -59,7 +59,6 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
                     var i = 0;
                     foreach (var (seqnr, msg) in _logService.Replay(instanceName, sequenceNr))
                     {
-                        //TODO: make msg a byte[]..
                         await dispatchQueue.UnderlyingCollection.Writer.WriteAsync(msg, default).ConfigureAwait(false);
                         i++;
                     }

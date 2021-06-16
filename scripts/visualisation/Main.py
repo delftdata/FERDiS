@@ -12,8 +12,8 @@ from checkpoint_plots import produce_checkpoint_plot
 import warnings
 warnings.filterwarnings("ignore")
 
-fromSecond = 0
-toSecond = 300
+fromSecond = 30
+toSecond = 270
 
 def main():
     logfileloc = "C:/Projects/BlackSP/scripts/experiments/results"

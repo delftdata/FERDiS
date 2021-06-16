@@ -44,7 +44,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 _logger.Information($"Uncoordinated checkpoint will be taken, configured interval is {_checkpointConfiguration.CheckpointIntervalSeconds}s");
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-                var cpId = await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
+                var cpId = await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(true);
                 sw.Stop();
                 _logger.Information($"Checkpoint {cpId} has been taken in {sw.ElapsedMilliseconds}ms");
                 _protocol.SetLastCheckpointUtc(DateTime.UtcNow);

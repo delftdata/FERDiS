@@ -63,14 +63,10 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
             if(payload.MetaData == null)
             {
-                _logger.Fatal("Received checkpoint taken payload without metadata");
-            }
-            
-            if(payload.MetaData.Dependencies == null)
-            {
-                payload.MetaData.Dependencies = new Dictionary<string, Guid>();
+                _logger.Warning("Received checkpoint taken payload without metadata");
             }
 
+            payload.MetaData.Dependencies ??= new Dictionary<string, Guid>();
             _checkpointStorage.AddMetaData(payload.MetaData);
 
             if(payload.AssociatedSequenceNumbers != null)

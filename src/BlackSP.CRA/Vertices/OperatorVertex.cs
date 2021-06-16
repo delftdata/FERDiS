@@ -30,7 +30,7 @@ namespace BlackSP.CRA.Vertices
         public OperatorVertex()
         {
             _ctSource = new CancellationTokenSource();
-
+            Console.WriteLine("Const() wurking");
             //ClientLibrary.CreateVertexAsync()
         }
         
@@ -40,6 +40,7 @@ namespace BlackSP.CRA.Vertices
 
         public override Task InitializeAsync(int shardId, ShardingInfo shardingInfo, object vertexParameter)
         {
+            Console.WriteLine("Waddup bitches");
             var configuration = (vertexParameter as byte[])?.BinaryDeserialize() as IHostConfiguration 
                 ?? throw new ArgumentException($"Argument {nameof(vertexParameter)} was not of type {typeof(IHostConfiguration)}");
             configuration.VertexConfiguration.SetCurrentShardId(shardId);

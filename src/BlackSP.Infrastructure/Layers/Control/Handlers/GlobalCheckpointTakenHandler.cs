@@ -1,4 +1,5 @@
-﻿using BlackSP.Core.Coordination;
+﻿using BlackSP.Checkpointing.Persistence;
+using BlackSP.Core.Coordination;
 using BlackSP.Core.Extensions;
 using BlackSP.Core.MessageProcessing.Handlers;
 using BlackSP.Core.Models;
@@ -24,6 +25,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
 
         private readonly ChandyLamportBarrierSource _barrierSource;
+        private readonly ICheckpointStorage _checkpointStorage;
         private readonly IVertexGraphConfiguration _graphConfiguration;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ILogger _logger;
@@ -33,11 +35,13 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
 
 
         public GlobalCheckpointTakenHandler(ChandyLamportBarrierSource barrierSource,
+            ICheckpointStorage checkpointStorage,
             IVertexGraphConfiguration graphConfiguration,
             IVertexConfiguration vertexConfiguration,
             ILogger logger)
         {
             _barrierSource = barrierSource ?? throw new ArgumentNullException(nameof(barrierSource));
+            _checkpointStorage = checkpointStorage ?? throw new ArgumentNullException(nameof(checkpointStorage));
             _graphConfiguration = graphConfiguration ?? throw new ArgumentNullException(nameof(graphConfiguration));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -49,6 +53,16 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
         protected override Task<IEnumerable<ControlMessage>> Handle(CheckpointTakenPayload payload, CancellationToken t)
         {
             _ = payload ?? throw new ArgumentNullException(nameof(payload));
+
+            _logger.Debug("Handling CheckpointTakenPayload from " + payload.OriginInstance + " with checkpoint " + payload.CheckpointId);
+
+            if (payload.MetaData == null)
+            {
+                _logger.Warning("Received checkpoint taken payload without metadata");
+            }
+
+            payload.MetaData.Dependencies ??= new Dictionary<string, Guid>();
+            _checkpointStorage.AddMetaData(payload.MetaData);
 
             checkpointedInstances.Add(payload.OriginInstance);
             if(checkpointedInstances.Intersect(allInstanceNames).Count() == allInstanceNames.Count)

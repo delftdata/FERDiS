@@ -115,13 +115,13 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 //sources never have incoming CIC payloads.. so just check the fallback protocol instead
                 if (_backupProtocol.CheckCheckpointCondition(DateTime.UtcNow))
                 {
-                    await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(false);
+                    await _checkpointingService.TakeCheckpoint(_vertexConfiguration.InstanceName).ConfigureAwait(true);
                 }
             }
 
             if(message.TryExtractPayload<CICPayload>(out var cicPayload))
             {
-                await HandlePayload(cicPayload).ConfigureAwait(false);
+                await HandlePayload(cicPayload).ConfigureAwait(true);
             }
 
             return message.Yield();

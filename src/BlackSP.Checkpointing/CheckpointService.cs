@@ -53,7 +53,7 @@ namespace BlackSP.Checkpointing
         ///<inheritdoc/>
         public void UpdateCheckpointDependency(string originInstanceName, Guid checkpointId)
         {
-            _logger.GetDefaultLogger().Debug($"Updating checkpoint dependency on instance {originInstanceName} to {checkpointId}");
+            _logger.GetDefaultLogger().Information($"Updating checkpoint dependency on instance {originInstanceName} to {checkpointId}");
             _dpTracker.UpdateDependency(originInstanceName, checkpointId);
         }
 

@@ -134,15 +134,15 @@ namespace BlackSP.Core.MessageProcessing.Processors
                 }
                 else
                 {
-                    message = await _source.Take(t).ConfigureAwait(false) ?? throw new Exception($"Received null from {_source.GetType()}.Take");
+                    message = await _source.Take(t).ConfigureAwait(true) ?? throw new Exception($"Received null from {_source.GetType()}.Take");
                 }
 
-                await _pauseSemaphore.WaitAsync(t).ConfigureAwait(false);
+                await _pauseSemaphore.WaitAsync(t).ConfigureAwait(true);
                 try
                 {
-                    foreach (var output in await _pipeline.Process(message, t).ConfigureAwait(false))
+                    foreach (var output in await _pipeline.Process(message, t).ConfigureAwait(true))
                     {
-                        await _dispatcher.Dispatch(output, t);
+                        await _dispatcher.Dispatch(output, t).ConfigureAwait(true);
                     }
                 }
                 finally

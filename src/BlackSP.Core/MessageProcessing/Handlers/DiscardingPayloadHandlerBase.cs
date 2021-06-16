@@ -29,7 +29,7 @@ namespace BlackSP.Core.MessageProcessing.Handlers
             }
 
             //get results
-            var results = await Handle(payload, t).ConfigureAwait(false);
+            var results = await Handle(payload, t).ConfigureAwait(true);
             //only forward messages with payloads
             return results.Where(msg => msg.Payloads.Any());
         }

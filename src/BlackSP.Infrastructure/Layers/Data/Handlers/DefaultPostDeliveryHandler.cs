@@ -34,11 +34,11 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
 
         public async Task<IEnumerable<DataMessage>> Handle(DataMessage message, CancellationToken t)
         {
-            byte[] bytes = await _serializer.SerializeAsync(message, default).ConfigureAwait(false);
+            byte[] bytes = await _serializer.SerializeAsync(message, default).ConfigureAwait(true);
             foreach (var (config, shard) in _partitioner.Partition(message))
             {
                 var outputQueue = _dispatcher.GetDispatchQueue(config, shard);
-                await outputQueue.UnderlyingCollection.Writer.WriteAsync(bytes, t);
+                await outputQueue.UnderlyingCollection.Writer.WriteAsync(bytes, t).ConfigureAwait(true);
             }
             return Enumerable.Empty<DataMessage>();
         }

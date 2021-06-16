@@ -172,7 +172,7 @@ namespace BlackSP.Core.MessageProcessing
                 //use critical section
                 var triplet = (message, origin, shardId);
                 await _receivedMessages.SendAsync(triplet, lcts.Token).ConfigureAwait(false);
-                _logger.Debug($"Delivered input from upstream instance: {origin.GetRemoteInstanceName(shardId)}");
+                _logger.Verbose($"Delivered input from upstream instance: {origin.GetRemoteInstanceName(shardId)}");
                 _lastWrite = triplet;
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)

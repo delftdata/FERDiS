@@ -38,6 +38,9 @@ namespace BlackSP.CRA.Configuration
 
         protected override async Task<IApplication> BuildGraph()
         {
+            _craClient.DisableArtifactUploading();
+            _craClient.DisableDynamicLoading();
+
             await RegisterGraphWithCRA().ConfigureAwait(false);
             _k8sDeploymentUtil.With(VertexBuilders).WriteDeploymentYaml();
             _k8sDeploymentUtil.PrintUsage();

@@ -45,11 +45,11 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 var payload = new SequenceNumberPayload { SequenceNumber = seqNr };
                 message.AddPayload(payload);
 
-                byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(false);
+                byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(true);
                 _loggingService.Append(targetInstance, bytes);
 
                 var outputQueue = _dispatcher.GetDispatchQueue(endpoint, shard);
-                await outputQueue.UnderlyingCollection.Writer.WriteAsync(bytes, t).ConfigureAwait(false);
+                await outputQueue.UnderlyingCollection.Writer.WriteAsync(bytes, t).ConfigureAwait(true);
                 return Enumerable.Empty<DataMessage>();
             }
 
@@ -63,10 +63,10 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 var payload = new SequenceNumberPayload { SequenceNumber = seqNr };
                 msgCopy.AddPayload(payload);
 
-                byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(false);
+                byte[] bytes = await _serializer.SerializeAsync(message, t).ConfigureAwait(true);
                 _loggingService.Append(targetInstance, bytes);
                 var outputQueue = _dispatcher.GetDispatchQueue(endpoint, shard);
-                await outputQueue.UnderlyingCollection.Writer.WriteAsync(bytes, t).ConfigureAwait(false);
+                await outputQueue.UnderlyingCollection.Writer.WriteAsync(bytes, t).ConfigureAwait(true);
             }
 
             return Enumerable.Empty<DataMessage>();

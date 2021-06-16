@@ -8,10 +8,10 @@
   <ItemGroup>
     <None Remove="lib\NEXMarkGenerator.jar" />
   </ItemGroup>
-
+  
   <PropertyGroup Condition=" '$(Configuration)' == 'Trace' ">
     <DefineConstants>TRACE</DefineConstants>
-	<DebugType>full</DebugType>
+	  <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 

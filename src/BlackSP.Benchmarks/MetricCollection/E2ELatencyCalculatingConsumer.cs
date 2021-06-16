@@ -59,11 +59,11 @@ namespace BlackSP.Benchmarks.MetricCollection
                     continue;
                 }
 
-                var timeoutSource = new CancellationTokenSource(1000); //TODO: consider increasing? may start lagging harder, not a real issue tho
+                var timeoutSource = new CancellationTokenSource(10000); //TODO: consider increasing? may start lagging harder, not a real issue tho
 
                 //fetch the next offsets that were delivered after the 'nextTs'
                 var nextTs = new Timestamp(lastPrint, TimestampType.CreateTime);
-                var tposForPrint = consumer.OffsetsForTimes(assignedTopicPartitionOffsets.Select(tpo => new TopicPartitionTimestamp(tpo.TopicPartition, nextTs)), TimeSpan.FromMilliseconds(60000));
+                var tposForPrint = consumer.OffsetsForTimes(assignedTopicPartitionOffsets.Select(tpo => new TopicPartitionTimestamp(tpo.TopicPartition, nextTs)), TimeSpan.FromMilliseconds(10000));
                 foreach(var tpo in tposForPrint)
                 {
                     TimeSpan latency = TimeSpan.FromMilliseconds(-1);
@@ -102,7 +102,10 @@ namespace BlackSP.Benchmarks.MetricCollection
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
                 GroupId = "e2e-latency",
                 EnableAutoCommit = true,
-                AutoOffsetReset = AutoOffsetReset.Latest
+                AutoOffsetReset = AutoOffsetReset.Latest,
+                MaxPartitionFetchBytes = 5000,
+                FetchMaxBytes = 5000,
+                MessageMaxBytes = 5000
             }).SetErrorHandler((c,e) => errorLogger.Warning($"Kafka error: {e}"));
 
             var consumer = builder.Build();

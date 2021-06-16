@@ -37,13 +37,13 @@ namespace BlackSP.Core.MessageProcessing
 
         private async Task<IEnumerable<T>> ApplyMessageHandlers(T message, CancellationToken t)
         {
-            IEnumerable<T> results = await _middlewares.First().Handle(message, t).ConfigureAwait(false);
+            IEnumerable<T> results = await _middlewares.First().Handle(message, t).ConfigureAwait(true);
             foreach (var middleware in _middlewares.Skip(1))
             {
                 var propagatedMessages = new List<T>();
                 foreach(var msg in results)
                 {
-                    var nextMessages = await middleware.Handle(msg, t).ConfigureAwait(false) ?? throw new Exception($"Middleware of type {middleware.GetType()} returned null, expected IEnumerable");
+                    var nextMessages = await middleware.Handle(msg, t).ConfigureAwait(true) ?? throw new Exception($"Middleware of type {middleware.GetType()} returned null, expected IEnumerable");
                     propagatedMessages.AddRange(nextMessages);
                 }
                 results = propagatedMessages;

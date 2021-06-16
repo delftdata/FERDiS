@@ -5,6 +5,7 @@ using BlackSP.Infrastructure.Layers.Data;
 using BlackSP.Kernel.Checkpointing;
 using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.MessageProcessing;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,12 +27,14 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         private readonly IMessageLoggingService<byte[]> _loggingService;
         private readonly IVertexConfiguration _vertexConfiguration;
         private readonly ICheckpointStorage _checkpointStorage;
+        private readonly ILogger _logger;
         private readonly Channel<ControlMessage> _output;
 
         public CheckpointTakenSource(ICheckpointService checkpointService, 
                                      IMessageLoggingService<byte[]> loggingService,
                                      IVertexConfiguration vertexConfiguration,
-                                     ICheckpointStorage checkpointStorage) : this(checkpointService, vertexConfiguration, checkpointStorage)
+                                     ICheckpointStorage checkpointStorage,
+                                     ILogger logger) : this(checkpointService, vertexConfiguration, checkpointStorage, logger)
         {
             _loggingService = loggingService ?? throw new ArgumentNullException(nameof(loggingService));
             InitLoggingService();
@@ -39,11 +42,13 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
 
         public CheckpointTakenSource(ICheckpointService checkpointService,
                                      IVertexConfiguration vertexConfiguration,
-                                     ICheckpointStorage checkpointStorage)
+                                     ICheckpointStorage checkpointStorage,
+                                     ILogger logger)
         {
             _checkpointService = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
             _vertexConfiguration = vertexConfiguration ?? throw new ArgumentNullException(nameof(vertexConfiguration));
             _checkpointStorage = checkpointStorage ?? throw new ArgumentNullException(nameof(checkpointStorage));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
 
             _output = Channel.CreateUnbounded<ControlMessage>();
@@ -64,10 +69,13 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             {
                 throw new InvalidOperationException($"Could not send checkpoint metadata as storage returned null for Id: {checkpointId}");
             }
+            _logger.Debug($"Producing a checkpoint taken payload for checkpoint {checkpointId}");
             var msg = new ControlMessage();
             msg.AddPayload(payload);
             while(!_output.Writer.TryWrite(msg))
-            { /*try again..*/ }
+            { /*try again..*/
+                _logger.Debug($"Producing a checkpoint taken payload for checkpoint {checkpointId} (retry)");
+            }
         }
 
         public Task Flush(IEnumerable<string> upstreamInstancesToFlush)

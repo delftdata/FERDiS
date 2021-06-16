@@ -5,6 +5,7 @@ using CRA.ClientLibrary;
 using Serilog;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,11 +16,20 @@ namespace BlackSP.CRA.Endpoints
         public delegate VertexInputEndpoint Factory(IEndpointConfiguration config);
 
         private readonly IInputEndpoint _bspInputEndpoint;
+        private readonly IVertexGraphConfiguration _graphConfig;
+        private readonly IVertexConfiguration _vertexConfig;
+        private readonly IEndpointConfiguration _epConfig;
         private readonly ILogger _logger;
 
-        public VertexInputEndpoint(IEndpointConfiguration config, EndpointFactory endpointFactory, ILogger logger)
+        public VertexInputEndpoint(IEndpointConfiguration config, 
+            IVertexGraphConfiguration graphConfig,
+            IVertexConfiguration vertexConfig,
+            EndpointFactory endpointFactory,
+            ILogger logger)
         {
-            _ = config ?? throw new ArgumentNullException(nameof(config));
+            _epConfig = config ?? throw new ArgumentNullException(nameof(config));
+            _graphConfig = graphConfig ?? throw new ArgumentNullException(nameof(graphConfig));
+            _vertexConfig = vertexConfig ?? throw new ArgumentNullException(nameof(vertexConfig));
             _ = endpointFactory ?? throw new ArgumentNullException(nameof(endpointFactory));
             _bspInputEndpoint = endpointFactory.ConstructInputEndpoint(config, true);
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -29,6 +39,10 @@ namespace BlackSP.CRA.Endpoints
         {
             try
             {
+                if(!_epConfig.IsControl && !_epConfig.IsBackchannel && !_graphConfig.GetAllInstancesUpstreamOf(_vertexConfig.InstanceName, true).Contains(_epConfig.GetRemoteInstanceName(otherShardId))) {
+                    _logger.Information("Holding off input connection to " + _epConfig.GetRemoteInstanceName(otherShardId) + ", suspecting its not part of the pipeline");
+                    await Task.Delay(-1, token);
+                }
                 //CRA invokes this method on the thread pool so just invoke Ingress here..
                 await _bspInputEndpoint.Ingress(stream, otherEndpoint, otherShardId, token).ConfigureAwait(false);
             }

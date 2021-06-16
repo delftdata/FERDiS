@@ -25,7 +25,7 @@ def produce_throughput_graph(location: str, fromSec: int = 0, toSec: int = 9999)
             initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
 
             data = normalize_timestamp_column(parsedData, initialTs)
-            data['throughput'] = savitzky_golay(data['throughput'], 19, 2);
+            data['throughput'] = savitzky_golay(data['throughput'], 11, 1);
             data['throughput'] = data['throughput'].apply(lambda x: 0 if x < 0 else x)
             data = data[data["timestamp"] > fromSec*1000][data["timestamp"] < toSec*1000]
             data = data.reset_index()
@@ -65,7 +65,7 @@ def produce_latency_graph(location: str, plotPerShard: bool = False, plotMeanPer
                 #add to plot per shard
                 for key, values in data.groupby(["shard"]):
                     values = values.reset_index()
-                    values['latency'] = savitzky_golay(values['latency'], 19, 2);
+                    #values['latency'] = savitzky_golay(values['latency'], 19, 2);
                     values['latency'] = values['latency'].apply(lambda x: 0 if x < 0 else x)
 
                     plotter.add_latency_data(values['timestamp'].apply(lambda x: x/1000), values['latency'], "shard-"+str(key))

@@ -1,4 +1,4 @@
-$result = ./docker/bin/BlackSP.Benchmarks.exe benchmark *>&1
+$result = C:\Projects\BlackSP\scripts\experiments\docker\bin\BlackSP.Benchmarks.exe benchmark -a *>&1
 
 # Evaluate success/failure
 if(!($LASTEXITCODE -eq 0))

@@ -11,19 +11,19 @@ namespace BlackSP.Benchmarks.WordCount
     {
         public static Action<IVertexGraphBuilder> WordCount(Size size)
         {
-            int sourceShards = 1;
-            int mapShards = 1;
-            int reducerShards = 1;
-            int sinkShards = 1;
+            int sourceShards = 2;
+            int mapShards = 2;
+            int reducerShards = 2;
+            int sinkShards = 2;
 
             switch(size)
             {
                 case Size.Small: break;
                 case Size.Medium:
-                    sourceShards = 2;
-                    mapShards = 2;
-                    reducerShards = 2;
-                    sinkShards = 2;
+                    sourceShards = 12;
+                    mapShards = 12;
+                    reducerShards = 4;
+                    sinkShards = 4;
                     break;
                 case Size.Large:
                     sourceShards = 4;
@@ -42,7 +42,7 @@ namespace BlackSP.Benchmarks.WordCount
                 var reducer = graphBuilder.AddAggregate<WordCountAggregator, WordEvent, WordEvent>(reducerShards);
                 var sink = graphBuilder.AddSink<KafkaWordCountSink, WordEvent>(sinkShards);
 
-                source.Append(mapper);
+                source.Append(mapper).AsPipeline();
                 mapper.Append(reducer);
                 reducer.Append(sink).AsPipeline();
             };
@@ -51,9 +51,9 @@ namespace BlackSP.Benchmarks.WordCount
 
         public static Action<IVertexGraphBuilder> Projection(Size size)
         {
-            int sourceShards = 1;
-            int mapShards = 1;
-            int sinkShards = 1;
+            int sourceShards = 4;
+            int mapShards = 4;
+            int sinkShards = 2;
 
             switch (size)
             {
@@ -61,7 +61,7 @@ namespace BlackSP.Benchmarks.WordCount
                 case Size.Medium:
                     sourceShards = 12;
                     mapShards = 12;
-                    sinkShards = 12;
+                    sinkShards = 6;
                     break;
                 case Size.Large:
                     sourceShards = 24;

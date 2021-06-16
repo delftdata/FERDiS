@@ -4,6 +4,7 @@ using BlackSP.Checkpointing.Core;
 using BlackSP.Checkpointing.Extensions;
 using BlackSP.Checkpointing.Models;
 using BlackSP.Serialization.Extensions;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -22,8 +23,10 @@ namespace BlackSP.Checkpointing.Persistence
 
         private readonly ICollection<MetaData> _checkpointMetaData;
 
-        public AzureBackedCheckpointStorage()
+        private readonly ILogger _logger;
+        public AzureBackedCheckpointStorage(ILogger logger)
         {
+            _logger = logger;
             _blockOptions = new ExecutionDataflowBlockOptions
             {
                 MaxDegreeOfParallelism = Environment.ProcessorCount
@@ -34,6 +37,11 @@ namespace BlackSP.Checkpointing.Persistence
             };
 
             _checkpointMetaData = new List<MetaData>();
+        }
+
+        public AzureBackedCheckpointStorage() : this(null)
+        {
+            
         }
 
         private BlobContainerClient GetBlobContainerClientForCheckpoints()
@@ -155,7 +163,14 @@ namespace BlackSP.Checkpointing.Persistence
         {
             var snapshot = checkpoint.GetSnapshot(snapshotKey);
             var snapshotUploadStream = new MemoryStream();
-            snapshot.BinarySerializeTo(snapshotUploadStream);
+            try
+            {
+                snapshot.BinarySerializeTo(snapshotUploadStream);
+            } 
+            catch(Exception e)
+            {
+                _logger.Warning(e, "Serialization error for object with snapshotKey " + snapshotKey);
+            }
             snapshotUploadStream.Seek(0, SeekOrigin.Begin);
             return Tuple.Create($"{checkpoint.Id}/{snapshotKey}", snapshotUploadStream);
         }

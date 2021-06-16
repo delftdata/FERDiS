@@ -1,6 +1,6 @@
 
 #unique identifier for the experiment
-$experimentKey = "job-1-uc-20s-1k-sink-fail-local(0)"
+$experimentKey = "job-1-cic-30s-30k-sourcefail"
 
 #SAS for the azure log blob container
 $azureSasUrl = 'https://vertexstore.blob.core.windows.net/logs?sp=radl&st=2021-06-14T10:23:01Z&se=2022-06-15T10:23:00Z&sv=2020-02-10&sr=c&sig=0Z6EJSlBYm4J3jHXLEmrfZVUnccT%2FDTfAqDLL0Dkxyc%3D'#'http://145.100.57.248:10000/devstoreaccount1/logs'#145.100.59.144
@@ -14,18 +14,18 @@ $kafkaKustomizationPath = '.\kafka\variants\scale-1'
 $kafkaInitSeconds = 45
 
 #generator settings
-$generatorShards = 1
-$generatorThroughput = 1000
+$generatorShards = 3
+$generatorThroughput = 10000
 $generatorType = 'text' #possible types: 'text', 'graph', 'nexmark'
 $generatorNexmarkGenCalls = 9999999 #...
 
 #checkpoint settings
-$checkpointMode = 0 #0 = uc, 1 = cc, 2 = cic
-$checkpointIntervalSec = 20
+$checkpointMode = 2 #0 = uc, 1 = cc, 2 = cic
+$checkpointIntervalSec = 30
 
 #job settings
 $jobType = 1 #0-6
-$jobSize = 0 #0-2
+$jobSize = 1 #0-2
 
 #log settings
 $logTargets = 4 # flags (1 = console, 2 = file, 4 = azure blob)
@@ -33,10 +33,10 @@ $logLevel = 2 # 0-5 (Verbose-Debug-Information-Warning-Error-Fatal)
 
 
 #experiment execution timing settings
-$generatorStartDelayMs = 30000
+$generatorStartDelayMs = 40000
 $preFailureSleepMs = 90000 #120000 
 $postFailureSleepMs = 180000 
-$metricTearDownDelayMs = 10000 #the amount of delay betwean tearing down the workers+generators and the  metric collectors
+$metricTearDownDelayMs = 20000 #the amount of delay betwean tearing down the workers+generators and the  metric collectors
 
 #-----------------------------------start script-------------------------------------------
 Write-Output "Starting experiment $($experimentKey)"
@@ -59,11 +59,8 @@ Write-Output "Deploying kafka"
 kubectl apply -k $kafkaKustomizationPath
 $kafkaStartTime = Get-Date
 
-#Write-Output "Deploying Azurite"
-#kubectl apply -f .\azurite\azurite.yaml
-
-#Write-Output "Deleting remaining log files from blob storage"
-#azcopy rm $azureSasUrl --recursive
+Write-Output "Deleting remaining log files from blob storage"
+azcopy rm $azureSasUrl --recursive
 
 #prepare cra deployment (yields k8s yaml)
 Write-Output "Preparing deployment file for BlackSP nodes"
@@ -113,7 +110,7 @@ $failureTimes += "`n"
 #kubectl scale statefulsets crainst03 --replicas=0
 #kubectl scale statefulsets crainst03 --replicas=1
 #kubectl rollout restart statefulset crainst13
-kubectl exec -it crainst28-0 -c crainst28 -- /bin/sh -c "kill 1"
+kubectl exec -it crainst05-0 -c crainst05 -- /bin/sh -c "kill 1"
 [console]::beep(700,500) 
 [console]::beep(700,500) # BEEP BEEP - failure inserted
 
