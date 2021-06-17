@@ -1,6 +1,6 @@
 
 #unique identifier for the experiment
-$experimentKey = "job-1-cic-30s-30k-sourcefail"
+$experimentKey = "job-1-uc-30s-45k-sourcefail(1)"
 
 #SAS for the azure log blob container
 $azureSasUrl = 'https://vertexstore.blob.core.windows.net/logs?sp=radl&st=2021-06-14T10:23:01Z&se=2022-06-15T10:23:00Z&sv=2020-02-10&sr=c&sig=0Z6EJSlBYm4J3jHXLEmrfZVUnccT%2FDTfAqDLL0Dkxyc%3D'#'http://145.100.57.248:10000/devstoreaccount1/logs'#145.100.59.144
@@ -15,12 +15,12 @@ $kafkaInitSeconds = 45
 
 #generator settings
 $generatorShards = 3
-$generatorThroughput = 10000
+$generatorThroughput = 15000
 $generatorType = 'text' #possible types: 'text', 'graph', 'nexmark'
 $generatorNexmarkGenCalls = 9999999 #...
 
 #checkpoint settings
-$checkpointMode = 2 #0 = uc, 1 = cc, 2 = cic
+$checkpointMode = 0 #0 = uc, 1 = cc, 2 = cic
 $checkpointIntervalSec = 30
 
 #job settings

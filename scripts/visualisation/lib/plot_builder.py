@@ -15,7 +15,7 @@ class Plotter:
     def add_checkpoint_data(self, series: pd.DataFrame):
         self.c = self.c + 1
         
-        plt.boxplot(series.values, autorange=True)
+        plt.boxplot(series.values, autorange=True, labels=["wauw"])
         #color='random',
         
         plt.xlabel("Experiment Time (s)")
@@ -39,7 +39,7 @@ class Plotter:
         
         plt.xlabel("Experiment Time (s)")
         plt.ylabel("Throughput (e/s)")
-        plt.legend(prop={'size': 16})
+        plt.legend(prop={'size': 12})
         self.fig.tight_layout(pad=0.05)
         
     def add_latency_data(self, timestamps: pd.DataFrame, latencies: pd.DataFrame, label: str):
@@ -56,7 +56,7 @@ class Plotter:
         
         plt.xlabel("Experiment Time (s)")
         plt.ylabel("Latency (ms)")
-        plt.legend(prop={'size': 16})
+        plt.legend(prop={'size': 12})
         self.fig.tight_layout(pad=0.05)
 
     def add_kill_line(self, killtime, label):

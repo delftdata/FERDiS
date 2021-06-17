@@ -13,16 +13,16 @@ namespace BlackSP.Benchmarks.NEXMark
 
         public static Action<IVertexGraphBuilder> Selection(Size size)
         {
-            int sourceShards = 1;
-            int filterShards = 1;
-            int sinkShards = 1;
+            int sourceShards = 2;
+            int filterShards = 2;
+            int sinkShards = 2;
             switch(size)
             {
                 case Size.Small: break;
                 case Size.Medium:
-                    sourceShards = 4;
-                    filterShards = 4;
-                    sinkShards = 2;
+                    sourceShards = 8;
+                    filterShards = 8;
+                    sinkShards = 8;
                     break;
                 case Size.Large:
                     sourceShards = 4;
@@ -39,35 +39,35 @@ namespace BlackSP.Benchmarks.NEXMark
                 var sink = builder.AddSink<Operators.Projection.BidSinkOperator, BidEvent>(sinkShards);
 
                 source.Append(filter).AsPipeline();
-                filter.Append(sink);
+                filter.Append(sink).AsPipeline();
             };
         }
 
         public static Action<IVertexGraphBuilder> LocalItem(Size size)
         {
 
-            int pSourceShards = 1;
-            int pFilterShards = 1;
-            int aSourceShards = 1;
-            int aFilterShards = 1;
-            int joinShards = 1;
-            int sinkShards = 1;
+            int pSourceShards = 2;
+            int pFilterShards = 2;
+            int aSourceShards = 2;
+            int aFilterShards = 2;
+            int joinShards = 2;
+            int sinkShards = 2;
             switch (size)
             {
                 case Size.Small: break;
                 case Size.Medium:
-                    pSourceShards = 2;
-                    pFilterShards = 2;
-                    aSourceShards = 2;
-                    aFilterShards = 2;
-                    joinShards = 2;
-                    sinkShards = 2;
-                    break;
-                case Size.Large:
                     pSourceShards = 4;
                     pFilterShards = 4;
                     aSourceShards = 4;
                     aFilterShards = 4;
+                    joinShards = 4;
+                    sinkShards = 4;
+                    break;
+                case Size.Large:
+                    pSourceShards = 8;
+                    pFilterShards = 8;
+                    aSourceShards = 8;
+                    aFilterShards = 8;
                     joinShards = 4;
                     sinkShards = 4;
                     break;
@@ -79,17 +79,17 @@ namespace BlackSP.Benchmarks.NEXMark
                 var auctionSource = builder.AddSource<AuctionSourceOperator, AuctionEvent>(aSourceShards);
 
                 var personFilter = builder.AddFilter<Operators.LocalItem.PersonLocationFilterOperator, PersonEvent>(pFilterShards);
-                personSource.Append(personFilter);
+                personSource.Append(personFilter).AsPipeline();
 
                 var auctionFilter = builder.AddFilter<Operators.LocalItem.AuctionCategoryFilterOperator, AuctionEvent>(aFilterShards);
-                auctionSource.Append(auctionFilter);
+                auctionSource.Append(auctionFilter).AsPipeline();
 
                 var join = builder.AddJoin<Operators.LocalItem.AuctionPersonJoinOperator, AuctionEvent, PersonEvent, AuctionPersonEvent>(joinShards);
                 personFilter.Append(join);
                 auctionFilter.Append(join);
 
                 var sink = builder.AddSink<Operators.LocalItem.AuctionPersonSinkOperator, AuctionPersonEvent>(sinkShards);
-                join.Append(sink);
+                join.Append(sink).AsPipeline();
             };
             
         }

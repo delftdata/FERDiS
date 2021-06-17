@@ -22,6 +22,12 @@ def get_checkpoint_files(location: str, folder: str):
     return [e for e in os.listdir(f'{location}/{folder}/checkpoint')]
 
 
+"""Retrieves a list of recovery data filenames
+"""
+def get_recovery_files(location: str, folder: str):
+    return [e for e in os.listdir(f'{location}/{folder}/recovery')]
+
+
 
 """Reads a throughput file and returns it as an untyped multi-dimensional array
 format = timestamp, throughput, latmin, latavg, latmax
@@ -53,6 +59,14 @@ format = timestamp, forced, taken_ms, bytes
 def get_checkpoint_file_content(location: str, folder: str, filename: str):
     frame = pd.read_csv(f'{location}/{folder}/checkpoint/{filename}', sep=",")
     frame.columns = ['timestamp', 'forced', 'taken_ms', 'bytes']
+    return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
+
+"""Reads a recovery file and returns it as an untyped multi-dimensional array
+format = timestamp, forced, taken_ms, bytes
+"""
+def get_recovery_file_content(location: str, folder: str, filename: str):
+    frame = pd.read_csv(f'{location}/{folder}/recovery/{filename}', sep=",")
+    frame.columns = ['timestamp', 'restored_ms', 'rollback_ms']
     return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
 
 

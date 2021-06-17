@@ -123,8 +123,10 @@ def parse_checkpoint_data(datapoints: pd.DataFrame):
     datapoints['forced'] = datapoints['forced'].transform(lambda s: s == "True")
     datapoints['taken_ms'] = datapoints['taken_ms'].transform(float)
     datapoints['bytes'] = datapoints['bytes'].transform(int)
-
     return datapoints
 
-
-
+def parse_recovery_data(datapoints: pd.DataFrame):
+    datapoints['timestamp'] = datapoints['timestamp'].transform(parse_time_to_timestamp)
+    datapoints['restored_ms'] = datapoints['restored_ms'].transform(float)
+    datapoints['rollback_ms'] = datapoints['rollback_ms'].transform(float)
+    return datapoints

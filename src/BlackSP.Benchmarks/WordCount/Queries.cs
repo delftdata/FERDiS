@@ -20,8 +20,8 @@ namespace BlackSP.Benchmarks.WordCount
             {
                 case Size.Small: break;
                 case Size.Medium:
-                    sourceShards = 12;
-                    mapShards = 12;
+                    sourceShards = 8;
+                    mapShards = 8;
                     reducerShards = 4;
                     sinkShards = 4;
                     break;
