@@ -99,7 +99,7 @@ namespace BlackSP.CRA
             worker.DisableDynamicLoading();
             Console.WriteLine("Parallel connection enabled, dynamic loading disabled.");
             worker.SetTcpConnectionTimeout(5000);
-            worker.SetConnectionRetryDelay(2500);
+            worker.SetConnectionRetryDelay(5000);
             //worker.SideloadVertex(new OperatorVertex(), args[2]);
             worker.Start();
         }

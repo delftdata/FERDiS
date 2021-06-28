@@ -40,7 +40,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
                 return Task.FromResult(AssociatedMessage.Yield());
             } 
             
-            _logger.Verbose($"Dropping message with sequence number {payload.SequenceNumber} (expected {_loggingService.ReceivedSequenceNumbers[origin]+1}) from {origin}");
+            _logger.Debug($"Dropping message with sequence number {payload.SequenceNumber} (expected {_loggingService.ReceivedSequenceNumbers[origin]+1}) from {origin}");
             return Task.FromResult(Enumerable.Empty<DataMessage>());
         }
     }

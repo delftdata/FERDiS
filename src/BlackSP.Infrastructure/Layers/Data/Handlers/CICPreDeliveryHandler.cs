@@ -77,7 +77,7 @@ namespace BlackSP.Infrastructure.Layers.Data.Handlers
             _checkpointingService.AfterCheckpointTaken += (cpId) =>
             {
                 _hmnrProtocol.AfterCheckpoint(); //NOTE: invoke after checkpoint handler to include correct clock values in checkpoint and ensure post-recovery consistency
-                _backupProtocol.SetLastCheckpointUtc(DateTime.UtcNow);
+                _backupProtocol.SetLastCheckpointUtc(DateTime.UtcNow); //update last cp datetime to prevent potential double checkpoint scenarios where a cp is forced and shortly after uncoordinatedly taken too
             };
 
         }

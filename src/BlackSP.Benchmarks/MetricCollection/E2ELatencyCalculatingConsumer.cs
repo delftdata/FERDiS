@@ -63,8 +63,17 @@ namespace BlackSP.Benchmarks.MetricCollection
 
                 //fetch the next offsets that were delivered after the 'nextTs'
                 var nextTs = new Timestamp(lastPrint, TimestampType.CreateTime);
-                var tposForPrint = consumer.OffsetsForTimes(assignedTopicPartitionOffsets.Select(tpo => new TopicPartitionTimestamp(tpo.TopicPartition, nextTs)), TimeSpan.FromMilliseconds(10000));
-                foreach(var tpo in tposForPrint)
+                List<TopicPartitionOffset> tposForPrint;
+                try
+                {
+                    tposForPrint = consumer.OffsetsForTimes(assignedTopicPartitionOffsets.Select(tpo => new TopicPartitionTimestamp(tpo.TopicPartition, nextTs)), TimeSpan.FromMilliseconds(10000));
+                } catch(Exception e)
+                {
+                    errorLogger.Warning(e, "exception");
+                    Thread.Sleep(1000);
+                    continue;
+                }
+                foreach (var tpo in tposForPrint)
                 {
                     TimeSpan latency = TimeSpan.FromMilliseconds(-1);
                     try

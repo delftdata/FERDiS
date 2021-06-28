@@ -57,10 +57,16 @@ class Plotter:
         plt.xlabel("Experiment Time (s)")
         plt.ylabel("Latency (ms)")
         plt.legend(prop={'size': 12})
-        self.fig.tight_layout(pad=0.05)
+        #self.fig.tight_layout(pad=0.05)
 
     def add_kill_line(self, killtime, label):
         plt.axvline((killtime) / 1000, color="r", linestyle="--")
+
+    def xlim(self, arg: list):
+        plt.xlim(arg)
+
+    def ylim(self, arg: list):
+        plt.ylim(arg)
 
     def show_plot(self, title = 'plot'):
         self.fig.canvas.set_window_title(title)

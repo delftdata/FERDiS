@@ -24,5 +24,11 @@ namespace BlackSP.Kernel.Logging
         /// <param name="time">the time it took to restore</param>
         /// <param name="distance">the distance the state went back in time</param>
         void Recovery(TimeSpan time, TimeSpan distance);
+
+
+        /// <summary>
+        /// Logs a count of messages lost
+        /// </summary>
+        void LostMessages(int messageCount, string downstreamInstanceName);
     }
 }

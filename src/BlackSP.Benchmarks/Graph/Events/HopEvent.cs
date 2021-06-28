@@ -22,5 +22,7 @@ namespace BlackSP.Benchmarks.Graph.Events
 
         [ProtoMember(3)]
         public Neighbour Neighbour { get; set; }
+
+
     }
 }

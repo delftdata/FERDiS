@@ -23,7 +23,7 @@ namespace BlackSP.Benchmarks.Graph
         /// <param name="brokerList"></param>
         /// <param name="edgeFileLocation"></param>
         /// <returns></returns>
-        public static async Task StartProductingGraphData(string edgeFileLocation)
+        public static async Task StartProductingAdjacency(string edgeFileLocation)
         {
             _ = edgeFileLocation ?? throw new ArgumentNullException(nameof(edgeFileLocation));
 
@@ -74,6 +74,73 @@ namespace BlackSP.Benchmarks.Graph
             }
             adjacencyProducer.Flush();
             Console.WriteLine("Completed producing Adjacency events to Kafka");
+
+        }
+
+        public static async Task StartProductingEdges(int targetThroughput, int totalVertices)
+        {
+
+            var config = new ProducerConfig
+            {
+                BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
+                Partitioner = Partitioner.Consistent
+            };
+
+
+            using var neighbourProducer = new ProducerBuilder<int, Neighbour>(config)
+                .SetValueSerializer(new ProtoBufAsyncValueSerializer<Neighbour>())
+                .SetErrorHandler((prod, err) => Console.WriteLine($"Neighbour producer error: {err}"))
+                .Build();
+
+            Random r = new Random();
+
+            var windowAt = DateTime.UtcNow;
+            var produceCounter = 0;
+
+            
+
+            for(var i = 0; i < totalVertices; i++)
+            {
+                for (var j = 0; j < totalVertices; j++)
+                {
+                    var nextWindow = windowAt.AddMilliseconds(1000 / 10);
+                    var now = DateTime.UtcNow;
+                    if (produceCounter > (targetThroughput / 10) && nextWindow > now)
+                    {
+                        Console.WriteLine($"produced {produceCounter} events, waiting for {(int)(nextWindow - now).TotalMilliseconds}ms (throttle)");
+                        await Task.Delay(nextWindow - now);
+                        neighbourProducer.Flush();
+                    }
+
+                    if (nextWindow < now)
+                    {
+                        Console.WriteLine($"resetting counter {produceCounter} to 0");
+                        produceCounter = 0;
+                        windowAt = nextWindow;
+                    }
+
+
+                    if (new Random().NextDouble() < 0.99)
+                    {
+                        continue; //1% chance to include edge in graph..
+                    }
+
+                    int fromId = i;
+                    int toId = j;
+
+                    var nb = new Models.Neighbour
+                    {
+                        FromId = fromId,
+                        ToId = toId,
+                        Hops = 1
+                    };
+                    var msg = new Message<int, Neighbour>() { Key = fromId, Value = nb };
+                    neighbourProducer.ProduceAsync(Neighbour.KafkaTopicName, msg);
+                    produceCounter++;
+                }
+            }
+            neighbourProducer.Flush();
+            Console.WriteLine("Completed producing neighbour events to Kafka");
 
         }
 

@@ -1,5 +1,6 @@
 ﻿using BlackSP.Checkpointing.UnitTests.Models;
 using BlackSP.Kernel.Checkpointing;
+using BlackSP.Kernel.Logging;
 using Moq;
 using NUnit.Framework;
 using Serilog;
@@ -20,8 +21,9 @@ namespace BlackSP.Checkpointing.UnitTests
         public void SetUp()
         {
             var loggerMock = new Mock<ILogger>();
+            var metricLoggerMock = new Mock<IMetricLogger>();
             var cpserviceMock = new Mock<ICheckpointService>();
-            _testService = new MessageLoggingService<TestMessage>(cpserviceMock.Object, loggerMock.Object);
+            _testService = new MessageLoggingService<TestMessage>(cpserviceMock.Object, metricLoggerMock.Object, loggerMock.Object);
         } 
 
         [Test]
@@ -174,6 +176,24 @@ namespace BlackSP.Checkpointing.UnitTests
             Assert.AreEqual(1, _testService.Append("d1", new TestMessage()));
             Assert.AreEqual(2, _testService.Append("d1", new TestMessage()));
             Assert.AreEqual(3, _testService.Append("d1", new TestMessage()));
+        }
+
+        [Test]
+        public void Append_And_NextSequenceNumber_Returns_Gapless_SequenceNumbers()
+        {
+            _testService.Initialize(new[] { "d1", "d2" }, new[] { "u1", "u2" });
+            Assert.AreEqual(0, _testService.GetNextOutgoingSequenceNumber("d1"));
+            Assert.AreEqual(0, _testService.Append("d1", new TestMessage()));
+
+            Assert.AreEqual(1, _testService.GetNextOutgoingSequenceNumber("d1"));
+            Assert.AreEqual(1, _testService.GetNextOutgoingSequenceNumber("d1"));
+            Assert.AreEqual(1, _testService.Append("d1", new TestMessage()));
+
+            Assert.AreEqual(2, _testService.GetNextOutgoingSequenceNumber("d1"));
+            Assert.AreEqual(2, _testService.GetNextOutgoingSequenceNumber("d1"));
+            Assert.AreEqual(2, _testService.GetNextOutgoingSequenceNumber("d1"));
+            Assert.AreEqual(2, _testService.Append("d1", new TestMessage()));
+
         }
 
         [Test]

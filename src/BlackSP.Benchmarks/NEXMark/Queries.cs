@@ -96,24 +96,24 @@ namespace BlackSP.Benchmarks.NEXMark
 
         public static Action<IVertexGraphBuilder> HotItem(Size size)
         {
-            int sourceShards = 1;
-            int aggregateShards = 1;
-            int filterShards = 1;
-            int sinkShards = 1;
+            int sourceShards = 3;
+            int aggregateShards = 3;
+            int filterShards = 3;
+            int sinkShards = 3;
             switch (size)
             {
                 case Size.Small: break;
                 case Size.Medium:
-                    sourceShards = 2;
-                    aggregateShards = 2;
-                    filterShards = 2;
-                    sinkShards = 2;
+                    sourceShards = 6;
+                    aggregateShards = 6;
+                    filterShards = 6;
+                    sinkShards = 6;
                     break;
                 case Size.Large:
-                    sourceShards = 4;
-                    aggregateShards = 4;
-                    filterShards = 4;
-                    sinkShards = 4;
+                    sourceShards = 12;
+                    aggregateShards = 12;
+                    filterShards = 12;
+                    sinkShards = 12;
                     break;
             }
 
@@ -137,22 +137,22 @@ namespace BlackSP.Benchmarks.NEXMark
         public static Action<IVertexGraphBuilder> AverageSellingPriceBySeller(Size size)
         {
 
-            int bSourceShards = 1;
-            int aSourceShards = 1;
-            int joinShards = 1;
-            int aggregate1Shards = 1;
-            int aggregate2Shards = 1;
-            int sinkShards = 1;
+            int bSourceShards = 2;
+            int aSourceShards = 2;
+            int joinShards = 2;
+            int aggregate1Shards = 2;
+            int aggregate2Shards = 2;
+            int sinkShards = 2;
             switch (size)
             {
                 case Size.Small: break;
                 case Size.Medium:
-                    bSourceShards = 2;
-                    aSourceShards = 2;
-                    joinShards = 4;
-                    aggregate1Shards = 2;
-                    aggregate2Shards = 2;
-                    sinkShards = 2;
+                    bSourceShards = 3;
+                    aSourceShards = 3;
+                    joinShards = 3;
+                    aggregate1Shards = 3;
+                    aggregate2Shards = 3;
+                    sinkShards = 3;
                     break;
                 case Size.Large:
                     bSourceShards = 4;

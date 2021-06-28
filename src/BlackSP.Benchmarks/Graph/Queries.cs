@@ -48,18 +48,18 @@ namespace BlackSP.Benchmarks.Graph
 
         public static Action<IVertexGraphBuilder> NHop(Size size)
         {
-            int sourceShards = 1;
-            int partitionMapShards = 1;
-            int repartitionMapShards = 1;
-            int sinkShards = 1;
+            int sourceShards = 3;
+            int partitionMapShards = 2;
+            int repartitionMapShards = 2;
+            int sinkShards = 3;
             switch (size)
             {
                 case Size.Small: break;
                 case Size.Medium:
-                    sourceShards = 2;
-                    partitionMapShards = 2;
-                    repartitionMapShards = 2;
-                    sinkShards = 2;
+                    sourceShards = 6;
+                    partitionMapShards = 6;
+                    repartitionMapShards = 6;
+                    sinkShards = 6;
                     break;
                 case Size.Large:
                     sourceShards = 4;
@@ -71,15 +71,15 @@ namespace BlackSP.Benchmarks.Graph
 
             return (IVertexGraphBuilder builder) =>
             {
-                var source = builder.AddSource<RandomEdgeSourceOperator, HopEvent>(sourceShards);
+                var source = builder.AddSource<NeighbourSourceOperator, HopEvent>(sourceShards);
                 var partitionMapper = builder.AddMap<HopCountPartitionMapper, HopEvent, HopEvent>(partitionMapShards);
                 var repartitionMapper = builder.AddMap<HopCountRepartitionMapper, HopEvent, HopEvent>(repartitionMapShards);
                 var sink = builder.AddSink<HopCountSinkOperator, HopEvent>(sinkShards);
 
                 source.Append(partitionMapper);
-                partitionMapper.Append(repartitionMapper);
+                partitionMapper.Append(repartitionMapper).AsPipeline();
                 repartitionMapper.Append(partitionMapper).AsBackchannel();
-                repartitionMapper.Append(sink);
+                repartitionMapper.Append(sink).AsPipeline();
             };
             
         }

@@ -1,4 +1,6 @@
-param ([string] $type, [int] $shards)
+param ([string] $type, [int] $shards, [string] $skipList)
+
+$vertexCount = 5000; #used for graph data generation (n-hop query)
 
 $yaml = @"
 kind: Deployment
@@ -32,6 +34,12 @@ spec:
                   value: "$($env:GENERATOR_TARGET_THROUGHPUT)"
                 - name: GENERATOR_CALLS
                   value: "$($env:GENERATOR_CALLS)"
+                - name: GENERATOR_SKIP_TOPICS
+                  value: "$($skipList)"
+                - name: GENERATOR_VERTEX_COUNT
+                  value: "$($vertexCount)"
+
+                  
               args: ["$($type)"]
 "@
 

@@ -9,9 +9,9 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.AverageSellingPriceBySeller
 {
     class AverageSellingPriceAggregateOperator : IAggregateOperator<AuctionSellingPriceEvent, AveragePricePersonEvent>
     {
-        public TimeSpan WindowSize => TimeSpan.FromSeconds(60);
+        public TimeSpan WindowSize => TimeSpan.FromSeconds(5);
 
-        public TimeSpan WindowSlideSize => TimeSpan.FromMilliseconds(2500);
+        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(5);
 
         public IEnumerable<AveragePricePersonEvent> Aggregate(IEnumerable<AuctionSellingPriceEvent> window)
         {

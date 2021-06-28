@@ -66,7 +66,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
                     yield return new HopEvent
                     {
                         Key = null, //null key results in broadcast
-                        EventTime = DateTime.Now,
+                        EventTime = @event.EventTime,
                         Neighbour = new Neighbour { FromId = fromId, ToId = toId, Hops = hops }
                     };
                 }

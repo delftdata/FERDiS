@@ -107,8 +107,12 @@ namespace BlackSP.Benchmarks
         {
             try
             {
-                string edgesFileLoc = Environment.GetEnvironmentVariable("EDGES_FILE_LOCATION");
-                await Graph.Producer.StartProductingGraphData(edgesFileLoc);
+                //string edgesFileLoc = Environment.GetEnvironmentVariable("EDGES_FILE_LOCATION");
+                //await Graph.Producer.StartProductingAdjacency(edgesFileLoc);
+                int tp = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_TARGET_THROUGHPUT"));
+                int vtCount = int.Parse(Environment.GetEnvironmentVariable("GENERATOR_VERTEX_COUNT"));
+
+                await Graph.Producer.StartProductingEdges(tp, vtCount);
             }
             catch (Exception e)
             {

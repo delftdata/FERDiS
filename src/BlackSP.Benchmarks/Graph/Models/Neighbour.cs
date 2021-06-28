@@ -13,6 +13,9 @@ namespace BlackSP.Benchmarks.Graph.Models
     public class Neighbour
     {
 
+        public static readonly string KafkaTopicName = "neighbours";
+
+
         /// <summary>
         /// Beginning of neighbour relation
         /// </summary>

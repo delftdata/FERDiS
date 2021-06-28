@@ -39,8 +39,9 @@ namespace BlackSP.Infrastructure.Layers.Control.Handlers
             //Verbose
             _logger.Verbose($"Handling prune request with arguments {payload.InstanceName}, {payload.SequenceNumber}");
             var pruneCount = _loggingService.Prune(payload.InstanceName, payload.SequenceNumber);
+            var nextSeqNr = _loggingService.GetNextOutgoingSequenceNumber(payload.InstanceName);
             //Debug
-            _logger.Information($"Pruned {pruneCount} messages from log to {payload.InstanceName}. Message log now at seqNr: {payload.SequenceNumber}");
+            _logger.Information($"Pruned {pruneCount} messages from log to {payload.InstanceName}. Prune requested at seqNr: {payload.SequenceNumber}. Message log now at seqNr: {nextSeqNr}");
 
             //var response = new ControlMessage();
             AssociatedMessage.AddPayload(new WorkerResponsePayload() { });

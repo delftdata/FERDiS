@@ -90,9 +90,9 @@ namespace BlackSP.Benchmarks.NEXMark.Generator
             while (!reader.EndOfStream)
             {
                 //throttling begin
-                var nextWindow = windowAt.AddMilliseconds(1000);
+                var nextWindow = windowAt.AddMilliseconds(1000/10);
                 var now = DateTime.UtcNow;
-                if (produceCounter > (targetThroughput) && nextWindow > now)
+                if (produceCounter > (targetThroughput/10) && nextWindow > now)
                 {
                     Console.WriteLine($"produced {produceCounter} events, waiting for {(int)(nextWindow - now).TotalMilliseconds}ms (throttle)");
                     await Task.Delay(nextWindow - now);

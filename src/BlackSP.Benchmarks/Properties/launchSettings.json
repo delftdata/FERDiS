@@ -4,9 +4,9 @@
       "commandName": "Project",
       "environmentVariables": {
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
-        "KAFKA_BROKER_COUNT": "4",
+        "KAFKA_BROKER_COUNT": "1",
 
-        "GENERATOR_TARGET_THROUGHPUT": "999999",
+        "GENERATOR_TARGET_THROUGHPUT": "1000",
         "GENERATOR_CALLS": "99999999",
         "GENERATOR_SKIP_TOPICS": "" //bids,people,auctions
       },
@@ -17,9 +17,11 @@
       "commandName": "Project",
       "environmentVariables": {
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
-        "KAFKA_BROKER_COUNT": "4",
+        "KAFKA_BROKER_COUNT": "1",
 
-        "EDGES_FILE_LOCATION": "C:\\Users\\marcd\\Downloads\\test-edges.txt"
+        "EDGES_FILE_LOCATION": "C:\\Users\\marcd\\Downloads\\test-edges.txt",
+        "GENERATOR_TARGET_THROUGHPUT": "10000",
+        "GENERATOR_VERTEX_COUNT": "10000"
       },
       "commandLineArgs": "graph"
     },
@@ -39,9 +41,9 @@
       "commandName": "Project",
       "environmentVariables": {
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
-        "KAFKA_BROKER_COUNT": "6",
+        "KAFKA_BROKER_COUNT": "1",
 
-        "KAFKA_TOPICS_TO_DELETE": "sentences, bids, people, auctions, adjacency, output"
+        "KAFKA_TOPICS_TO_DELETE": "sentences, bids, people, auctions, adjacency, neighbours, output"
       },
       "commandLineArgs": "delete-topic"
     },
@@ -50,8 +52,8 @@
       "commandName": "Project",
       "environmentVariables": {
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
-        "KAFKA_BROKER_COUNT": "4",
-        "KAFKA_TOPIC_PARTITION_COUNT": "10"
+        "KAFKA_BROKER_COUNT": "1",
+        "KAFKA_TOPIC_PARTITION_COUNT": "24"
       },
       "commandLineArgs": "consume"
     },
@@ -97,13 +99,13 @@
         "KAFKA_TOPIC_PARTITION_COUNT": "24",
 
         "LOG_TARGET_FLAGS": "3", // 1 (console) || 2 (file) || 4 (azure blob)
-        "LOG_EVENT_LEVEL": "2", //0-5,
+        "LOG_EVENT_LEVEL": "1", //0-5,
 
         "CHECKPOINT_COORDINATION_MODE": "2", //0 = uc, 1 = cc, 2 = cic
         "CHECKPOINT_INTERVAL_SECONDS": "15",
 
         "BENCHMARK_INFRA": "0", //0 = simulator, 1 = cra
-        "BENCHMARK_JOB": "0", //0-5
+        "BENCHMARK_JOB": "6", //0-6
         "BENCHMARK_SIZE": "0", // 0 = S, 1 = M, 2 = L
 
         "CRA_WORKER_DOCKER_IMAGE": "mdzwart/cra-net3.1:latest",

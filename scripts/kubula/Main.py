@@ -9,7 +9,7 @@ import sys
 from lib.cluster import create_cluster, wait_for_kubernetes_slaves, get_deployment_info, find_missing_ips
 
 #NOTE: used in cluster naming, cluster naming is used in some DNS stage, therefore: ensure this number is unique per experiment!
-experiment_num = 449
+experiment_num = 454
 
 def main():
     args = sys.argv[1:]

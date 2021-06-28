@@ -1,7 +1,4 @@
 
-#unique identifier for the experiment
-$experimentKey = "job-1-uc-30s-45k-sourcefail(1)"
-
 #SAS for the azure log blob container
 $azureSasUrl = 'https://vertexstore.blob.core.windows.net/logs?sp=radl&st=2021-06-14T10:23:01Z&se=2022-06-15T10:23:00Z&sv=2020-02-10&sr=c&sig=0Z6EJSlBYm4J3jHXLEmrfZVUnccT%2FDTfAqDLL0Dkxyc%3D'#'http://145.100.57.248:10000/devstoreaccount1/logs'#145.100.59.144
 
@@ -11,35 +8,42 @@ $clusterKafkaDnsTemplate = 'kafka-{0}.kafka.kafka.svc.cluster.local:9092'
 $kafkaBrokerCount = 1
 $kafkaTopicPartitionCount = 24
 $kafkaKustomizationPath = '.\kafka\variants\scale-1'
-$kafkaInitSeconds = 45
+$kafkaInitSeconds = 30
 
 #generator settings
-$generatorShards = 3
-$generatorThroughput = 15000
-$generatorType = 'text' #possible types: 'text', 'graph', 'nexmark'
-$generatorNexmarkGenCalls = 9999999 #...
+$generatorShards = 1
+$generatorThroughput = 600
+$generatorType = 'graph' #possible types: 'text', 'graph', 'nexmark'
+$generatorNexmarkGenCalls = 99999999 #...
+$generatorSkipList = 'people'#'bids'
 
 #checkpoint settings
-$checkpointMode = 0 #0 = uc, 1 = cc, 2 = cic
-$checkpointIntervalSec = 30
+$checkpointMode = 2 #0 = uc, 1 = cc, 2 = cic
+$checkpointIntervalSec = 10
 
 #job settings
-$jobType = 1 #0-6
+$jobType = 6 #0-6
 $jobSize = 1 #0-2
 
 #log settings
-$logTargets = 4 # flags (1 = console, 2 = file, 4 = azure blob)
+$logTargets = 5 # flags (1 = console, 2 = file, 4 = azure blob)
 $logLevel = 2 # 0-5 (Verbose-Debug-Information-Warning-Error-Fatal)
 
 
+#unique identifier for the experiment
+$keySuffix = "(0)"
+$experimentKey = "job-$($jobType)-cp-$($checkpointMode)-$($checkpointIntervalSec)s-$($generatorShards * ($generatorThroughput / 1000))k-$($keySuffix)"
+
 #experiment execution timing settings
-$generatorStartDelayMs = 40000
-$preFailureSleepMs = 90000 #120000 
-$postFailureSleepMs = 180000 
+$generatorStartDelayMs = 45000
+$preFailureSleepMs = 90000 
+$postFailureSleepMs = 150000 
 $metricTearDownDelayMs = 20000 #the amount of delay betwean tearing down the workers+generators and the  metric collectors
 
 #-----------------------------------start script-------------------------------------------
+Write-Output "====================================="
 Write-Output "Starting experiment $($experimentKey)"
+Write-Output "====================================="
 
 Write-Output "Setting up environment variables"
 .\lib\env\env-checkpoint.ps1 $checkpointMode $checkpointIntervalSec
@@ -70,7 +74,7 @@ Write-Output "Preparing deployment file for metric nodes"
 .\lib\metric-deployment.ps1
 #prepare generator deployment
 Write-Output "Preparing deployment file for generator nodes"
-.\lib\generator-deployment.ps1 $generatorType $generatorShards
+.\lib\generator-deployment.ps1 $generatorType $generatorShards $generatorSkipList
 
 $kafkaInitSleepMs = $kafkaInitSeconds*1000 - (New-TimeSpan -Start $kafkaStartTime -End (Get-Date)).TotalMilliseconds;
 Write-Output "Waiting for $($kafkaInitSleepMs/1000) seconds for kafka to initialise"
@@ -110,7 +114,7 @@ $failureTimes += "`n"
 #kubectl scale statefulsets crainst03 --replicas=0
 #kubectl scale statefulsets crainst03 --replicas=1
 #kubectl rollout restart statefulset crainst13
-kubectl exec -it crainst05-0 -c crainst05 -- /bin/sh -c "kill 1"
+kubectl exec -it crainst18-0 -c crainst18 -- /bin/sh -c "kill 1"
 [console]::beep(700,500) 
 [console]::beep(700,500) # BEEP BEEP - failure inserted
 
@@ -131,6 +135,10 @@ kubectl delete -f .\metric-loggers.yaml
 
 Write-Output "Tearing kafka down"
 kubectl delete -k $kafkaKustomizationPath
+
+Write-Output "Purging kubernetes DNS cache"
+kubectl scale deployment coredns -n kube-system --replicas=0
+kubectl scale deployment coredns -n kube-system --replicas=2
 
 #deployment deleted..
 Write-Output "Teardown completed." 

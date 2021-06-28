@@ -77,11 +77,11 @@ spec:
              command: ["sh", "-ce", "kill -s TERM 1; while $(kill -0 1 2>/dev/null); do sleep 1; done"]
         resources:
           requests:
-            cpu: 2000m #request 2 cores
-            memory: 4000Mi #request 4gb ram
+            cpu: 7500m #request 8 cores
+            memory: 8000Mi #request 8gb ram
           limits:
-            cpu: 4000m #max out at 4 cores
-            memory: 8000Mi #max out at 8gb ram
+            cpu: 8000m #max out at 4 cores
+            memory: 16000Mi #max out at 16gb ram
         readinessProbe:
           tcpSocket:
             port: 9092

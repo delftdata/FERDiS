@@ -56,7 +56,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
                     if(nb.Hops + hops <= Constants.HopCountMax) //only output within hop range
                     {
                         var nbout = new Neighbour { FromId = fromId, ToId = toId, Hops = nb.Hops + hops };
-                        yield return new HopEvent { Key = toId, EventTime = DateTime.Now, Neighbour = nbout };
+                        yield return new HopEvent { Key = toId, EventTime = @event.EventTime, Neighbour = nbout };
                     }
                 }
                 //_neighbourDict[nb.ToId] = new Dictionary<int, int>();

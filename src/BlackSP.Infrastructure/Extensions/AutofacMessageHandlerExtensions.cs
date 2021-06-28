@@ -73,15 +73,15 @@ namespace BlackSP.Infrastructure.Extensions
                     break;
                 
                 case CheckpointCoordinationMode.Uncoordinated:
+                    builder.RegisterType<MessageLoggingPreDeliveryHandler>().As<IHandler<DataMessage>>();
                     builder.RegisterType<UncoordinatedCheckpointingHandler>().As<IHandler<DataMessage>>();
                     builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
-                    builder.RegisterType<MessageLoggingPreDeliveryHandler>().As<IHandler<DataMessage>>();
                     break;
                 
                 case CheckpointCoordinationMode.CommunicationInduced:
+                    builder.RegisterType<MessageLoggingPreDeliveryHandler>().As<IHandler<DataMessage>>();
                     builder.RegisterType<CICPreDeliveryHandler>().As<IHandler<DataMessage>>();
                     builder.RegisterType<CheckpointDependencyTrackingReceptionHandler>().As<IHandler<DataMessage>>(); //updates local CP depencencies
-                    builder.RegisterType<MessageLoggingPreDeliveryHandler>().As<IHandler<DataMessage>>();
                     break;
             }
 

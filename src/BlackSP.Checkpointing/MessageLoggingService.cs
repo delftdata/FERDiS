@@ -6,22 +6,24 @@ using System.Linq;
 using System.Text;
 using Serilog;
 using System.Threading;
+using BlackSP.Kernel.Logging;
 
 namespace BlackSP.Checkpointing
 {
-    public class MessageLoggingService<TMessage> : IMessageLoggingService<TMessage>
+    public class MessageLoggingService<TMessage> : IMessageLoggingService<TMessage>, ICheckpointable
     {
 
         public IDictionary<string, int> ReceivedSequenceNumbers => _receivedSequenceNrs;
 
         private readonly ILogger _logger;
+        private readonly IMetricLogger _metricLogger;
 
         private readonly SemaphoreSlim semaphore;
         /// <summary>
         /// Contains message logs keyed by <b>downstream</b> instance names<br/>
         /// Tuples are (seqNr, msg)
         /// </summary>
-        [ApplicationState]
+        //[ApplicationState]
         private readonly IDictionary<string, LinkedList<(int, TMessage)>> _logs;
 
         /// <summary>
@@ -30,16 +32,24 @@ namespace BlackSP.Checkpointing
         [ApplicationState]
         private readonly IDictionary<string, int> _receivedSequenceNrs;
 
-        public MessageLoggingService(ICheckpointService checkpointService, ILogger logger)
+        /// <summary>
+        /// Contains the sent sequence numbers keyed by <b>upstream</b> instance names
+        /// </summary>
+        [ApplicationState]
+        private readonly IDictionary<string, int> _sentSequenceNrs;
+
+        public MessageLoggingService(ICheckpointService checkpointService, IMetricLogger metricLogger, ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _metricLogger = metricLogger ?? throw new ArgumentNullException(nameof(metricLogger));
             _ = checkpointService ?? throw new ArgumentNullException(nameof(checkpointService));
 
             _logs = new Dictionary<string, LinkedList<(int, TMessage)>>();
             _receivedSequenceNrs = new Dictionary<string, int>();
+            _sentSequenceNrs = new Dictionary<string, int>();
             semaphore = new SemaphoreSlim(1, 1);
             checkpointService.BeforeCheckpointTaken += () => semaphore.Wait();
-            checkpointService.AfterCheckpointTaken += (cpId) => semaphore.Release();
+            checkpointService.AfterCheckpointTaken += (guid) => semaphore.Release();
         }
 
         /// <inheritdoc/>
@@ -53,9 +63,11 @@ namespace BlackSP.Checkpointing
             foreach(var instanceName in downstreamInstanceNames)
             {
                 _logs.Add(instanceName, new LinkedList<(int, TMessage)>());
+                _sentSequenceNrs.Add(instanceName, -1); //NOTE: start at -1 (first send seqnr = 0)
+
             }
 
-            foreach(var instanceName in upstreamInstanceNames)
+            foreach (var instanceName in upstreamInstanceNames)
             {
                 _receivedSequenceNrs.Add(instanceName, -1); //NOTE: start at -1 (first send seqnr = 0)
             }
@@ -74,7 +86,7 @@ namespace BlackSP.Checkpointing
             semaphore.Wait();
             var log = _logs[targetInstanceName];
             int nextSeqNr = GetNextOutgoingSequenceNumberInternal(targetInstanceName);
-
+            _sentSequenceNrs[targetInstanceName] = nextSeqNr;
             log.AddLast((nextSeqNr, message));
             semaphore.Release();
             return nextSeqNr;
@@ -123,6 +135,21 @@ namespace BlackSP.Checkpointing
             var log = _logs[replayInstanceName];
             var current = log.First;
 
+            var lastSentSeqNr = _sentSequenceNrs[replayInstanceName];
+            var lastSeqNrInLog = log.Last?.Value.Item1 ?? -1;
+            
+            if(lastSeqNrInLog > lastSentSeqNr)
+            {
+                throw new InvalidOperationException("Error: last sequence number in the log cannot possibly be larger than the last sent sequence number, possibly an implementation error.");
+            }
+
+            if (lastSeqNrInLog < lastSentSeqNr) //messages were lost..
+            {
+                _metricLogger.LostMessages(fromSequenceNr - lastSentSeqNr, replayInstanceName);
+                _logger.Warning($"Cannot replay from {fromSequenceNr} till {lastSentSeqNr} to {replayInstanceName}. Log ends at {lastSeqNrInLog}.");
+                _sentSequenceNrs[replayInstanceName] = fromSequenceNr - 1; //trick: set the sequencenumbers "back" to prevent downstream from discarding them as duplicates waiting for the lower sequence number that will never come..
+            }
+
             var (seq, _) = current?.Value ?? (-1, default);
             if(seq > fromSequenceNr) //go replay from 10 (problem if seq > 10 (e.g. 11 or 12)) so throw
             {
@@ -132,10 +159,14 @@ namespace BlackSP.Checkpointing
             while (current != null)
             {
                 var (seqNr, msg) = current.Value;
-                if (seqNr >= fromSequenceNr && msg != null)
+                if (seqNr >= fromSequenceNr)
                 {
-                    //need to replay from here..
-                    yield return current.Value;
+                    if(msg != null)
+                    {
+                        //need to replay from here..
+                        yield return current.Value;
+                    }
+                    
                 }
                 current = current.Next;
             }
@@ -189,6 +220,9 @@ namespace BlackSP.Checkpointing
 
         private int GetNextOutgoingSequenceNumberInternal(string targetInstance)
         {
+            return _sentSequenceNrs[targetInstance] + 1;
+
+
             int nextSeqNr = 0;
             var log = _logs[targetInstance];
             if (log.Any())
@@ -201,6 +235,18 @@ namespace BlackSP.Checkpointing
                 nextSeqNr = lastSeqNr + 1;
             }
             return nextSeqNr;
+        }
+
+        public void OnBeforeRestore()
+        {
+        }
+
+        public void OnAfterRestore()
+        {
+            foreach (var log in _logs.Values)
+            {
+                log.Clear();
+            }
         }
     }
 }

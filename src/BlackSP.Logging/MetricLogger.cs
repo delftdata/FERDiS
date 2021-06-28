@@ -16,6 +16,7 @@ namespace BlackSP.Logging
         private ILogger _defaultLogger;
         private ILogger _checkpointLogger;
         private ILogger _recoveryLogger;
+        private ILogger _lostMessagesLogger;
 
 
         public MetricLogger(IVertexConfiguration vertexConfig, ILogConfiguration logConfig, ILogger defaultLogger)
@@ -40,6 +41,11 @@ namespace BlackSP.Logging
             _recoveryLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, {(int)time.TotalMilliseconds}, {(int)distance.TotalMilliseconds}");
         }
 
+        public void LostMessages(int messageCount, string downstreamInstanceName)
+        {
+            _lostMessagesLogger.Information($"{DateTime.UtcNow:hh:mm:ss:ffffff}, {messageCount.ToString()}, {downstreamInstanceName}");
+        }
+
         /// <summary>
         /// Init metric logger objects and write header line
         /// </summary>
@@ -49,6 +55,8 @@ namespace BlackSP.Logging
             _checkpointLogger.Information("timestamp, forced, taken_ms, bytes");
             _recoveryLogger = new LoggerConfiguration().ConfigureMetricSinks(_config.TargetFlags, _config.EventLevel, _instanceName, "recovery").CreateLogger();
             _recoveryLogger.Information("timestamp, restored_ms, rollback_ms");
+            _lostMessagesLogger = new LoggerConfiguration().ConfigureMetricSinks(_config.TargetFlags, _config.EventLevel, _instanceName, "lost-messages").CreateLogger();
+            _lostMessagesLogger.Information("timestamp, message_count, instance_name");
         }
 
     }

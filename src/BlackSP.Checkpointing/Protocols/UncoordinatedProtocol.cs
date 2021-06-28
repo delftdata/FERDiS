@@ -40,7 +40,7 @@ namespace BlackSP.Checkpointing.Protocols
         {
             if (_lastCheckpointUtc == default)
             {
-                _lastCheckpointUtc = DateTime.UtcNow + new TimeSpan(new Random().Next(0, (int)_checkpointInterval.Ticks));
+                _lastCheckpointUtc = DateTime.UtcNow + new TimeSpan(new Random().Next(0, (int)(_checkpointInterval.Ticks/3)));
             }
             return processingTime - _lastCheckpointUtc >= _checkpointInterval;
         }
@@ -51,7 +51,15 @@ namespace BlackSP.Checkpointing.Protocols
             {
                 throw new ArgumentException("default date provided to overwrite last checkpoint moment", nameof(lastCheckpointUtc));
             }
-            _lastCheckpointUtc = lastCheckpointUtc;
+
+            if (_lastCheckpointUtc == default)
+            {
+                _lastCheckpointUtc = lastCheckpointUtc + new TimeSpan(new Random().Next(0, (int)_checkpointInterval.Ticks));
+            }
+            else
+            {
+                _lastCheckpointUtc = lastCheckpointUtc;
+            }
         }
 
     }

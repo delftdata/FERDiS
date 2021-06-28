@@ -43,12 +43,18 @@ namespace BlackSP.Core.Models
 
         public async Task BeginFlush()
         {
+            Task task;
             if (_tcs == null)
             {
                 _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                task = _tcs.Task;
                 UnderlyingCollection.Writer.Complete();
+            } 
+            else
+            {
+                task = _tcs.Task;
             }
-            await _tcs.Task.ConfigureAwait(false);
+            await task.ConfigureAwait(false);
         }
 
         public async Task EndFlush()

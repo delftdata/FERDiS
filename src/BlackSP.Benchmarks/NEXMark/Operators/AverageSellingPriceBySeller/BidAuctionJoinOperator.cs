@@ -11,11 +11,11 @@ namespace BlackSP.Benchmarks.NEXMark.Operators.AverageSellingPriceBySeller
     /// </summary>
     public class BidAuctionJoinOperator : IJoinOperator<BidEvent, AuctionEvent, BidAuctionEvent>
     {
-        //Note: "unbounded" window
+        //Note: "unbounded" window is unusable so far due to poor performance
 
-        public TimeSpan WindowSize => TimeSpan.FromDays(365);
+        public TimeSpan WindowSize => TimeSpan.FromSeconds(15);
 
-        public TimeSpan WindowSlideSize => TimeSpan.FromDays(365);
+        public TimeSpan WindowSlideSize => TimeSpan.FromSeconds(5);
 
         public BidAuctionEvent Join(BidEvent matchA, AuctionEvent matchB)
         {

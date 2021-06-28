@@ -278,8 +278,8 @@ namespace BlackSP.Core.Coordination
             }
             
             _logger.Information($"Checkpoint restore triggers fired on {String.Join(", ", _preparedRecoveryLine.AffectedWorkers)}");
-
-            var t = Task.Run(async () =>
+            /*
+            Task.Run(async () =>
             {
                 try
                 {
@@ -300,7 +300,7 @@ namespace BlackSP.Core.Coordination
             }).ContinueWith(LogException, TaskScheduler.Current);
             // no need to wait for gc, may cause race condition if all workers recover before gc completes where state machine doesnt advance to next state
             //t.Wait(); //wait for async operation to complete before returning
-
+            */
             
         }
 
