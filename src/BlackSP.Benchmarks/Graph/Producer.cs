@@ -83,7 +83,7 @@ namespace BlackSP.Benchmarks.Graph
             var config = new ProducerConfig
             {
                 BootstrapServers = KafkaUtils.GetKafkaBrokerString(),
-                Partitioner = Partitioner.Consistent
+                Partitioner = Partitioner.Random
             };
 
 
@@ -97,7 +97,7 @@ namespace BlackSP.Benchmarks.Graph
             var windowAt = DateTime.UtcNow;
             var produceCounter = 0;
 
-            
+            double P_exclude = 1 - double.Parse(Environment.GetEnvironmentVariable("GENERATOR_EDGE_P_INCLUDE"));
 
             for(var i = 0; i < totalVertices; i++)
             {
@@ -120,9 +120,9 @@ namespace BlackSP.Benchmarks.Graph
                     }
 
 
-                    if (new Random().NextDouble() < 0.99)
+                    if (new Random().NextDouble() < P_exclude)
                     {
-                        continue; //1% chance to include edge in graph..
+                        continue; //probablistically exclude edges
                     }
 
                     int fromId = i;

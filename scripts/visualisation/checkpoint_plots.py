@@ -56,6 +56,8 @@ def produce_checkpoint_metrics(location: str, experiment: str):
         frame = pd.concat([frame, data])
     frame['kbytes'] = (frame['bytes'] / 1000).round(0)
 
+    print(frame)
+
     #frame.columns = ['bytes']
     print("Total checkpoints:", np.count_nonzero(frame['timestamp']))
     print("Forced:", np.count_nonzero(frame['forced'] == True))

@@ -290,5 +290,22 @@ namespace BlackSP.Checkpointing.UnitTests
             //but next message seqnr is still valid
             Assert.AreEqual(4, _testService.Append("d1", new TestMessage()));
         }
+
+        [Test]
+        public void OnAfterCheckpoint_RemovesMessagesThatHaveNotBeenSentByRestoredCheckpoint()
+        {
+            _testService.Initialize(new[] { "d1", "d2" }, new[] { "u1", "u2" });
+
+            Assert.AreEqual(0, _testService.Append("d1", new TestMessage()));
+            Assert.AreEqual(1, _testService.Append("d1", new TestMessage()));
+            Assert.AreEqual(2, _testService.Append("d1", new TestMessage()));
+            Assert.AreEqual(3, _testService.Append("d1", new TestMessage()));
+            _testService._sentSequenceNrs["d1"] = 1;
+            _testService.OnAfterRestore();
+
+            //but next message seqnr is still valid
+            Assert.AreEqual(2, _testService.GetNextOutgoingSequenceNumber("d1"));
+            Assert.AreEqual(2, _testService.Append("d1", new TestMessage()));
+        }
     }
 }

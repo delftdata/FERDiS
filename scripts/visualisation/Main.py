@@ -17,52 +17,32 @@ toSecond = 270
 
 def main():
     plots = True
-    compound_plots = False
+    compound_plots = True
     metrics = True
     logfileloc = "C:/Projects/BlackSP/scripts/experiments/results"
-    metricExperiment = 'job-6-cp-2-10s-1k-(0)'
+    metricExperiment = 'job-6-cp-0-10s-3.2k-(0)'
     
-    job1_targetExperiments = [
-        ('job-1-cc-30s-50k-sourcefail', 'CC'),
-        ('job-1-uc-30s-50k-sourcefail', 'UC'),
-        ('job-1-cic-30s-50k-sourcefail', 'CIC')
+    compound_keys = [
+        ('job-6-cp-0-10s-4k-(0)', 'Run 1'),
+        ('job-6-cp-0-10s-4k-(1)', 'Run 2'),
+        ('job-6-cp-0-10s-4k-(2)', 'Run 3')
     ]
-
-    job1_nostate_targetExperiments = [
-        ('job-1-cp-1-10s-30k-sink-fail(0)', 'CC'),
-        ('job-1-cp-0-10s-30k-sink-fail(1)', 'UC'),
-        ('job-1-cp-2-10s-30k-sink-fail(0)', 'CIC')
-    ]
-
-    job2_targetExperiments = [
-        ('job-2-cc-30s-100k-filter-fail', 'CC'),
-        ('job-2-uc-30s-100k-filter-fail', 'UC'),
-        ('job-2-cic-30s-100k-filter-fail', 'CIC')
-    ]
-
-    job2_nostate_targetExperiments = [
-        ('job-2-cp-1-10s-100k-sink-fail(1)', 'CC'),
-        ('job-2-cp-0-10s-100k-sink-fail(0)-no-cp-dealignment', 'UC'),
-        ('job-2-cp-2-10s-100k-sink-fail(0)', 'CIC')
-    ]
-
-    
 
     if(plots):
         produce_throughput_graphs_in_folder(logfileloc)
         produce_latency_graphs_in_folder(logfileloc)
 
     if(compound_plots):
-        plotter = produce_throughput_compound_graph(logfileloc, job1_nostate_targetExperiments)
+        plotter = produce_throughput_compound_graph(logfileloc, compound_keys)
         plotter.xlim([fromSecond, toSecond])
         plotter.xlim([30, 230])
         plotter.ylim([0, 100000])
         #plotter.show_plot(experiment)
         plotter.save_plot(f"{logfileloc}/compound-throughput")
         
-        plotter = produce_latency_compound_graph(logfileloc, job1_nostate_targetExperiments)
+        plotter = produce_latency_compound_graph(logfileloc, compound_keys)
         plotter.xlim([30, 230])
-        plotter.ylim([0, 10000])
+        plotter.ylim([0, 50000])
         #plotter.show_plot(experiment)
         plotter.save_plot(f"{logfileloc}/compound-latency")
 

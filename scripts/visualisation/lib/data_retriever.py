@@ -33,7 +33,7 @@ def get_recovery_files(location: str, folder: str):
 format = timestamp, throughput, latmin, latavg, latmax
 """
 def get_throughput_file_content(location: str, folder: str, filename: str):
-    frame = pd.read_csv(f'{location}/{folder}/performance/{filename}', sep=",")
+    frame = pd.read_csv(f'{location}/{folder}/performance/{filename}', sep=", ")
     frame.columns = ['timestamp', 'throughput']
     return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
 
@@ -41,7 +41,7 @@ def get_throughput_file_content(location: str, folder: str, filename: str):
 format = timestamp, throughput, latmin, latavg, latmax
 """
 def get_latency_file_content(location: str, folder: str, filename: str):
-    frame = pd.read_csv(f'{location}/{folder}/performance/{filename}', sep=",")
+    frame = pd.read_csv(f'{location}/{folder}/performance/{filename}', sep=", ")
     frame.columns = ['timestamp', 'latency', 'shard']
     return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
 
@@ -49,7 +49,7 @@ def get_latency_file_content(location: str, folder: str, filename: str):
 format = timestamp, throughput, latmin, latavg, latmax
 """
 def get_failure_file_content(location: str, folder: str):
-    frame = pd.read_csv(f'{location}/{folder}/failures.log', sep=",")
+    frame = pd.read_csv(f'{location}/{folder}/failures.log', sep=", ")
     frame.columns = ['timestamp']
     return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
 
@@ -57,7 +57,7 @@ def get_failure_file_content(location: str, folder: str):
 format = timestamp, forced, taken_ms, bytes
 """
 def get_checkpoint_file_content(location: str, folder: str, filename: str):
-    frame = pd.read_csv(f'{location}/{folder}/checkpoint/{filename}', sep=",")
+    frame = pd.read_csv(f'{location}/{folder}/checkpoint/{filename}', sep=", ")
     frame.columns = ['timestamp', 'forced', 'taken_ms', 'bytes']
     return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
 
@@ -65,7 +65,7 @@ def get_checkpoint_file_content(location: str, folder: str, filename: str):
 format = timestamp, forced, taken_ms, bytes
 """
 def get_recovery_file_content(location: str, folder: str, filename: str):
-    frame = pd.read_csv(f'{location}/{folder}/recovery/{filename}', sep=",")
+    frame = pd.read_csv(f'{location}/{folder}/recovery/{filename}', sep=", ")
     frame.columns = ['timestamp', 'restored_ms', 'rollback_ms']
     return frame[frame.timestamp.astype(str).str.strip() != 'timestamp']
 

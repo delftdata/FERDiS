@@ -27,16 +27,18 @@ namespace BlackSP.Checkpointing
         private readonly IDictionary<string, LinkedList<(int, TMessage)>> _logs;
 
         /// <summary>
-        /// Contains the received sequence numbers keyed by <b>upstream</b> instance names
+        /// Contains the received sequence numbers keyed by <b>upstream</b> instance names.
+        
         /// </summary>
         [ApplicationState]
-        private readonly IDictionary<string, int> _receivedSequenceNrs;
+        private readonly IDictionary<string, int> _receivedSequenceNrs; 
 
         /// <summary>
         /// Contains the sent sequence numbers keyed by <b>upstream</b> instance names
+        /// Dont touch this property in production-code
         /// </summary>
         [ApplicationState]
-        private readonly IDictionary<string, int> _sentSequenceNrs;
+        public readonly IDictionary<string, int> _sentSequenceNrs; //only public for unit-testing purposes
 
         public MessageLoggingService(ICheckpointService checkpointService, IMetricLogger metricLogger, ILogger logger)
         {
@@ -243,8 +245,31 @@ namespace BlackSP.Checkpointing
 
         public void OnAfterRestore()
         {
-            foreach (var log in _logs.Values)
+            foreach (var kv in _logs)
             {
+                var log = kv.Value;
+                var dstream = kv.Key;
+                var lastSentFromCheckpoint = _sentSequenceNrs[dstream];
+                //Only clear log entries past
+
+                var current = log.Last;
+                while(current != null)
+                {
+                    if(current.Value.Item1 > lastSentFromCheckpoint)
+                    {
+                        log.RemoveLast();
+                        current = current.Previous; //walk backwards and remove messages that 'can not have been sent'
+                    } 
+                    else
+                    {
+                        break;
+                    }
+                    
+                }
+                foreach(var entry in log)
+                {
+                    
+                }
                 log.Clear();
             }
         }

@@ -120,7 +120,7 @@ def parse_failures_data(datapoints: pd.DataFrame):
 
 def parse_checkpoint_data(datapoints: pd.DataFrame):
     datapoints['timestamp'] = datapoints['timestamp'].transform(parse_time_to_timestamp)
-    datapoints['forced'] = datapoints['forced'].transform(lambda s: s == "True")
+    datapoints['forced'] = datapoints['forced'].transform(lambda e: str(e) == "True")
     datapoints['taken_ms'] = datapoints['taken_ms'].transform(float)
     datapoints['bytes'] = datapoints['bytes'].transform(int)
     return datapoints

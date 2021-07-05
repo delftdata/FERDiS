@@ -1,6 +1,10 @@
+param ([int] $jobType, [int] $repCount, [int] $generatorShards, [int] $generatorThrougput, [string] $generatorType, [string] $generatorSkipList, [int] $checkpointMode, [int] $checkpointIntervalSec, [string] $instanceToKill)
+
+#$repCount = repeated exection number..
 
 #SAS for the azure log blob container
-$azureSasUrl = 'https://vertexstore.blob.core.windows.net/logs?sp=radl&st=2021-06-14T10:23:01Z&se=2022-06-15T10:23:00Z&sv=2020-02-10&sr=c&sig=0Z6EJSlBYm4J3jHXLEmrfZVUnccT%2FDTfAqDLL0Dkxyc%3D'#'http://145.100.57.248:10000/devstoreaccount1/logs'#145.100.59.144
+$logsSasUrl = 'https://vertexstore.blob.core.windows.net/logs?sp=radl&st=2021-06-14T10:23:01Z&se=2022-06-15T10:23:00Z&sv=2020-02-10&sr=c&sig=0Z6EJSlBYm4J3jHXLEmrfZVUnccT%2FDTfAqDLL0Dkxyc%3D'
+$checkpointSasUrl = 'https://vertexstore.blob.core.windows.net/checkpoints?sp=rwdl&st=2021-07-05T11:39:22Z&se=2026-07-06T11:39:00Z&sv=2020-02-10&sr=c&sig=x8gRd%2FNbHUw%2FNLX3WCfZmvfI8tngAErjK6KD22evGuY%3D'
 
 #kafka settings
 $localKafkaDnsTemplate = 'localhost:3240{0}'
@@ -11,27 +15,18 @@ $kafkaKustomizationPath = '.\kafka\variants\scale-1'
 $kafkaInitSeconds = 30
 
 #generator settings
-$generatorShards = 1
-$generatorThroughput = 600
-$generatorType = 'graph' #possible types: 'text', 'graph', 'nexmark'
-$generatorNexmarkGenCalls = 99999999 #...
-$generatorSkipList = 'people'#'bids'
-
-#checkpoint settings
-$checkpointMode = 2 #0 = uc, 1 = cc, 2 = cic
-$checkpointIntervalSec = 10
+$generatorNexmarkGenCalls = 99999999 #FIXED
 
 #job settings
-$jobType = 6 #0-6
-$jobSize = 1 #0-2
+$jobSize = 1 #0-2 BUT FIXED FOR EXPERIMENTS
 
-#log settings
+#log settings - FIXED
 $logTargets = 5 # flags (1 = console, 2 = file, 4 = azure blob)
 $logLevel = 2 # 0-5 (Verbose-Debug-Information-Warning-Error-Fatal)
 
 
 #unique identifier for the experiment
-$keySuffix = "(0)"
+$keySuffix = "($($repCount))"
 $experimentKey = "job-$($jobType)-cp-$($checkpointMode)-$($checkpointIntervalSec)s-$($generatorShards * ($generatorThroughput / 1000))k-$($keySuffix)"
 
 #experiment execution timing settings
@@ -41,9 +36,12 @@ $postFailureSleepMs = 150000
 $metricTearDownDelayMs = 20000 #the amount of delay betwean tearing down the workers+generators and the  metric collectors
 
 #-----------------------------------start script-------------------------------------------
-Write-Output "====================================="
+Write-Output ""
+Write-Output "=========================================================================="
 Write-Output "Starting experiment $($experimentKey)"
-Write-Output "====================================="
+Write-Output "=========================================================================="
+Write-Output ""
+
 
 Write-Output "Setting up environment variables"
 .\lib\env\env-checkpoint.ps1 $checkpointMode $checkpointIntervalSec
@@ -64,7 +62,10 @@ kubectl apply -k $kafkaKustomizationPath
 $kafkaStartTime = Get-Date
 
 Write-Output "Deleting remaining log files from blob storage"
-azcopy rm $azureSasUrl --recursive
+azcopy rm $logsSasUrl --recursive
+
+Write-Output "Deleting remaining checkpoints from blob storage"
+azcopy rm $checkpointSasUrl --recursive
 
 #prepare cra deployment (yields k8s yaml)
 Write-Output "Preparing deployment file for BlackSP nodes"
@@ -96,7 +97,7 @@ Write-Output "Deploying generator nodes to kubernetes cluster"
 kubectl apply -f .\generators.yaml
 
 $startTime = (Get-Date).ToUniversalTime().ToString("hh:mm:ss:ffffff");
-[console]::beep(700,500) # BEEP - experiment has started
+[console]::beep(1000,100) # BEEP - experiment has started
 
 #deployment deployed..
 Write-Output "Experiment $($experimentKey) deployed, waiting $($preFailureSleepMs/1000) seconds before inserting failure.."
@@ -114,9 +115,9 @@ $failureTimes += "`n"
 #kubectl scale statefulsets crainst03 --replicas=0
 #kubectl scale statefulsets crainst03 --replicas=1
 #kubectl rollout restart statefulset crainst13
-kubectl exec -it crainst18-0 -c crainst18 -- /bin/sh -c "kill 1"
-[console]::beep(700,500) 
-[console]::beep(700,500) # BEEP BEEP - failure inserted
+kubectl exec -it "$($instanceToKill)-0" -c "$($instanceToKill)" -- /bin/sh -c "kill 1"
+[console]::beep(1000,100) 
+[console]::beep(1000,100) # BEEP BEEP - failure inserted
 
 #let the system recover and resume
 Write-Output "Failure inserted, waiting $($postFailureSleepMs/1000) seconds before tearing the cluster down.."
@@ -155,6 +156,12 @@ Rename-Item ./results/logs $experimentKey
 Write-Output "Deleting deployment files from disk"
 Remove-Item -path .\* -include *.yaml
 
-[console]::beep(700,500)
-[console]::beep(700,500)
-[console]::beep(700,500) #BEEP BEEP BEEP - experiment completed
+Write-Output "Deleting remaining log files from blob storage"
+azcopy rm $logsSasUrl --recursive
+
+Write-Output "Deleting remaining checkpoints from blob storage"
+azcopy rm $checkpointSasUrl --recursive
+
+[console]::beep(1000,100)
+[console]::beep(1000,100)
+[console]::beep(1000,100) #BEEP BEEP BEEP - experiment completed
