@@ -76,7 +76,7 @@ namespace BlackSP.Benchmarks.Graph
                 var repartitionMapper = builder.AddMap<HopCountRepartitionMapper, HopEvent, HopEvent>(repartitionMapShards);
                 var sink = builder.AddSink<HopCountSinkOperator, HopEvent>(sinkShards);
 
-                source.Append(partitionMapper);
+                source.Append(partitionMapper).AsPipeline();
                 partitionMapper.Append(repartitionMapper).AsPipeline();
                 repartitionMapper.Append(partitionMapper).AsBackchannel();
                 repartitionMapper.Append(sink).AsPipeline();

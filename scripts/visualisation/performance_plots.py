@@ -65,7 +65,7 @@ def produce_latency_compound_graph(location: str, experiments: list):
     plotter = Plotter()
     plotter.start_plot()
     for experiment in experiments:
-        produce_latency_graph(location, experiment[0], plotter, label=experiment[1], plotMeanPerTime=True)
+        produce_latency_graph(location, experiment[0], plotter, label=experiment[1])
     return plotter
 
 def produce_latency_graph(location: str, experiment: str, plotter: Plotter, fromSec: int = 0, toSec: int = 9999, label = 'latency', plotPerShard: bool = False, plotMeanPerTime = False):

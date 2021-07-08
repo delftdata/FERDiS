@@ -61,11 +61,11 @@ $configurations.Add(@(6, 1, 3200, 'graph', '', 2, 15, "crainst14"));
 Write-Output "Configuration array setup completed"
 
 Foreach($conf in $configurations) {
-    Write-Output ">>>> Starting experiment execution"
+    Write-Output ">>>> Starting experiment execution for job $($conf[0])"
     $repCount = 5
-    For ($i=0; $i -le $repCount; $i++) {
+    For ($i=0; $i -lt $repCount; $i++) {
         #actual experiment execution happens here
-        .\execute-experiment.ps1 conf[0] $i conf[1] conf[2] conf[3] conf[4] conf[5] conf[6] conf[7]
+        .\execute-experiment.ps1 $conf[0] $i $conf[1] $conf[2] $conf[3] $conf[4] $conf[5] $conf[6] $conf[7]
         
         Write-Output ">>>> Waiting for next repetition"
         Start-Sleep -s 30 #ensure pods have a chance to terminate or next run cant start due to insufficient available resources
@@ -73,20 +73,6 @@ Foreach($conf in $configurations) {
     Write-Output ">>>> Configuration executed"
     [console]::beep(500,150)
 }
-
-#generator settings
-$generatorShards = 2
-$generatorThroughput = 3000
-$generatorType = 'graph' #possible types: 'text', 'graph', 'nexmark'
-$generatorSkipList = 'people'#'bids'
-
-#checkpoint settings
-$checkpointMode = 0 #0 = uc, 1 = cc, 2 = cic
-$checkpointIntervalSec = 10
-
-#job settings
-$jobType = 6 #0-6
-
 
 
 

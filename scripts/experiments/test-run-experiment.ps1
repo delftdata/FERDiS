@@ -1,16 +1,16 @@
 #generator settings
 $generatorShards = 1
-$generatorThroughput = 3200
+$generatorThroughput = 100
 $generatorType = 'graph' #possible types: 'text', 'graph', 'nexmark'
 $generatorSkipList = 'people'#'bids'
 
 #checkpoint settings
-$checkpointMode = 0 #0 = uc, 1 = cc, 2 = cic
+$checkpointMode = 2 #0 = uc, 1 = cc, 2 = cic
 $checkpointIntervalSec = 10
 
 #job settings
 $jobType = 6 #0-6
-$repCount = 3
+$repCount = 1
 
 $instanceToKill = "crainst14"
 

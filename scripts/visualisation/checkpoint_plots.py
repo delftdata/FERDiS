@@ -39,10 +39,8 @@ def produce_checkpoint_plot(location: str):
         #plotter.save_plot(f"{location}/{experiment}-checkpoint-size")
 
 
-def produce_checkpoint_metrics(location: str, experiment: str):
+def produce_checkpoint_metrics(location: str, experiment: str, frame: pd.DataFrame):
     initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
-
-    frame = pd.DataFrame()
     for perf_file in get_checkpoint_files(location, experiment):
         instanceName = perf_file.split("-", 1)[0]
         data = get_checkpoint_file_content(location, experiment, perf_file)
@@ -55,10 +53,9 @@ def produce_checkpoint_metrics(location: str, experiment: str):
         #add to plot
         frame = pd.concat([frame, data])
     frame['kbytes'] = (frame['bytes'] / 1000).round(0)
-
-    print(frame)
-
-    #frame.columns = ['bytes']
+    return frame
+    
+def print_checkpoint_metrics(frame: pd.DataFrame):
     print("Total checkpoints:", np.count_nonzero(frame['timestamp']))
     print("Forced:", np.count_nonzero(frame['forced'] == True))
     print("Regular:", np.count_nonzero(frame['forced'] == False))

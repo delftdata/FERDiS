@@ -34,8 +34,8 @@ namespace BlackSP.Benchmarks.Graph.Operators
         {
             var nb = @event.Neighbour;
             bool partOfState = nb.FromId % _config.InstanceNames.Count() == _config.ShardId;
-            if (partOfState) //only one operator has edge as part of state 
-            {
+            //if (partOfState) //only one operator has edge as part of state 
+            //{
                 if(UpdateIfSmaller(nb.FromId, nb.ToId, nb.Hops))
                 {
                     //there has been a change, output repartitioned to propagate update                    
@@ -43,7 +43,7 @@ namespace BlackSP.Benchmarks.Graph.Operators
                     yield return @event;
                 }
                 
-            }
+            //}
             //regardless of being part of state.. find any edges that continue this edge's "path"..
             if(_neighbourDict.TryGetValue(nb.ToId, out var nbDict))
             {

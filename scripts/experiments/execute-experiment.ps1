@@ -1,4 +1,4 @@
-param ([int] $jobType, [int] $repCount, [int] $generatorShards, [int] $generatorThrougput, [string] $generatorType, [string] $generatorSkipList, [int] $checkpointMode, [int] $checkpointIntervalSec, [string] $instanceToKill)
+param ([int] $jobType, [int] $repCount, [int] $generatorShards, [int] $generatorThroughput, [string] $generatorType, [string] $generatorSkipList, [int] $checkpointMode, [int] $checkpointIntervalSec, [string] $instanceToKill)
 
 #$repCount = repeated exection number..
 
