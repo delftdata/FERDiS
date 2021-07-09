@@ -6,59 +6,69 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-from performance_plots import produce_throughput_graphs_in_folder, produce_throughput_compound_graph, produce_latency_graphs_in_folder, produce_latency_compound_graph
-from checkpoint_plots import produce_checkpoint_plot, produce_checkpoint_metrics, produce_recovery_metrics, print_checkpoint_metrics
+from performance_plots import produce_throughput_graphs_in_folder, produce_throughput_compound_graph, produce_latency_graphs_in_folder, produce_latency_compound_graph, produce_compound_latency_metrics
+from checkpoint_plots import produce_checkpoint_plot, produce_compound_checkpoint_metrics, produce_compound_recovery_metrics
 
 import warnings
 warnings.filterwarnings("ignore")
 
+
+print_plots = False
+print_compound_plots = False
+print_metrics = True
+
+logfileloc = "C:/Projects/BlackSP/scripts/experiments/results.bak/REAL_EXPERIMENTS_FILTERED/job 0 S/" #"C:/Projects/BlackSP/scripts/experiments/results" 
+
 fromSecond = 30
-toSecond = 270
-plots = not False
-compound_plots = False
-metrics = False
-logfileloc = "C:/Projects/BlackSP/scripts/experiments/results.bak/REAL_EXPERIMENTS_FILTERED/job 3/" #"C:/Projects/BlackSP/scripts/experiments/results" 
+toSecond = 999
 
-#metricExperiment = 'job-6-cp-0-10s-3.2k-(0)'
-
-compound_keys = [
+compound_plot_keys = [
     ('job-0-cp-2-15s-18k-(0)', 'CIC 1'),
     ('job-0-cp-2-15s-18k-(1)', 'CIC 2'),
     ('job-0-cp-2-15s-18k-(2)', 'CIC 3')
 ]
 
-compound_metric_keys = [
-    ('job-0-cp-2-15s-18k-(0)'),
-    ('job-0-cp-2-15s-18k-(1)'),
-    ('job-0-cp-2-15s-18k-(2)')
-]
-
 def main():
-    if(plots):
+        
+    if(print_plots):
         produce_throughput_graphs_in_folder(logfileloc)
         produce_latency_graphs_in_folder(logfileloc)
 
-    if(compound_plots):
-        plotter = produce_throughput_compound_graph(logfileloc, compound_keys)
+    if(print_compound_plots):
+        plotter = produce_throughput_compound_graph(logfileloc, compound_plot_keys)
         plotter.xlim([fromSecond, toSecond])
         plotter.ylim([0, 1000])
         #plotter.show_plot(experiment)
         plotter.save_plot(f"{logfileloc}/compound-throughput")
         
-        plotter = produce_latency_compound_graph(logfileloc, compound_keys)
+        plotter = produce_latency_compound_graph(logfileloc, compound_plot_keys)
         plotter.xlim([fromSecond, toSecond])
         plotter.ylim([0, 35000])
         #plotter.show_plot(experiment)
         plotter.save_plot(f"{logfileloc}/compound-latency")
 
-    if(metrics):
-        cpDataFrame = pd.DataFrame()
-        for experiment in compound_metric_keys:
-            cpDataFrame = produce_checkpoint_metrics(logfileloc, experiment, cpDataFrame)
-        print_checkpoint_metrics(cpDataFrame)
+    if(print_metrics):
+        metrics = produce_compound_latency_metrics(logfileloc, fromSecond, toSecond)
+        metrics['protocol'] = metrics['protocol'].apply(lambda s: 'UC' if s == '0' else 'CC' if s == '1' else 'CIC')
+        metrics['protocol'] = metrics['protocol'] + " @ " + metrics['interval']+"s"
+        metrics.drop('interval', axis='columns', inplace=True)
+        print(metrics.to_latex(index = False))
         
-        for experiment in compound_metric_keys:
-            produce_recovery_metrics(logfileloc, experiment)
+        print("------------------------------")
+        
+        metrics = produce_compound_checkpoint_metrics(logfileloc)
+        metrics['protocol'] = metrics['protocol'].apply(lambda s: 'UC' if s == '0' else 'CC' if s == '1' else 'CIC')
+        metrics['protocol'] = metrics['protocol'] + " @ " + metrics['interval']+"s"
+        metrics.drop('interval',axis='columns', inplace=True)
+        print(metrics.to_latex(index = False))
+        
+        print("------------------------------")
+        
+        metrics = produce_compound_recovery_metrics(logfileloc)
+        metrics['protocol'] = metrics['protocol'].apply(lambda s: 'UC' if s == '0' else 'CC' if s == '1' else 'CIC')
+        metrics['protocol'] = metrics['protocol'] + " @ " + metrics['interval']+"s"
+        metrics.drop('interval',axis='columns', inplace=True)
+        print(metrics.to_latex(index = False))
         
     
     

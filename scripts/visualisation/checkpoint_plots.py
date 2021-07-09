@@ -39,7 +39,35 @@ def produce_checkpoint_plot(location: str):
         #plotter.save_plot(f"{location}/{experiment}-checkpoint-size")
 
 
-def produce_checkpoint_metrics(location: str, experiment: str, frame: pd.DataFrame):
+    
+def produce_compound_checkpoint_metrics(location: str):
+    frame = pd.DataFrame()
+    frame['key'] = get_experiments_at_location(location);
+    frame['protocol'] = frame['key'].apply(lambda key: key.split('-')[3])
+    frame['interval'] = frame['key'].apply(lambda key: key.split('-')[4][:2])
+    
+    output = pd.DataFrame(columns = ['protocol', 'interval', '#total', '#regular', '#forced', 'size (Kb)', 'time (ms)'])
+    i = 0
+    for _, group in frame.groupby(['protocol', 'interval']):
+        checkpoints = pd.DataFrame()
+        group_size = 0
+        for key in group['key']:
+            checkpoints = group_checkpoint_data(location, key, checkpoints)
+            group_size += 1
+        checkpoints = checkpoints.reset_index()        
+
+        cp_total = round(np.count_nonzero(checkpoints['timestamp'])/group_size)
+        cp_regular = round(np.count_nonzero(checkpoints['forced'] == False)/group_size)
+        cp_forced = cp_total - cp_regular
+        size_mean = round(checkpoints['kbytes'].mean())
+        size_stdef = round(checkpoints['kbytes'].std())
+        time_mean = round(checkpoints['taken_ms'].mean())
+        time_stdef = round(checkpoints['taken_ms'].std())
+        output.loc[i] = [group['protocol'].iloc[0], group['interval'].iloc[0], cp_total, cp_regular, cp_forced, str(size_mean) + " ± " + str(size_stdef), str(time_mean) + " ± " + str(time_stdef)]
+        i += 1
+    return output
+
+def group_checkpoint_data(location: str, experiment: str, frame: pd.DataFrame):
     initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
     for perf_file in get_checkpoint_files(location, experiment):
         instanceName = perf_file.split("-", 1)[0]
@@ -49,34 +77,41 @@ def produce_checkpoint_metrics(location: str, experiment: str, frame: pd.DataFra
         #parse & normalize
         data = parse_checkpoint_data(data)
         data = normalize_timestamp_column(data, initialTs)
-        #print(data)
-        #add to plot
         frame = pd.concat([frame, data])
     frame['kbytes'] = (frame['bytes'] / 1000).round(0)
     return frame
+
+
+def produce_compound_recovery_metrics(location: str):
+    frame = pd.DataFrame()
+    frame['key'] = get_experiments_at_location(location);
+    frame['protocol'] = frame['key'].apply(lambda key: key.split('-')[3])
+    frame['interval'] = frame['key'].apply(lambda key: key.split('-')[4][:2])
     
-def print_checkpoint_metrics(frame: pd.DataFrame):
-    print("Total checkpoints:", np.count_nonzero(frame['timestamp']))
-    print("Forced:", np.count_nonzero(frame['forced'] == True))
-    print("Regular:", np.count_nonzero(frame['forced'] == False))
+    output = pd.DataFrame(columns = ['protocol', 'interval', '#total', '#recovered', 'recovery (ms)', 'restore (ms)', 'rollback (s)'])
+    i = 0
+    for _, group in frame.groupby(['protocol', 'interval']):
+        recovery = pd.DataFrame()
+        group_size = 0
+        for key in group['key']:
+            recovery = pd.concat([recovery, group_recovery_data(location, key)])
+            group_size += 1
+        recovery = recovery.reset_index()        
 
-    print("Checkpoint take ms")
-    print("1th:", np.percentile(frame['taken_ms'], 1).round(2))
-    print("25th:", np.percentile(frame['taken_ms'], 25).round(2))
-    print("50th:", np.percentile(frame['taken_ms'], 50).round(2))
-    print("75th:", np.percentile(frame['taken_ms'], 75).round(2))
-    print("95th:", np.percentile(frame['taken_ms'], 95).round(2))
-    print("99th:", np.percentile(frame['taken_ms'], 99).round(2))
+        recovery['rollback_s'] = recovery['rollback_ms'].apply(lambda ms: ms/1000);
 
-    print("Checkpoint size (kb)")
-    print("1th:", np.percentile(frame['kbytes'], 1).round(2))
-    print("25th:", np.percentile(frame['kbytes'], 25).round(2))
-    print("50th:", np.percentile(frame['kbytes'], 50).round(2))
-    print("75th:", np.percentile(frame['kbytes'], 75).round(2))
-    print("95th:", np.percentile(frame['kbytes'], 95).round(2))
-    print("99th:", np.percentile(frame['kbytes'], 99).round(2))
+        total_workers = round(recovery['total_workers'].mean())
+        recovered_workers = round(recovery['recovered_workers'].mean())
+        recovery_mean = float('nan') #TODO: calculate somehow..
+        restore_mean = round(recovery['restored_ms'].mean())
+        restore_stdev = round(recovery['restored_ms'].std())
+        rollback_mean = round(recovery['rollback_s'].mean(),2)
+        rollback_stdev = round(recovery['rollback_s'].std(),2)
+        output.loc[i] = [group['protocol'].iloc[0], group['interval'].iloc[0], total_workers, recovered_workers, recovery_mean, str(restore_mean) + " ± " + str(restore_stdev), str(rollback_mean) + " ± " + str(rollback_stdev)]
+        i += 1
+    return output
 
-def produce_recovery_metrics(location: str, experiment: str):
+def group_recovery_data(location: str, experiment: str):
     initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
 
     frame = pd.DataFrame()
@@ -95,23 +130,24 @@ def produce_recovery_metrics(location: str, experiment: str):
         #add to plot
         frame = pd.concat([frame, data])
     total_workers -= 1 #subtract the coordinator
-    
-    print("Total workers:", total_workers)
-    print("Total recovered:", np.count_nonzero(frame['timestamp']))
-    
 
-    print("Recovery ms")
-    print("1th:", np.percentile(frame['restored_ms'], 1).round(2))
-    print("25th:", np.percentile(frame['restored_ms'], 25).round(2))
-    print("50th:", np.percentile(frame['restored_ms'], 50).round(2))
-    print("75th:", np.percentile(frame['restored_ms'], 75).round(2))
-    print("95th:", np.percentile(frame['restored_ms'], 95).round(2))
-    print("99th:", np.percentile(frame['restored_ms'], 99).round(2))
+    frame['total_workers'] = total_workers
+    frame['recovered_workers'] = np.count_nonzero(frame['timestamp'])
+    return frame
 
-    print("Rollback distance ms")
-    print("1th:", np.percentile(frame['rollback_ms'], 1).round(2))
-    print("25th:", np.percentile(frame['rollback_ms'], 25).round(2))
-    print("50th:", np.percentile(frame['rollback_ms'], 50).round(2))
-    print("75th:", np.percentile(frame['rollback_ms'], 75).round(2))
-    print("95th:", np.percentile(frame['rollback_ms'], 95).round(2))
-    print("99th:", np.percentile(frame['rollback_ms'], 99).round(2))
+    #print("Total workers:", total_workers)
+    #print("Total recovered:", np.count_nonzero(frame['timestamp']))
+    #print("Restore ms")
+    #print("1th:", np.percentile(frame['restored_ms'], 1).round(2))
+    #print("25th:", np.percentile(frame['restored_ms'], 25).round(2))
+    #print("50th:", np.percentile(frame['restored_ms'], 50).round(2))
+    #print("75th:", np.percentile(frame['restored_ms'], 75).round(2))
+    #print("95th:", np.percentile(frame['restored_ms'], 95).round(2))
+    #print("99th:", np.percentile(frame['restored_ms'], 99).round(2))
+    #print("Rollback distance ms")
+    #print("1th:", np.percentile(frame['rollback_ms'], 1).round(2))
+    #print("25th:", np.percentile(frame['rollback_ms'], 25).round(2))
+    #print("50th:", np.percentile(frame['rollback_ms'], 50).round(2))
+    #print("75th:", np.percentile(frame['rollback_ms'], 75).round(2))
+    #print("95th:", np.percentile(frame['rollback_ms'], 95).round(2))
+    #print("99th:", np.percentile(frame['rollback_ms'], 99).round(2))

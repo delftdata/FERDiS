@@ -100,3 +100,28 @@ def produce_latency_graph(location: str, experiment: str, plotter: Plotter, from
         failures = failures[failures["timestamp"] > fromSec*1000][failures["timestamp"] < toSec*1000]
         for index, row in failures.iterrows():
             plotter.add_kill_line(row['timestamp'], "FAILURE")
+
+
+def produce_compound_latency_metrics(location: str, fromSec: int = 0, toSec: int = 9999):
+    frame = pd.DataFrame()
+    frame['key'] = get_experiments_at_location(location);
+    frame['protocol'] = frame['key'].apply(lambda key: key.split('-')[3])
+    frame['interval'] = frame['key'].apply(lambda key: key.split('-')[4][:2])
+    
+    output = pd.DataFrame(columns = ['protocol', 'interval', 'min', 'max', 'mean', '90th', '95th', '99th', 'std var'])
+    i = 0
+    for _, group in frame.groupby(['protocol', 'interval']):
+        latencies = pd.DataFrame()
+        for key in group['key']:
+            for perf_file in get_performance_files(location, key):
+                if(perf_file.split("-", 1)[0] != 'latency'):
+                    continue
+                new_latencies = parse_latency_data(get_latency_file_content(location, key, perf_file).drop_duplicates())
+                initialTs = parse_time_to_timestamp(get_init_ts(location, key))
+                new_latencies = normalize_timestamp_column(new_latencies, initialTs)
+                new_latencies = new_latencies[new_latencies["timestamp"] > fromSec*1000][new_latencies["timestamp"] < toSec*1000]
+                latencies = pd.concat([latencies, new_latencies])
+        latencies = latencies.reset_index()        
+        output.loc[i] = [group['protocol'].iloc[0], group['interval'].iloc[0], latencies['latency'].min(), latencies['latency'].max(), np.round(latencies['latency'].mean(), 2), latencies['latency'].quantile(.9), latencies['latency'].quantile(.95), latencies['latency'].quantile(.99), np.round(latencies['latency'].std(), 2)]
+        i = i + 1
+    return output
