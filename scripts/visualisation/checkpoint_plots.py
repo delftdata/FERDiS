@@ -41,30 +41,33 @@ def produce_checkpoint_plot(location: str):
 
     
 def produce_compound_checkpoint_metrics(location: str):
-    frame = pd.DataFrame()
-    frame['key'] = get_experiments_at_location(location);
-    frame['protocol'] = frame['key'].apply(lambda key: key.split('-')[3])
-    frame['interval'] = frame['key'].apply(lambda key: key.split('-')[4][:2])
-    
-    output = pd.DataFrame(columns = ['protocol', 'interval', '#total', '#regular', '#forced', 'size (Kb)', 'time (ms)'])
+    output = pd.DataFrame(columns = ['query', 'protocol', 'interval', '#total', '#regular', '#forced', 'size (Kb)', 'time (ms)'])
     i = 0
-    for _, group in frame.groupby(['protocol', 'interval']):
-        checkpoints = pd.DataFrame()
-        group_size = 0
-        for key in group['key']:
-            checkpoints = group_checkpoint_data(location, key, checkpoints)
-            group_size += 1
-        checkpoints = checkpoints.reset_index()        
+    for query_folder in get_experiments_at_location(location):
+        query_folder_path = os.path.join(location, query_folder)
+        
+        print(query_folder)
+        frame = pd.DataFrame()
+        frame['key'] = get_experiments_at_location(query_folder_path);
+        frame['protocol'] = frame['key'].apply(lambda key: key.split('-')[3])
+        frame['interval'] = frame['key'].apply(lambda key: key.split('-')[4][:2])
+        for _, group in frame.groupby(['protocol', 'interval']):
+            checkpoints = pd.DataFrame()
+            group_size = 0
+            for key in group['key']:
+                checkpoints = group_checkpoint_data(query_folder_path, key, checkpoints)
+                group_size += 1
+            checkpoints = checkpoints.reset_index()        
 
-        cp_total = round(np.count_nonzero(checkpoints['timestamp'])/group_size)
-        cp_regular = round(np.count_nonzero(checkpoints['forced'] == False)/group_size)
-        cp_forced = cp_total - cp_regular
-        size_mean = round(checkpoints['kbytes'].mean())
-        size_stdef = round(checkpoints['kbytes'].std())
-        time_mean = round(checkpoints['taken_ms'].mean())
-        time_stdef = round(checkpoints['taken_ms'].std())
-        output.loc[i] = [group['protocol'].iloc[0], group['interval'].iloc[0], cp_total, cp_regular, cp_forced, str(size_mean) + " ± " + str(size_stdef), str(time_mean) + " ± " + str(time_stdef)]
-        i += 1
+            cp_total = round(np.count_nonzero(checkpoints['timestamp'])/group_size)
+            cp_regular = round(np.count_nonzero(checkpoints['forced'] == False)/group_size)
+            cp_forced = cp_total - cp_regular
+            size_mean = round(checkpoints['kbytes'].mean())
+            size_stdef = round(checkpoints['kbytes'].std())
+            time_mean = round(checkpoints['taken_ms'].mean())
+            time_stdef = round(checkpoints['taken_ms'].std())
+            output.loc[i] = [str(query_folder), group['protocol'].iloc[0], group['interval'].iloc[0], cp_total, cp_regular, cp_forced, str(size_mean) + " ± " + str(size_stdef), str(time_mean) + " ± " + str(time_stdef)]
+            i += 1
     return output
 
 def group_checkpoint_data(location: str, experiment: str, frame: pd.DataFrame):
@@ -83,32 +86,33 @@ def group_checkpoint_data(location: str, experiment: str, frame: pd.DataFrame):
 
 
 def produce_compound_recovery_metrics(location: str):
-    frame = pd.DataFrame()
-    frame['key'] = get_experiments_at_location(location);
-    frame['protocol'] = frame['key'].apply(lambda key: key.split('-')[3])
-    frame['interval'] = frame['key'].apply(lambda key: key.split('-')[4][:2])
-    
-    output = pd.DataFrame(columns = ['protocol', 'interval', '#total', '#recovered', 'recovery (ms)', 'restore (ms)', 'rollback (s)'])
+    output = pd.DataFrame(columns = ['query', 'protocol', 'interval', '#total', '#recovered', 'recovery (ms)', 'restore (ms)', 'rollback (s)'])
     i = 0
-    for _, group in frame.groupby(['protocol', 'interval']):
-        recovery = pd.DataFrame()
-        group_size = 0
-        for key in group['key']:
-            recovery = pd.concat([recovery, group_recovery_data(location, key)])
-            group_size += 1
-        recovery = recovery.reset_index()        
-
-        recovery['rollback_s'] = recovery['rollback_ms'].apply(lambda ms: ms/1000);
-
-        total_workers = round(recovery['total_workers'].mean())
-        recovered_workers = round(recovery['recovered_workers'].mean())
-        recovery_mean = float('nan') #TODO: calculate somehow..
-        restore_mean = round(recovery['restored_ms'].mean())
-        restore_stdev = round(recovery['restored_ms'].std())
-        rollback_mean = round(recovery['rollback_s'].mean(),2)
-        rollback_stdev = round(recovery['rollback_s'].std(),2)
-        output.loc[i] = [group['protocol'].iloc[0], group['interval'].iloc[0], total_workers, recovered_workers, recovery_mean, str(restore_mean) + " ± " + str(restore_stdev), str(rollback_mean) + " ± " + str(rollback_stdev)]
-        i += 1
+    for query_folder in get_experiments_at_location(location):
+        query_folder_path = os.path.join(location, query_folder)
+    
+        frame = pd.DataFrame()
+        frame['key'] = get_experiments_at_location(query_folder_path);
+        frame['protocol'] = frame['key'].apply(lambda key: key.split('-')[3])
+        frame['interval'] = frame['key'].apply(lambda key: key.split('-')[4][:2])
+        for _, group in frame.groupby(['protocol', 'interval']):
+            recovery = pd.DataFrame()
+            group_size = 0
+            for key in group['key']:
+                recovery = pd.concat([recovery, group_recovery_data(query_folder_path, key)])
+                group_size += 1
+            recovery = recovery.reset_index()        
+            recovery['rollback_s'] = recovery['rollback_ms'].apply(lambda ms: ms/1000);
+            #compute statistics
+            total_workers = round(recovery['total_workers'].mean())
+            recovered_workers = round(recovery['recovered_workers'].mean())
+            recovery_mean = float('nan') #TODO: calculate somehow..
+            restore_mean = round(recovery['restored_ms'].mean())
+            restore_stdev = round(recovery['restored_ms'].std())
+            rollback_mean = round(recovery['rollback_s'].mean(),2)
+            rollback_stdev = round(recovery['rollback_s'].std(),2)
+            output.loc[i] = [str(query_folder), group['protocol'].iloc[0], group['interval'].iloc[0], total_workers, recovered_workers, recovery_mean, str(restore_mean) + " ± " + str(restore_stdev), str(rollback_mean) + " ± " + str(rollback_stdev)]
+            i += 1
     return output
 
 def group_recovery_data(location: str, experiment: str):
@@ -126,13 +130,19 @@ def group_recovery_data(location: str, experiment: str):
         #parse & normalize
         data = parse_recovery_data(data)
         data = normalize_timestamp_column(data, initialTs)
-        #print(data)
         #add to plot
         frame = pd.concat([frame, data])
     total_workers -= 1 #subtract the coordinator
+    
+
+    if(frame.empty):
+        print("no recovery from " + str(experiment))
 
     frame['total_workers'] = total_workers
-    frame['recovered_workers'] = np.count_nonzero(frame['timestamp'])
+    frame['recovered_workers'] = recovered_workers = np.count_nonzero(frame['timestamp'])
+    if(recovered_workers > 24):
+        print("double failure in " + experiment)
+
     return frame
 
     #print("Total workers:", total_workers)

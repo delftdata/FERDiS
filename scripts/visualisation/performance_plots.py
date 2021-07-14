@@ -38,7 +38,7 @@ def produce_throughput_graph(location: str, experiment: str, plotter: Plotter, f
         initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
 
         data = normalize_timestamp_column(parsedData, initialTs)
-        data['throughput'] = savitzky_golay(data['throughput'], 11, 1);
+        data['throughput'] = savitzky_golay(data['throughput'], 19, 2);
         data['throughput'] = data['throughput'].apply(lambda x: 0 if x < 0 else x)
         data = data[data["timestamp"] > fromSec*1000][data["timestamp"] < toSec*1000]
         data = data.reset_index()
@@ -76,7 +76,7 @@ def produce_latency_graph(location: str, experiment: str, plotter: Plotter, from
         parsedData = parse_latency_data(get_latency_file_content(location, experiment, perf_file).drop_duplicates())
         initialTs = parse_time_to_timestamp(get_init_ts(location, experiment))
         data = normalize_timestamp_column(parsedData, initialTs)
-        data = data[data["timestamp"] > fromSec*1000][data["timestamp"] < toSec*1000]
+        #data = data[data["timestamp"] > fromSec*1000][data["timestamp"] < toSec*1000]
         if(plotPerShard):
             #add to plot per shard
             for key, values in data.groupby(["shard"]):
@@ -103,25 +103,29 @@ def produce_latency_graph(location: str, experiment: str, plotter: Plotter, from
 
 
 def produce_compound_latency_metrics(location: str, fromSec: int = 0, toSec: int = 9999):
-    frame = pd.DataFrame()
-    frame['key'] = get_experiments_at_location(location);
-    frame['protocol'] = frame['key'].apply(lambda key: key.split('-')[3])
-    frame['interval'] = frame['key'].apply(lambda key: key.split('-')[4][:2])
-    
-    output = pd.DataFrame(columns = ['protocol', 'interval', 'min', 'max', 'mean', '90th', '95th', '99th', 'std var'])
+    output = pd.DataFrame(columns = ['query', 'protocol', 'interval', 'min', 'max', 'mean', '90th', '95th', '99th', 'std var'])
     i = 0
-    for _, group in frame.groupby(['protocol', 'interval']):
-        latencies = pd.DataFrame()
-        for key in group['key']:
-            for perf_file in get_performance_files(location, key):
-                if(perf_file.split("-", 1)[0] != 'latency'):
-                    continue
-                new_latencies = parse_latency_data(get_latency_file_content(location, key, perf_file).drop_duplicates())
-                initialTs = parse_time_to_timestamp(get_init_ts(location, key))
-                new_latencies = normalize_timestamp_column(new_latencies, initialTs)
-                new_latencies = new_latencies[new_latencies["timestamp"] > fromSec*1000][new_latencies["timestamp"] < toSec*1000]
-                latencies = pd.concat([latencies, new_latencies])
-        latencies = latencies.reset_index()        
-        output.loc[i] = [group['protocol'].iloc[0], group['interval'].iloc[0], latencies['latency'].min(), latencies['latency'].max(), np.round(latencies['latency'].mean(), 2), latencies['latency'].quantile(.9), latencies['latency'].quantile(.95), latencies['latency'].quantile(.99), np.round(latencies['latency'].std(), 2)]
-        i = i + 1
+
+    for query_folder in get_experiments_at_location(location):
+        query_folder_path = os.path.join(location, query_folder)
+    
+        frame = pd.DataFrame()
+        frame['key'] = get_experiments_at_location(query_folder_path);
+        frame['protocol'] = frame['key'].apply(lambda key: key.split('-')[3])
+        frame['interval'] = frame['key'].apply(lambda key: key.split('-')[4][:2])
+        for _, group in frame.groupby(['protocol', 'interval']):
+            latencies = pd.DataFrame()
+            for key in group['key']:
+                for perf_file in get_performance_files(query_folder_path, key):
+                    if(perf_file.split("-", 1)[0] != 'latency'):
+                        continue
+                    new_latencies = parse_latency_data(get_latency_file_content(query_folder_path, key, perf_file).drop_duplicates())
+                    initialTs = parse_time_to_timestamp(get_init_ts(query_folder_path, key))
+                    new_latencies = normalize_timestamp_column(new_latencies, initialTs)
+                    new_latencies = new_latencies[new_latencies["timestamp"] > fromSec*1000][new_latencies["timestamp"] < toSec*1000]
+                    latencies = pd.concat([latencies, new_latencies])
+            latencies = latencies.reset_index()
+            output.loc[i] = [str(query_folder), group['protocol'].iloc[0], group['interval'].iloc[0], latencies['latency'].min(), latencies['latency'].max(), np.round(latencies['latency'].mean(), 2), latencies['latency'].quantile(.9), latencies['latency'].quantile(.95), latencies['latency'].quantile(.99), np.round(latencies['latency'].std(), 2)]
+            i = i + 1
+
     return output

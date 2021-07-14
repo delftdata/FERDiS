@@ -150,7 +150,7 @@ Write-Output "Downloading log files"
 New-Item -Path './results/' -Name "logs" -ItemType "directory" #ensure folder creation even if azcopy fails
 $failureTimes | Out-File ./results/logs/failures.log -Encoding "UTF8"
 $startTime | Out-File ./results/logs/init_timestamp.log -Encoding "UTF8"
-azcopy copy $azureSasUrl './results/' --recursive --from-to BlobLocal
+azcopy copy $logsSasUrl './results/' --recursive
 Rename-Item ./results/logs $experimentKey
 
 Write-Output "Deleting deployment files from disk"
