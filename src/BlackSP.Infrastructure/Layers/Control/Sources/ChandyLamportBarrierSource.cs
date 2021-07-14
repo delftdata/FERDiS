@@ -2,6 +2,7 @@
 using BlackSP.Core;
 using BlackSP.Core.Coordination;
 using BlackSP.Core.Extensions;
+using BlackSP.Core.Observers;
 using BlackSP.Infrastructure.Layers.Data.Payloads;
 using BlackSP.Kernel.Configuration;
 using BlackSP.Kernel.Endpoints;
@@ -44,6 +45,7 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
         //TODO: consider building in a feedback loop to detect completion of global checkpoint
 
         public ChandyLamportBarrierSource(WorkerGraphStateManager graphStateManager,
+            ConnectionObserver connectionObserver,
             IVertexGraphConfiguration graphConfiguration,
             IVertexConfiguration vertexConfiguration,
             ICheckpointConfiguration checkpointConfiguration,
@@ -63,6 +65,27 @@ namespace BlackSP.Infrastructure.Layers.Control.Sources
             foreach (var manager in _graphStateManager.GetAllWorkerStateManagers())
             {
                 manager.OnStateChange += WorkerStateManager_OnStateChange;
+            }
+            _ = connectionObserver ?? throw new ArgumentNullException(nameof(connectionObserver));
+            connectionObserver.OnConnectionChange += ConnectionObserver_OnConnectionChange_HaltTimer;
+        }
+
+        private void ConnectionObserver_OnConnectionChange_HaltTimer(ConnectionObserver sender, ConnectionMonitorEventArgs e)
+        {
+            var (changedConnection, isConnected) = e.ChangedConnection;
+
+            if (changedConnection.IsUpstream && !isConnected)
+            {
+                //state manager waits for downstream connection to fail (as it fails later), however this means we 
+                //could be generating barriers for a checkpoint while a failure is about to be detected
+                //
+                //hotfix: pre-emptively halt timer when upstream connection to worker fails
+                //
+                //note: not a solid fix as barriers could have been generated milliseconds before the connection failed..
+                //      a real fix will require a way for the coordinator to detect completion of a global checkpoint
+                //      and restore only completed global checkpoints over consistent checkpoints
+                //note2: will be reactivated through "WorkerStateManager_OnStateChange"
+                CheckpointTimer(false);
             }
         }
 
