@@ -5,6 +5,7 @@
 This section describes the modules present in BlackSP and some of their primary responsibilities/functionalities. The descriptions can be slightly outdated and therefore should only be interpreted as a high level introduction.
 
 **TODO: UPDATE NAMING ONCE RENAME IS APPLIED THROUGHPOUT THE CODEBASE**
+
 **TODO: INSERT MODULE DEPENDENCY DIAGRAM**
 
 ### BlackSP.Kernel
