@@ -11,9 +11,9 @@ using BlackSP.Kernel.Configuration;
 
 namespace BlackSP.Benchmarks.WordCount.Operators
 {
-    class TestSentenceGeneratorSource : Kafka.KafkaSourceConsumerBase<string>, ISourceOperator<SentenceEvent>
+    class TestSentenceGeneratorSource : ISourceOperator<SentenceEvent>
     {
-        private static string[] defaultSentences = new[] { "asdlkfnmjalksjnhfdlkashbfkjasdbhf", "asldkfjnmalskfnhjlakshdfbnkjashdf asdflkmjnaskldfjlkashdfasdf", "asdflkmjaslkfdjasklhdjfasdf asdflknaskldfjnalskdhjfnasdfasdfasf askldjfnaslkjdfhnaslkhjdfasdfasdf", "asdflkmnjcasklhjfdnasdf askldfjmhalkjhcnrasdf lkjfdmlakjsdflaksjhnfdlkasd lsdjkmgfkasjhdfnakjha" };//new[] { "A", "A B", "A B C", "A B C D" };
+        private static string[] defaultSentences = new[] { "A", "A B", "A B C", "A B C D" };
 
         [ApplicationState]
         private int lastSentenceIndex;
@@ -23,11 +23,9 @@ namespace BlackSP.Benchmarks.WordCount.Operators
         
         private readonly ILogger _logger;
 
-        private int MaxSentenceCount => int.MaxValue;// defaultSentences.Length * 50000;
+        private int MaxSentenceCount => defaultSentences.Length * 50000;
 
-        protected override string TopicName => "sentences";
-
-        public TestSentenceGeneratorSource(IVertexConfiguration config, ILogger logger) : base(config, logger)
+        public TestSentenceGeneratorSource(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             lastSentenceIndex = 0;
@@ -53,12 +51,6 @@ namespace BlackSP.Benchmarks.WordCount.Operators
             lastSentenceIndex = (lastSentenceIndex + 1) % defaultSentences.Length; //round robin pick sentences
             sentencesGenerated++;
             //_logger.Debug($"Sending {defaultSentences[i]} ({i} , {lastSentenceIndex})");
-            //var x = Consumer.Consume(t);
-            //var huh = x.Message.Value;
-            //if (huh == "lol")
-            //{
-            //    sentencesGenerated++;
-            //}
             return new SentenceEvent
             {
                 Sentence = defaultSentences[i],

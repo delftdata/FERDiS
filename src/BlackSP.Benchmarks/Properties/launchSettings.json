@@ -94,7 +94,7 @@
         "LOG_TARGET_FLAGS": "3", // 1 (console) || 2 (file) || 4 (azure blob)
         "LOG_EVENT_LEVEL": "2", //0-5,
 
-        "CHECKPOINT_COORDINATION_MODE": "2", //0 = uc, 1 = cc, 2 = cic
+        "CHECKPOINT_COORDINATION_MODE": "1", //0 = uc, 1 = cc, 2 = cic
         "CHECKPOINT_INTERVAL_SECONDS": "15",
 
         "BENCHMARK_INFRA": "0", //0 = simulator, 1 = cra

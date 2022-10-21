@@ -40,18 +40,18 @@ namespace BlackSP.Benchmarks.WordCount.Operators
 
         public Task Sink(WordEvent @event)
         {
-            if(_wordCountMap.ContainsKey(@event.Word))
+            if (_wordCountMap.ContainsKey(@event.Word))
             {
                 _wordCountMap[@event.Word] += @event.Count;
-            } 
+            }
             else
             {
                 _wordCountMap.Add(@event.Word, @event.Count);
             }
             //var wordCountStrings = _wordCountMap.OrderBy(p => p.Key).Select(x => x.Key + "=" + x.Value).ToArray();
             //_logger.Debug($"WordCount: {string.Join("; ", wordCountStrings)}");
-            
-            var outputValue = @event.EventTime.ToString("yyyyMMddHHmmssFFFFF")+"$"+DateTime.UtcNow.ToString("yyyyMMddHHmmssFFFFF")+"$"+@event.EventCount();
+
+            var outputValue = @event.EventTime.ToString("yyyyMMddHHmmssFFFFF") + "$" + DateTime.UtcNow.ToString("yyyyMMddHHmmssFFFFF") + "$" + @event.EventCount();
             producer.Produce("output", new Message<int, string> { Key = @event.Key ?? default, Value = outputValue });
             return Task.CompletedTask;
             //producer.Flush();
@@ -72,13 +72,6 @@ namespace BlackSP.Benchmarks.WordCount.Operators
                 disposedValue = true;
             }
         }
-
-        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-        // ~WordCountLoggerSink()
-        // {
-        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        //     Dispose(disposing: false);
-        // }
 
         public void Dispose()
         {

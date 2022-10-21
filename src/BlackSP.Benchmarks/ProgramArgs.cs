@@ -12,6 +12,7 @@ namespace BlackSP.Benchmarks
 
     public enum Job
     {
+        WordCountInternal = -1,
         WordCount,
         Projection,
         Selection,
