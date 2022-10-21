@@ -19,6 +19,8 @@ namespace BlackSP.Benchmarks
         {
             switch(benchmark)
             {
+                case Job.WordCountInternal:
+                    return WordCount.Queries.WordCountInternal(size);
                 case Job.WordCount:
                     return WordCount.Queries.WordCount(size);
                 case Job.Projection:

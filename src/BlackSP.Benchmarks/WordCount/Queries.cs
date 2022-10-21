@@ -46,7 +46,44 @@ namespace BlackSP.Benchmarks.WordCount
                 mapper.Append(reducer);
                 reducer.Append(sink).AsPipeline();
             };
-            
+        }
+
+        public static Action<IVertexGraphBuilder> WordCountInternal(Size size)
+        {
+            int sourceShards = 2;
+            int mapShards = 2;
+            int reducerShards = 2;
+            int sinkShards = 2;
+
+            switch (size)
+            {
+                case Size.Small: break;
+                case Size.Medium:
+                    sourceShards = 8;
+                    mapShards = 8;
+                    reducerShards = 4;
+                    sinkShards = 4;
+                    break;
+                case Size.Large:
+                    sourceShards = 4;
+                    mapShards = 4;
+                    reducerShards = 4;
+                    sinkShards = 4;
+                    break;
+            }
+
+            return (IVertexGraphBuilder graphBuilder) =>
+            {
+                var source = graphBuilder.AddSource<TestSentenceGeneratorSource, SentenceEvent>(sourceShards);
+
+                var mapper = graphBuilder.AddMap<SentenceToWordMapper, SentenceEvent, WordEvent>(mapShards);
+                var reducer = graphBuilder.AddAggregate<WordCountAggregator, WordEvent, WordEvent>(reducerShards);
+                var sink = graphBuilder.AddSink<TestWordCountSink, WordEvent>(sinkShards);
+
+                source.Append(mapper).AsPipeline();
+                mapper.Append(reducer);
+                reducer.Append(sink).AsPipeline();
+            };
         }
 
         public static Action<IVertexGraphBuilder> Projection(Size size)

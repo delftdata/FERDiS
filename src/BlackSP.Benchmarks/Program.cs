@@ -8,6 +8,7 @@ using BlackSP.Infrastructure;
 using BlackSP.Infrastructure.Models;
 using BlackSP.Kernel.Configuration;
 using CRA.ClientLibrary;
+using Microsoft.Extensions.Configuration;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace BlackSP.Benchmarks
         {
             CultureInfo.CurrentCulture = CultureInfo.CreateSpecificCulture("nl-NL");
             CultureInfo.CurrentUICulture = CultureInfo.CreateSpecificCulture("nl-NL");
-
+            LoadUserSecretsIntoEnvironment();
 #if TRACE && false
             Environment.SetEnvironmentVariable("AZURE_STORAGE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net");
             Environment.SetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING", "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;");
@@ -187,6 +188,25 @@ namespace BlackSP.Benchmarks
                 .Build();
 
             await app.RunAsync();
+        }
+
+        /// <summary>
+        /// Retrieves values from visual studio user secrets and loads them into the current process's environment variables.
+        /// </summary>
+        static void LoadUserSecretsIntoEnvironment()
+        {
+            var config = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
+            var connstr = config.GetValue<string>("AZURE_STORAGE_CONN_STRING");
+            if(!string.IsNullOrEmpty(connstr))
+            {
+                Environment.SetEnvironmentVariable("AZURE_STORAGE_CONN_STRING", connstr);
+            }
+
+            connstr = config.GetValue<string>("AZURE_STORAGE_CONNECTION_STRING");
+            if (!string.IsNullOrEmpty(connstr))
+            {
+                Environment.SetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING", connstr);
+            }
         }
     }
 }

@@ -61,8 +61,6 @@
     "Collect latency metrics": {
       "commandName": "Project",
       "environmentVariables": {
-        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
-
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
         "KAFKA_BROKER_COUNT": "1",
         "KAFKA_TOPIC_PARTITION_COUNT": "24",
@@ -76,8 +74,6 @@
     "Collect throughput metrics": {
       "commandName": "Project",
       "environmentVariables": {
-        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
-
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //kafka-{0}.kafka.kafka.svc.cluster.local:9092
         "KAFKA_BROKER_COUNT": "1",
         "KAFKA_TOPIC_PARTITION_COUNT": "24",
@@ -88,24 +84,21 @@
       "commandLineArgs": "throughput"
     },
 
-    "Run benchmark on BlackSP": {
+    "Run in simulator": {
       "commandName": "Project",
       "environmentVariables": {
-        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
-        "AZURE_STORAGE_CONNECTION_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
-
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //"kafka-{0}.kafka.kafka.svc.cluster.local:9092"
         "KAFKA_BROKER_COUNT": "1",
         "KAFKA_TOPIC_PARTITION_COUNT": "24",
 
         "LOG_TARGET_FLAGS": "3", // 1 (console) || 2 (file) || 4 (azure blob)
-        "LOG_EVENT_LEVEL": "1", //0-5,
+        "LOG_EVENT_LEVEL": "2", //0-5,
 
-        "CHECKPOINT_COORDINATION_MODE": "2", //0 = uc, 1 = cc, 2 = cic
+        "CHECKPOINT_COORDINATION_MODE": "1", //0 = uc, 1 = cc, 2 = cic
         "CHECKPOINT_INTERVAL_SECONDS": "15",
 
         "BENCHMARK_INFRA": "0", //0 = simulator, 1 = cra
-        "BENCHMARK_JOB": "6", //0-6
+        "BENCHMARK_JOB": "-1", //-1 - 6
         "BENCHMARK_SIZE": "0", // 0 = S, 1 = M, 2 = L
 
         "CRA_WORKER_DOCKER_IMAGE": "mdzwart/cra-net3.1:latest",
@@ -117,9 +110,6 @@
     "Run local worker": {
       "commandName": "Project",
       "environmentVariables": {
-        "AZURE_STORAGE_CONN_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
-        "AZURE_STORAGE_CONNECTION_STRING": "DefaultEndpointsProtocol=https;AccountName=vertexstore;AccountKey=3BMGVlrXZq8+NE9caC47KDcpZ8X59vvxFw21NLNNLFhKGgmA8Iq+nr7naEd7YuGGz+M0Xm7dSUhgkUN5N9aMLw==;EndpointSuffix=core.windows.net",
-
         "KAFKA_BROKER_DNS_TEMPLATE": "localhost:3240{0}", //"kafka-{0}.kafka.kafka.svc.cluster.local:9092"
         "KAFKA_BROKER_COUNT": "1",
         "KAFKA_TOPIC_PARTITION_COUNT": "24",
